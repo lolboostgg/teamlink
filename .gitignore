@@ -40,6 +40,11 @@ yarn-error.log*
 # template (unconnected Claude Code skill pack), not TeamLink content.
 /skills
 
+# Raw lolboost.gg asset dump (source material to curate files from into
+# public/ — see lib/gameArt.ts, lib/lolAssets.ts). ~60MB, mostly unused;
+# kept on disk for future curation but never committed.
+/assets
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
