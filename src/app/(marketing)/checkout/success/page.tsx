@@ -23,8 +23,8 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
         <h1 className="section__title">You&rsquo;re all set!</h1>
         <p className="section__sub" style={{ margin: "0 auto 28px" }}>
           {teammate
-            ? `You're matched with ${teammate.name}. This is a mock confirmation — no real payment was processed.`
-            : "We're matching you with a teammate now. This is a mock confirmation — no real payment was processed."}
+            ? `You're matched with ${teammate.name}. This is a mock confirmation, no real payment was processed.`
+            : "We're matching you with a teammate now. This is a mock confirmation, no real payment was processed."}
         </p>
         <Link className="btn btn--primary" href="/">
           Back to home

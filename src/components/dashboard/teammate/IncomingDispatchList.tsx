@@ -20,7 +20,7 @@ export function IncomingDispatchList() {
       <div className="notification-panel">
         <div className="notification-panel__empty">
           <i className="fa-solid fa-bell-slash" aria-hidden="true" />
-          No live match requests right now — book a session as a customer to see one arrive here.
+          No live match requests right now. Book a session as a customer to see one arrive here.
         </div>
       </div>
     );

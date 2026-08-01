@@ -83,7 +83,7 @@ export function MatchmakingScreen({ orderId }: Props) {
           <i className="fa-solid fa-check" aria-hidden="true" />
         </span>
         <h1 className="matching-screen__title">You&rsquo;re matched!</h1>
-        <p className="matching-screen__sub">Your teammate is ready for {order.gameName} — {order.option}.</p>
+        <p className="matching-screen__sub">Your teammate is ready for {order.gameName} · {order.option}.</p>
         <button
           type="button"
           className="btn btn--vivid"

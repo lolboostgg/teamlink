@@ -3,7 +3,9 @@
 import { useAuthModal } from "./AuthModalProvider";
 
 export function HeaderAuthButtons() {
-  const { open } = useAuthModal();
+  const { open, isAuthenticated } = useAuthModal();
+
+  if (isAuthenticated) return null;
 
   return (
     <>

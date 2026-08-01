@@ -1,6 +1,8 @@
 import { getTeammateById } from "@/lib/teammates";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
+import { FlagIcon } from "@/components/ui/FlagIcon";
+import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import type { DispatchCandidate } from "@/lib/matchmaking/types";
 
 interface Props {
@@ -18,7 +20,9 @@ export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectab
   if (candidate.status === "pending") {
     return (
       <div className="candidate-slot candidate-slot--pending">
-        <span className="candidate-slot__avatar candidate-slot__avatar--pending">{teammate.avatarInitials}</span>
+        <span className="candidate-slot__avatar candidate-slot__avatar--pending">
+          <AvatarIcon seed={teammate.id} />
+        </span>
         <span className="candidate-slot__name">{teammate.name}</span>
         <span className="candidate-slot__status">
           <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" /> Waiting for response...
@@ -30,7 +34,9 @@ export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectab
   if (candidate.status === "declined" || candidate.status === "timed_out") {
     return (
       <div className="candidate-slot candidate-slot--out">
-        <span className="candidate-slot__avatar">{teammate.avatarInitials}</span>
+        <span className="candidate-slot__avatar">
+          <AvatarIcon seed={teammate.id} />
+        </span>
         <span className="candidate-slot__name">{teammate.name}</span>
         <span className="candidate-slot__status">
           {candidate.status === "declined" ? "Declined" : "No response"}
@@ -62,9 +68,7 @@ export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectab
         </span>
         <span className="candidate-slot__langs">
           {teammate.languages.map((lang) => (
-            <span key={lang} title={getLanguageMeta(lang).label}>
-              {getLanguageMeta(lang).flag}
-            </span>
+            <FlagIcon key={lang} iso={getLanguageMeta(lang).flagIso} label={getLanguageMeta(lang).label} />
           ))}
         </span>
       </div>

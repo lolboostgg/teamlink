@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
 import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
-import { GameCover } from "@/components/home/GameCover";
+import { gameIcon } from "@/lib/gameArt";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { TeammatePicker } from "@/components/booking/TeammatePicker";
 import { TEAMMATES } from "@/lib/teammates";
@@ -63,7 +63,8 @@ export function BookingWidget({ game }: Props) {
         <Reveal>
           <div className="booking-header">
             <div className="booking-header__cover">
-              <GameCover game={game} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={gameIcon(game.slug)} alt="" className="booking-header__cover-icon" />
             </div>
             <div>
               <h1>{game.name}</h1>

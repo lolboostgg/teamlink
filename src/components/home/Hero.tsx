@@ -32,7 +32,7 @@ export function Hero() {
 
         <Reveal delay={80}>
           <h1 className="hero__title">
-            Play with a pro <span className="hero__title-accent">teammate</span> — right now.
+            Play with a pro <span className="hero__title-accent">teammate</span>, right now.
           </h1>
         </Reveal>
 
@@ -76,7 +76,7 @@ export function Hero() {
 
         <Reveal delay={320}>
           <div className="hero-modes-wrap">
-            <div className="hero-modes-title">{activeGame.name} — select a mode</div>
+            <div className="hero-modes-title">{activeGame.name} · pick a mode</div>
             <div className="hero-modes">
               {options.map((option) => (
                 <button
@@ -96,7 +96,7 @@ export function Hero() {
             <div className="hero-cta">
               <Link href={`/games/${activeGame.slug}`} className="btn btn--vivid btn--block">
                 <i className="fa-solid fa-bolt" aria-hidden="true" />
-                Play now — <PriceTag amountEUR={activeOption.price} />
+                Play now for <PriceTag amountEUR={activeOption.price} />
               </Link>
             </div>
           </div>

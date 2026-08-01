@@ -34,7 +34,7 @@ export function BentoFeatures() {
           <Reveal className="bento__cell bento__cell--wide" delay={70}>
             <div className="bento-card">
               <h3>Fair price</h3>
-              <p>We keep pricing transparent — no hidden fees, no surprise add-ons.</p>
+              <p>We keep pricing transparent: no hidden fees, no surprise add-ons.</p>
               <div className="bento-card__price-compare">
                 <div className="bento-card__price-row">
                   <span>Others charge</span>

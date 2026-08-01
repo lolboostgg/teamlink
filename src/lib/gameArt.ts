@@ -8,3 +8,9 @@ const EXTENSIONS: Record<string, string> = {
 export function localGameBanner(slug: string): string {
   return `/games/${slug}.${EXTENSIONS[slug] ?? "webp"}`;
 }
+
+// Square logo mark for the same game, used wherever a compact badge/icon
+// reads better than the full poster-style banner (small tags, headers).
+export function gameIcon(slug: string): string {
+  return `/games/icons/${slug}.png`;
+}

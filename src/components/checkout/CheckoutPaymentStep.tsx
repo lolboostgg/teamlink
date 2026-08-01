@@ -111,7 +111,7 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
               <span className="payg-toggle__title">
                 <i className="fa-solid fa-infinity" aria-hidden="true" /> Pay as you play
               </span>
-              <span className="payg-toggle__desc">Connect PayPal once, keep playing — billed as you go.</span>
+              <span className="payg-toggle__desc">Connect PayPal once, keep playing, billed as you go.</span>
             </button>
           </div>
 
@@ -121,8 +121,8 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
             </p>
           ) : (
             <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "14px 0 0" }}>
-              You&rsquo;ll connect PayPal, then the session starts immediately. No upfront charge — you&rsquo;re billed
-              for the time you actually play.
+              You&rsquo;ll connect PayPal, then the session starts immediately. No upfront charge, you&rsquo;re just
+              billed for the time you actually play.
             </p>
           )}
 

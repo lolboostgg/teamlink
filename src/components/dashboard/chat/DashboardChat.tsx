@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ChatConversation, ChatMessage } from "@/lib/dashboard/chatData";
+import { AvatarIcon } from "@/components/ui/AvatarIcon";
 
 export function DashboardChat({ conversations: initial }: { conversations: ChatConversation[] }) {
   const [conversations, setConversations] = useState(initial);
@@ -45,7 +46,9 @@ export function DashboardChat({ conversations: initial }: { conversations: ChatC
             className={`chat-list__item${c.id === active.id ? " is-active" : ""}`}
             onClick={() => selectConversation(c.id)}
           >
-            <span className="chat-list__avatar">{c.withInitials}</span>
+            <span className="chat-list__avatar">
+              <AvatarIcon seed={c.id + c.withName} />
+            </span>
             <span className="chat-list__meta">
               <span className="chat-list__name">{c.withName}</span>
               <span className="chat-list__last">{c.lastMessage}</span>
@@ -57,7 +60,9 @@ export function DashboardChat({ conversations: initial }: { conversations: ChatC
 
       <div className="chat-thread">
         <div className="chat-thread__head">
-          <span className="chat-list__avatar">{active.withInitials}</span>
+          <span className="chat-list__avatar">
+            <AvatarIcon seed={active.id + active.withName} />
+          </span>
           <div>
             <div className="chat-thread__name">{active.withName}</div>
             <div className="chat-thread__game">{active.gameName}</div>

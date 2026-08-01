@@ -8,7 +8,6 @@ export interface ChatMessage {
 export interface ChatConversation {
   id: string;
   withName: string;
-  withInitials: string;
   gameName: string;
   lastMessage: string;
   unread: number;
@@ -19,7 +18,6 @@ export const CLIENT_CONVERSATIONS: ChatConversation[] = [
   {
     id: "conv-1",
     withName: "Nova",
-    withInitials: "NV",
     gameName: "League of Legends",
     lastMessage: "Ready when you are, invite sent!",
     unread: 2,
@@ -33,7 +31,6 @@ export const CLIENT_CONVERSATIONS: ChatConversation[] = [
   {
     id: "conv-2",
     withName: "Kestrel",
-    withInitials: "KS",
     gameName: "Valorant",
     lastMessage: "GGs, thanks for playing!",
     unread: 0,
@@ -48,7 +45,6 @@ export const TEAMMATE_CONVERSATIONS: ChatConversation[] = [
   {
     id: "conv-1",
     withName: "Mara Feld",
-    withInitials: "MF",
     gameName: "League of Legends",
     lastMessage: "Perfect, see you in the lobby!",
     unread: 1,
@@ -61,7 +57,6 @@ export const TEAMMATE_CONVERSATIONS: ChatConversation[] = [
   {
     id: "conv-2",
     withName: "Owen Brooks",
-    withInitials: "OB",
     gameName: "Valorant",
     lastMessage: "Thanks for the carry 🙌",
     unread: 0,

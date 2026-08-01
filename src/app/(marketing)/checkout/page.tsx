@@ -29,7 +29,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
 
         <CheckoutForm
           gameSlug={game?.slug ?? ""}
-          gameName={game?.name ?? "—"}
+          gameName={game?.name ?? "Your game"}
           option={option}
           teammates={teammates}
           teammateId={params.teammate}

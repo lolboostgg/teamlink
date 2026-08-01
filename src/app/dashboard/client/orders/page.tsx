@@ -10,7 +10,7 @@ export default function ClientOrdersPage() {
       <div className="dashboard-panel__head">
         <div>
           <div className="dashboard-panel__title">Your orders</div>
-          <div className="dashboard-panel__sub">Every booking — upcoming, completed, and cancelled</div>
+          <div className="dashboard-panel__sub">Every booking: upcoming, completed, and cancelled</div>
         </div>
       </div>
       <BookingsTable bookings={CLIENT_BOOKINGS} />

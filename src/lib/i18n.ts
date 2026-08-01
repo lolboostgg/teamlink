@@ -4,20 +4,21 @@ export interface LanguageMeta {
   code: LanguageCode;
   label: string;
   nativeLabel: string;
-  flag: string;
+  flagIso: string;
 }
 
 // UI + persistence only — selecting a language here does not translate page
 // content yet (that's a separate, much larger project). This exists so the
 // switcher behaves exactly like the currency switcher: instant, persisted,
-// no reload.
+// no reload. flagIso maps to a real SVG in public/flags/ (see FlagIcon) —
+// emoji flags don't render on Windows, they just show as text.
 export const LANGUAGES: LanguageMeta[] = [
-  { code: "en", label: "English", nativeLabel: "English", flag: "🇬🇧" },
-  { code: "de", label: "German", nativeLabel: "Deutsch", flag: "🇩🇪" },
-  { code: "fr", label: "French", nativeLabel: "Français", flag: "🇫🇷" },
-  { code: "es", label: "Spanish", nativeLabel: "Español", flag: "🇪🇸" },
-  { code: "pl", label: "Polish", nativeLabel: "Polski", flag: "🇵🇱" },
-  { code: "tr", label: "Turkish", nativeLabel: "Türkçe", flag: "🇹🇷" },
+  { code: "en", label: "English", nativeLabel: "English", flagIso: "gb" },
+  { code: "de", label: "German", nativeLabel: "Deutsch", flagIso: "de" },
+  { code: "fr", label: "French", nativeLabel: "Français", flagIso: "fr" },
+  { code: "es", label: "Spanish", nativeLabel: "Español", flagIso: "es" },
+  { code: "pl", label: "Polish", nativeLabel: "Polski", flagIso: "pl" },
+  { code: "tr", label: "Turkish", nativeLabel: "Türkçe", flagIso: "tr" },
 ];
 
 const LANGUAGE_BY_CODE = new Map(LANGUAGES.map((l) => [l.code, l]));

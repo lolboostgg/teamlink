@@ -1,6 +1,8 @@
 import type { Teammate } from "@/lib/teammates";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta, championIcon } from "@/lib/lolAssets";
+import { FlagIcon } from "@/components/ui/FlagIcon";
+import { AvatarIcon } from "@/components/ui/AvatarIcon";
 
 interface Props {
   teammate: Teammate;
@@ -16,7 +18,9 @@ export function TeammateCard({ teammate, selected, onSelect }: Props) {
       {selected && <i className="fa-solid fa-check teammate-card__check" aria-hidden="true" />}
 
       <div className="teammate-card__head">
-        <span className="teammate-card__avatar">{teammate.avatarInitials}</span>
+        <span className="teammate-card__avatar">
+          <AvatarIcon seed={teammate.id} />
+        </span>
         <div>
           <div className="teammate-card__name">{teammate.name}</div>
           <div className="teammate-card__rating">
@@ -33,9 +37,7 @@ export function TeammateCard({ teammate, selected, onSelect }: Props) {
         </span>
         <span className="teammate-card__langs">
           {teammate.languages.map((lang) => (
-            <span key={lang} title={getLanguageMeta(lang).label}>
-              {getLanguageMeta(lang).flag}
-            </span>
+            <FlagIcon key={lang} iso={getLanguageMeta(lang).flagIso} label={getLanguageMeta(lang).label} />
           ))}
         </span>
       </div>

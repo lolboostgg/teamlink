@@ -31,7 +31,7 @@ export function PromoBanner() {
           <i className="fa-solid fa-gift" aria-hidden="true" />
         </span>
         <p className="promo-banner__text">
-          <strong>Refer a friend</strong> — you both get €5 session credit.
+          <strong>Refer a friend</strong> and you both get €5 session credit.
         </p>
         <Link href="/games" className="promo-banner__cta">
           Learn more <i className="fa-solid fa-arrow-right" aria-hidden="true" />

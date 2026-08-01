@@ -23,7 +23,7 @@ export function TeammatePicker({ gameSlug, selected, onChange }: Props) {
             <i className="fa-solid fa-shuffle" aria-hidden="true" />
           </div>
           <div className="teammate-card__name">Random match</div>
-          <p className="teammate-card__tagline">Fastest available teammate — recommended for the quickest match.</p>
+          <p className="teammate-card__tagline">Fastest available teammate, recommended for the quickest match.</p>
         </button>
 
         {teammates.map((t) => (

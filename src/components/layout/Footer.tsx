@@ -89,7 +89,7 @@ export function Footer() {
         </div>
 
         <div className="site-footer__bottom">
-          <span>© {year} TeamLink.gg — All rights reserved.</span>
+          <span>© {year} TeamLink.gg. All rights reserved.</span>
           <span>Not affiliated with Riot Games, Epic Games, or any game publisher.</span>
         </div>
       </div>

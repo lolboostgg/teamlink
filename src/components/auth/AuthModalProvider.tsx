@@ -82,7 +82,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
           </h2>
           <p className="auth-modal__sub">
             {mode === "login"
-              ? "Welcome back — pick up right where you left off."
+              ? "Welcome back, pick up right where you left off."
               : "Takes less than 30 seconds. No credit card required."}
           </p>
 
@@ -113,7 +113,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 
             {notice && (
               <p className="auth-modal__notice">
-                This is a demo — account creation isn&rsquo;t wired up yet.
+                This is a demo, account creation isn&rsquo;t wired up yet.
               </p>
             )}
 

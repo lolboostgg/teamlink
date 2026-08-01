@@ -18,7 +18,7 @@ export function NotificationPanel({ notifications }: { notifications: BookingReq
       <div className="notification-panel">
         <div className="notification-panel__empty">
           <i className="fa-solid fa-bell-slash" aria-hidden="true" />
-          No notifications yet — new booking requests will show up here.
+          No notifications yet, new booking requests will show up here.
         </div>
       </div>
     );

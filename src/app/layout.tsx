@@ -24,7 +24,7 @@ const bebasNeue = Bebas_Neue({
 
 export const metadata: Metadata = {
   title: {
-    default: "TeamLink.gg — Find your next teammate, today.",
+    default: "TeamLink.gg: find your next teammate today",
     template: "%s | TeamLink.gg",
   },
   description: "Book a skilled, verified teammate to play with in under two minutes.",

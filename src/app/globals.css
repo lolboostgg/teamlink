@@ -493,27 +493,9 @@ ul {
   gap: 36px;
 }
 
-.site-header__nav {
-  display: flex;
-  align-items: center;
-  gap: 26px;
-  flex: 0 0 auto;
-}
-
-.site-header__nav a {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted);
-  transition: color 0.15s ease;
-}
-
-.site-header__nav a:hover {
-  color: var(--text);
-}
-
 .site-header__search {
   flex: 1 1 auto;
-  max-width: 360px;
+  max-width: 420px;
   position: relative;
 }
 
@@ -546,6 +528,66 @@ ul {
   font-size: 12px;
 }
 
+.header-search__preview {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  max-height: 360px;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  animation: modalPanelIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-search__empty {
+  padding: 14px 10px;
+  font-size: 13px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.header-search__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.header-search__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.header-search__item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.header-search__item-name {
+  font-size: 13px;
+  font-weight: 700;
+  flex: 1 1 auto;
+}
+
+.header-search__item-players {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
 .site-header__actions {
   display: flex;
   align-items: center;
@@ -553,8 +595,7 @@ ul {
   margin-left: auto;
 }
 
-@media (max-width: 900px) {
-  .site-header__nav,
+@media (max-width: 640px) {
   .site-header__search {
     display: none;
   }
@@ -908,7 +949,7 @@ ul {
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .game-cover__scrim {
@@ -1173,12 +1214,11 @@ ul {
   font-size: 10px;
 }
 
-.marquee__game {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-faint);
+.marquee__game-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: cover;
 }
 
 /* ── How it works (compact vertical timeline) ───────────────── */
@@ -1504,6 +1544,14 @@ ul {
   font-weight: 800;
   font-size: 12px;
   box-shadow: var(--shadow-card);
+  background: var(--bg-elevated-2);
+}
+
+.booking-header__cover-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
 }
 
 .booking-header h1 {
@@ -2811,6 +2859,22 @@ ul {
   color: var(--text-faint);
 }
 
+/* Real flag SVGs (public/flags/) — see FlagIcon.tsx. Sized to sit inline
+   wherever an emoji flag used to go. */
+.flag-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+
+.dropdown-switcher__flag {
+  width: 14px;
+  height: 14px;
+}
+
 .dropdown-switcher__symbol {
   font-size: 13px;
 }
@@ -2839,6 +2903,12 @@ ul {
   left: auto;
   right: 0;
   min-width: 190px;
+}
+
+.dropdown-switcher__menu--settings {
+  max-height: none;
+  overflow: visible;
+  padding: 0;
 }
 
 .dropdown-switcher__item {
@@ -2889,84 +2959,104 @@ ul {
   font-size: 11px;
 }
 
-/* ── Settings modal (currency + language, combined) ─────────────── */
-.settings-modal {
-  min-width: 0;
+/* ── Settings dropdown panel (currency + language, hover/click) ──── */
+.settings-panel {
+  width: 300px;
+  padding: 14px;
 }
 
-.settings-modal__title {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  margin-bottom: 20px;
+.settings-panel__section + .settings-panel__section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
 }
 
-.settings-modal__section + .settings-modal__section {
-  margin-top: 22px;
-}
-
-.settings-modal__label {
-  font-size: 11px;
+.settings-panel__title {
+  font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-faint);
-  margin-bottom: 10px;
+  color: var(--text);
+  margin-bottom: 8px;
 }
 
-.settings-modal__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  max-height: 260px;
+.settings-panel__lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
   overflow-y: auto;
 }
 
-.settings-modal__item {
+.settings-panel__lang-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  width: 100%;
+  padding: 8px 8px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.settings-modal__item:hover {
-  border-color: var(--border-strong);
-}
-
-.settings-modal__item.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.settings-modal__item-symbol {
-  flex: 0 0 auto;
-  width: 22px;
-  text-align: center;
-  font-size: 15px;
-}
-
-.settings-modal__item-code {
-  display: block;
+  background: none;
+  border: none;
+  color: var(--text-muted);
   font-size: 13px;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.settings-panel__lang-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-panel__lang-item.is-active {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
   font-weight: 700;
 }
 
-.settings-modal__item-sub {
-  display: block;
-  font-size: 11px;
-  color: var(--text-faint);
+.settings-panel__lang-flag {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
 }
 
-.settings-modal__item i {
+.settings-panel__lang-item i {
   margin-left: auto;
-  color: var(--accent);
+  color: var(--success);
   font-size: 12px;
+}
+
+.settings-panel__currency-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 130px;
+  overflow-y: auto;
+}
+
+.settings-panel__currency-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.settings-panel__currency-pill:hover {
+  border-color: var(--border-strong);
+}
+
+.settings-panel__currency-pill.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.settings-panel__currency-symbol {
+  color: var(--accent);
 }
 
 /* ── Role switcher (demo dashboard picker) ──────────────────────── */

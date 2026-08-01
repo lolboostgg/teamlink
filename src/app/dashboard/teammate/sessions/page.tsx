@@ -13,7 +13,7 @@ export default function TeammateSessionsPage() {
           <div>
             <div className="dashboard-panel__title">Incoming requests</div>
             <div className="dashboard-panel__sub">
-              Live dispatch — a real customer order lands here the moment it&rsquo;s sent to you
+              Live dispatch, a real customer order lands here the moment it&rsquo;s sent to you
             </div>
           </div>
         </div>

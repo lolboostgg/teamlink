@@ -45,7 +45,7 @@ export function CheckoutSessionMeter({ gameName, option, ratePerMinuteEUR }: Pro
         </div>
         <h1 className="session-meter__title">Session ended</h1>
         <p className="session-meter__sub">
-          You played for {formatElapsed(seconds)} — charged automatically via PayPal.
+          You played for {formatElapsed(seconds)}, charged automatically via PayPal.
         </p>
         <div className="session-meter__receipt-total">{format(costEUR)}</div>
         <Link href="/dashboard/client/orders" className="btn btn--vivid">
@@ -62,9 +62,9 @@ export function CheckoutSessionMeter({ gameName, option, ratePerMinuteEUR }: Pro
       </span>
 
       <h1 className="session-meter__title">
-        {gameName} — {option}
+        {gameName} · {option}
       </h1>
-      <p className="session-meter__sub">Keep playing — you&rsquo;re billed automatically for the time you use.</p>
+      <p className="session-meter__sub">Keep playing, you&rsquo;re billed automatically for the time you use.</p>
 
       <div className="session-meter__display">
         <div className="session-meter__stat">

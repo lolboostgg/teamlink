@@ -7,7 +7,7 @@ export function ReviewsList({ reviews }: { reviews: Review[] }) {
         <div className="dashboard-list-item" key={r.id}>
           <div className="dashboard-list-item__meta">
             <div className="dashboard-list-item__title">{r.client}</div>
-            <div className="dashboard-list-item__sub">&ldquo;{r.comment}&rdquo; — {r.date}</div>
+            <div className="dashboard-list-item__sub">&ldquo;{r.comment}&rdquo; · {r.date}</div>
           </div>
           <span className="dashboard-list-item__stars">
             {"★".repeat(r.rating)}
