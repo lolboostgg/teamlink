@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { GameSwitcherBar } from "@/components/booking/GameSwitcherBar";
 import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
@@ -23,6 +23,19 @@ export function Hero({ game: gameProp }: Props) {
   const lastSlug = useLastGameSlug();
   const game = gameProp ?? (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
   const [hoverSlug, setHoverSlug] = useState<string | null>(null);
+  const gameSlugProp = gameProp?.slug;
+
+  // /games/[slug] pages land straight on the booking panel instead of
+  // wherever the browser happens to leave scroll position (its native
+  // restoration is inconsistent across reloads and same-layout game
+  // switches) — a visitor picking a specific game already has intent, so
+  // skip the marketing hero. The homepage (gameSlugProp undefined) is
+  // unaffected and stays at the top. Keyed on the slug so this re-fires on
+  // every switch, since this layout never remounts between games.
+  useEffect(() => {
+    if (!gameSlugProp) return;
+    document.getElementById("booking")?.scrollIntoView({ behavior: "instant" });
+  }, [gameSlugProp]);
 
   return (
     <>
@@ -59,11 +72,8 @@ export function Hero({ game: gameProp }: Props) {
       {/* Separate from .hero on purpose: .hero has overflow:hidden to mask
           the ambient backdrop, which per the CSS overflow spec would force
           overflow-y to auto too and break position:sticky on the booking
-          sidebar below. See .glow-clip for the same fix applied here. */}
-      <div className="booking-page" style={{ position: "relative" }}>
-        <div className="glow-clip" aria-hidden="true">
-          <span className="bg-glow bg-glow--teal" style={{ width: 360, height: 360, left: "-140px", bottom: "0" }} />
-        </div>
+          sidebar below. */}
+      <div id="booking" className="booking-page" style={{ position: "relative" }}>
         <div className="container booking-widget-wrap" style={{ position: "relative", zIndex: 1 }}>
           <BookingWidget game={game} />
         </div>

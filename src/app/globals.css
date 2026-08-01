@@ -327,21 +327,6 @@ ul {
   overflow: hidden;
 }
 
-/* Clips just the decorative bg-glow blurs instead of the whole page —
-   overflow-x/y hidden on an ancestor (section-relative) breaks
-   position: sticky for any descendant, per spec: setting overflow-x to
-   anything but visible forces overflow-y's computed value to auto too
-   (and vice versa), so there's no way to clip one axis on an ancestor
-   without also creating a scroll container that breaks sticky. Used on
-   the booking page specifically since it has a sticky sidebar. */
-.glow-clip {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-
 /* ── Buttons ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -520,12 +505,6 @@ ul {
   height: var(--header-h);
   display: flex;
   align-items: center;
-  background: transparent;
-  border-bottom: 1px solid transparent;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.site-header.is-scrolled {
   background: rgba(6, 8, 15, 0.75);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -1290,10 +1269,6 @@ ul {
   padding-top: calc(88px + var(--offset-h, var(--header-h)));
 }
 
-.games-page-hero .ambient-bg__layer {
-  filter: brightness(0.4) saturate(1.1);
-}
-
 .games-page-hero > .container {
   position: relative;
   z-index: 1;
@@ -1757,6 +1732,7 @@ ul {
 /* ── Booking widget (game/service page) ────────────────────── */
 .booking-page {
   padding-bottom: 60px;
+  scroll-margin-top: calc(var(--offset-h, var(--header-h)) + 16px);
 }
 
 .booking-widget-wrap {
@@ -1797,96 +1773,108 @@ ul {
   margin-bottom: 12px;
 }
 
-.booking-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 16px 18px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  margin-bottom: 10px;
-  text-align: left;
-  width: 100%;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-}
-
-.booking-option:active {
-  transform: scale(0.99);
-}
-
-.booking-option:hover {
-  border-color: var(--border-strong);
-}
-
-.booking-option.is-selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.booking-option__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
-  color: var(--text-faint);
-  flex: 0 0 auto;
+/* Visual tiles instead of plain list rows — matches the card/carousel
+   language used everywhere else on the page (game picker, teammate
+   picker), so the mode list doesn't read as a flat, unrelated table. */
+.booking-options-grid {
   display: grid;
-  place-items: center;
-  font-size: 13px;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.booking-option.is-selected .booking-option__icon {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
-
-.booking-option__main {
-  flex: 1;
-  display: flex;
-  align-items: center;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 12px;
 }
 
-.booking-option__name {
-  display: inline-flex;
+.booking-tile {
+  position: relative;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.booking-tile:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card);
+}
+
+.booking-tile.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.booking-tile__check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  display: grid;
+  place-items: center;
+}
+
+.booking-tile__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.booking-tile__name {
+  display: flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
   font-weight: 700;
+  margin-bottom: 4px;
 }
 
-.booking-option__name .info-tooltip {
+.booking-tile__name .info-tooltip {
   font-size: 11px;
 }
 
-.booking-option__desc {
+.booking-tile__desc {
+  display: block;
+  min-height: 32px;
   font-size: 12px;
-  color: var(--text-faint);
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 14px;
 }
 
-.booking-option__price {
-  text-align: right;
-  flex: 0 0 auto;
-}
-
-.booking-option__price-value {
-  font-size: 14px;
+.booking-tile__price {
+  display: block;
+  font-size: 16px;
   font-weight: 800;
 }
 
-.booking-option__eta {
+.booking-tile__unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  margin-left: 2px;
+}
+
+.booking-tile__eta {
+  display: block;
   font-size: 11px;
   color: var(--text-faint);
+  margin-top: 2px;
 }
 
 .booking-sidebar {
   position: sticky;
-  top: calc(var(--header-h) + 20px);
+  top: calc(var(--offset-h, var(--header-h)) + 20px);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-elevated);

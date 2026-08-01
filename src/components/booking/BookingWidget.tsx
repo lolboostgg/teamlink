@@ -70,36 +70,33 @@ export function BookingWidget({ game }: Props) {
           <Reveal key={cat.category} delay={ci * 70}>
             <div className="booking-category">
               <div className="booking-category__title">{cat.category}</div>
-              {cat.options.map((option) => (
-                <button
-                  key={option.name}
-                  type="button"
-                  className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
-                  onClick={() => setSelected(option)}
-                >
-                  <span className="booking-option__main">
-                    <span className="booking-option__icon">
+              <div className="booking-options-grid">
+                {cat.options.map((option) => (
+                  <button
+                    key={option.name}
+                    type="button"
+                    className={`booking-tile${selected.name === option.name ? " is-selected" : ""}`}
+                    onClick={() => setSelected(option)}
+                  >
+                    {selected.name === option.name && (
+                      <i className="fa-solid fa-check booking-tile__check" aria-hidden="true" />
+                    )}
+                    <span className="booking-tile__icon">
                       <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
                     </span>
-                    <span>
-                      <span className="booking-option__name">
-                        {option.name}
-                        <InfoTooltip text={option.description} />
-                      </span>
-                      <br />
-                      <span className="booking-option__desc">{option.description}</span>
+                    <span className="booking-tile__name">
+                      {option.name}
+                      <InfoTooltip text={option.description} />
                     </span>
-                  </span>
-                  <span className="booking-option__price">
-                    <span className="booking-option__price-value">
+                    <span className="booking-tile__desc">{option.description}</span>
+                    <span className="booking-tile__price">
                       <PriceTag amountEUR={option.price} />
-                      {option.unit}
+                      <span className="booking-tile__unit">{option.unit}</span>
                     </span>
-                    <br />
-                    <span className="booking-option__eta">{option.eta}</span>
-                  </span>
-                </button>
-              ))}
+                    <span className="booking-tile__eta">{option.eta}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </Reveal>
         ))}
