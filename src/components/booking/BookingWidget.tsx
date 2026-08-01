@@ -105,8 +105,10 @@ export function BookingWidget({ game }: Props) {
         ))}
 
         <Reveal delay={BOOKING_CATEGORIES.length * 70}>
-          <div className="booking-category__title">Choose your teammate</div>
-          <TeammatePicker gameSlug={game.slug} selected={teammateId} onChange={setTeammateId} />
+          <div className="teammate-picker-section">
+            <div className="booking-category__title">Choose your teammate</div>
+            <TeammatePicker gameSlug={game.slug} selected={teammateId} onChange={setTeammateId} />
+          </div>
         </Reveal>
       </div>
 

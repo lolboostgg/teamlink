@@ -16,8 +16,8 @@ interface Props {
 export function GamesPageSlider({ games, onHover }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
 
-  function scrollNext() {
-    trackRef.current?.scrollBy({ left: 360, behavior: "smooth" });
+  function scrollBy(delta: number) {
+    trackRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   }
 
   return (
@@ -28,7 +28,10 @@ export function GamesPageSlider({ games, onHover }: Props) {
         ))}
       </div>
 
-      <button type="button" className="hero-carousel__next games-slider__next" onClick={scrollNext} aria-label="Show more games">
+      <button type="button" className="hero-carousel__prev games-slider__prev" onClick={() => scrollBy(-360)} aria-label="Show previous games">
+        <i className="fa-solid fa-chevron-left" aria-hidden="true" />
+      </button>
+      <button type="button" className="hero-carousel__next games-slider__next" onClick={() => scrollBy(360)} aria-label="Show more games">
         <i className="fa-solid fa-chevron-right" aria-hidden="true" />
       </button>
     </div>

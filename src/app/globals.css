@@ -214,8 +214,8 @@ body::before {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 75%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 75%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
 }
 
 .ambient-bg__layer {
@@ -788,9 +788,9 @@ ul {
   gap: 12px;
   padding: 11px 18px;
   border-radius: var(--radius-md);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .trust-badge__stars {
@@ -880,7 +880,7 @@ ul {
   position: relative;
   flex: 0 0 auto;
   width: 220px;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3.3;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   overflow: hidden;
@@ -936,6 +936,42 @@ ul {
   box-shadow: 0 0 0 2px rgba(6, 8, 15, 0.7);
 }
 
+/* Stats pill, top-left (mirrors the checkmark's top-right corner) — kept
+   out of the footer so the wordmark down there has room to breathe instead
+   of competing with player-count/rating text on the same cramped line. */
+.hero-card__badge {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(6, 8, 15, 0.6);
+  backdrop-filter: blur(6px);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hero-card__badge i {
+  font-size: 8px;
+}
+
+.hero-card__badge .fa-user-group {
+  color: var(--hue-green);
+}
+
+.hero-card__badge .fa-star {
+  color: var(--hue-gold);
+}
+
+.hero-card__badge-sep {
+  color: rgba(255, 255, 255, 0.3);
+}
+
 .hero-card__footer {
   position: absolute;
   left: 0;
@@ -965,22 +1001,9 @@ ul {
   margin-bottom: 4px;
 }
 
-.hero-card__players {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.hero-card__players i {
-  color: var(--hue-green);
-  font-size: 8px;
-}
-
-.hero-carousel__next {
+.hero-carousel__next,
+.hero-carousel__prev {
   position: absolute;
-  right: -6px;
   top: 50%;
   transform: translateY(-50%);
   width: 36px;
@@ -997,7 +1020,16 @@ ul {
   transition: background 0.15s ease;
 }
 
-.hero-carousel__next:hover {
+.hero-carousel__next {
+  right: -6px;
+}
+
+.hero-carousel__prev {
+  left: -6px;
+}
+
+.hero-carousel__next:hover,
+.hero-carousel__prev:hover {
   background: rgba(6, 8, 15, 0.92);
 }
 
@@ -1030,20 +1062,18 @@ ul {
 
 .games-slider__card {
   width: 300px;
-  aspect-ratio: 3 / 2;
 }
 
 .games-slider__card .hero-card__wordmark {
   height: 30px;
 }
 
-.games-slider__rating-star {
-  margin-left: 10px;
-  color: var(--hue-gold);
-}
-
 .games-slider__next {
   right: 4px;
+}
+
+.games-slider__prev {
+  left: 4px;
 }
 
 @media (max-width: 640px) {
@@ -1062,7 +1092,6 @@ ul {
 
 .games-full-grid__card {
   width: 100%;
-  aspect-ratio: 3 / 2;
 }
 
 /* ── Game cover (shared, resilient — see GameCover.tsx) ─────── */
@@ -1209,6 +1238,10 @@ ul {
   overflow: hidden;
   margin-top: calc(-1 * var(--header-h));
   padding-top: calc(88px + var(--header-h));
+}
+
+.games-page-hero .ambient-bg__layer {
+  filter: brightness(0.4) saturate(1.1);
 }
 
 .games-page-hero > .container {
@@ -1541,7 +1574,6 @@ ul {
 .cta-band {
   text-align: center;
   padding: 90px 0;
-  border-top: 1px solid var(--border);
   background-size: cover;
   background-position: center 30%;
 }
@@ -1550,7 +1582,7 @@ ul {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(180deg, var(--bg) 0%, rgba(6, 8, 15, 0.6) 25%, rgba(6, 8, 15, 0.6) 75%, var(--bg) 100%);
+  background: linear-gradient(180deg, var(--bg) 0%, rgba(6, 8, 15, 0.8) 30%, rgba(6, 8, 15, 0.8) 70%, var(--bg) 100%);
 }
 
 .cta-band__title {
@@ -1979,8 +2011,23 @@ ul {
 }
 
 /* ── Teammate picker ────────────────────────────────────────── */
+/* Its own framed panel, distinct from the plain option-row categories
+   above — the teammate cards use a much richer visual language (avatars,
+   ratings, champion icons), so without a boundary the section read as a
+   stray addition instead of its own deliberate step in the flow. */
+.teammate-picker-section {
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.teammate-picker-section .booking-category__title {
+  margin-bottom: 14px;
+}
+
 .teammate-picker {
-  margin-bottom: 28px;
+  margin-bottom: 0;
 }
 
 .teammate-grid {

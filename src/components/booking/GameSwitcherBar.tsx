@@ -28,8 +28,8 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
     setLastGameSlug(activeSlug);
   }, [activeSlug]);
 
-  function scrollNext() {
-    trackRef.current?.scrollBy({ left: 300, behavior: "smooth" });
+  function scrollBy(delta: number) {
+    trackRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   }
 
   return (
@@ -48,6 +48,9 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="hero-card__bg" src={heroCardBackground(game.slug)} alt="" loading="lazy" />
               <span className="hero-card__scrim" aria-hidden="true" />
+              <span className="hero-card__badge">
+                <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}
+              </span>
               {isActive && <i className="fa-solid fa-check hero-card__check" aria-hidden="true" />}
               <div className="hero-card__footer">
                 {wordmark ? (
@@ -56,16 +59,16 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
                 ) : (
                   <span className="hero-card__name-text">{game.name}</span>
                 )}
-                <span className="hero-card__players">
-                  <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}
-                </span>
               </div>
             </Link>
           );
         })}
       </div>
 
-      <button type="button" className="hero-carousel__next" onClick={scrollNext} aria-label="Show more games">
+      <button type="button" className="hero-carousel__prev" onClick={() => scrollBy(-300)} aria-label="Show previous games">
+        <i className="fa-solid fa-chevron-left" aria-hidden="true" />
+      </button>
+      <button type="button" className="hero-carousel__next" onClick={() => scrollBy(300)} aria-label="Show more games">
         <i className="fa-solid fa-chevron-right" aria-hidden="true" />
       </button>
     </div>
