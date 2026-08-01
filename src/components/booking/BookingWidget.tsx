@@ -7,7 +7,7 @@ import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
-import { TeammatePicker } from "@/components/booking/TeammatePicker";
+import { TeammateModal } from "@/components/booking/TeammateModal";
 import { TEAMMATES } from "@/lib/teammates";
 
 interface Props {
@@ -27,6 +27,7 @@ export function BookingWidget({ game }: Props) {
   const [teammates, setTeammates] = useState(1);
   const [pulsing, setPulsing] = useState(false);
   const [teammateId, setTeammateId] = useState("random");
+  const [teammateModalOpen, setTeammateModalOpen] = useState(false);
   const firstRender = useRef(true);
 
   const total = useMemo(() => selected.price * teammates, [selected, teammates]);
@@ -70,43 +71,35 @@ export function BookingWidget({ game }: Props) {
           <Reveal key={cat.category} delay={ci * 70}>
             <div className="booking-category">
               <div className="booking-category__title">{cat.category}</div>
-              <div className="booking-options-grid">
-                {cat.options.map((option) => (
-                  <button
-                    key={option.name}
-                    type="button"
-                    className={`booking-tile${selected.name === option.name ? " is-selected" : ""}`}
-                    onClick={() => setSelected(option)}
-                  >
-                    {selected.name === option.name && (
-                      <i className="fa-solid fa-check booking-tile__check" aria-hidden="true" />
-                    )}
-                    <span className="booking-tile__icon">
-                      <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
-                    </span>
-                    <span className="booking-tile__name">
+              {cat.options.map((option) => (
+                <button
+                  key={option.name}
+                  type="button"
+                  className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
+                  onClick={() => setSelected(option)}
+                >
+                  <span className="booking-option__icon">
+                    <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
+                  </span>
+                  <span className="booking-option__main">
+                    <span className="booking-option__name">
                       {option.name}
                       <InfoTooltip text={option.description} />
                     </span>
-                    <span className="booking-tile__desc">{option.description}</span>
-                    <span className="booking-tile__price">
+                    <span className="booking-option__desc">{option.description}</span>
+                  </span>
+                  <span className="booking-option__price">
+                    <span className="booking-option__price-value">
                       <PriceTag amountEUR={option.price} />
-                      <span className="booking-tile__unit">{option.unit}</span>
+                      <span className="booking-option__unit">{option.unit}</span>
                     </span>
-                    <span className="booking-tile__eta">{option.eta}</span>
-                  </button>
-                ))}
-              </div>
+                    <span className="booking-option__eta">{option.eta}</span>
+                  </span>
+                </button>
+              ))}
             </div>
           </Reveal>
         ))}
-
-        <Reveal delay={BOOKING_CATEGORIES.length * 70}>
-          <div className="teammate-picker-section">
-            <div className="booking-category__title">Choose your teammate</div>
-            <TeammatePicker gameSlug={game.slug} selected={teammateId} onChange={setTeammateId} />
-          </div>
-        </Reveal>
       </div>
 
       <aside className="booking-sidebar">
@@ -120,11 +113,14 @@ export function BookingWidget({ game }: Props) {
           <span>Option</span>
           <span>{selected.name}</span>
         </div>
-        <div className="booking-sidebar__row">
+        <button type="button" className="booking-sidebar__row booking-sidebar__row--action" onClick={() => setTeammateModalOpen(true)}>
           <span>Teammate</span>
-          <span>{selectedTeammateName}</span>
-        </div>
-        <div className="booking-sidebar__row">
+          <span>
+            {selectedTeammateName}
+            <i className="fa-solid fa-pen" aria-hidden="true" />
+          </span>
+        </button>
+        <div className="booking-sidebar__row booking-sidebar__row--last">
           <span>Group size</span>
           <div className="booking-stepper">
             <button type="button" onClick={() => setTeammates((n) => Math.max(1, n - 1))} aria-label="Decrease">
@@ -146,6 +142,14 @@ export function BookingWidget({ game }: Props) {
           Continue to checkout
         </button>
       </aside>
+
+      <TeammateModal
+        open={teammateModalOpen}
+        onClose={() => setTeammateModalOpen(false)}
+        gameSlug={game.slug}
+        selected={teammateId}
+        onChange={setTeammateId}
+      />
     </div>
   );
 }

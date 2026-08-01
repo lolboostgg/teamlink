@@ -1779,99 +1779,93 @@ ul {
   margin-bottom: 12px;
 }
 
-/* Visual tiles instead of plain list rows — matches the card/carousel
-   language used everywhere else on the page (game picker, teammate
-   picker), so the mode list doesn't read as a flat, unrelated table. */
-.booking-options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
-}
-
-.booking-tile {
+/* Compact rows, not tiles — a full tile grid per category ran the page
+   very tall/dense; a flat row list keeps every option visible at a glance
+   without the scroll depth (only the teammate picker, which genuinely
+   needs bigger cards, moved out to its own modal — see TeammateModal). */
+.booking-option {
   position: relative;
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  margin-bottom: 8px;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.booking-tile:hover {
+.booking-option:hover {
   border-color: var(--border-strong);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-card);
 }
 
-.booking-tile.is-selected {
+.booking-option.is-selected {
   border-color: var(--accent);
   background: var(--accent-soft);
-  box-shadow: 0 0 0 2px var(--accent);
 }
 
-.booking-tile__check {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 10px;
-  display: grid;
-  place-items: center;
-}
-
-.booking-tile__icon {
-  width: 36px;
-  height: 36px;
+.booking-option__icon {
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.05);
   color: var(--accent);
   display: grid;
   place-items: center;
-  font-size: 14px;
-  margin-bottom: 12px;
+  font-size: 13px;
+  flex: 0 0 auto;
 }
 
-.booking-tile__name {
+.booking-option.is-selected .booking-option__icon {
+  background: var(--accent);
+  color: #fff;
+}
+
+.booking-option__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.booking-option__name {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
-  margin-bottom: 4px;
 }
 
-.booking-tile__name .info-tooltip {
+.booking-option__name .info-tooltip {
   font-size: 11px;
 }
 
-.booking-tile__desc {
+.booking-option__desc {
   display: block;
-  min-height: 32px;
   font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: 14px;
+  color: var(--text-faint);
+  margin-top: 2px;
 }
 
-.booking-tile__price {
-  display: block;
-  font-size: 16px;
+.booking-option__price {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.booking-option__price-value {
+  font-size: 14px;
   font-weight: 800;
 }
 
-.booking-tile__unit {
-  font-size: 12px;
+.booking-option__unit {
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--text-faint);
-  margin-left: 2px;
+  margin-left: 1px;
 }
 
-.booking-tile__eta {
+.booking-option__eta {
   display: block;
   font-size: 11px;
   color: var(--text-faint);
@@ -1900,13 +1894,46 @@ ul {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 10px 0;
   font-size: 13px;
   border-bottom: 1px solid var(--border);
+  /* Reset button defaults — the Teammate row is a <button> (opens the
+     teammate modal) while the rest are plain <div>s; both need to look
+     identical. */
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
 }
 
-.booking-sidebar__row:last-of-type {
+.booking-sidebar__row--last {
   border-bottom: none;
+}
+
+.booking-sidebar__row--action {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.booking-sidebar__row--action:hover {
+  color: var(--text);
+}
+
+.booking-sidebar__row--action span:last-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.booking-sidebar__row--action i {
+  font-size: 10px;
+  color: var(--text-faint);
 }
 
 .booking-stepper {
@@ -2055,78 +2082,51 @@ ul {
 }
 
 /* ── Teammate picker ────────────────────────────────────────── */
-/* Its own framed panel, distinct from the plain option-row categories
-   above — the teammate cards use a much richer visual language (avatars,
-   ratings, champion icons), so without a boundary the section read as a
-   stray addition instead of its own deliberate step in the flow. */
-.teammate-picker-section {
-  padding: 20px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+/* Modal that opens from the booking sidebar's Teammate row (see
+   TeammateModal.tsx) — this used to be a permanent carousel section on
+   the page; moving it into a modal is most of why the booking panel is
+   shorter now. .modal-panel's default max-width (see the login/signup
+   modal) is sized for a compact form, too narrow for a 3-across card
+   grid, so widen it just for this modal via :has(). */
+.modal-panel:has(.teammate-modal) {
+  max-width: 720px;
 }
 
-.teammate-picker-section .booking-category__title {
-  margin-bottom: 14px;
+.teammate-modal__title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  margin-bottom: 6px;
 }
 
-/* Horizontal carousel, matching the game-picker's visual language
-   (see .hero-carousel) instead of a standalone card grid — ties the
-   teammate step back into the rest of the page's carousel-driven feel
-   instead of reading as an unrelated component. */
-.teammate-carousel {
-  position: relative;
+.teammate-modal__sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 22px;
 }
 
-.teammate-carousel__track {
-  display: flex;
+.teammate-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  padding: 6px 0;
 }
 
-.teammate-carousel__track::-webkit-scrollbar {
-  display: none;
-}
-
-/* Gutter for the prev/next buttons lives on the edge chips themselves,
-   not as padding on the scrollable track — Chromium doesn't reliably
-   reserve leading padding on a scroll container (it gets scrolled away
-   immediately, landing content flush at scrollLeft: 0 regardless), so the
-   buttons would otherwise sit on top of chip text (these chips run
-   content nearly their full height, unlike .hero-card's big image area). */
-.teammate-chip:first-child {
-  margin-left: 44px;
-}
-
-.teammate-chip:last-child {
-  margin-right: 44px;
-}
-
-.teammate-carousel__prev {
-  left: 4px;
-}
-
-.teammate-carousel__next {
-  right: 4px;
+@media (max-width: 640px) {
+  .teammate-modal__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .teammate-chip {
   position: relative;
-  flex: 0 0 auto;
-  width: 190px;
+  width: 100%;
   padding: 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   text-align: left;
-  /* No scroll-snap-align here on purpose: with one set, the browser
-     establishes the initial scroll rest position by snapping to it,
-     which silently cancels out the first-child gutter margin below
-     (confirmed via scrollLeft — it lands exactly on the margin amount
-     regardless of whether the gutter is padding or margin). */
   transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -2231,12 +2231,6 @@ ul {
   display: flex;
   gap: 4px;
   font-size: 13px;
-}
-
-@media (max-width: 640px) {
-  .teammate-chip {
-    width: 160px;
-  }
 }
 
 /* ── Checkout ───────────────────────────────────────────────── */
