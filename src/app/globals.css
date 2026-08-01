@@ -3347,81 +3347,38 @@ ul {
 
 /* ── Settings dropdown panel (currency + language, hover/click) ──── */
 .settings-panel {
-  width: 320px;
-  padding: 10px;
+  width: 380px;
+  padding: 20px;
 }
 
-.settings-panel__tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 8px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.settings-panel__tab {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 9px 10px;
-  border-radius: var(--radius-sm);
-  background: none;
-  border: none;
-  color: var(--text-faint);
-  font-size: 12.5px;
+.settings-panel__title {
+  font-size: 15px;
   font-weight: 700;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.settings-panel__tab:hover {
-  color: var(--text-muted);
-}
-
-.settings-panel__tab.is-active {
-  background: var(--bg-elevated-2);
   color: var(--text);
-  box-shadow: var(--shadow-card);
-}
-
-.settings-panel__tab-flag {
-  width: 15px;
-  height: 15px;
-}
-
-.settings-panel__tab-symbol {
-  color: var(--accent);
+  margin-bottom: 10px;
 }
 
 .settings-panel__lang-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 280px;
+  max-height: 260px;
   overflow-y: auto;
-  padding: 4px;
-}
-
-.settings-panel__lang-list,
-.settings-panel__currency-grid {
+  margin: 0 -8px;
+  padding: 0 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
-.settings-panel__lang-list::-webkit-scrollbar,
-.settings-panel__currency-grid::-webkit-scrollbar {
+.settings-panel__lang-list::-webkit-scrollbar {
   width: 6px;
 }
 
-.settings-panel__lang-list::-webkit-scrollbar-track,
-.settings-panel__currency-grid::-webkit-scrollbar-track {
+.settings-panel__lang-list::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.settings-panel__lang-list::-webkit-scrollbar-thumb,
-.settings-panel__currency-grid::-webkit-scrollbar-thumb {
+.settings-panel__lang-list::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.18);
   border-radius: 999px;
 }
@@ -3429,14 +3386,14 @@ ul {
 .settings-panel__lang-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
-  padding: 9px 10px;
+  padding: 11px 12px;
   border-radius: var(--radius-sm);
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 13.5px;
+  font-size: 14.5px;
   text-align: left;
   transition: background 0.12s ease, color 0.12s ease;
 }
@@ -3447,41 +3404,47 @@ ul {
 }
 
 .settings-panel__lang-item.is-active {
-  background: var(--accent-soft);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   font-weight: 700;
 }
 
 .settings-panel__lang-flag {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
-}
-
-.settings-panel__lang-item.is-active .settings-panel__lang-flag {
-  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .settings-panel__lang-item i {
   margin-left: auto;
-  color: var(--accent);
-  font-size: 12px;
+  color: var(--success);
+  font-size: 14px;
 }
 
 .settings-panel__currency-row {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-panel__currency-row .settings-panel__title {
+  margin-bottom: 0;
+}
+
+.settings-panel__currency-pills {
+  display: flex;
   gap: 8px;
-  padding: 8px 4px 4px;
 }
 
 .settings-panel__currency-pill {
-  flex: 1 1 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 7px;
+  padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.03);
@@ -3502,18 +3465,9 @@ ul {
 }
 
 .settings-panel__currency-flag {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-}
-
-.settings-panel__currency-flag--euro {
-  display: grid;
-  place-items: center;
-  background: linear-gradient(160deg, #f5c542, #d99a1f);
-  color: #3a2a00;
-  font-size: 11px;
-  font-weight: 800;
 }
 
 /* ── Info tooltip (gamemode explainers) ───────────────────────────── */
