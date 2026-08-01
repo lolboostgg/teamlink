@@ -11,41 +11,37 @@ interface Props {
   className?: string;
 }
 
-// Single source of truth for "what a game looks like" everywhere in the
-// app (hero picker, games grid, booking header, quick-book widget). Tries
-// the real banner art, but never depends on it: lolboost.gg's Cloudflare
-// bot-challenge can 403 image requests at any time (confirmed — it isn't
-// hypothetical), so a failed load falls back to a consistent, deliberately
-// designed treatment (dark card, colored accent border, giant faint
-// short-code watermark) instead of the old bare tint-color rectangle.
-// This is also *the* fix for "the background looks inconsistent": every
-// card now shares the same structure regardless of whether art loads.
-// Three-tier fallback: hotlinked lolboost.gg banner -> local hand-authored
-// SVG (public/games/{slug}.svg, see lib/gameArt.ts) -> CSS tint+shortcode
-// watermark as the final safety net. Tier 0 is the common case; tier 1 is
-// the actual fix for hotlink unreliability; tier 2 only fires if even the
-// local asset is somehow missing.
+// Single source of truth for "what a game looks like" everywhere in the app
+// (hero picker, games grid, booking header, dashboards). Renders the local
+// hand-authored SVG banner (public/games/{slug}.svg, see lib/gameArt.ts) —
+// NOT the previous lolboost.gg hotlink: verified during testing that when
+// lolboost.gg blocks the request (Cross-Origin-Resource-Policy), Chromium
+// leaves the <img> in a `complete=true, naturalWidth=0` state without
+// reliably firing `onerror`, so the old onError-based fallback silently
+// rendered a blank box instead of recovering. A local, same-origin asset
+// can't have that failure mode. The CSS tint+shortcode watermark stays as
+// the final safety net for the (now very unlikely) case the SVG itself
+// 404s.
 export function GameCover({ game, showName, compact, className }: Props) {
-  const [tier, setTier] = useState<0 | 1 | 2>(0);
+  const [broken, setBroken] = useState(false);
 
   const style = { "--game-tint": game.tint } as CSSProperties;
-  const src = tier === 0 ? game.bannerUrl : localGameBanner(game.slug);
 
   return (
     <div
       className={`game-cover${compact ? " game-cover--compact" : ""}${className ? ` ${className}` : ""}`}
       style={style}
     >
-      {tier < 2 && (
+      {!broken && (
         <img
           className="game-cover__img"
-          src={src}
+          src={localGameBanner(game.slug)}
           alt=""
           loading="lazy"
-          onError={() => setTier((t) => (t === 0 ? 1 : 2))}
+          onError={() => setBroken(true)}
         />
       )}
-      {tier === 2 && <span className="game-cover__code">{game.shortName}</span>}
+      {broken && <span className="game-cover__code">{game.shortName}</span>}
       <span className="game-cover__scrim" aria-hidden="true" />
       {showName && <span className="game-cover__name">{game.name}</span>}
     </div>

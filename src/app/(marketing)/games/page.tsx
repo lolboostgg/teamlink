@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { GAMES } from "@/lib/games";
-import { GameCover } from "@/components/home/GameCover";
+import { GamesSearchGrid } from "@/components/home/GamesSearchGrid";
 
 export const metadata: Metadata = {
   title: "All Games",
@@ -18,19 +17,7 @@ export default function GamesPage() {
           <p className="section__sub">Pick a game to see available teammates, modes, and pricing.</p>
         </div>
 
-        <div className="games-grid">
-          {GAMES.map((game) => (
-            <Link key={game.slug} href={`/games/${game.slug}`} className="game-card">
-              <div className="game-card__cover">
-                <GameCover game={game} showName />
-              </div>
-              <div className="game-card__meta">
-                <span className="game-card__name">{game.shortName}</span>
-                <span className="game-card__players">{game.players}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <GamesSearchGrid games={GAMES} />
       </div>
     </main>
   );

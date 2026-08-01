@@ -12,6 +12,13 @@ interface Props {
   game: Game;
 }
 
+const CATEGORY_ICONS: Record<string, string> = {
+  "Team Up": "fa-solid fa-user-group",
+  Ranked: "fa-solid fa-trophy",
+  Social: "fa-solid fa-comments",
+  Coaching: "fa-solid fa-chalkboard-user",
+};
+
 export function BookingWidget({ game }: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState<BookingOption>(BOOKING_CATEGORIES[0].options[0]);
@@ -49,7 +56,7 @@ export function BookingWidget({ game }: Props) {
         <Reveal>
           <div className="booking-header">
             <div className="booking-header__cover">
-              <GameCover game={game} compact />
+              <GameCover game={game} />
             </div>
             <div>
               <h1>{game.name}</h1>
@@ -73,7 +80,9 @@ export function BookingWidget({ game }: Props) {
                   onClick={() => setSelected(option)}
                 >
                   <span className="booking-option__main">
-                    <span className="booking-option__radio" />
+                    <span className="booking-option__icon">
+                      <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
+                    </span>
                     <span>
                       <span className="booking-option__name">{option.name}</span>
                       <br />
@@ -124,7 +133,7 @@ export function BookingWidget({ game }: Props) {
           <PriceTag amountEUR={total} />
         </div>
 
-        <button type="button" className="btn btn--lime btn--block" onClick={goToCheckout}>
+        <button type="button" className="btn btn--vivid btn--block" onClick={goToCheckout}>
           Continue to checkout
         </button>
       </aside>

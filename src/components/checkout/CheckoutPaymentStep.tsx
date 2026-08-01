@@ -125,7 +125,7 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
         </div>
       )}
 
-      <button type="submit" className="btn btn--lime btn--block" disabled={submitting}>
+      <button type="submit" className="btn btn--vivid btn--block" disabled={submitting}>
         {submitting ? "Processing..." : <>Pay <PriceTag amountEUR={totalEUR} /></>}
       </button>
     </form>

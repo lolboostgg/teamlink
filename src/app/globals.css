@@ -29,12 +29,14 @@
   --hue-gold: #f5a524;
   --hue-pink: #ec4899;
   --hue-cyan: #22d3ee;
-  /* High-contrast neon used sparingly for the single most prominent CTA
-     per screen (hero "Play now", checkout submit) — tapin.gg's lime pop
-     against the dark theme, kept out of everyday buttons/links so --accent
-     blue stays the primary brand color. */
-  --hue-lime: #baf23c;
-  --hue-lime-ink: #0c1404;
+  --hue-cyan-ink: #05222b;
+  /* Bright electric-blue pop used sparingly for the single most prominent
+     CTA per screen (hero "Play now", checkout submit) — matches the cyan in
+     the logo mark, so it reads as "our brand, turned up" rather than an
+     unrelated color, and keeps the whole palette in the dark-blue family
+     the brief asked for (no lime/green/orange CTA). */
+  --cta-vivid: var(--hue-cyan);
+  --cta-vivid-ink: var(--hue-cyan-ink);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -55,7 +57,6 @@ html {
   color-scheme: dark;
 }
 
-#how-it-works,
 #why-us,
 #faq {
   scroll-margin-top: calc(var(--header-h) + 16px);
@@ -301,42 +302,6 @@ ul {
   overflow: hidden;
 }
 
-.floating-shapes {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.floating-shape {
-  position: absolute;
-  border-radius: 50%;
-  animation-name: floatShape;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-}
-
-.floating-shape--ring {
-  border: 1.5px solid rgba(64, 102, 255, 0.28);
-  background: transparent;
-}
-
-.floating-shape--dot {
-  background: rgba(64, 102, 255, 0.45);
-  box-shadow: 0 0 14px rgba(64, 102, 255, 0.35);
-}
-
-@keyframes floatShape {
-  0%, 100% { transform: translateY(0) translateX(0); }
-  50% { transform: translateY(-16px) translateX(6px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .floating-shape {
-    animation: none;
-  }
-}
-
 /* ── Buttons ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -383,16 +348,16 @@ ul {
   box-shadow: 0 8px 24px rgba(64, 102, 255, 0.35);
 }
 
-/* High-contrast neon CTA — used sparingly for the single most prominent
-   action per screen (see --hue-lime in :root). */
-.btn--lime {
-  background: var(--hue-lime);
-  color: var(--hue-lime-ink);
+/* High-contrast electric-blue CTA — used sparingly for the single most
+   prominent action per screen (see --cta-vivid in :root). */
+.btn--vivid {
+  background: var(--cta-vivid);
+  color: var(--cta-vivid-ink);
 }
 
-.btn--lime:hover {
-  background: color-mix(in srgb, var(--hue-lime) 88%, #fff);
-  box-shadow: 0 8px 26px rgba(186, 242, 60, 0.4);
+.btn--vivid:hover {
+  background: color-mix(in srgb, var(--cta-vivid) 88%, #fff);
+  box-shadow: 0 8px 26px rgba(34, 211, 238, 0.4);
 }
 
 .btn--outline {
@@ -420,8 +385,8 @@ ul {
 
 /* ── Promo banner ───────────────────────────────────────────── */
 .promo-banner {
-  background: var(--hue-lime);
-  color: var(--hue-lime-ink);
+  background: var(--cta-vivid);
+  color: var(--cta-vivid-ink);
 }
 
 .promo-banner__inner {
@@ -705,260 +670,88 @@ ul {
   letter-spacing: 1px;
 }
 
-/* Rating widget — deliberately built from real, individually-rendered
-   parts (icon stars in colored tiles, an overlapping avatar cluster)
-   rather than a plain text pill, so it reads as an actual embedded
-   review-platform widget instead of decorative copy. Honestly labeled as
-   TeamLink's own verified-session rating, not a third-party certification
-   we don't actually have. */
+/* Rating widget — a single row of individually-rendered star tiles plus a
+   bold score, the same production-quality grammar embedded review-platform
+   widgets (Trustpilot etc.) use, without borrowing their name/logo since
+   TeamLink has no real account there. Honestly labeled "Verified Reviews". */
 .trust-badge {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
-  padding: 10px 18px 10px 10px;
+  gap: 12px;
+  padding: 11px 18px;
   border-radius: var(--radius-md);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-card);
 }
 
-.trust-badge__avatars {
-  display: flex;
-  flex: 0 0 auto;
-}
-
-.trust-badge__avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 10.5px;
-  font-weight: 800;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border: 2px solid var(--bg-elevated);
-  margin-left: -10px;
-}
-
-.trust-badge__avatar:first-child {
-  margin-left: 0;
-}
-
-.trust-badge__main {
-  text-align: left;
-}
-
-.trust-badge__stars-row {
+.trust-badge__stars {
   display: flex;
   gap: 3px;
-  margin-bottom: 3px;
+  flex: 0 0 auto;
 }
 
 .trust-badge__star {
-  width: 15px;
-  height: 15px;
-  border-radius: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   display: grid;
   place-items: center;
   background: var(--hue-green);
   color: #06080f;
-  font-size: 9px;
+  font-size: 11px;
 }
 
-.trust-badge__label {
+.trust-badge__score {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.trust-badge__score span {
   font-size: 12.5px;
+  font-weight: 600;
   color: var(--text-muted);
 }
 
-.trust-badge__label strong {
-  color: var(--text);
-  font-weight: 700;
-}
-
-/* ── Floating hero mockup cards ─────────────────────────────── */
-.hero-mockups {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.hero-mockup {
-  position: absolute;
-  display: flex;
+.trust-badge__source {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px 12px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-lg);
+  gap: 6px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
   font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
   white-space: nowrap;
-  animation: heroMockupFloat 7s ease-in-out infinite;
 }
 
-.hero-mockup strong {
-  display: block;
-  font-size: 13px;
+.trust-badge__source i {
+  color: var(--hue-green);
 }
 
-.hero-mockup__body {
-  display: block;
-  color: var(--text-faint);
-  font-size: 11.5px;
-}
-
-.hero-mockup--match {
-  top: 6%;
-  left: 4%;
-  transform: rotate(-4deg);
-  animation-delay: 0s;
-}
-
-.hero-mockup--rating {
-  top: 12%;
-  right: 5%;
-  transform: rotate(3deg);
-  animation-delay: 1.2s;
-}
-
-.hero-mockup--price {
-  bottom: 10%;
-  left: 8%;
-  transform: rotate(3deg);
-  animation-delay: 0.6s;
-}
-
-@keyframes heroMockupFloat {
-  0%, 100% { translate: 0 0; }
-  50% { translate: 0 -10px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-mockup {
-    animation: none;
-  }
-}
-
-.hero-mockup__icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  color: #06080f;
-}
-
-.hero-mockup__icon--green {
-  background: var(--hue-green);
-}
-
-.hero-mockup__icon--gold {
-  background: var(--hue-gold);
-}
-
-.hero-mockup__avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 11px;
-  flex: 0 0 auto;
-}
-
-.hero-mockup__stars {
-  color: var(--hue-gold);
-}
-
-.hero-mockup__stars em {
-  color: var(--text-faint);
-  font-style: normal;
-}
-
-.hero-mockup__meta {
-  color: var(--text-faint);
-  font-size: 11px;
-}
-
-.hero-mockup--split-top {
-  top: -6%;
-  right: 8%;
-  transform: rotate(-3deg);
-  animation-delay: 0.3s;
-}
-
-.hero-mockup--split-bottom {
-  bottom: -8%;
-  right: -4%;
-  transform: rotate(4deg);
-  animation-delay: 1s;
-}
-
-/* Dotted "globe" — a point-cloud sphere behind the hero's booking card,
-   reinforcing the "global community" idea the way tapin.gg's hemisphere
-   illustration does. Pure CSS: a masked dot-grid slowly panning inside a
-   circular mask for a lazy rotation illusion, no image asset needed. */
-.hero-globe {
-  position: absolute;
-  z-index: 0;
-  right: -100px;
-  bottom: -140px;
-  width: 460px;
-  height: 460px;
-  border-radius: 50%;
-  background-image: radial-gradient(1.4px 1.4px at 1px 1px, rgba(255, 255, 255, 0.55) 1px, transparent 1.4px);
-  background-size: 16px 16px;
-  -webkit-mask-image: radial-gradient(circle, #000 50%, transparent 76%);
-  mask-image: radial-gradient(circle, #000 50%, transparent 76%);
-  opacity: 0.6;
-  pointer-events: none;
-  animation: globePan 70s linear infinite;
-}
-
-@keyframes globePan {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 320px 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-globe {
-    animation: none;
-  }
-}
-
-@media (max-width: 900px) {
-  .hero-mockups {
-    display: none;
-  }
-
-  .hero-globe {
+@media (max-width: 480px) {
+  .trust-badge__source span {
     display: none;
   }
 }
 
-/* Game picker strip */
+/* Game picker strip — the hero's primary "choose game" affordance, sized and
+   staged like tapin.gg's actual picker (big key-art cards, active check
+   badge, glow ring) rather than the small icon row this used to be. */
 .game-picker {
   display: flex;
   justify-content: center;
-  gap: 14px;
+  gap: 16px;
   flex-wrap: wrap;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .game-pick {
-  width: 108px;
+  position: relative;
+  width: 152px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -970,36 +763,133 @@ ul {
 .game-pick:hover {
   border-color: var(--border-strong);
   transform: translateY(-4px);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-lg);
 }
 
 .game-pick.is-active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  border-color: var(--cta-vivid);
+  box-shadow: 0 0 0 2px var(--cta-vivid), 0 0 26px rgba(34, 211, 238, 0.35);
 }
 
 .game-pick__cover {
   position: relative;
-  height: 72px;
+  height: 118px;
   transition: transform 0.4s ease;
 }
 
 .game-pick:hover .game-pick__cover {
-  transform: scale(1.08);
+  transform: scale(1.06);
+}
+
+.game-pick__check {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cta-vivid);
+  color: var(--cta-vivid-ink);
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 2px rgba(6, 8, 15, 0.7);
+}
+
+.game-pick__meta {
+  padding: 10px 12px 12px;
 }
 
 .game-pick__name {
   display: block;
-  padding: 8px 10px;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 800;
+  margin-bottom: 3px;
 }
 
 .game-pick__players {
-  display: block;
-  padding: 0 10px 10px;
-  font-size: 10.5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
   color: var(--text-faint);
+}
+
+.game-pick__players i {
+  color: var(--hue-green);
+  font-size: 8px;
+}
+
+@media (max-width: 640px) {
+  .game-pick {
+    width: 124px;
+  }
+
+  .game-pick__cover {
+    height: 96px;
+  }
+}
+
+/* ── Hero mode strip + CTA (below the game picker) ──────────────────── */
+.hero-modes-wrap {
+  max-width: 720px;
+  margin: 36px auto 0;
+}
+
+.hero-modes-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin-bottom: 14px;
+}
+
+.hero-modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.hero-mode {
+  padding: 13px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.hero-mode:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.hero-mode.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hero-mode__name {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.hero-mode__price {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+.hero-mode.is-active .hero-mode__price {
+  color: var(--accent);
+}
+
+.hero-cta {
+  max-width: 340px;
+  margin: 0 auto;
 }
 
 /* ── Game cover (shared, resilient — see GameCover.tsx) ─────── */
@@ -1102,14 +992,59 @@ ul {
   justify-content: space-between;
 }
 
-.game-card__name {
-  font-size: 13px;
-  font-weight: 700;
+.game-card__players,
+.game-card__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-faint);
 }
 
-.game-card__players {
-  font-size: 11px;
+.game-card__players i {
+  color: var(--hue-green);
+  font-size: 9px;
+}
+
+.game-card__rating i {
+  color: var(--hue-gold);
+}
+
+/* ── Games listing page search ──────────────────────────────── */
+.games-page-search {
+  position: relative;
+  max-width: 420px;
+  margin: 0 auto 32px;
+}
+
+.games-page-search i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-faint);
+  font-size: 13px;
+}
+
+.games-page-search input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.games-page-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.games-page-empty {
+  text-align: center;
+  color: var(--text-faint);
+  padding: 40px 0;
 }
 
 /* ── Community marquee ──────────────────────────────────────── */
@@ -1171,138 +1106,6 @@ ul {
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
-}
-
-/* ── How it works ───────────────────────────────────────────── */
-.how-steps {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
-}
-
-.how-step {
-  padding: 26px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  border-top: 2px solid color-mix(in srgb, var(--item-color, var(--accent)) 55%, transparent);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-card);
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.how-step:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.how-step__visual {
-  position: relative;
-  height: 140px;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(160deg, var(--bg-elevated-2), #05070d);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-  font-size: 32px;
-  color: var(--item-color, var(--accent));
-}
-
-.how-step__ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--item-color, var(--accent)) 40%, transparent);
-}
-
-.how-step__ring--1 {
-  width: 70px;
-  height: 70px;
-}
-
-.how-step__ring--2 {
-  width: 110px;
-  height: 110px;
-  border-color: color-mix(in srgb, var(--item-color, var(--accent)) 20%, transparent);
-}
-
-.how-step__number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--item-color, var(--accent)) 16%, transparent);
-  color: var(--item-color, var(--accent));
-  font-weight: 800;
-  font-size: 13px;
-  margin-bottom: 18px;
-}
-
-.how-step h3 {
-  font-size: 16px;
-  margin-bottom: 8px;
-}
-
-.how-step p {
-  font-size: 13.5px;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-
-/* ── Why us (bento grid) ────────────────────────────────────── */
-.why-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.why-card {
-  position: relative;
-  padding: 24px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  border-top: 2px solid color-mix(in srgb, var(--item-color, var(--accent)) 55%, transparent);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-card);
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.why-card:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
-}
-
-.why-card:hover .why-card__icon {
-  background: var(--item-color, var(--accent));
-  color: #06080f;
-}
-
-.why-card__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--item-color, var(--accent)) 16%, transparent);
-  color: var(--item-color, var(--accent));
-  display: grid;
-  place-items: center;
-  margin-bottom: 16px;
-  font-size: 16px;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.why-card h3 {
-  font-size: 15px;
-  margin-bottom: 6px;
-}
-
-.why-card p {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.6;
 }
 
 /* ── FAQ ────────────────────────────────────────────────────── */
@@ -1522,14 +1325,15 @@ ul {
 
 .booking-header__cover {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 76px;
+  height: 76px;
   border-radius: var(--radius-md);
   overflow: hidden;
   display: grid;
   place-items: center;
   font-weight: 800;
   font-size: 12px;
+  box-shadow: var(--shadow-card);
 }
 
 .booking-header h1 {
@@ -1585,26 +1389,24 @@ ul {
   background: var(--accent-soft);
 }
 
-.booking-option__radio {
-  width: 18px;
-  height: 18px;
+.booking-option__icon {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 2px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text-faint);
   flex: 0 0 auto;
   display: grid;
   place-items: center;
+  font-size: 13px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.booking-option.is-selected .booking-option__radio {
-  border-color: var(--accent);
-}
-
-.booking-option.is-selected .booking-option__radio::after {
-  content: "";
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.booking-option.is-selected .booking-option__icon {
   background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
 }
 
 .booking-option__main {
@@ -1862,11 +1664,6 @@ ul {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .how-steps,
-  .why-grid {
-    grid-template-columns: 1fr;
-  }
-
   .site-footer__nav {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1984,411 +1781,6 @@ ul {
   color: var(--accent);
   font-weight: 700;
   padding: 0;
-}
-
-/* ── Prototype variant switcher (dev-only tooling, not site design) ──── */
-.proto-switcher {
-  position: fixed;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 10px 10px 16px;
-  border-radius: 999px;
-  background: #111;
-  border: 1px solid #333;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-  font-family: ui-monospace, "SF Mono", Consolas, monospace;
-}
-
-.proto-switcher button {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #222;
-  border: 1px solid #3a3a3a;
-  color: #ffe066;
-  display: grid;
-  place-items: center;
-}
-
-.proto-switcher button:hover {
-  background: #2c2c2c;
-}
-
-.proto-switcher__label {
-  font-size: 12.5px;
-  color: #e5e5e5;
-  white-space: nowrap;
-}
-
-.proto-switcher__label strong {
-  color: #ffe066;
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   Variant B — split hero + booking widget + zigzag + strip
-   ══════════════════════════════════════════════════════════════════ */
-.hero-split {
-  position: relative;
-  overflow: hidden;
-  padding: 90px 0;
-}
-
-.hero-split__grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 56px;
-  align-items: center;
-}
-
-.hero-split__title {
-  font-family: var(--font-heading);
-  font-size: clamp(38px, 5.2vw, 58px);
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  line-height: 1.03;
-  margin-bottom: 16px;
-}
-
-.quickbook {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  padding: 22px;
-  box-shadow: var(--shadow-card);
-}
-
-.quickbook__games {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.quickbook__game {
-  position: relative;
-  flex: 1;
-  height: 72px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.quickbook__game:hover {
-  transform: translateY(-3px) scale(1.03);
-}
-
-.quickbook__game.is-active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent), 0 0 22px rgba(64, 102, 255, 0.5);
-}
-
-.quickbook__game-check {
-  position: absolute;
-  z-index: 2;
-  top: 5px;
-  right: 5px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--hue-lime);
-  color: var(--hue-lime-ink);
-  font-size: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 2px rgba(6, 8, 15, 0.7);
-}
-
-.quickbook__title {
-  font-size: 15px;
-  font-weight: 800;
-  margin-bottom: 12px;
-}
-
-.quickbook__options {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.quickbook__option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-muted);
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.quickbook__option.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-@media (max-width: 900px) {
-  .hero-split__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.zigzag {
-  max-width: 980px;
-  margin: 0 auto;
-}
-
-.zigzag__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 48px;
-  align-items: center;
-  padding: 32px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.zigzag__row:last-child {
-  border-bottom: none;
-}
-
-.zigzag__row--flip .zigzag__text {
-  order: 2;
-}
-
-.zigzag__row--flip .zigzag__visual {
-  order: 1;
-}
-
-.zigzag__number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--item-color, var(--accent)) 16%, transparent);
-  color: var(--item-color, var(--accent));
-  font-weight: 800;
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-
-.zigzag__text h3 {
-  font-size: 20px;
-  margin-bottom: 10px;
-}
-
-.zigzag__text p {
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.7;
-}
-
-.zigzag__visual {
-  position: relative;
-  height: 220px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: linear-gradient(160deg, var(--bg-elevated-2), #05070d);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 54px;
-  color: var(--item-color, var(--accent));
-  overflow: hidden;
-}
-
-.zigzag__ring {
-  position: absolute;
-  border-radius: 50%;
-  border: 1.5px solid color-mix(in srgb, var(--item-color, var(--accent)) 35%, transparent);
-}
-
-.zigzag__ring--1 {
-  width: 110px;
-  height: 110px;
-}
-
-.zigzag__ring--2 {
-  width: 170px;
-  height: 170px;
-  border-color: color-mix(in srgb, var(--item-color, var(--accent)) 18%, transparent);
-}
-
-@media (max-width: 860px) {
-  .zigzag__row,
-  .zigzag__row--flip {
-    grid-template-columns: 1fr;
-  }
-
-  .zigzag__row--flip .zigzag__text,
-  .zigzag__row--flip .zigzag__visual {
-    order: initial;
-  }
-}
-
-.why-strip {
-  display: flex;
-  flex-wrap: wrap;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.why-strip__item {
-  flex: 1 1 260px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 22px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s ease;
-}
-
-.why-strip__item:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.why-strip__item i {
-  color: var(--accent);
-  font-size: 17px;
-  margin-top: 2px;
-}
-
-.why-strip__item strong {
-  display: block;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.why-strip__item span {
-  font-size: 12.5px;
-  color: var(--text-muted);
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   Variant C — compact search hero + bento grid + dense games
-   ══════════════════════════════════════════════════════════════════ */
-.hero-compact {
-  padding: 64px 0 48px;
-  text-align: center;
-}
-
-.hero-compact__pills {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 22px;
-}
-
-.hero-compact__pills span {
-  font-size: 12px;
-  font-weight: 700;
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-}
-
-.hero-compact__title {
-  font-family: var(--font-heading);
-  font-size: clamp(34px, 4.6vw, 50px);
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  max-width: 680px;
-  margin: 0 auto 26px;
-  line-height: 1.05;
-}
-
-.hero-compact__search {
-  position: relative;
-  max-width: 520px;
-  margin: 0 auto 24px;
-}
-
-.hero-compact__search input {
-  width: 100%;
-  padding: 14px 16px 14px 42px;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
-  color: var(--text);
-  font-size: 14px;
-}
-
-.hero-compact__search input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.hero-compact__search > i {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-faint);
-}
-
-.hero-compact__results {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  text-align: left;
-  z-index: 20;
-  box-shadow: var(--shadow-card);
-}
-
-.hero-compact__results a {
-  display: block;
-  padding: 10px 16px;
-  font-size: 13px;
-}
-
-.hero-compact__results a:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.hero-compact__stats {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 14px;
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.hero-compact__stats strong {
-  color: var(--text);
-}
-
-.hero-compact__dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--text-faint);
 }
 
 .bento {
