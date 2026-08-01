@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Mode = "login" | "signup" | null;
 const SESSION_KEY = "teamlink:authenticated";
@@ -29,8 +30,10 @@ export function useAuthModal() {
 // The optional onSuccess callback lets callers (like checkout) react once
 // the mock login/signup completes, without the provider knowing about them.
 export function AuthModalProvider({ children }: { children: ReactNode }) {
+  const { showToast } = useToast();
   const [mode, setMode] = useState<Mode>(null);
   const [notice, setNotice] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const onSuccessRef = useRef<(() => void) | undefined>(undefined);
 
@@ -44,26 +47,39 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const open = useCallback((next: Exclude<Mode, null>, onSuccess?: () => void) => {
     setMode(next);
     setNotice(false);
+    setFormError(null);
     onSuccessRef.current = onSuccess;
   }, []);
 
   const close = useCallback(() => {
     setMode(null);
     setNotice(false);
+    setFormError(null);
   }, []);
 
   const logout = useCallback(() => {
     setIsAuthenticated(false);
     window.localStorage.removeItem(SESSION_KEY);
-  }, []);
+    showToast("Logged out", "info");
+  }, [showToast]);
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const missing = ["auth-email", "auth-password", ...(mode === "signup" ? ["auth-username"] : [])].some(
+      (name) => !String(data.get(name) ?? "").trim(),
+    );
+    if (missing) {
+      setFormError("Fill in every field to continue.");
+      return;
+    }
+    setFormError(null);
     setNotice(true);
     const onSuccess = onSuccessRef.current;
     window.setTimeout(() => {
       setIsAuthenticated(true);
       window.localStorage.setItem(SESSION_KEY, "1");
+      showToast(mode === "signup" ? "Account created" : "Logged in successfully", "success");
       onSuccess?.();
       close();
     }, 700);
@@ -95,21 +111,27 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
             <span>or</span>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             {mode === "signup" && (
               <div className="form-row">
                 <label htmlFor="auth-username">Username</label>
-                <input id="auth-username" type="text" placeholder="Your in-game name" required />
+                <input id="auth-username" name="auth-username" type="text" placeholder="Your in-game name" />
               </div>
             )}
             <div className="form-row">
               <label htmlFor="auth-email">Email</label>
-              <input id="auth-email" type="email" placeholder="you@example.com" required />
+              <input id="auth-email" name="auth-email" type="email" placeholder="you@example.com" />
             </div>
             <div className="form-row">
               <label htmlFor="auth-password">Password</label>
-              <input id="auth-password" type="password" placeholder="••••••••" required />
+              <input id="auth-password" name="auth-password" type="password" placeholder="••••••••" />
             </div>
+
+            {formError && (
+              <p className="form-row__error">
+                <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {formError}
+              </p>
+            )}
 
             {notice && (
               <p className="auth-modal__notice">

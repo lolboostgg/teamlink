@@ -8,32 +8,57 @@ interface Props {
   onLoggedIn: () => void;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // Guest checkout is always available and never blocked behind login — the
-// "log in / register" path is an alternative, not a requirement.
+// "log in / register" path is an alternative, not a requirement. Validation
+// is hand-rolled (noValidate + this) instead of relying on the browser's
+// native constraint-validation popup, which is unstyled and (on this
+// machine) shows up in the OS/browser locale rather than the site's.
 export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
   const { open } = useAuthModal();
   const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   function handleGuestSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onContinueAsGuest(email);
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Enter your email address to continue.");
+      return;
+    }
+    if (!EMAIL_RE.test(trimmed)) {
+      setError("That doesn't look like a valid email address.");
+      return;
+    }
+    setError(null);
+    onContinueAsGuest(trimmed);
   }
 
   return (
     <div className="checkout-card">
       <div className="checkout-card__title">How do you want to check out?</div>
 
-      <form onSubmit={handleGuestSubmit}>
+      <form onSubmit={handleGuestSubmit} noValidate>
         <div className="form-row">
           <label htmlFor="checkout-guest-email">Email address</label>
           <input
             id="checkout-guest-email"
             type="email"
-            required
             placeholder="you@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (error) setError(null);
+            }}
+            className={error ? "has-error" : undefined}
+            aria-invalid={error ? true : undefined}
           />
+          {error && (
+            <p className="form-row__error">
+              <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {error}
+            </p>
+          )}
         </div>
         <button type="submit" className="btn btn--primary btn--block">
           Continue as guest

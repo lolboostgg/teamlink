@@ -1,16 +1,15 @@
 import type { Game } from "@/lib/games";
-import { heroCardBackground } from "@/lib/gameArt";
+import { gamesPageBanner } from "@/lib/gameArt";
 
 // Full-bleed key-art banner at the top of the game page — the booking
 // widget below used to be the only thing on the page, which read as flat
 // and empty. This gives each game page an identity before the user even
-// scrolls to pricing. Uses the same landscape art as the hero carousel
-// (falls back to the tall poster, cover-cropped, for the couple of games
-// without dedicated landscape art) instead of the old small right-anchored
-// contain treatment, which read as a stray floating thumbnail.
+// scrolls to pricing. Uses gamesPageBanner (large, ~1920x500 dedicated art)
+// rather than heroCardBackground (only ~500x228, fine for a small carousel
+// tile but visibly blurry stretched across a full-width banner).
 export function GamePageHero({ game }: { game: Game }) {
   return (
-    <div className="game-page-hero" style={{ backgroundImage: `url(${heroCardBackground(game.slug)})` }}>
+    <div className="game-page-hero" style={{ backgroundImage: `url(${gamesPageBanner(game.slug)})` }}>
       <div className="game-page-hero__scrim" aria-hidden="true" />
       <div className="container game-page-hero__inner">
         <span className="game-page-hero__eyebrow">

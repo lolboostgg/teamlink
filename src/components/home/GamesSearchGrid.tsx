@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import type { Game } from "@/lib/games";
-import { GameCover } from "@/components/home/GameCover";
 import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
+import { GamesPageSlider } from "@/components/home/GamesPageSlider";
 
 export function GamesSearchGrid({ games }: { games: Game[] }) {
   const [query, setQuery] = useState("");
@@ -44,29 +43,7 @@ export function GamesSearchGrid({ games }: { games: Game[] }) {
         {filtered.length === 0 ? (
           <p className="games-page-empty">No games match &ldquo;{query}&rdquo;.</p>
         ) : (
-          <div className="games-grid" onMouseLeave={() => setHoverSlug(null)}>
-            {filtered.map((game) => (
-              <Link
-                key={game.slug}
-                href={`/games/${game.slug}`}
-                className="game-card"
-                onMouseEnter={() => setHoverSlug(game.slug)}
-              >
-                <div className="game-card__cover">
-                  <GameCover game={game} iconMode />
-                </div>
-                <div className="game-card__name">{game.name}</div>
-                <div className="game-card__meta">
-                  <span className="game-card__players">
-                    <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}
-                  </span>
-                  <span className="game-card__rating">
-                    <i className="fa-solid fa-star" aria-hidden="true" /> 4.9
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <GamesPageSlider games={filtered} onHover={setHoverSlug} />
         )}
       </div>
     </>

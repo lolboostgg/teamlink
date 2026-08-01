@@ -20,6 +20,7 @@
   --accent-soft: rgba(64, 102, 255, 0.12);
   --success: #2fbf71;
   --warning: #e0a83b;
+  --danger: #e5484d;
   /* Small curated accent set for icon badges/highlights — tapin.gg and
      eloboost.gg both use multiple saturated colors to code different
      features/categories, not one accent everywhere. Still no gradients:
@@ -337,6 +338,21 @@ ul {
 .section-relative {
   position: relative;
   overflow: hidden;
+}
+
+/* Clips just the decorative bg-glow blurs instead of the whole page —
+   overflow-x/y hidden on an ancestor (section-relative) breaks
+   position: sticky for any descendant, per spec: setting overflow-x to
+   anything but visible forces overflow-y's computed value to auto too
+   (and vice versa), so there's no way to clip one axis on an ancestor
+   without also creating a scroll container that breaks sticky. Used on
+   the booking page specifically since it has a sticky sidebar. */
+.glow-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* ── Buttons ────────────────────────────────────────────────── */
@@ -986,16 +1002,67 @@ ul {
   }
 }
 
+/* ── /games listing slider (bigger cards, dedicated per-game banners) ── */
+.games-slider {
+  position: relative;
+  max-width: 100%;
+  margin-top: 8px;
+}
+
+.games-slider__track {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding: 20px 28px;
+  margin: -16px -28px;
+}
+
+.games-slider__track::-webkit-scrollbar {
+  display: none;
+}
+
+.games-slider__card {
+  width: 300px;
+  aspect-ratio: 3 / 2;
+}
+
+.games-slider__card .hero-card__wordmark {
+  height: 30px;
+}
+
+.games-slider__rating-star {
+  margin-left: 10px;
+  color: var(--hue-gold);
+}
+
+.games-slider__next {
+  right: 4px;
+}
+
+@media (max-width: 640px) {
+  .games-slider__card {
+    width: 240px;
+  }
+}
+
 /* ── Hero mode strip + CTA (below the game picker) ──────────────────── */
 .hero-modes-wrap {
   max-width: 720px;
   margin: 36px auto 0;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: rgba(10, 13, 24, 0.55);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-lg);
 }
 
 .hero-modes-title {
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-faint);
+  color: var(--text-muted);
   margin-bottom: 14px;
 }
 
@@ -1010,7 +1077,7 @@ ul {
   padding: 13px 16px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   text-align: left;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
@@ -2376,6 +2443,19 @@ ul {
   border-color: var(--accent);
 }
 
+.form-row input.has-error {
+  border-color: var(--danger);
+}
+
+.form-row__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--danger);
+}
+
 .form-row-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2854,6 +2934,76 @@ ul {
   color: var(--text);
 }
 
+/* ── Toast stack (app-wide success/error feedback) ────────────────── */
+.toast-stack {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  width: 320px;
+  max-width: calc(100vw - 40px);
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 32px 13px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated-2);
+  box-shadow: var(--shadow-lg);
+  font-size: 13px;
+  color: var(--text);
+  animation: toastIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
+
+.toast--success i:first-child {
+  color: var(--success);
+}
+
+.toast--error i:first-child {
+  color: var(--danger);
+}
+
+.toast--info i:first-child {
+  color: var(--accent);
+}
+
+.toast__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+  font-size: 10px;
+  border-radius: 50%;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.toast__close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 860px) {
   .games-grid {
@@ -3293,8 +3443,8 @@ ul {
   overflow-y: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
-  background: rgba(13, 17, 32, 0.78);
-  backdrop-filter: blur(18px);
+  background: rgba(10, 13, 24, 0.94);
+  backdrop-filter: blur(20px);
   box-shadow: var(--shadow-lg);
   padding: 6px;
   animation: modalPanelIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
@@ -3510,7 +3660,8 @@ ul {
   left: 50%;
   transform: translateX(-50%) translateY(4px);
   width: max-content;
-  max-width: 200px;
+  max-width: 340px;
+  white-space: nowrap;
   padding: 7px 10px;
   border-radius: var(--radius-sm);
   background: var(--bg-elevated-2);
