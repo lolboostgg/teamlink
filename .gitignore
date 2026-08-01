@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Unrelated to this project — appears to be dropped in by a local git init
+# template (unconnected Claude Code skill pack), not TeamLink content.
+/skills
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

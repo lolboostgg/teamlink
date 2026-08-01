@@ -1,5 +1,6 @@
 import { Hero } from "@/components/home/Hero";
 import { PopularGames } from "@/components/home/PopularGames";
+import { CommunityMarquee } from "@/components/home/CommunityMarquee";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { WhyUs } from "@/components/home/WhyUs";
 import { Faq } from "@/components/home/Faq";
@@ -10,6 +11,7 @@ export default function HomePage() {
     <main>
       <Hero />
       <PopularGames />
+      <CommunityMarquee />
       <HowItWorks />
       <WhyUs />
       <Faq />

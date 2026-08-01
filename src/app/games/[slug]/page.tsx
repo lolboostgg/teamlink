@@ -27,8 +27,11 @@ export default async function GamePage({ params }: Props) {
   if (!game) notFound();
 
   return (
-    <main className="booking-page">
-      <div className="container">
+    <main className="booking-page section-relative">
+      <span className="bg-glow bg-glow--blue" style={{ width: 480, height: 480, right: "-160px", top: "-100px" }} aria-hidden="true" />
+      <span className="bg-glow bg-glow--teal" style={{ width: 360, height: 360, left: "-140px", bottom: "0" }} aria-hidden="true" />
+
+      <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <BookingWidget game={game} />
       </div>
     </main>

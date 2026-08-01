@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
 import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
+import { Reveal } from "@/components/ui/Reveal";
 
 interface Props {
   game: Game;
@@ -13,8 +14,22 @@ export function BookingWidget({ game }: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState<BookingOption>(BOOKING_CATEGORIES[0].options[0]);
   const [teammates, setTeammates] = useState(1);
+  const [pulsing, setPulsing] = useState(false);
+  const firstRender = useRef(true);
 
   const total = useMemo(() => selected.price * teammates, [selected, teammates]);
+
+  // Small "flash" on the total whenever the selection changes, so the price
+  // update reads as live/reactive rather than just appearing.
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setPulsing(true);
+    const t = setTimeout(() => setPulsing(false), 260);
+    return () => clearTimeout(t);
+  }, [total]);
 
   function goToCheckout() {
     const params = new URLSearchParams({
@@ -29,51 +44,58 @@ export function BookingWidget({ game }: Props) {
   return (
     <div className="booking-layout">
       <div>
-        <div className="booking-header">
-          <div
-            className="booking-header__cover"
-            style={{
-              backgroundColor: game.tint,
-              backgroundImage: `url(${game.bannerUrl})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          />
-          <div>
-            <h1>{game.name}</h1>
-            <p>{game.players} players matched so far</p>
+        <Reveal>
+          <div className="booking-header">
+            <div
+              className="booking-header__cover"
+              style={{
+                backgroundColor: game.tint,
+                backgroundImage: `url(${game.bannerUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+            <div>
+              <h1>{game.name}</h1>
+              <p>{game.players} players matched so far</p>
+            </div>
+            <span className="booking-header__live">
+              <span className="pulse-dot" aria-hidden="true" /> ~1 min average wait
+            </span>
           </div>
-        </div>
+        </Reveal>
 
-        {BOOKING_CATEGORIES.map((cat) => (
-          <div className="booking-category" key={cat.category}>
-            <div className="booking-category__title">{cat.category}</div>
-            {cat.options.map((option) => (
-              <button
-                key={option.name}
-                type="button"
-                className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
-                onClick={() => setSelected(option)}
-              >
-                <span className="booking-option__main">
-                  <span className="booking-option__radio" />
-                  <span>
-                    <span className="booking-option__name">{option.name}</span>
+        {BOOKING_CATEGORIES.map((cat, ci) => (
+          <Reveal key={cat.category} delay={ci * 70}>
+            <div className="booking-category">
+              <div className="booking-category__title">{cat.category}</div>
+              {cat.options.map((option) => (
+                <button
+                  key={option.name}
+                  type="button"
+                  className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
+                  onClick={() => setSelected(option)}
+                >
+                  <span className="booking-option__main">
+                    <span className="booking-option__radio" />
+                    <span>
+                      <span className="booking-option__name">{option.name}</span>
+                      <br />
+                      <span className="booking-option__desc">{option.description}</span>
+                    </span>
+                  </span>
+                  <span className="booking-option__price">
+                    <span className="booking-option__price-value">
+                      ${option.price.toFixed(2)}
+                      {option.unit}
+                    </span>
                     <br />
-                    <span className="booking-option__desc">{option.description}</span>
+                    <span className="booking-option__eta">{option.eta}</span>
                   </span>
-                </span>
-                <span className="booking-option__price">
-                  <span className="booking-option__price-value">
-                    ${option.price.toFixed(2)}
-                    {option.unit}
-                  </span>
-                  <br />
-                  <span className="booking-option__eta">{option.eta}</span>
-                </span>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+          </Reveal>
         ))}
       </div>
 
@@ -101,7 +123,7 @@ export function BookingWidget({ game }: Props) {
           </div>
         </div>
 
-        <div className="booking-sidebar__total">
+        <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
           <span>Total</span>
           <span>${total.toFixed(2)}</span>
         </div>

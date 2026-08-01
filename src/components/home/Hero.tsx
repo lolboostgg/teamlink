@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GAMES } from "@/lib/games";
 import { LOLBOOST_ASSETS } from "@/lib/assets";
 import { Reveal } from "@/components/ui/Reveal";
+import { FloatingShapes } from "@/components/ui/FloatingShapes";
 
 export function Hero() {
   return (
@@ -9,6 +10,7 @@ export function Hero() {
       <div className="hero__bg" aria-hidden="true">
         <img src={`${LOLBOOST_ASSETS}/landing/lolboost-hero-multigame6.webp`} alt="" loading="eager" fetchPriority="high" />
       </div>
+      <FloatingShapes />
 
       <div className="container">
         <Reveal>

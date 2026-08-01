@@ -4,6 +4,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,9 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body>
-        <Header />
-        {children}
-        <Footer />
+        <AuthModalProvider>
+          <Header />
+          {children}
+          <Footer />
+        </AuthModalProvider>
       </body>
     </html>
   );

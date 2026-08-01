@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
 
 export function CtaBand() {
+  const { open } = useAuthModal();
+
   return (
     <section className="cta-band section-relative">
       <span className="bg-glow bg-glow--blue" style={{ width: 500, height: 300, left: "50%", top: "20%", transform: "translateX(-50%)" }} aria-hidden="true" />
@@ -14,9 +19,9 @@ export function CtaBand() {
             <Link className="btn btn--primary" href="/games">
               Browse games
             </Link>
-            <Link className="btn btn--outline" href="/signup">
+            <button type="button" className="btn btn--outline" onClick={() => open("signup")}>
               Create free account
-            </Link>
+            </button>
           </div>
         </Reveal>
       </div>

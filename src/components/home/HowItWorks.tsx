@@ -1,11 +1,20 @@
 import { HOW_IT_WORKS } from "@/lib/content";
 import { LOLBOOST_ASSETS } from "@/lib/assets";
 import { Reveal } from "@/components/ui/Reveal";
+import { FloatingShapes } from "@/components/ui/FloatingShapes";
+
+const HOW_SHAPES = [
+  { top: "8%", right: "5%", size: 40, variant: "ring" as const, duration: 10, delay: 0.3 },
+  { top: "55%", left: "4%", size: 16, variant: "dot" as const, duration: 7.5, delay: 1 },
+  { top: "85%", right: "18%", size: 12, variant: "dot" as const, duration: 6, delay: 0.8 },
+];
 
 export function HowItWorks() {
   return (
-    <section className="section" id="how-it-works">
-      <div className="container">
+    <section className="section section-relative" id="how-it-works">
+      <FloatingShapes shapes={HOW_SHAPES} />
+
+      <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <Reveal>
           <div className="section__head section__head--center">
             <div className="section__eyebrow">How it works</div>
