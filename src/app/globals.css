@@ -214,8 +214,8 @@ body::before {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
-  mask-image: linear-gradient(180deg, #000 35%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
 }
 
 .ambient-bg__layer {
@@ -427,8 +427,9 @@ ul {
 .promo-banner {
   position: relative;
   z-index: 10;
-  background: var(--cta-vivid);
-  color: var(--cta-vivid-ink);
+  background: rgba(34, 211, 238, 0.1);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+  color: var(--text);
 }
 
 .promo-banner__inner {
@@ -446,7 +447,8 @@ ul {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(12, 20, 4, 0.14);
+  background: rgba(34, 211, 238, 0.16);
+  color: var(--cta-vivid);
   flex: 0 0 auto;
   font-size: 11px;
 }
@@ -461,6 +463,7 @@ ul {
   align-items: center;
   gap: 6px;
   font-weight: 800;
+  color: var(--cta-vivid);
   white-space: nowrap;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -472,13 +475,14 @@ ul {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(12, 20, 4, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
   flex: 0 0 auto;
   transition: background 0.15s ease;
 }
 
 .promo-banner__close:hover {
-  background: rgba(12, 20, 4, 0.22);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 @media (max-width: 640px) {
@@ -702,11 +706,57 @@ ul {
 .hero {
   position: relative;
   /* Extends up under the sticky (transparent) header instead of starting
-     right below it, so the ambient backdrop shows through the header too. */
-  margin-top: calc(-1 * var(--header-h));
-  padding: calc(64px + var(--header-h)) 0 40px;
+     right below it, so the ambient backdrop shows through the header too.
+     Full viewport height — gives the key art room to breathe and the
+     ambient fade a long, gradual run instead of cutting off within a
+     couple hundred pixels. */
+  margin-top: calc(-1 * var(--offset-h, var(--header-h)));
+  min-height: 100vh;
+  padding: calc(64px + var(--offset-h, var(--header-h))) 0 100px;
+  display: flex;
+  align-items: center;
   text-align: center;
   overflow: hidden;
+}
+
+.hero > .container {
+  width: 100%;
+}
+
+.hero__scroll-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  animation: heroScrollCue 1.8s ease-in-out infinite;
+}
+
+@keyframes heroScrollCue {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateX(-50%) translateY(6px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__scroll-cue {
+    animation: none;
+  }
 }
 
 /* Darkens just the headline/subhead area so the ambient backdrop can stay
@@ -1236,8 +1286,8 @@ ul {
 .games-page-hero {
   position: relative;
   overflow: hidden;
-  margin-top: calc(-1 * var(--header-h));
-  padding-top: calc(88px + var(--header-h));
+  margin-top: calc(-1 * var(--offset-h, var(--header-h)));
+  padding-top: calc(88px + var(--offset-h, var(--header-h)));
 }
 
 .games-page-hero .ambient-bg__layer {
@@ -2026,38 +2076,83 @@ ul {
   margin-bottom: 14px;
 }
 
-.teammate-picker {
-  margin-bottom: 0;
-}
-
-.teammate-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px;
-}
-
-.teammate-card {
+/* Horizontal carousel, matching the game-picker's visual language
+   (see .hero-carousel) instead of a standalone card grid — ties the
+   teammate step back into the rest of the page's carousel-driven feel
+   instead of reading as an unrelated component. */
+.teammate-carousel {
   position: relative;
-  padding: 16px;
+}
+
+.teammate-carousel__track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding: 6px 0;
+}
+
+.teammate-carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Gutter for the prev/next buttons lives on the edge chips themselves,
+   not as padding on the scrollable track — Chromium doesn't reliably
+   reserve leading padding on a scroll container (it gets scrolled away
+   immediately, landing content flush at scrollLeft: 0 regardless), so the
+   buttons would otherwise sit on top of chip text (these chips run
+   content nearly their full height, unlike .hero-card's big image area). */
+.teammate-chip:first-child {
+  margin-left: 44px;
+}
+
+.teammate-chip:last-child {
+  margin-right: 44px;
+}
+
+.teammate-carousel__prev {
+  left: 4px;
+}
+
+.teammate-carousel__next {
+  right: 4px;
+}
+
+.teammate-chip {
+  position: relative;
+  flex: 0 0 auto;
+  width: 190px;
+  padding: 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   text-align: left;
+  /* No scroll-snap-align here on purpose: with one set, the browser
+     establishes the initial scroll rest position by snapping to it,
+     which silently cancels out the first-child gutter margin below
+     (confirmed via scrollLeft — it lands exactly on the margin amount
+     regardless of whether the gutter is padding or margin). */
   transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.teammate-card:hover {
+.teammate-chip:hover {
   border-color: var(--border-strong);
   transform: translateY(-3px);
   box-shadow: var(--shadow-card);
 }
 
-.teammate-card.is-selected {
+.teammate-chip.is-selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent);
 }
 
-.teammate-card__check {
+.teammate-chip--random {
+  background: var(--accent-soft);
+  border-color: rgba(64, 102, 255, 0.35);
+}
+
+.teammate-chip__check {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -2071,14 +2166,7 @@ ul {
   place-items: center;
 }
 
-.teammate-card__head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.teammate-card__avatar {
+.teammate-chip__avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -2086,103 +2174,75 @@ ul {
   color: var(--accent);
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-size: 13px;
-  flex: 0 0 auto;
+  font-size: 15px;
+  margin-bottom: 10px;
 }
 
-.teammate-card__name {
+.teammate-chip__avatar--random {
+  background: var(--accent);
+  color: #fff;
+}
+
+.teammate-chip__name {
+  display: block;
   font-size: 14px;
   font-weight: 700;
+  margin-bottom: 2px;
 }
 
-.teammate-card__rating {
+.teammate-chip__rating {
+  display: block;
   font-size: 11px;
   color: var(--text-faint);
+  margin-bottom: 8px;
 }
 
-.teammate-card__rating i {
+.teammate-chip__rating i {
   color: var(--hue-gold);
 }
 
-.teammate-card__tagline {
+.teammate-chip__tagline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.5;
   margin-bottom: 10px;
 }
 
-.teammate-card__meta {
+.teammate-chip__rank {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--text-faint);
-  margin-bottom: 10px;
-}
-
-.teammate-card__meta i {
-  color: var(--accent);
-}
-
-.teammate-card__langs {
-  display: flex;
-  gap: 4px;
-  font-size: 13px;
-}
-
-.teammate-card__rank {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 6px;
+  width: fit-content;
+  padding: 5px 8px;
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--border);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   margin-bottom: 8px;
 }
 
-.teammate-card__rank-icon {
-  width: 22px;
-  height: 22px;
+.teammate-chip__rank-icon {
+  width: 18px;
+  height: 18px;
   object-fit: contain;
 }
 
-.teammate-card__champions {
+.teammate-chip__langs {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 13px;
 }
 
-.teammate-card__champion-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--border-strong);
-}
-
-.teammate-card--random {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  background: var(--accent-soft);
-  border-color: rgba(64, 102, 255, 0.35);
-}
-
-.teammate-card__random-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 15px;
-  margin-bottom: 10px;
+@media (max-width: 640px) {
+  .teammate-chip {
+    width: 160px;
+  }
 }
 
 /* ── Checkout ───────────────────────────────────────────────── */

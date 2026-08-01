@@ -48,9 +48,6 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="hero-card__bg" src={heroCardBackground(game.slug)} alt="" loading="lazy" />
               <span className="hero-card__scrim" aria-hidden="true" />
-              <span className="hero-card__badge">
-                <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}
-              </span>
               {isActive && <i className="fa-solid fa-check hero-card__check" aria-hidden="true" />}
               <div className="hero-card__footer">
                 {wordmark ? (

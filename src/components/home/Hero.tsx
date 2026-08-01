@@ -50,6 +50,10 @@ export function Hero({ game: gameProp }: Props) {
 
           <GameSwitcherBar games={GAMES} activeSlug={game.slug} onHover={setHoverSlug} />
         </div>
+
+        <div className="hero__scroll-cue" aria-hidden="true">
+          <i className="fa-solid fa-chevron-down" />
+        </div>
       </section>
 
       {/* Separate from .hero on purpose: .hero has overflow:hidden to mask
@@ -58,7 +62,6 @@ export function Hero({ game: gameProp }: Props) {
           sidebar below. See .glow-clip for the same fix applied here. */}
       <div className="booking-page" style={{ position: "relative" }}>
         <div className="glow-clip" aria-hidden="true">
-          <span className="bg-glow bg-glow--blue" style={{ width: 480, height: 480, right: "-160px", top: "-100px" }} />
           <span className="bg-glow bg-glow--teal" style={{ width: 360, height: 360, left: "-140px", bottom: "0" }} />
         </div>
         <div className="container booking-widget-wrap" style={{ position: "relative", zIndex: 1 }}>
