@@ -1,6 +1,7 @@
 import { ViewTransition } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { PromoBanner } from "@/components/layout/PromoBanner";
 
 // Marketing chrome (Header/Footer) lives here instead of the root layout so
 // /dashboard/* gets its own shell. The ViewTransition below is the "flying
@@ -14,6 +15,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
   return (
     <>
       <Header />
+      <PromoBanner />
       <ViewTransition
         enter={{ "dashboard-exit": "dash-in-back", default: "none" }}
         exit={{ "dashboard-enter": "dash-out-fwd", default: "none" }}

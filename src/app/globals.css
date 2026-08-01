@@ -1,9 +1,13 @@
 /* TeamLink.gg design system — one stylesheet, flat color (no gradient text
-   or gradient buttons), modest corner radii, Inter for everything. Dark
-   navy base color intentionally close to lolboost.gg's palette per brief. */
+   or gradient buttons), modest corner radii. Inter for body copy, Bebas
+   Neue for headline/display moments (see --font-display). Dark navy base
+   color intentionally close to lolboost.gg's palette per brief, textured
+   with a starfield + grain instead of flat black — modeled on tapin.gg's
+   dark "space" atmosphere, game-art-forward cards, and honest, high-
+   production trust widget (see .starfield, .trust-badge, .game-pick). */
 
 :root {
-  --bg: #06080f;
+  --bg: #060811;
   --bg-elevated: #0d1120;
   --bg-elevated-2: #121729;
   --border: rgba(255, 255, 255, 0.08);
@@ -25,6 +29,12 @@
   --hue-gold: #f5a524;
   --hue-pink: #ec4899;
   --hue-cyan: #22d3ee;
+  /* High-contrast neon used sparingly for the single most prominent CTA
+     per screen (hero "Play now", checkout submit) — tapin.gg's lime pop
+     against the dark theme, kept out of everyday buttons/links so --accent
+     blue stays the primary brand color. */
+  --hue-lime: #baf23c;
+  --hue-lime-ink: #0c1404;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -32,6 +42,7 @@
   --header-h: 72px;
   --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.55);
+  --font-heading: var(--font-display), Impact, "Arial Narrow", sans-serif;
 }
 
 * {
@@ -72,6 +83,123 @@ body::before {
   opacity: 0.025;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Starfield — site-wide background layer ─────────────────────────
+   Rendered once in the root layout (behind every page: marketing,
+   dashboard, checkout — this is what makes the whole product feel like
+   one place instead of a stitched-together set of screens). Two tiled
+   dot layers drifting at different speeds for parallax depth, plus a
+   couple of periodic "shooting star" streaks. z-index:-1 pins it below
+   all normal in-flow content while staying fixed to the viewport. */
+.starfield {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.starfield__layer {
+  position: absolute;
+  inset: -20%;
+  background-repeat: repeat;
+}
+
+.starfield__layer--sm {
+  background-image:
+    radial-gradient(1px 1px at 40px 60px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 180px 24px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 320px 120px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 440px 200px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 60px 220px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 260px 260px, rgba(255, 255, 255, 0.5), transparent);
+  background-size: 480px 320px;
+  animation: starDrift 140s linear infinite;
+  opacity: 0.55;
+}
+
+.starfield__layer--lg {
+  background-image:
+    radial-gradient(1.6px 1.6px at 100px 40px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1.6px 1.6px at 260px 140px, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1.6px 1.6px at 420px 60px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1.6px 1.6px at 540px 260px, rgba(255, 255, 255, 0.65), transparent);
+  background-size: 620px 380px;
+  animation: starDrift 200s linear infinite reverse;
+  opacity: 0.4;
+}
+
+@keyframes starDrift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-480px, -320px, 0);
+  }
+}
+
+.starfield__shoot {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.8);
+  opacity: 0;
+  animation: shootingStar 9s ease-in infinite;
+}
+
+.starfield__shoot::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 90px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7));
+  transform: translateY(-50%);
+}
+
+.starfield__shoot--1 {
+  top: 12%;
+  left: 15%;
+  animation-delay: 0.5s;
+}
+
+.starfield__shoot--2 {
+  top: 30%;
+  left: 70%;
+  animation-delay: 4.5s;
+}
+
+@keyframes shootingStar {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  4% {
+    opacity: 1;
+  }
+  16% {
+    opacity: 0;
+    transform: translate(260px, 180px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(260px, 180px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield__layer,
+  .starfield__shoot {
+    animation: none;
+  }
+
+  .starfield__shoot {
+    opacity: 0;
+  }
 }
 
 a {
@@ -221,7 +349,11 @@ ul {
   font-weight: 600;
   border: 1px solid transparent;
   white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
 }
 
 .btn:active {
@@ -248,6 +380,19 @@ ul {
 
 .btn--primary:hover {
   background: var(--accent-hover);
+  box-shadow: 0 8px 24px rgba(64, 102, 255, 0.35);
+}
+
+/* High-contrast neon CTA — used sparingly for the single most prominent
+   action per screen (see --hue-lime in :root). */
+.btn--lime {
+  background: var(--hue-lime);
+  color: var(--hue-lime-ink);
+}
+
+.btn--lime:hover {
+  background: color-mix(in srgb, var(--hue-lime) 88%, #fff);
+  box-shadow: 0 8px 26px rgba(186, 242, 60, 0.4);
 }
 
 .btn--outline {
@@ -271,6 +416,68 @@ ul {
 
 .btn--block {
   width: 100%;
+}
+
+/* ── Promo banner ───────────────────────────────────────────── */
+.promo-banner {
+  background: var(--hue-lime);
+  color: var(--hue-lime-ink);
+}
+
+.promo-banner__inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 24px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.promo-banner__badge {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(12, 20, 4, 0.14);
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.promo-banner__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.promo-banner__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.promo-banner__close {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(12, 20, 4, 0.1);
+  flex: 0 0 auto;
+  transition: background 0.15s ease;
+}
+
+.promo-banner__close:hover {
+  background: rgba(12, 20, 4, 0.22);
+}
+
+@media (max-width: 640px) {
+  .promo-banner__text {
+    display: none;
+  }
 }
 
 /* ── Header ─────────────────────────────────────────────────── */
@@ -406,10 +613,11 @@ ul {
 }
 
 .section__title {
-  font-size: clamp(26px, 3vw, 38px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  font-family: var(--font-heading);
+  font-size: clamp(30px, 3.6vw, 44px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
   margin-bottom: 12px;
 }
 
@@ -462,11 +670,13 @@ ul {
 }
 
 .hero__title {
-  font-size: clamp(34px, 5vw, 56px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  max-width: 840px;
+  font-family: var(--font-heading);
+  font-size: clamp(40px, 6.4vw, 72px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.02;
+  max-width: 900px;
   margin: 0 auto 18px;
 }
 
@@ -495,37 +705,69 @@ ul {
   letter-spacing: 1px;
 }
 
+/* Rating widget — deliberately built from real, individually-rendered
+   parts (icon stars in colored tiles, an overlapping avatar cluster)
+   rather than a plain text pill, so it reads as an actual embedded
+   review-platform widget instead of decorative copy. Honestly labeled as
+   TeamLink's own verified-session rating, not a third-party certification
+   we don't actually have. */
 .trust-badge {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 16px 6px 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--hue-green) 12%, var(--bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--hue-green) 35%, transparent);
+  gap: 14px;
+  padding: 10px 18px 10px 10px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
 }
 
-.trust-badge__score {
+.trust-badge__avatars {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+  flex: 0 0 auto;
+}
+
+.trust-badge__avatar {
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 2px solid var(--bg-elevated);
+  margin-left: -10px;
+}
+
+.trust-badge__avatar:first-child {
+  margin-left: 0;
+}
+
+.trust-badge__main {
+  text-align: left;
+}
+
+.trust-badge__stars-row {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 3px;
+}
+
+.trust-badge__star {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  display: grid;
+  place-items: center;
   background: var(--hue-green);
   color: #06080f;
-  font-weight: 900;
-  font-size: 12px;
-}
-
-.trust-badge__stars {
-  color: var(--hue-green);
-  letter-spacing: 1px;
-  font-size: 13px;
+  font-size: 9px;
 }
 
 .trust-badge__label {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--text-muted);
 }
 
@@ -562,7 +804,7 @@ ul {
   font-size: 13px;
 }
 
-.hero-mockup span {
+.hero-mockup__body {
   display: block;
   color: var(--text-faint);
   font-size: 11.5px;
@@ -640,8 +882,67 @@ ul {
   font-style: normal;
 }
 
+.hero-mockup__meta {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.hero-mockup--split-top {
+  top: -6%;
+  right: 8%;
+  transform: rotate(-3deg);
+  animation-delay: 0.3s;
+}
+
+.hero-mockup--split-bottom {
+  bottom: -8%;
+  right: -4%;
+  transform: rotate(4deg);
+  animation-delay: 1s;
+}
+
+/* Dotted "globe" — a point-cloud sphere behind the hero's booking card,
+   reinforcing the "global community" idea the way tapin.gg's hemisphere
+   illustration does. Pure CSS: a masked dot-grid slowly panning inside a
+   circular mask for a lazy rotation illusion, no image asset needed. */
+.hero-globe {
+  position: absolute;
+  z-index: 0;
+  right: -100px;
+  bottom: -140px;
+  width: 460px;
+  height: 460px;
+  border-radius: 50%;
+  background-image: radial-gradient(1.4px 1.4px at 1px 1px, rgba(255, 255, 255, 0.55) 1px, transparent 1.4px);
+  background-size: 16px 16px;
+  -webkit-mask-image: radial-gradient(circle, #000 50%, transparent 76%);
+  mask-image: radial-gradient(circle, #000 50%, transparent 76%);
+  opacity: 0.6;
+  pointer-events: none;
+  animation: globePan 70s linear infinite;
+}
+
+@keyframes globePan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 320px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-globe {
+    animation: none;
+  }
+}
+
 @media (max-width: 900px) {
   .hero-mockups {
+    display: none;
+  }
+
+  .hero-globe {
     display: none;
   }
 }
@@ -748,9 +1049,18 @@ ul {
   bottom: 0;
   z-index: 1;
   padding: 12px;
-  font-weight: 800;
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   color: #fff;
+  font-size: 17px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.game-cover--compact .game-cover__name {
   font-size: 13px;
+  padding: 8px;
 }
 
 /* ── Popular games grid (marketing) ────────────────────────── */
@@ -777,7 +1087,7 @@ ul {
 
 .game-card__cover {
   position: relative;
-  height: 150px;
+  height: 190px;
   transition: transform 0.5s ease;
 }
 
@@ -1059,9 +1369,12 @@ ul {
 }
 
 .cta-band__title {
-  font-size: clamp(28px, 3.6vw, 42px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-heading);
+  font-size: clamp(34px, 4.4vw, 52px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.05;
   margin-bottom: 14px;
 }
 
@@ -1220,8 +1533,10 @@ ul {
 }
 
 .booking-header h1 {
-  font-size: 22px;
-  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .booking-header p {
@@ -1407,8 +1722,10 @@ ul {
 }
 
 .checkout-title {
-  font-size: 26px;
-  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 34px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
   margin-bottom: 32px;
 }
 
@@ -1729,10 +2046,12 @@ ul {
 }
 
 .hero-split__title {
-  font-size: clamp(30px, 4vw, 46px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  font-family: var(--font-heading);
+  font-size: clamp(38px, 5.2vw, 58px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.03;
   margin-bottom: 16px;
 }
 
@@ -1753,39 +2072,40 @@ ul {
 .quickbook__game {
   position: relative;
   flex: 1;
-  height: 52px;
+  height: 72px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   overflow: hidden;
   display: grid;
   place-items: center;
   color: #fff;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .quickbook__game:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.03);
 }
 
 .quickbook__game.is-active {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 22px rgba(64, 102, 255, 0.5);
 }
 
 .quickbook__game-check {
   position: absolute;
   z-index: 2;
-  top: 4px;
-  right: 4px;
-  width: 16px;
-  height: 16px;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 9px;
+  background: var(--hue-lime);
+  color: var(--hue-lime-ink);
+  font-size: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 0 2px rgba(6, 8, 15, 0.7);
 }
 
 .quickbook__title {
@@ -1988,12 +2308,14 @@ ul {
 }
 
 .hero-compact__title {
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  max-width: 640px;
+  font-family: var(--font-heading);
+  font-size: clamp(34px, 4.6vw, 50px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  max-width: 680px;
   margin: 0 auto 26px;
-  line-height: 1.2;
+  line-height: 1.05;
 }
 
 .hero-compact__search {
@@ -2264,17 +2586,18 @@ ul {
 }
 
 .games-dense__card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   border-color: var(--border-strong);
+  box-shadow: var(--shadow-lg);
 }
 
 .games-dense__cover {
   position: relative;
-  height: 100px;
+  height: 136px;
 }
 
 .games-dense__cover .game-cover__name {
-  font-size: 11.5px;
+  font-size: 14px;
   padding: 8px;
 }
 
@@ -2599,8 +2922,10 @@ ul {
 }
 
 .dashboard-topbar__title {
-  font-size: 19px;
-  font-weight: 800;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .dashboard-topbar__actions {
@@ -2654,6 +2979,12 @@ ul {
   border-top: 2px solid color-mix(in srgb, var(--item-color, var(--accent)) 55%, transparent);
   background: var(--bg-elevated);
   box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
 }
 
 .stat-card__icon {
@@ -2675,9 +3006,10 @@ ul {
 }
 
 .stat-card__value {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .stat-card__delta {

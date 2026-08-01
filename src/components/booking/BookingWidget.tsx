@@ -124,7 +124,7 @@ export function BookingWidget({ game }: Props) {
           <PriceTag amountEUR={total} />
         </div>
 
-        <button type="button" className="btn btn--primary btn--block" onClick={goToCheckout}>
+        <button type="button" className="btn btn--lime btn--block" onClick={goToCheckout}>
           Continue to checkout
         </button>
       </aside>

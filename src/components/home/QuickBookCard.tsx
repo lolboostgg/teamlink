@@ -51,7 +51,7 @@ export function QuickBookCard() {
         ))}
       </div>
 
-      <Link href={`/games/${activeGame.slug}`} className="btn btn--primary btn--block quickbook__cta">
+      <Link href={`/games/${activeGame.slug}`} className="btn btn--lime btn--block quickbook__cta">
         <i className="fa-solid fa-bolt" aria-hidden="true" />
         Play now — <PriceTag amountEUR={activeOption.price} />
       </Link>

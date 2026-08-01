@@ -2,6 +2,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { FloatingShapes } from "@/components/ui/FloatingShapes";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { QuickBookCard } from "@/components/home/QuickBookCard";
+import { TeammateSpotlightCards } from "@/components/home/TeammateSpotlightCards";
 
 // Split hero: copy on the left, a live booking preview on the right — the
 // primary affordance is "configure right here", matching tapin.gg's actual
@@ -14,6 +15,7 @@ export function Hero() {
       <span className="bg-glow bg-glow--blue" style={{ width: 480, height: 480, left: "-140px", top: "-140px" }} aria-hidden="true" />
       <div className="bg-grid" aria-hidden="true" />
       <FloatingShapes />
+      <TeammateSpotlightCards />
 
       <div className="container hero-split__grid" style={{ position: "relative", zIndex: 1 }}>
         <div>
