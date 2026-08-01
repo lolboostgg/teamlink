@@ -3,6 +3,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
 import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
 import { NotificationProvider } from "@/components/dashboard/NotificationProvider";
+import { DispatchAlertPopup } from "@/components/dashboard/teammate/DispatchAlertPopup";
 
 // Sibling of the (marketing) route group, so /dashboard/* gets its own
 // shell (sidebar + topbar) instead of inheriting the marketing Header/
@@ -17,6 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <DashboardAuthGate>
       <NotificationProvider>
+        <DispatchAlertPopup />
         <div className="dashboard-shell">
           <DashboardSidebar />
           <div className="dashboard-shell__main">

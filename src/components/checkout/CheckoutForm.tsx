@@ -75,6 +75,20 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateId
   return (
     <div className="checkout-layout">
       <div>
+        <div className="checkout-steps">
+          <span className={`checkout-steps__item${step === "identity" ? " is-active" : " is-done"}`}>
+            <span className="checkout-steps__num">
+              {step === "payment" ? <i className="fa-solid fa-check" aria-hidden="true" /> : "1"}
+            </span>
+            Your details
+          </span>
+          <span className="checkout-steps__line" aria-hidden="true" />
+          <span className={`checkout-steps__item${step === "payment" ? " is-active" : ""}`}>
+            <span className="checkout-steps__num">2</span>
+            Payment
+          </span>
+        </div>
+
         {step === "identity" && (
           <CheckoutIdentityStep onContinueAsGuest={handleGuestContinue} onLoggedIn={handleLoggedIn} />
         )}
@@ -105,6 +119,7 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateId
       </div>
 
       <CheckoutOrderSummary
+        gameSlug={gameSlug}
         gameName={gameName}
         option={option}
         teammates={teammates}

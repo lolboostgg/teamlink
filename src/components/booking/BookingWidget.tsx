@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
 import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
-import { gameIcon } from "@/lib/gameArt";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { TeammatePicker } from "@/components/booking/TeammatePicker";
 import { TEAMMATES } from "@/lib/teammates";
@@ -61,19 +60,9 @@ export function BookingWidget({ game }: Props) {
     <div className="booking-layout">
       <div>
         <Reveal>
-          <div className="booking-header">
-            <div className="booking-header__cover">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={gameIcon(game.slug)} alt="" className="booking-header__cover-icon" />
-            </div>
-            <div>
-              <h1>{game.name}</h1>
-              <p>{game.players} players matched so far</p>
-            </div>
-            <span className="booking-header__live">
-              <span className="pulse-dot" aria-hidden="true" /> ~1 min average wait
-            </span>
-          </div>
+          <span className="booking-live-badge">
+            <span className="pulse-dot" aria-hidden="true" /> ~1 min average wait right now
+          </span>
         </Reveal>
 
         {BOOKING_CATEGORIES.map((cat, ci) => (

@@ -458,8 +458,7 @@ ul {
   font-weight: 900;
   letter-spacing: -0.01em;
   color: #fff;
-  -webkit-text-stroke: 5px #0b0f1a;
-  paint-order: stroke fill;
+  white-space: nowrap;
 }
 
 .logo__word-accent {
@@ -467,8 +466,6 @@ ul {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  -webkit-text-stroke: 5px #0b0f1a;
-  paint-order: stroke fill;
 }
 
 .site-header {
@@ -678,13 +675,20 @@ ul {
 
 .hero__title {
   font-family: var(--font-heading);
-  font-size: clamp(40px, 6.4vw, 72px);
+  font-size: clamp(28px, 4.4vw, 58px);
   font-weight: 400;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  line-height: 1.02;
-  max-width: 900px;
+  line-height: 1.05;
+  max-width: 1100px;
   margin: 0 auto 18px;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .hero__title {
+    white-space: normal;
+  }
 }
 
 .hero__title-accent {
@@ -913,10 +917,16 @@ ul {
 }
 
 .hero-mode__name {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 2px;
+}
+
+.hero-mode__name .info-tooltip {
+  font-size: 11px;
 }
 
 .hero-mode__price {
@@ -1501,7 +1511,11 @@ ul {
 
 /* ── Booking widget (game/service page) ────────────────────── */
 .booking-page {
-  padding: 40px 0 100px;
+  padding-bottom: 60px;
+}
+
+.booking-widget-wrap {
+  padding-top: 40px;
 }
 
 .booking-layout {
@@ -1511,16 +1525,7 @@ ul {
   align-items: start;
 }
 
-.booking-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-}
-
-.booking-header__live {
-  margin-left: auto;
+.booking-live-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1531,39 +1536,77 @@ ul {
   border: 1px solid var(--border);
   padding: 7px 14px;
   border-radius: 999px;
+  margin-bottom: 24px;
 }
 
-.booking-header__cover {
+/* ── Game page hero banner ─────────────────────────────────── */
+.game-page-hero {
   position: relative;
-  width: 76px;
-  height: 76px;
-  border-radius: var(--radius-md);
+  height: 280px;
+  margin-bottom: 40px;
+  background-color: var(--bg-elevated-2);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: right -20px top;
   overflow: hidden;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 12px;
-  box-shadow: var(--shadow-card);
-  background: var(--bg-elevated-2);
 }
 
-.booking-header__cover-icon {
-  width: 100%;
+.game-page-hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(6, 8, 15, 0.05) 0%, rgba(6, 8, 15, 0.25) 55%, var(--bg) 100%),
+    linear-gradient(90deg, rgba(6, 8, 15, 0.55) 0%, transparent 45%);
+}
+
+.game-page-hero__inner {
+  position: relative;
+  z-index: 2;
   height: 100%;
-  object-fit: contain;
-  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 28px;
 }
 
-.booking-header h1 {
+.game-page-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: rgba(6, 8, 15, 0.55);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(6px);
+}
+
+.game-page-hero__title {
   font-family: var(--font-heading);
-  font-size: 30px;
+  font-size: clamp(32px, 4.5vw, 52px);
   font-weight: 400;
   letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
+  margin-bottom: 12px;
 }
 
-.booking-header p {
+.game-page-hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
   font-size: 13px;
-  color: var(--text-faint);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.game-page-hero__stats i {
+  color: var(--accent);
+  margin-right: 6px;
 }
 
 .booking-category {
@@ -2021,6 +2064,59 @@ ul {
   background: var(--bg-elevated);
   padding: 24px;
   margin-bottom: 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.checkout-steps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.checkout-steps__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.checkout-steps__item.is-active {
+  color: var(--text);
+}
+
+.checkout-steps__item.is-done {
+  color: var(--text-muted);
+}
+
+.checkout-steps__num {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  font-size: 11px;
+}
+
+.checkout-steps__item.is-active .checkout-steps__num {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.checkout-steps__item.is-done .checkout-steps__num {
+  border-color: var(--success);
+  background: rgba(47, 191, 113, 0.12);
+  color: var(--success);
+}
+
+.checkout-steps__line {
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--border);
 }
 
 .checkout-card__title {
@@ -2139,13 +2235,83 @@ ul {
   gap: 14px;
 }
 
+.order-summary {
+  position: relative;
+  overflow: hidden;
+}
+
+.order-summary::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.order-summary__head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.order-summary__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  padding: 6px;
+  background: var(--bg-elevated-2);
+  box-shadow: var(--shadow-card);
+}
+
+.order-summary__game {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.order-summary__option {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
 .order-summary__item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+.order-summary__item i {
+  color: var(--accent);
+  margin-right: 7px;
+  font-size: 11px;
+}
+
+.order-summary__trust {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.order-summary__trust i {
+  color: var(--success);
 }
 
 .checkout-card--identity {
@@ -2172,10 +2338,11 @@ ul {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 0;
-  margin-top: 8px;
-  border-top: 1px solid var(--border);
-  font-size: 16px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: 17px;
   font-weight: 800;
 }
 
@@ -2452,6 +2619,92 @@ ul {
   margin-left: auto;
   color: var(--accent);
   font-weight: 700;
+}
+
+/* ── Dispatch alert popup (sound + toast, teammate role) ──────────── */
+.dispatch-alert-stack {
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 340px;
+  max-width: calc(100vw - 40px);
+}
+
+.dispatch-alert {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  padding-right: 34px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated-2);
+  box-shadow: var(--shadow-lg);
+  animation: dispatchAlertIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dispatchAlertIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dispatch-alert {
+    animation: none;
+  }
+}
+
+.dispatch-alert__icon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--cta-vivid);
+  font-size: 14px;
+}
+
+.dispatch-alert__title {
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 3px;
+}
+
+.dispatch-alert__meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+
+.dispatch-alert__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dispatch-alert__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+  font-size: 11px;
+  border-radius: 50%;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.dispatch-alert__close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
@@ -2961,102 +3214,210 @@ ul {
 
 /* ── Settings dropdown panel (currency + language, hover/click) ──── */
 .settings-panel {
-  width: 300px;
-  padding: 14px;
+  width: 320px;
+  padding: 10px;
 }
 
-.settings-panel__section + .settings-panel__section {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.settings-panel__title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text);
+.settings-panel__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
   margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.settings-panel__tab {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.settings-panel__tab:hover {
+  color: var(--text-muted);
+}
+
+.settings-panel__tab.is-active {
+  background: var(--bg-elevated-2);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+}
+
+.settings-panel__tab-flag {
+  width: 15px;
+  height: 15px;
+}
+
+.settings-panel__tab-symbol {
+  color: var(--accent);
 }
 
 .settings-panel__lang-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 220px;
+  max-height: 280px;
   overflow-y: auto;
+  padding: 4px;
 }
 
 .settings-panel__lang-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 8px 8px;
+  padding: 9px 10px;
   border-radius: var(--radius-sm);
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 13.5px;
   text-align: left;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .settings-panel__lang-item:hover {
   background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
 }
 
 .settings-panel__lang-item.is-active {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--accent-soft);
   color: var(--text);
   font-weight: 700;
 }
 
 .settings-panel__lang-flag {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+}
+
+.settings-panel__lang-item.is-active .settings-panel__lang-flag {
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .settings-panel__lang-item i {
   margin-left: auto;
-  color: var(--success);
+  color: var(--accent);
   font-size: 12px;
 }
 
-.settings-panel__currency-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-height: 130px;
+.settings-panel__currency-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  max-height: 280px;
   overflow-y: auto;
+  padding: 4px;
 }
 
-.settings-panel__currency-pill {
-  display: inline-flex;
+.settings-panel__currency-item {
+  display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 11px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  gap: 9px;
+  padding: 8px 9px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
   color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  text-align: left;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
-.settings-panel__currency-pill:hover {
-  border-color: var(--border-strong);
+.settings-panel__currency-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
 }
 
-.settings-panel__currency-pill.is-active {
-  border-color: var(--accent);
+.settings-panel__currency-item.is-active {
   background: var(--accent-soft);
   color: var(--text);
 }
 
-.settings-panel__currency-symbol {
+.settings-panel__currency-item i {
+  margin-left: auto;
   color: var(--accent);
+  font-size: 11px;
+}
+
+.settings-panel__currency-symbol {
+  flex: 0 0 auto;
+  width: 22px;
+  text-align: center;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-panel__currency-code {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.settings-panel__currency-label {
+  display: block;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+/* ── Info tooltip (gamemode explainers) ───────────────────────────── */
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-faint);
+  cursor: help;
+  outline: none;
+}
+
+.info-tooltip:hover,
+.info-tooltip:focus-visible {
+  color: var(--accent);
+}
+
+.info-tooltip__bubble {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: 200px;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 30;
+}
+
+.info-tooltip:hover .info-tooltip__bubble,
+.info-tooltip:focus-visible .info-tooltip__bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ── Role switcher (demo dashboard picker) ──────────────────────── */

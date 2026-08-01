@@ -6,6 +6,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { GameCover } from "@/components/home/GameCover";
 import { PriceTag } from "@/components/currency/PriceTag";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { GAMES } from "@/lib/games";
 import { BOOKING_CATEGORIES } from "@/lib/bookingOptions";
 
@@ -85,7 +86,10 @@ export function Hero() {
                   className={`hero-mode${option.name === activeOption.name ? " is-active" : ""}`}
                   onClick={() => setActiveOption(option)}
                 >
-                  <span className="hero-mode__name">{option.name}</span>
+                  <span className="hero-mode__name">
+                    {option.name}
+                    <InfoTooltip text={option.description} />
+                  </span>
                   <span className="hero-mode__price">
                     <PriceTag amountEUR={option.price} /> {option.unit}
                   </span>
