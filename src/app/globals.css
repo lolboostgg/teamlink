@@ -223,7 +223,7 @@ body::before {
   inset: -5%;
   background-size: cover;
   background-position: center 20%;
-  filter: brightness(0.6) saturate(1.15);
+  filter: brightness(0.45) saturate(1.1);
   transform: scale(1.05);
   opacity: 0;
   animation: ambientBgIn 1s ease forwards;
@@ -505,6 +505,12 @@ ul {
   height: var(--header-h);
   display: flex;
   align-items: center;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.site-header.is-scrolled {
   background: rgba(6, 8, 15, 0.75);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
