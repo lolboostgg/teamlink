@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function GamesPage() {
   return (
-    <main className="section">
+    <main className="section games-page-hero">
       <div className="container">
         <div className="section__head section__head--center">
           <div className="section__eyebrow">All games</div>

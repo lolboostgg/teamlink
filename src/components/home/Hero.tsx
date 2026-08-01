@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { GameCover } from "@/components/home/GameCover";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
-import { useActiveBackground } from "@/components/home/ActiveBackgroundProvider";
+import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
 import { GAMES } from "@/lib/games";
 import { BOOKING_CATEGORIES } from "@/lib/bookingOptions";
 
@@ -19,16 +19,11 @@ export function Hero() {
   const [activeGame, setActiveGame] = useState(GAMES[0]);
   const options = BOOKING_CATEGORIES[0].options;
   const [activeOption, setActiveOption] = useState(options[0]);
-  const { setActiveBackground } = useActiveBackground();
-
-  // The ambient backdrop should always match the selected game — including
-  // on first paint, not just after a hover/click.
-  useEffect(() => {
-    setActiveBackground(activeGame.slug);
-  }, [activeGame, setActiveBackground]);
+  const [hoverSlug, setHoverSlug] = useState<string | null>(null);
 
   return (
     <section className="hero">
+      <AmbientGameBackground slug={hoverSlug ?? activeGame.slug} />
       <span className="bg-glow bg-glow--blue" style={{ width: 560, height: 560, left: "50%", top: "-220px", transform: "translateX(-50%)" }} aria-hidden="true" />
       <div className="bg-grid" aria-hidden="true" />
 
@@ -65,11 +60,11 @@ export function Hero() {
                 type="button"
                 className={`game-pick${game.slug === activeGame.slug ? " is-active" : ""}`}
                 onClick={() => setActiveGame(game)}
-                onMouseEnter={() => setActiveBackground(game.slug)}
-                onMouseLeave={() => setActiveBackground(activeGame.slug)}
+                onMouseEnter={() => setHoverSlug(game.slug)}
+                onMouseLeave={() => setHoverSlug(null)}
               >
                 <div className="game-pick__cover">
-                  <GameCover game={game} />
+                  <GameCover game={game} iconMode />
                   {game.slug === activeGame.slug && (
                     <i className="fa-solid fa-check game-pick__check" aria-hidden="true" />
                   )}

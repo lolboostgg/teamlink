@@ -208,19 +208,21 @@ body::before {
    hero picker and /games listing (see ActiveBackgroundProvider). Sits
    above the starfield, below all normal-flow content. */
 .ambient-bg {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 75%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 75%, transparent 100%);
 }
 
 .ambient-bg__layer {
   position: absolute;
   inset: -5%;
   background-size: cover;
-  background-position: center;
-  filter: blur(8px) brightness(0.4) saturate(1.15);
+  background-position: center 20%;
+  filter: blur(3px) brightness(0.55) saturate(1.15);
   transform: scale(1.05);
   opacity: 0;
   animation: ambientBgIn 1s ease forwards;
@@ -509,9 +511,9 @@ ul {
   height: var(--header-h);
   display: flex;
   align-items: center;
-  background: rgba(6, 8, 15, 0.82);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  background: rgba(6, 8, 15, 0.32);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .site-header__inner {
@@ -1002,6 +1004,20 @@ ul {
   background: linear-gradient(180deg, rgba(6, 8, 15, 0) 40%, rgba(6, 8, 15, 0.92) 100%);
 }
 
+/* Clean square logo tile instead of the tall poster — used wherever the
+   card is too small for the poster to read well (hero picker, games grid). */
+.game-cover--icon {
+  display: grid;
+  place-items: center;
+}
+
+.game-cover__icon-img {
+  width: 54%;
+  height: 54%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+}
+
 .game-cover__code {
   position: absolute;
   inset: 0;
@@ -1071,8 +1087,14 @@ ul {
   transform: scale(1.07);
 }
 
+.game-card__name {
+  padding: 12px 14px 0;
+  font-weight: 700;
+  font-size: 14px;
+}
+
 .game-card__meta {
-  padding: 10px 14px 14px;
+  padding: 6px 14px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1097,6 +1119,16 @@ ul {
 }
 
 /* ── Games listing page search ──────────────────────────────── */
+.games-page-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.games-page-hero > .container {
+  position: relative;
+  z-index: 1;
+}
+
 .games-page-search {
   position: relative;
   max-width: 420px;
@@ -3305,6 +3337,28 @@ ul {
   padding: 4px;
 }
 
+.settings-panel__lang-list,
+.settings-panel__currency-grid {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.settings-panel__lang-list::-webkit-scrollbar,
+.settings-panel__currency-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-panel__lang-list::-webkit-scrollbar-track,
+.settings-panel__currency-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-panel__lang-list::-webkit-scrollbar-thumb,
+.settings-panel__currency-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+
 .settings-panel__lang-item {
   display: flex;
   align-items: center;
@@ -3348,63 +3402,51 @@ ul {
   font-size: 12px;
 }
 
-.settings-panel__currency-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 4px;
+.settings-panel__currency-row {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px 4px;
 }
 
-.settings-panel__currency-item {
+.settings-panel__currency-pill {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 9px;
-  border-radius: var(--radius-sm);
-  background: none;
-  border: none;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-muted);
-  text-align: left;
-  transition: background 0.12s ease, color 0.12s ease;
+  font-size: 13px;
+  font-weight: 700;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
-.settings-panel__currency-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text);
+.settings-panel__currency-pill:hover {
+  border-color: var(--border-strong);
 }
 
-.settings-panel__currency-item.is-active {
+.settings-panel__currency-pill.is-active {
+  border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--text);
 }
 
-.settings-panel__currency-item i {
-  margin-left: auto;
-  color: var(--accent);
+.settings-panel__currency-flag {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.settings-panel__currency-flag--euro {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #f5c542, #d99a1f);
+  color: #3a2a00;
   font-size: 11px;
-}
-
-.settings-panel__currency-symbol {
-  flex: 0 0 auto;
-  width: 22px;
-  text-align: center;
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.settings-panel__currency-code {
-  display: block;
-  font-size: 12.5px;
-  font-weight: 700;
-}
-
-.settings-panel__currency-label {
-  display: block;
-  font-size: 10.5px;
-  color: var(--text-faint);
+  font-weight: 800;
 }
 
 /* ── Info tooltip (gamemode explainers) ───────────────────────────── */
@@ -3528,6 +3570,10 @@ ul {
   padding: 22px 16px;
   border-right: 1px solid var(--border);
   background: var(--bg-elevated);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .dashboard-sidebar__brand {

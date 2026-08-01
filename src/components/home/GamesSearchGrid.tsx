@@ -4,11 +4,11 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 import { GameCover } from "@/components/home/GameCover";
-import { useActiveBackground } from "@/components/home/ActiveBackgroundProvider";
+import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
 
 export function GamesSearchGrid({ games }: { games: Game[] }) {
   const [query, setQuery] = useState("");
-  const { setActiveBackground } = useActiveBackground();
+  const [hoverSlug, setHoverSlug] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -18,6 +18,8 @@ export function GamesSearchGrid({ games }: { games: Game[] }) {
 
   return (
     <>
+      <AmbientGameBackground slug={hoverSlug} />
+
       <div className="games-page-search">
         <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
         <input
@@ -31,17 +33,18 @@ export function GamesSearchGrid({ games }: { games: Game[] }) {
       {filtered.length === 0 ? (
         <p className="games-page-empty">No games match &ldquo;{query}&rdquo;.</p>
       ) : (
-        <div className="games-grid" onMouseLeave={() => setActiveBackground(null)}>
+        <div className="games-grid" onMouseLeave={() => setHoverSlug(null)}>
           {filtered.map((game) => (
             <Link
               key={game.slug}
               href={`/games/${game.slug}`}
               className="game-card"
-              onMouseEnter={() => setActiveBackground(game.slug)}
+              onMouseEnter={() => setHoverSlug(game.slug)}
             >
               <div className="game-card__cover">
-                <GameCover game={game} showName />
+                <GameCover game={game} iconMode />
               </div>
+              <div className="game-card__name">{game.name}</div>
               <div className="game-card__meta">
                 <span className="game-card__players">
                   <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}

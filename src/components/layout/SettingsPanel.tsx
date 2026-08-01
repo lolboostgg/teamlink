@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CURRENCIES } from "@/lib/currency";
+import { CURRENCIES, type CurrencyCode } from "@/lib/currency";
 import { LANGUAGES } from "@/lib/i18n";
 import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { useLanguage } from "@/components/language/LanguageProvider";
@@ -9,9 +9,15 @@ import { FlagIcon } from "@/components/ui/FlagIcon";
 
 type Tab = "language" | "currency";
 
+// Kept intentionally short for now (just EUR/USD) rather than the full
+// 18-currency list — most visitors only need one of these two.
+const FEATURED_CURRENCIES: { code: CurrencyCode; flagIso?: string }[] = [
+  { code: "EUR" },
+  { code: "USD", flagIso: "us" },
+];
+
 // Hover/click dropdown panel (see SettingsTrigger) — tabbed so only one
-// list is visible at a time instead of stacking both, which reads cleaner
-// for the 18-currency / 6-language lists than a single long scroll.
+// list is visible at a time instead of stacking both.
 export function SettingsPanel() {
   const { currency, setCurrency } = useCurrency();
   const { language, setLanguage } = useLanguage();
@@ -55,22 +61,25 @@ export function SettingsPanel() {
           ))}
         </div>
       ) : (
-        <div className="settings-panel__currency-grid">
-          {CURRENCIES.map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              className={`settings-panel__currency-item${c.code === currency ? " is-active" : ""}`}
-              onClick={() => setCurrency(c.code)}
-            >
-              <span className="settings-panel__currency-symbol">{c.symbol}</span>
-              <span>
-                <span className="settings-panel__currency-code">{c.code}</span>
-                <span className="settings-panel__currency-label">{c.label}</span>
-              </span>
-              {c.code === currency && <i className="fa-solid fa-check" aria-hidden="true" />}
-            </button>
-          ))}
+        <div className="settings-panel__currency-row">
+          {FEATURED_CURRENCIES.map((c) => {
+            const meta = CURRENCIES.find((m) => m.code === c.code)!;
+            return (
+              <button
+                key={c.code}
+                type="button"
+                className={`settings-panel__currency-pill${c.code === currency ? " is-active" : ""}`}
+                onClick={() => setCurrency(c.code)}
+              >
+                {c.flagIso ? (
+                  <FlagIcon iso={c.flagIso} label={meta.label} className="settings-panel__currency-flag" />
+                ) : (
+                  <span className="settings-panel__currency-flag settings-panel__currency-flag--euro">€</span>
+                )}
+                {meta.code}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
