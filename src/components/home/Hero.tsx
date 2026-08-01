@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { TrustBadge } from "@/components/ui/TrustBadge";
-import { GameCover } from "@/components/home/GameCover";
+import { HeroGameCarousel } from "@/components/home/HeroGameCarousel";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
@@ -53,31 +53,12 @@ export function Hero() {
         </Reveal>
 
         <Reveal delay={260}>
-          <div className="game-picker">
-            {GAMES.slice(0, 6).map((game) => (
-              <button
-                key={game.slug}
-                type="button"
-                className={`game-pick${game.slug === activeGame.slug ? " is-active" : ""}`}
-                onClick={() => setActiveGame(game)}
-                onMouseEnter={() => setHoverSlug(game.slug)}
-                onMouseLeave={() => setHoverSlug(null)}
-              >
-                <div className="game-pick__cover">
-                  <GameCover game={game} iconMode />
-                  {game.slug === activeGame.slug && (
-                    <i className="fa-solid fa-check game-pick__check" aria-hidden="true" />
-                  )}
-                </div>
-                <div className="game-pick__meta">
-                  <span className="game-pick__name">{game.name}</span>
-                  <span className="game-pick__players">
-                    <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
+          <HeroGameCarousel
+            games={GAMES}
+            activeSlug={activeGame.slug}
+            onSelect={setActiveGame}
+            onHover={setHoverSlug}
+          />
         </Reveal>
 
         <Reveal delay={320}>

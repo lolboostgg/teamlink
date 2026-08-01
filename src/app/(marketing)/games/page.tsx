@@ -10,15 +10,7 @@ export const metadata: Metadata = {
 export default function GamesPage() {
   return (
     <main className="section games-page-hero">
-      <div className="container">
-        <div className="section__head section__head--center">
-          <div className="section__eyebrow">All games</div>
-          <h1 className="section__title">Choose your game</h1>
-          <p className="section__sub">Pick a game to see available teammates, modes, and pricing.</p>
-        </div>
-
-        <GamesSearchGrid games={GAMES} />
-      </div>
+      <GamesSearchGrid games={GAMES} />
     </main>
   );
 }

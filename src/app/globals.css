@@ -422,6 +422,8 @@ ul {
 
 /* ── Promo banner ───────────────────────────────────────────── */
 .promo-banner {
+  position: relative;
+  z-index: 10;
   background: var(--cta-vivid);
   color: var(--cta-vivid-ink);
 }
@@ -690,7 +692,10 @@ ul {
 /* ── Hero ───────────────────────────────────────────────────── */
 .hero {
   position: relative;
-  padding: 64px 0 40px;
+  /* Extends up under the sticky (transparent) header instead of starting
+     right below it, so the ambient backdrop shows through the header too. */
+  margin-top: calc(-1 * var(--header-h));
+  padding: calc(64px + var(--header-h)) 0 40px;
   text-align: center;
   overflow: hidden;
 }
@@ -819,51 +824,74 @@ ul {
   }
 }
 
-/* Game picker strip — the hero's primary "choose game" affordance, sized and
-   staged like tapin.gg's actual picker (big key-art cards, active check
-   badge, glow ring) rather than the small icon row this used to be. */
-.game-picker {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
+/* Game picker carousel — tapin.gg style: wide full-bleed key-art cards in a
+   horizontally scrollable strip with a stylized wordmark overlay, instead
+   of small icon tiles (which read fine small but wasted the real art we
+   have for these games). */
+.hero-carousel {
+  position: relative;
   max-width: 1000px;
   margin: 0 auto;
 }
 
-.game-pick {
+.hero-carousel__track {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  padding: 4px 2px 8px;
+}
+
+.hero-carousel__track::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-card {
   position: relative;
-  width: 152px;
+  flex: 0 0 auto;
+  width: 220px;
+  aspect-ratio: 16 / 10;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
   overflow: hidden;
   text-align: left;
+  scroll-snap-align: start;
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.game-pick:hover {
+.hero-card:hover {
   border-color: var(--border-strong);
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
 }
 
-.game-pick.is-active {
+.hero-card.is-active {
   border-color: var(--cta-vivid);
   box-shadow: 0 0 0 2px var(--cta-vivid), 0 0 26px rgba(34, 211, 238, 0.35);
 }
 
-.game-pick__cover {
-  position: relative;
-  height: 118px;
+.hero-card__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
   transition: transform 0.4s ease;
 }
 
-.game-pick:hover .game-pick__cover {
+.hero-card:hover .hero-card__bg {
   transform: scale(1.06);
 }
 
-.game-pick__check {
+.hero-card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 8, 15, 0) 45%, rgba(6, 8, 15, 0.88) 100%);
+}
+
+.hero-card__check {
   position: absolute;
   z-index: 2;
   top: 8px;
@@ -879,37 +907,74 @@ ul {
   box-shadow: 0 0 0 2px rgba(6, 8, 15, 0.7);
 }
 
-.game-pick__meta {
-  padding: 10px 12px 12px;
+.hero-card__footer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 10px 12px;
 }
 
-.game-pick__name {
+.hero-card__wordmark {
   display: block;
-  font-size: 13.5px;
-  font-weight: 800;
-  margin-bottom: 3px;
+  max-width: 100%;
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
+  margin-bottom: 4px;
 }
 
-.game-pick__players {
+.hero-card__name-text {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  margin-bottom: 4px;
+}
+
+.hero-card__players {
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 11px;
-  color: var(--text-faint);
+  color: rgba(255, 255, 255, 0.75);
 }
 
-.game-pick__players i {
+.hero-card__players i {
   color: var(--hue-green);
   font-size: 8px;
 }
 
-@media (max-width: 640px) {
-  .game-pick {
-    width: 124px;
-  }
+.hero-carousel__next {
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 8, 15, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-size: 13px;
+  z-index: 2;
+  transition: background 0.15s ease;
+}
 
-  .game-pick__cover {
-    height: 96px;
+.hero-carousel__next:hover {
+  background: rgba(6, 8, 15, 0.92);
+}
+
+@media (max-width: 640px) {
+  .hero-card {
+    width: 168px;
   }
 }
 
@@ -1122,6 +1187,8 @@ ul {
 .games-page-hero {
   position: relative;
   overflow: hidden;
+  margin-top: calc(-1 * var(--header-h));
+  padding-top: calc(88px + var(--header-h));
 }
 
 .games-page-hero > .container {
