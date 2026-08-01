@@ -1,0 +1,56 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { GAMES } from "@/lib/games";
+import { BOOKING_CATEGORIES } from "@/lib/bookingOptions";
+
+// Compact, embedded booking preview for the hero — mirrors tapin.gg's
+// actual homepage pattern of putting the game+mode+price picker directly
+// in the hero instead of sending visitors to a separate page first.
+export function QuickBookCard() {
+  const [activeGame, setActiveGame] = useState(GAMES[0]);
+  const options = BOOKING_CATEGORIES[0].options;
+  const [activeOption, setActiveOption] = useState(options[0]);
+
+  return (
+    <div className="quickbook">
+      <div className="quickbook__games">
+        {GAMES.slice(0, 6).map((game) => (
+          <button
+            key={game.slug}
+            type="button"
+            className={`quickbook__game${game.slug === activeGame.slug ? " is-active" : ""}`}
+            style={{ backgroundImage: `linear-gradient(180deg, rgba(6,8,15,.15), rgba(6,8,15,.65)), url(${game.bannerUrl})` }}
+            onClick={() => setActiveGame(game)}
+            aria-label={game.name}
+            title={game.name}
+          >
+            {game.slug === activeGame.slug && <i className="fa-solid fa-check" aria-hidden="true" />}
+          </button>
+        ))}
+      </div>
+
+      <div className="quickbook__title">{activeGame.name}</div>
+
+      <div className="quickbook__options">
+        {options.map((option) => (
+          <button
+            key={option.name}
+            type="button"
+            className={`quickbook__option${option.name === activeOption.name ? " is-active" : ""}`}
+            onClick={() => setActiveOption(option)}
+          >
+            <span>{option.name}</span>
+            <span>${option.price.toFixed(2)}</span>
+          </button>
+        ))}
+      </div>
+
+      <Link href={`/games/${activeGame.slug}`} className="btn btn--primary btn--block quickbook__cta">
+        <i className="fa-solid fa-bolt" aria-hidden="true" />
+        Play now — ${activeOption.price.toFixed(2)}
+      </Link>
+    </div>
+  );
+}
