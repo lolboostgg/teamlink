@@ -7,6 +7,7 @@ import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
 import { BookingWidget } from "@/components/booking/BookingWidget";
 import { GAMES, getGameBySlug, type Game } from "@/lib/games";
 import { useLastGameSlug } from "@/lib/lastGame";
+import { getPreviousPathname } from "@/lib/routeHistory";
 
 interface Props {
   // Explicit on /games/[slug] (pinned to the URL); omitted on the homepage,
@@ -25,15 +26,16 @@ export function Hero({ game: gameProp }: Props) {
   const [hoverSlug, setHoverSlug] = useState<string | null>(null);
   const gameSlugProp = gameProp?.slug;
 
-  // /games/[slug] pages land straight on the booking panel instead of
-  // wherever the browser happens to leave scroll position (its native
-  // restoration is inconsistent across reloads and same-layout game
-  // switches) — a visitor picking a specific game already has intent, so
-  // skip the marketing hero. The homepage (gameSlugProp undefined) is
-  // unaffected and stays at the top. Keyed on the slug so this re-fires on
-  // every switch, since this layout never remounts between games.
+  // Only jump straight to the booking panel when the visitor actually
+  // came from browsing /games — that's the one case where they've already
+  // expressed intent and the marketing hero is pure friction. A reload, a
+  // direct link, or switching games from within this same page should all
+  // leave scroll position alone. getPreviousPathname() reflects real
+  // in-app navigation history (see RouteTracker) and is null on a fresh
+  // load, so reloads/direct visits never qualify.
   useEffect(() => {
     if (!gameSlugProp) return;
+    if (getPreviousPathname() !== "/games") return;
     document.getElementById("booking")?.scrollIntoView({ behavior: "instant" });
   }, [gameSlugProp]);
 

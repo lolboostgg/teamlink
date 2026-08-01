@@ -1,6 +1,7 @@
 import { ViewTransition } from "react";
 import { SiteTopbar } from "@/components/layout/SiteTopbar";
 import { Footer } from "@/components/layout/Footer";
+import { RouteTracker } from "@/components/layout/RouteTracker";
 
 // Marketing chrome (Header/Footer) lives here instead of the root layout so
 // /dashboard/* gets its own shell. The ViewTransition below is the "flying
@@ -13,6 +14,7 @@ import { Footer } from "@/components/layout/Footer";
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <RouteTracker />
       <SiteTopbar />
       <ViewTransition
         enter={{ "dashboard-exit": "dash-in-back", default: "none" }}

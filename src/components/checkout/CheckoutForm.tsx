@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { CheckoutIdentityStep } from "@/components/checkout/CheckoutIdentityStep";
 import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
+import { CheckoutTrust } from "@/components/checkout/CheckoutTrust";
+import { Reveal } from "@/components/ui/Reveal";
 import { calculateFee, getPaymentMethod, perMinuteRate, type PaymentMethodKey } from "@/lib/payments";
 import { createOrder } from "@/lib/matchmaking/store";
 
@@ -75,60 +77,75 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateId
   return (
     <div className="checkout-layout">
       <div>
-        <div className="checkout-steps">
-          <span className={`checkout-steps__item${step === "identity" ? " is-active" : " is-done"}`}>
-            <span className="checkout-steps__num">
-              {step === "payment" ? <i className="fa-solid fa-check" aria-hidden="true" /> : "1"}
+        <Reveal>
+          <div className="checkout-steps">
+            <span className={`checkout-steps__item${step === "identity" ? " is-active" : " is-done"}`}>
+              <span className="checkout-steps__num">
+                {step === "payment" ? <i className="fa-solid fa-check" aria-hidden="true" /> : "1"}
+              </span>
+              Your details
             </span>
-            Your details
-          </span>
-          <span className="checkout-steps__line" aria-hidden="true" />
-          <span className={`checkout-steps__item${step === "payment" ? " is-active" : ""}`}>
-            <span className="checkout-steps__num">2</span>
-            Payment
-          </span>
-        </div>
+            <span className="checkout-steps__line" aria-hidden="true" />
+            <span className={`checkout-steps__item${step === "payment" ? " is-active" : ""}`}>
+              <span className="checkout-steps__num">2</span>
+              Payment
+            </span>
+          </div>
+        </Reveal>
 
         {step === "identity" && (
-          <CheckoutIdentityStep onContinueAsGuest={handleGuestContinue} onLoggedIn={handleLoggedIn} />
+          <Reveal delay={80}>
+            <CheckoutIdentityStep onContinueAsGuest={handleGuestContinue} onLoggedIn={handleLoggedIn} />
+          </Reveal>
         )}
 
         {step === "payment" && (
           <>
-            <div className="checkout-card checkout-card--identity">
-              <span className="checkout-card__identity-text">
-                <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                {identity?.mode === "guest"
-                  ? `Checking out as guest (${identity.email})`
-                  : "Checking out as logged-in user"}
-              </span>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("identity")}>
-                Change
-              </button>
-            </div>
-            <CheckoutPaymentStep
-              method={method}
-              onMethodChange={setMethod}
-              totalEUR={totalEUR}
-              submitting={submitting}
-              onSubmit={handlePaymentSubmit}
-              onStartPayAsYouGo={handleStartPayAsYouGo}
-            />
+            <Reveal delay={80}>
+              <div className="checkout-card checkout-card--identity">
+                <span className="checkout-card__identity-text">
+                  <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                  {identity?.mode === "guest"
+                    ? `Checking out as guest (${identity.email})`
+                    : "Checking out as logged-in user"}
+                </span>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("identity")}>
+                  Change
+                </button>
+              </div>
+            </Reveal>
+            <Reveal delay={140}>
+              <CheckoutPaymentStep
+                method={method}
+                onMethodChange={setMethod}
+                totalEUR={totalEUR}
+                submitting={submitting}
+                onSubmit={handlePaymentSubmit}
+                onStartPayAsYouGo={handleStartPayAsYouGo}
+              />
+            </Reveal>
           </>
         )}
       </div>
 
-      <CheckoutOrderSummary
-        gameSlug={gameSlug}
-        gameName={gameName}
-        option={option}
-        teammates={teammates}
-        teammateName={teammateName}
-        subtotalEUR={baseTotalEUR}
-        feeEUR={feeEUR}
-        feeLabel={feeLabel}
-        totalEUR={totalEUR}
-      />
+      <div>
+        <Reveal delay={80}>
+          <CheckoutOrderSummary
+            gameSlug={gameSlug}
+            gameName={gameName}
+            option={option}
+            teammates={teammates}
+            teammateName={teammateName}
+            subtotalEUR={baseTotalEUR}
+            feeEUR={feeEUR}
+            feeLabel={feeLabel}
+            totalEUR={totalEUR}
+          />
+        </Reveal>
+        <Reveal delay={140}>
+          <CheckoutTrust />
+        </Reveal>
+      </div>
     </div>
   );
 }

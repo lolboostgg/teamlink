@@ -2100,8 +2100,14 @@ ul {
    shorter now. .modal-panel's default max-width (see the login/signup
    modal) is sized for a compact form, too narrow for a 3-across card
    grid, so widen it just for this modal via :has(). */
+/* Near-fullsize instead of a centered compact panel — matches the
+   eloboost.gg booster-search modal reference. */
+.modal-overlay:has(.teammate-modal) {
+  padding: 32px 24px;
+}
+
 .modal-panel:has(.teammate-modal) {
-  max-width: 720px;
+  max-width: 1300px;
 }
 
 .teammate-modal__title {
@@ -2119,16 +2125,21 @@ ul {
   margin-bottom: 22px;
 }
 
+/* Flex-wrap, not grid — with a small roster (some games only have one
+   teammate), a fixed 3-column grid left visibly empty trailing cells that
+   read as broken. Flex just lets short rows end early instead. */
 .teammate-modal__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
-@media (max-width: 640px) {
-  .teammate-modal__grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.teammate-modal__grid .teammate-card {
+  width: auto;
+  /* Grows to fill whatever row it ends up in, so 1-2 cards (some games
+     only have one teammate) fill the width evenly instead of sitting
+     small and left-aligned with an empty gap where a 3rd column would be. */
+  flex: 1 1 300px;
 }
 
 /* Booster-search-style profile card (key art banner, overlapping avatar,
@@ -2310,7 +2321,22 @@ ul {
   font-size: 34px;
   font-weight: 400;
   letter-spacing: 0.01em;
+}
+
+.checkout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 32px;
+}
+
+@media (max-width: 700px) {
+  .checkout-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .checkout-layout {
@@ -2574,19 +2600,64 @@ ul {
   font-size: 11px;
 }
 
-.order-summary__trust {
+/* Concrete guarantees, not a generic "secure" badge — right before paying
+   is exactly where purchase anxiety peaks, see CheckoutTrust.tsx. */
+.checkout-trust {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--text-faint);
+  flex-direction: column;
+  gap: 14px;
 }
 
-.order-summary__trust i {
+.checkout-trust__point {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.checkout-trust__icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(47, 191, 113, 0.14);
   color: var(--success);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+}
+
+.checkout-trust__label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkout-trust__desc {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 1px;
+}
+
+.checkout-trust__payments {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.checkout-trust__payments-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+.checkout-trust__payment-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 22px;
+  color: var(--text-faint);
 }
 
 .checkout-card--identity {

@@ -20,12 +20,21 @@ interface Props {
 // content re-renders instead of the whole page flashing.
 export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLAnchorElement>(null);
 
   // Whichever game is actually active becomes "the last game", regardless
   // of how the visitor got here (this carousel, the /games listing, a
   // direct link) — restored as the pre-selected homepage card next visit.
   useEffect(() => {
     setLastGameSlug(activeSlug);
+  }, [activeSlug]);
+
+  // The active card can be scrolled out of view (e.g. landing directly on
+  // a game further down the roster, like Marvel Rivals) — keep it visible
+  // whenever it changes instead of leaving the track wherever it happened
+  // to rest.
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ behavior: "instant", inline: "center", block: "nearest" });
   }, [activeSlug]);
 
   function scrollBy(delta: number) {
@@ -41,6 +50,7 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
           return (
             <Link
               key={game.slug}
+              ref={isActive ? activeRef : undefined}
               href={`/games/${game.slug}`}
               className={`hero-card${isActive ? " is-active" : ""}`}
               onMouseEnter={() => onHover?.(game.slug)}

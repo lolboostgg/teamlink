@@ -48,6 +48,18 @@ export const PAYMENT_METHODS: PaymentMethodMeta[] = [
   },
 ];
 
+// Shared "we accept" icon set — footer and checkout trust strip both use
+// this exact list so the payment badges stay consistent everywhere.
+export const PAYMENT_ICONS = [
+  "fa-brands fa-cc-visa",
+  "fa-brands fa-cc-mastercard",
+  "fa-brands fa-cc-paypal",
+  "fa-brands fa-cc-apple-pay",
+  "fa-brands fa-google-pay",
+  "fa-brands fa-cc-stripe",
+  "fa-brands fa-bitcoin",
+];
+
 const METHOD_BY_KEY = new Map(PAYMENT_METHODS.map((m) => [m.key, m]));
 
 export function getPaymentMethod(key: PaymentMethodKey): PaymentMethodMeta {

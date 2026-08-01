@@ -68,11 +68,6 @@ export function CheckoutOrderSummary({
         <span>Total</span>
         <PriceTag amountEUR={totalEUR} />
       </div>
-
-      <div className="order-summary__trust">
-        <i className="fa-solid fa-lock" aria-hidden="true" />
-        Secure checkout, your details are never shared
-      </div>
     </aside>
   );
 }

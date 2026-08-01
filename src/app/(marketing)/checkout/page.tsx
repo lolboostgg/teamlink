@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getGameBySlug } from "@/lib/games";
 import { TEAMMATES } from "@/lib/teammates";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
+import { TrustBadge } from "@/components/ui/TrustBadge";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -23,9 +24,14 @@ export default async function CheckoutPage({ searchParams }: Props) {
       : TEAMMATES.find((t) => t.id === params.teammate)?.name ?? "Random match";
 
   return (
-    <main className="checkout-page">
-      <div className="container">
-        <h1 className="checkout-title">Checkout</h1>
+    <main className="checkout-page section-relative">
+      <span className="bg-glow bg-glow--blue" style={{ width: 480, height: 480, right: "-160px", top: "-80px" }} aria-hidden="true" />
+
+      <div className="container" style={{ position: "relative", zIndex: 1 }}>
+        <div className="checkout-header">
+          <h1 className="checkout-title">Checkout</h1>
+          <TrustBadge />
+        </div>
 
         <CheckoutForm
           gameSlug={game?.slug ?? ""}
