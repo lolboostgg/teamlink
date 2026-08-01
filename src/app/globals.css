@@ -223,7 +223,7 @@ body::before {
   inset: -5%;
   background-size: cover;
   background-position: center 20%;
-  filter: brightness(0.72) saturate(1.15);
+  filter: brightness(0.6) saturate(1.15);
   transform: scale(1.05);
   opacity: 0;
   animation: ambientBgIn 1s ease forwards;
@@ -320,19 +320,6 @@ ul {
 
 .bg-glow--teal {
   background: rgba(47, 191, 113, 0.14);
-}
-
-.bg-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 44px 44px;
-  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 0%, #000 40%, transparent 100%);
-  mask-image: radial-gradient(ellipse 60% 60% at 50% 0%, #000 40%, transparent 100%);
-  pointer-events: none;
-  z-index: 0;
 }
 
 .section-relative {
@@ -529,7 +516,13 @@ ul {
   height: var(--header-h);
   display: flex;
   align-items: center;
-  background: rgba(6, 8, 15, 0.32);
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.site-header.is-scrolled {
+  background: rgba(6, 8, 15, 0.75);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -1059,36 +1052,6 @@ ul {
   }
 }
 
-/* ── Persistent "choose game" strip on booking pages (games/[slug]) ── */
-.game-switcher-bar {
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
-  padding: 14px 0;
-}
-
-.game-switcher-bar .hero-carousel {
-  max-width: 100%;
-}
-
-.game-switcher-bar .hero-card {
-  width: 116px;
-  aspect-ratio: 4 / 3;
-}
-
-.game-switcher-bar .hero-card__wordmark {
-  height: 16px;
-}
-
-.game-switcher-bar .hero-card__footer {
-  padding: 8px;
-}
-
-@media (max-width: 640px) {
-  .game-switcher-bar .hero-card {
-    width: 92px;
-  }
-}
-
 /* ── /games listing: full grid, every game visible, no scrolling ── */
 .games-full-grid {
   display: grid;
@@ -1100,79 +1063,6 @@ ul {
 .games-full-grid__card {
   width: 100%;
   aspect-ratio: 3 / 2;
-}
-
-/* ── Hero mode strip + CTA (below the game picker) ──────────────────── */
-.hero-modes-wrap {
-  max-width: 720px;
-  margin: 36px auto 0;
-  padding: 20px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: rgba(10, 13, 24, 0.55);
-  backdrop-filter: blur(14px);
-  box-shadow: var(--shadow-lg);
-}
-
-.hero-modes-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-muted);
-  margin-bottom: 14px;
-}
-
-.hero-modes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.hero-mode {
-  padding: 13px 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  text-align: left;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-}
-
-.hero-mode:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-2px);
-}
-
-.hero-mode.is-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.hero-mode__name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 2px;
-}
-
-.hero-mode__name .info-tooltip {
-  font-size: 11px;
-}
-
-.hero-mode__price {
-  display: block;
-  font-size: 12.5px;
-  color: var(--text-faint);
-}
-
-.hero-mode.is-active .hero-mode__price {
-  color: var(--accent);
-}
-
-.hero-cta {
-  max-width: 340px;
-  margin: 0 auto;
 }
 
 /* ── Game cover (shared, resilient — see GameCover.tsx) ─────── */
@@ -1652,6 +1542,15 @@ ul {
   text-align: center;
   padding: 90px 0;
   border-top: 1px solid var(--border);
+  background-size: cover;
+  background-position: center 30%;
+}
+
+.cta-band__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, var(--bg) 0%, rgba(6, 8, 15, 0.6) 25%, rgba(6, 8, 15, 0.6) 75%, var(--bg) 100%);
 }
 
 .cta-band__title {
@@ -1680,6 +1579,7 @@ ul {
 /* ── Footer ─────────────────────────────────────────────────── */
 .site-footer {
   border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
   padding: 48px 0 28px;
 }
 
@@ -1800,75 +1700,6 @@ ul {
   padding: 7px 14px;
   border-radius: 999px;
   margin-bottom: 24px;
-}
-
-/* ── Game page hero banner ─────────────────────────────────── */
-.game-page-hero {
-  position: relative;
-  height: 340px;
-  margin-bottom: 40px;
-  background-color: var(--bg-elevated-2);
-  background-size: cover;
-  background-position: center 25%;
-  overflow: hidden;
-}
-
-.game-page-hero__scrim {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(180deg, rgba(6, 8, 15, 0.15) 0%, rgba(6, 8, 15, 0.4) 55%, var(--bg) 100%),
-    linear-gradient(90deg, rgba(6, 8, 15, 0.7) 0%, transparent 55%);
-}
-
-.game-page-hero__inner {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding-bottom: 28px;
-}
-
-.game-page-hero__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: rgba(6, 8, 15, 0.55);
-  border: 1px solid var(--border);
-  padding: 6px 12px;
-  border-radius: 999px;
-  margin-bottom: 12px;
-  backdrop-filter: blur(6px);
-}
-
-.game-page-hero__title {
-  font-family: var(--font-heading);
-  font-size: clamp(32px, 4.5vw, 52px);
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.5);
-  margin-bottom: 12px;
-}
-
-.game-page-hero__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.game-page-hero__stats i {
-  color: var(--accent);
-  margin-right: 6px;
 }
 
 .booking-category {
@@ -3694,65 +3525,6 @@ ul {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ── Role switcher (demo dashboard picker) ──────────────────────── */
-.role-switcher {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 80;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-lg);
-}
-
-.role-switcher__label {
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-faint);
-  padding: 0 6px 0 4px;
-  white-space: nowrap;
-}
-
-.role-switcher--compact .role-switcher__label {
-  display: none;
-}
-
-.role-switcher__item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.04);
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.role-switcher__item:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.role-switcher__item.is-active {
-  color: #fff;
-  background: var(--accent);
-}
-
-@media (max-width: 640px) {
-  .role-switcher__item span:last-child {
-    display: none;
-  }
-}
-
 /* ══════════════════════════════════════════════════════════════════
    Dashboard shell
    ══════════════════════════════════════════════════════════════════ */
@@ -4562,6 +4334,20 @@ ul {
    ══════════════════════════════════════════════════════════════════ */
 :root {
   --vt-duration: 360ms;
+}
+
+/* React's ViewTransition activates on every navigation, not just the
+   dashboard fly-in below — untagged transitions (default: "none" on the
+   component) still get the browser's built-in root crossfade unless it's
+   explicitly suppressed here. That default crossfade barely showed before
+   (old/new pixels were nearly identical across a game switch), but now
+   that Hero renders genuinely different content per game it read as a
+   jarring whole-page dim. Only the two named dash-* transitions below
+   should animate. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 ::view-transition-old(.dash-out-fwd) {

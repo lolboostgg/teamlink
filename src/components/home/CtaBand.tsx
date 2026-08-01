@@ -3,13 +3,18 @@
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
+import { GAMES, getGameBySlug } from "@/lib/games";
+import { gameBackground } from "@/lib/gameArt";
+import { useLastGameSlug } from "@/lib/lastGame";
 
 export function CtaBand() {
   const { open } = useAuthModal();
+  const lastSlug = useLastGameSlug();
+  const game = (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
 
   return (
-    <section className="cta-band section-relative">
-      <span className="bg-glow bg-glow--blue" style={{ width: 500, height: 300, left: "50%", top: "20%", transform: "translateX(-50%)" }} aria-hidden="true" />
+    <section className="cta-band section-relative" style={{ backgroundImage: `url(${gameBackground(game.slug)})` }}>
+      <span className="cta-band__scrim" aria-hidden="true" />
 
       <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <Reveal>

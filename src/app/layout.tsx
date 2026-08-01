@@ -3,7 +3,6 @@ import { Inter, Bebas_Neue } from "next/font/google";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
-import { RoleSwitcher } from "@/components/role/RoleSwitcher";
 import { Starfield } from "@/components/ui/Starfield";
 
 const inter = Inter({
@@ -39,10 +38,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${bebasNeue.variable}`}>
       <body>
         <Starfield />
-        <AppProviders>
-          {children}
-          <RoleSwitcher />
-        </AppProviders>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

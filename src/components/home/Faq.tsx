@@ -9,8 +9,6 @@ export function Faq() {
 
   return (
     <section className="section section-relative" id="faq">
-      <span className="bg-glow bg-glow--blue" style={{ width: 380, height: 380, right: "-120px", top: "10%" }} aria-hidden="true" />
-
       <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <Reveal>
           <div className="section__head section__head--center">

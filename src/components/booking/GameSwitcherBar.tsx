@@ -9,29 +9,32 @@ import { setLastGameSlug } from "@/lib/lastGame";
 interface Props {
   games: Game[];
   activeSlug: string;
+  onHover?: (slug: string | null) => void;
 }
 
-// Persistent "choose game" strip for every booking page. It lives in
-// games/[slug]/layout.tsx, which Next.js does not remount when only the
-// dynamic slug changes — so clicking another game here is a plain Link
-// navigation (real URL, deep-linkable), but visually only the booking
-// panel below re-renders instead of the whole page flashing/reloading.
-export function GameSwitcherBar({ games, activeSlug }: Props) {
+// The one canonical "choose game" carousel — used both on the homepage and
+// on every /games/[slug] page (see Hero.tsx), since both now render the
+// exact same hero+booking composition. Cards are plain Links, so switching
+// games is a real navigation (URL updates, deep-linkable) rather than local
+// state; on /games/[slug] that lands back in the same layout, so only the
+// content re-renders instead of the whole page flashing.
+export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
 
-  // Whichever game page is actually being viewed becomes "the last game",
-  // regardless of how the visitor got here (switcher, listing, direct link).
+  // Whichever game is actually active becomes "the last game", regardless
+  // of how the visitor got here (this carousel, the /games listing, a
+  // direct link) — restored as the pre-selected homepage card next visit.
   useEffect(() => {
     setLastGameSlug(activeSlug);
   }, [activeSlug]);
 
   function scrollNext() {
-    trackRef.current?.scrollBy({ left: 260, behavior: "smooth" });
+    trackRef.current?.scrollBy({ left: 300, behavior: "smooth" });
   }
 
   return (
-    <div className="hero-carousel game-switcher">
-      <div className="hero-carousel__track" ref={trackRef}>
+    <div className="hero-carousel">
+      <div className="hero-carousel__track" ref={trackRef} onMouseLeave={() => onHover?.(null)}>
         {games.map((game) => {
           const wordmark = heroCardWordmark(game.slug);
           const isActive = game.slug === activeSlug;
@@ -40,6 +43,7 @@ export function GameSwitcherBar({ games, activeSlug }: Props) {
               key={game.slug}
               href={`/games/${game.slug}`}
               className={`hero-card${isActive ? " is-active" : ""}`}
+              onMouseEnter={() => onHover?.(game.slug)}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="hero-card__bg" src={heroCardBackground(game.slug)} alt="" loading="lazy" />
@@ -52,6 +56,9 @@ export function GameSwitcherBar({ games, activeSlug }: Props) {
                 ) : (
                   <span className="hero-card__name-text">{game.name}</span>
                 )}
+                <span className="hero-card__players">
+                  <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}
+                </span>
               </div>
             </Link>
           );

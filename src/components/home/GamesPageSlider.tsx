@@ -9,9 +9,10 @@ interface Props {
   onHover?: (slug: string | null) => void;
 }
 
-// Same big-card, full-bleed-art treatment as the homepage hero carousel
-// (see HeroGameCarousel) — cards here are bigger since this page has more
-// room, and each one is a direct link instead of an inline selector.
+// Same big-card, full-bleed-art treatment as the homepage/booking-page
+// game switcher (see GameSwitcherBar) — cards here are bigger since this
+// page has more room, and each one is a direct link instead of an inline
+// selector.
 export function GamesPageSlider({ games, onHover }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
 

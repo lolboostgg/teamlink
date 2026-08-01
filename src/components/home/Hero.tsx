@@ -1,112 +1,70 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Reveal } from "@/components/ui/Reveal";
 import { TrustBadge } from "@/components/ui/TrustBadge";
-import { HeroGameCarousel } from "@/components/home/HeroGameCarousel";
-import { PriceTag } from "@/components/currency/PriceTag";
-import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { GameSwitcherBar } from "@/components/booking/GameSwitcherBar";
 import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
+import { BookingWidget } from "@/components/booking/BookingWidget";
 import { GAMES, getGameBySlug, type Game } from "@/lib/games";
-import { BOOKING_CATEGORIES } from "@/lib/bookingOptions";
-import { setLastGameSlug, useLastGameSlug } from "@/lib/lastGame";
+import { useLastGameSlug } from "@/lib/lastGame";
 
-// Centered hero, closer to tapin.gg's actual homepage flow: headline -> trust
-// widget -> "choose game" picker (big key-art cards) -> mode + price -> one
-// CTA. No side card, no decorative globe/floating cards — the picker and
-// price panel carry the visual weight instead.
-export function Hero() {
-  // Restore whichever game the user had picked last time, like tapin.gg
-  // pre-selecting the last-used card on return visits. useLastGameSlug's
-  // server snapshot is always null, so first paint matches everywhere and
-  // React swaps in the real localStorage value right after hydration —
-  // once the visitor manually picks a card, that choice wins instead.
+interface Props {
+  // Explicit on /games/[slug] (pinned to the URL); omitted on the homepage,
+  // where it falls back to the last-selected game (or GAMES[0]) instead —
+  // same component, same layout, just a different active game either way.
+  game?: Game;
+}
+
+// tapin.gg-style single template: headline -> trust widget -> "choose game"
+// carousel -> the full booking panel (modes, teammate picker, price/CTA
+// sidebar), all in one place. /games/[slug] renders this exact same
+// composition pinned to a specific game — see games/[slug]/layout.tsx.
+export function Hero({ game: gameProp }: Props) {
   const lastSlug = useLastGameSlug();
-  const [manualGame, setManualGame] = useState<Game | null>(null);
-  const activeGame = manualGame ?? (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
-
-  const options = BOOKING_CATEGORIES[0].options;
-  const [activeOption, setActiveOption] = useState(options[0]);
+  const game = gameProp ?? (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
   const [hoverSlug, setHoverSlug] = useState<string | null>(null);
 
-  function selectGame(game: Game) {
-    setManualGame(game);
-    setLastGameSlug(game.slug);
-  }
-
   return (
-    <section className="hero">
-      <AmbientGameBackground slug={hoverSlug ?? activeGame.slug} />
-      <span className="hero__scrim" aria-hidden="true" />
-      <span className="bg-glow bg-glow--blue" style={{ width: 560, height: 560, left: "50%", top: "-220px", transform: "translateX(-50%)" }} aria-hidden="true" />
-      <div className="bg-grid" aria-hidden="true" />
+    <>
+      <section className="hero">
+        <AmbientGameBackground slug={hoverSlug ?? game.slug} />
+        <span className="hero__scrim" aria-hidden="true" />
+        <span className="bg-glow bg-glow--blue" style={{ width: 560, height: 560, left: "50%", top: "-220px", transform: "translateX(-50%)" }} aria-hidden="true" />
 
-      <div className="container" style={{ position: "relative", zIndex: 1 }}>
-        <Reveal>
+        <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <span className="hero__eyebrow">
             <span className="pulse-dot" aria-hidden="true" /> Matched in under 2 minutes
           </span>
-        </Reveal>
 
-        <Reveal delay={80}>
           <h1 className="hero__title">
             Play with a pro <span className="hero__title-accent">teammate</span>, right now.
           </h1>
-        </Reveal>
 
-        <Reveal delay={140}>
           <p className="hero__sub">
             Pick a game, pick a mode, and get matched in under two minutes. No downloads, no waiting rooms.
           </p>
-        </Reveal>
 
-        <Reveal delay={200}>
           <div className="hero__trust">
             <TrustBadge />
           </div>
-        </Reveal>
 
-        <Reveal delay={260}>
-          <HeroGameCarousel
-            games={GAMES}
-            activeSlug={activeGame.slug}
-            onSelect={selectGame}
-            onHover={setHoverSlug}
-          />
-        </Reveal>
+          <GameSwitcherBar games={GAMES} activeSlug={game.slug} onHover={setHoverSlug} />
+        </div>
+      </section>
 
-        <Reveal delay={320}>
-          <div className="hero-modes-wrap">
-            <div className="hero-modes-title">{activeGame.name} · pick a mode</div>
-            <div className="hero-modes">
-              {options.map((option) => (
-                <button
-                  key={option.name}
-                  type="button"
-                  className={`hero-mode${option.name === activeOption.name ? " is-active" : ""}`}
-                  onClick={() => setActiveOption(option)}
-                >
-                  <span className="hero-mode__name">
-                    {option.name}
-                    <InfoTooltip text={option.description} />
-                  </span>
-                  <span className="hero-mode__price">
-                    <PriceTag amountEUR={option.price} /> {option.unit}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            <div className="hero-cta">
-              <Link href={`/games/${activeGame.slug}`} className="btn btn--vivid btn--block">
-                <i className="fa-solid fa-bolt" aria-hidden="true" />
-                Play now for <PriceTag amountEUR={activeOption.price} />
-              </Link>
-            </div>
-          </div>
-        </Reveal>
+      {/* Separate from .hero on purpose: .hero has overflow:hidden to mask
+          the ambient backdrop, which per the CSS overflow spec would force
+          overflow-y to auto too and break position:sticky on the booking
+          sidebar below. See .glow-clip for the same fix applied here. */}
+      <div className="booking-page" style={{ position: "relative" }}>
+        <div className="glow-clip" aria-hidden="true">
+          <span className="bg-glow bg-glow--blue" style={{ width: 480, height: 480, right: "-160px", top: "-100px" }} />
+          <span className="bg-glow bg-glow--teal" style={{ width: 360, height: 360, left: "-140px", bottom: "0" }} />
+        </div>
+        <div className="container booking-widget-wrap" style={{ position: "relative", zIndex: 1 }}>
+          <BookingWidget game={game} />
+        </div>
       </div>
-    </section>
+    </>
   );
 }
