@@ -35,19 +35,25 @@ export function TeammateModal({ open, onClose, gameSlug, selected, onChange }: P
         <div className="teammate-modal__grid">
           <button
             type="button"
-            className={`teammate-chip teammate-chip--random${selected === "random" ? " is-selected" : ""}`}
+            className={`teammate-card teammate-card--random${selected === "random" ? " is-selected" : ""}`}
             onClick={() => choose("random")}
           >
-            {selected === "random" && <i className="fa-solid fa-check teammate-chip__check" aria-hidden="true" />}
-            <span className="teammate-chip__avatar teammate-chip__avatar--random">
-              <i className="fa-solid fa-shuffle" aria-hidden="true" />
-            </span>
-            <span className="teammate-chip__name">Random match</span>
-            <span className="teammate-chip__tagline">Fastest available teammate, recommended for the quickest match.</span>
+            <div className="teammate-card__banner teammate-card__banner--random">
+              {selected === "random" && <i className="fa-solid fa-check teammate-card__check" aria-hidden="true" />}
+            </div>
+            <div className="teammate-card__body">
+              <span className="teammate-card__avatar teammate-card__avatar--random">
+                <i className="fa-solid fa-shuffle" aria-hidden="true" />
+              </span>
+              <div className="teammate-card__head teammate-card__head--random">
+                <span className="teammate-card__name">Random match</span>
+              </div>
+              <p className="teammate-card__tagline">Fastest available teammate, recommended for the quickest match.</p>
+            </div>
           </button>
 
           {teammates.map((t) => (
-            <TeammateCard key={t.id} teammate={t} selected={selected === t.id} onSelect={() => choose(t.id)} />
+            <TeammateCard key={t.id} teammate={t} gameSlug={gameSlug} selected={selected === t.id} onSelect={() => choose(t.id)} />
           ))}
         </div>
       </div>
