@@ -1,7 +1,7 @@
 export const HOW_IT_WORKS = [
-  { step: "01", title: "Create your account", text: "Sign up with Discord or email and add your in-game name. Takes about 30 seconds." },
-  { step: "02", title: "Pick your game and mode", text: "Choose the game and the style of session you want — ranked grind, casual hangout, or coaching." },
-  { step: "03", title: "Get matched fast", text: "Most players are matched in under 2 minutes. Your teammate joins instantly so you can play right away." },
+  { step: "01", title: "Create your account", text: "Sign up with Discord or email and add your in-game name. Takes about 30 seconds.", image: "step-1.png" },
+  { step: "02", title: "Pick your game and mode", text: "Choose the game and the style of session you want — ranked grind, casual hangout, or coaching.", image: "step-2.png" },
+  { step: "03", title: "Get matched fast", text: "Most players are matched in under 2 minutes. Your teammate joins instantly so you can play right away.", image: "step-3.png" },
 ];
 
 export const WHY_US = [

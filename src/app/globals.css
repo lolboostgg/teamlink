@@ -69,6 +69,79 @@ ul {
   padding: 0 24px;
 }
 
+/* ── Motion utilities ───────────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 0 rgba(47, 191, 113, 0.55);
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0% { box-shadow: 0 0 0 0 rgba(47, 191, 113, 0.5); }
+  70% { box-shadow: 0 0 0 8px rgba(47, 191, 113, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(47, 191, 113, 0); }
+}
+
+/* Soft decorative glows — subtle, positioned behind content, not on any
+   text/button (keeps the "no gradient-everywhere" rule to functional
+   photo scrims + this kind of quiet background atmosphere only). */
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-glow--blue {
+  background: rgba(64, 102, 255, 0.22);
+}
+
+.bg-glow--teal {
+  background: rgba(47, 191, 113, 0.14);
+}
+
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 0%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 60% 60% at 50% 0%, #000 40%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.section-relative {
+  position: relative;
+  overflow: hidden;
+}
+
 /* ── Buttons ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -81,6 +154,19 @@ ul {
   font-weight: 600;
   border: 1px solid transparent;
   white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn i {
+  transition: transform 0.2s ease;
+}
+
+.btn:hover i.fa-arrow-right {
+  transform: translateX(3px);
 }
 
 .btn--sm {
@@ -166,6 +252,7 @@ ul {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
+  transition: color 0.15s ease;
 }
 
 .site-header__nav a:hover {
@@ -185,6 +272,7 @@ ul {
   border-radius: var(--radius-sm);
   padding: 9px 14px 9px 36px;
   color: var(--text);
+  transition: border-color 0.15s ease;
   font-size: 13px;
 }
 
@@ -274,8 +362,35 @@ ul {
 
 /* ── Hero ───────────────────────────────────────────────────── */
 .hero {
+  position: relative;
   padding: 64px 0 40px;
   text-align: center;
+  overflow: hidden;
+}
+
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+}
+
+.hero__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 8, 15, 0.35) 0%, rgba(6, 8, 15, 0.75) 55%, var(--bg) 100%);
+}
+
+.hero > .container {
+  position: relative;
+  z-index: 1;
 }
 
 .hero__eyebrow {
@@ -343,12 +458,13 @@ ul {
   background: var(--bg-elevated);
   overflow: hidden;
   text-align: left;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .game-pick:hover {
   border-color: var(--border-strong);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card);
 }
 
 .game-pick.is-active {
@@ -358,12 +474,14 @@ ul {
 
 .game-pick__cover {
   height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.7);
+  display: block;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.4s ease;
+}
+
+.game-pick:hover .game-pick__cover {
+  transform: scale(1.08);
 }
 
 .game-pick__name {
@@ -388,26 +506,36 @@ ul {
 }
 
 .game-card {
+  position: relative;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   overflow: hidden;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color 0.2s ease, transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .game-card:hover {
   border-color: var(--border-strong);
-  transform: translateY(-3px);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-card);
 }
 
 .game-card__cover {
-  height: 120px;
+  position: relative;
+  height: 150px;
   display: flex;
   align-items: flex-end;
-  padding: 12px;
+  padding: 14px;
   font-weight: 800;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  color: #fff;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.5s ease;
+}
+
+.game-card:hover .game-card__cover {
+  transform: scale(1.07);
 }
 
 .game-card__meta {
@@ -439,6 +567,30 @@ ul {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.how-step:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-4px);
+}
+
+.how-step__img {
+  height: 140px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated-2);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.how-step__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
 }
 
 .how-step__number {
@@ -478,6 +630,17 @@ ul {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.why-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-4px);
+}
+
+.why-card:hover .why-card__icon {
+  background: var(--accent);
+  color: #fff;
 }
 
 .why-card__icon {
@@ -490,6 +653,7 @@ ul {
   place-items: center;
   margin-bottom: 16px;
   font-size: 15px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .why-card h3 {
@@ -544,6 +708,19 @@ ul {
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.7;
+}
+
+.faq-row__panel--anim {
+  animation: faqPanelIn 0.25s ease;
+}
+
+@keyframes faqPanelIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.faq-row__btn:hover span {
+  color: var(--accent);
 }
 
 /* ── CTA band ───────────────────────────────────────────────── */
@@ -722,6 +899,11 @@ ul {
   margin-bottom: 10px;
   text-align: left;
   width: 100%;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.booking-option:active {
+  transform: scale(0.99);
 }
 
 .booking-option:hover {
@@ -901,6 +1083,11 @@ ul {
   gap: 10px;
   font-size: 13px;
   font-weight: 600;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.payment-method:hover {
+  border-color: var(--border-strong);
 }
 
 .payment-method.is-selected {
