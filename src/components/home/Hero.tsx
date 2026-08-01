@@ -8,22 +8,37 @@ import { HeroGameCarousel } from "@/components/home/HeroGameCarousel";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
-import { GAMES } from "@/lib/games";
+import { GAMES, getGameBySlug, type Game } from "@/lib/games";
 import { BOOKING_CATEGORIES } from "@/lib/bookingOptions";
+import { setLastGameSlug, useLastGameSlug } from "@/lib/lastGame";
 
 // Centered hero, closer to tapin.gg's actual homepage flow: headline -> trust
 // widget -> "choose game" picker (big key-art cards) -> mode + price -> one
 // CTA. No side card, no decorative globe/floating cards — the picker and
 // price panel carry the visual weight instead.
 export function Hero() {
-  const [activeGame, setActiveGame] = useState(GAMES[0]);
+  // Restore whichever game the user had picked last time, like tapin.gg
+  // pre-selecting the last-used card on return visits. useLastGameSlug's
+  // server snapshot is always null, so first paint matches everywhere and
+  // React swaps in the real localStorage value right after hydration —
+  // once the visitor manually picks a card, that choice wins instead.
+  const lastSlug = useLastGameSlug();
+  const [manualGame, setManualGame] = useState<Game | null>(null);
+  const activeGame = manualGame ?? (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
+
   const options = BOOKING_CATEGORIES[0].options;
   const [activeOption, setActiveOption] = useState(options[0]);
   const [hoverSlug, setHoverSlug] = useState<string | null>(null);
 
+  function selectGame(game: Game) {
+    setManualGame(game);
+    setLastGameSlug(game.slug);
+  }
+
   return (
     <section className="hero">
       <AmbientGameBackground slug={hoverSlug ?? activeGame.slug} />
+      <span className="hero__scrim" aria-hidden="true" />
       <span className="bg-glow bg-glow--blue" style={{ width: 560, height: 560, left: "50%", top: "-220px", transform: "translateX(-50%)" }} aria-hidden="true" />
       <div className="bg-grid" aria-hidden="true" />
 
@@ -56,7 +71,7 @@ export function Hero() {
           <HeroGameCarousel
             games={GAMES}
             activeSlug={activeGame.slug}
-            onSelect={setActiveGame}
+            onSelect={selectGame}
             onHover={setHoverSlug}
           />
         </Reveal>

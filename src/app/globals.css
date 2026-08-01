@@ -223,7 +223,7 @@ body::before {
   inset: -5%;
   background-size: cover;
   background-position: center 20%;
-  filter: blur(3px) brightness(0.55) saturate(1.15);
+  filter: brightness(0.72) saturate(1.15);
   transform: scale(1.05);
   opacity: 0;
   animation: ambientBgIn 1s ease forwards;
@@ -716,6 +716,16 @@ ul {
   overflow: hidden;
 }
 
+/* Darkens just the headline/subhead area so the ambient backdrop can stay
+   sharp and bright (recognizable key art) without washing out the text. */
+.hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(60% 55% at 50% 18%, rgba(6, 8, 15, 0.65) 0%, rgba(6, 8, 15, 0.28) 55%, rgba(6, 8, 15, 0) 80%);
+  pointer-events: none;
+}
+
 .hero__eyebrow {
   display: inline-flex;
   align-items: center;
@@ -740,6 +750,7 @@ ul {
   max-width: 1100px;
   margin: 0 auto 18px;
   white-space: nowrap;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.55);
 }
 
 @media (max-width: 760px) {
@@ -757,6 +768,7 @@ ul {
   color: var(--text-muted);
   max-width: 480px;
   margin: 0 auto 28px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
 }
 
 .hero__trust {
@@ -1045,6 +1057,49 @@ ul {
   .games-slider__card {
     width: 240px;
   }
+}
+
+/* ── Persistent "choose game" strip on booking pages (games/[slug]) ── */
+.game-switcher-bar {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 14px 0;
+}
+
+.game-switcher-bar .hero-carousel {
+  max-width: 100%;
+}
+
+.game-switcher-bar .hero-card {
+  width: 116px;
+  aspect-ratio: 4 / 3;
+}
+
+.game-switcher-bar .hero-card__wordmark {
+  height: 16px;
+}
+
+.game-switcher-bar .hero-card__footer {
+  padding: 8px;
+}
+
+@media (max-width: 640px) {
+  .game-switcher-bar .hero-card {
+    width: 92px;
+  }
+}
+
+/* ── /games listing: full grid, every game visible, no scrolling ── */
+.games-full-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.games-full-grid__card {
+  width: 100%;
+  aspect-ratio: 3 / 2;
 }
 
 /* ── Hero mode strip + CTA (below the game picker) ──────────────────── */
@@ -3306,57 +3361,6 @@ ul {
 
   .bento__cell--wide {
     grid-column: span 1;
-  }
-}
-
-.games-dense {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.games-dense__card {
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  display: block;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.games-dense__card:hover {
-  transform: translateY(-4px);
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-lg);
-}
-
-.games-dense__cover {
-  position: relative;
-  height: 136px;
-}
-
-.games-dense__cover .game-cover__name {
-  font-size: 14px;
-  padding: 8px;
-}
-
-.games-dense__stats {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 10px;
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
-@media (max-width: 980px) {
-  .games-dense {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .games-dense {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

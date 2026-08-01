@@ -1,10 +1,10 @@
-import Link from "next/link";
-import { GAMES } from "@/lib/games";
 import { Reveal } from "@/components/ui/Reveal";
-import { GameCover } from "@/components/home/GameCover";
+import { GamesPageSlider } from "@/components/home/GamesPageSlider";
+import { GAMES } from "@/lib/games";
 
-// Denser grid (more columns, smaller cards, stat icon row) — eloboost.gg
-// packs far more games per row than Variant A's larger showcase cards.
+// Same big-card slider treatment as the hero carousel / booking-page
+// switcher, rather than a static grid — keeps this section scannable
+// without pushing every game onto the screen at once.
 export function GamesDense() {
   return (
     <section className="section" id="games">
@@ -16,21 +16,9 @@ export function GamesDense() {
           </div>
         </Reveal>
 
-        <div className="games-dense">
-          {GAMES.map((game, i) => (
-            <Reveal key={game.slug} delay={i * 40}>
-              <Link href={`/games/${game.slug}`} className="games-dense__card">
-                <div className="games-dense__cover">
-                  <GameCover game={game} showName compact />
-                </div>
-                <div className="games-dense__stats">
-                  <span><i className="fa-solid fa-gamepad" aria-hidden="true" /> {game.players}</span>
-                  <span><i className="fa-solid fa-star" aria-hidden="true" /> 4.9</span>
-                </div>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal delay={80}>
+          <GamesPageSlider games={GAMES} />
+        </Reveal>
       </div>
     </section>
   );

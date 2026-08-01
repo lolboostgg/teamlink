@@ -3,8 +3,6 @@ import { notFound } from "next/navigation";
 import { GAMES, getGameBySlug } from "@/lib/games";
 import { BookingWidget } from "@/components/booking/BookingWidget";
 import { GamePageHero } from "@/components/booking/GamePageHero";
-import { BentoFeatures } from "@/components/home/BentoFeatures";
-import { Faq } from "@/components/home/Faq";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -24,13 +22,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+// Everything here is the part that actually changes when the customer picks
+// a different game in the persistent GameSwitcherBar (see layout.tsx) — the
+// banner and the booking panel. Chrome around it (picker strip, features,
+// FAQ) lives in the layout and stays mounted across the navigation.
 export default async function GamePage({ params }: Props) {
   const { slug } = await params;
   const game = getGameBySlug(slug);
   if (!game) notFound();
 
   return (
-    <main className="booking-page" style={{ position: "relative" }}>
+    <>
       <GamePageHero game={game} />
 
       {/* Clips only these glow blurs (not the whole page) so the booking
@@ -43,9 +45,6 @@ export default async function GamePage({ params }: Props) {
       <div className="container booking-widget-wrap" style={{ position: "relative", zIndex: 1 }}>
         <BookingWidget game={game} />
       </div>
-
-      <BentoFeatures />
-      <Faq />
-    </main>
+    </>
   );
 }

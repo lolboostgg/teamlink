@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Game } from "@/lib/games";
 import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
-import { GamesPageSlider } from "@/components/home/GamesPageSlider";
+import { GamesFullGrid } from "@/components/home/GamesFullGrid";
 
 export function GamesSearchGrid({ games }: { games: Game[] }) {
   const [query, setQuery] = useState("");
@@ -43,7 +43,7 @@ export function GamesSearchGrid({ games }: { games: Game[] }) {
         {filtered.length === 0 ? (
           <p className="games-page-empty">No games match &ldquo;{query}&rdquo;.</p>
         ) : (
-          <GamesPageSlider games={filtered} onHover={setHoverSlug} />
+          <GamesFullGrid games={filtered} onHover={setHoverSlug} />
         )}
       </div>
     </>
