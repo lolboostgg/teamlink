@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="225" viewBox="0 0 400 225">
-  <rect width="400" height="225" fill="#1b2a52"/>
-  <circle cx="330" cy="40" r="110" fill="#ffffff" fill-opacity="0.05"/>
-  <circle cx="50" cy="210" r="70" fill="#ffffff" fill-opacity="0.04"/>
-  <polygon points="0,225 160,225 70,110" fill="#ffffff" fill-opacity="0.03"/>
-  <text x="382" y="200" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="58" fill="#ffffff" fill-opacity="0.09">LoL</text>
-</svg>

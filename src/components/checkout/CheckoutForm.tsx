@@ -6,11 +6,14 @@ import { CheckoutIdentityStep } from "@/components/checkout/CheckoutIdentityStep
 import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
 import { calculateFee, getPaymentMethod, perMinuteRate, type PaymentMethodKey } from "@/lib/payments";
+import { createOrder } from "@/lib/matchmaking/store";
 
 interface Props {
+  gameSlug: string;
   gameName: string;
   option: string;
   teammates: number;
+  teammateId?: string;
   teammateName?: string;
   baseTotalEUR: number;
 }
@@ -21,7 +24,7 @@ type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 // Orchestrates the checkout flow: identity (guest email or login/register)
 // -> payment method + fee -> mock submit. Owns both columns because the
 // order summary must react live to the selected payment method's fee.
-export function CheckoutForm({ gameName, option, teammates, teammateName, baseTotalEUR }: Props) {
+export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateId, teammateName, baseTotalEUR }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identity");
   const [identity, setIdentity] = useState<Identity>(null);
@@ -45,7 +48,15 @@ export function CheckoutForm({ gameName, option, teammates, teammateName, baseTo
   function handlePaymentSubmit() {
     setSubmitting(true);
     setTimeout(() => {
-      router.push("/checkout/success");
+      const order = createOrder({
+        gameSlug,
+        gameName,
+        option,
+        priceEUR: totalEUR,
+        requestedTeammateId: teammateId && teammateId !== "random" ? teammateId : null,
+        customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
+      });
+      router.push(order ? `/checkout/matching?order=${order.id}` : "/checkout/success");
     }, 900);
   }
 

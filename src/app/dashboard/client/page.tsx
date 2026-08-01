@@ -4,6 +4,7 @@ import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { BookingsTable } from "@/components/dashboard/client/BookingsTable";
+import { LiveOrdersPanel } from "@/components/dashboard/client/LiveOrdersPanel";
 import { CLIENT_STATS, CLIENT_BOOKINGS } from "@/lib/dashboard/clientData";
 
 export const metadata: Metadata = { title: "Client Dashboard" };
@@ -22,6 +23,8 @@ export default function ClientDashboardPage() {
           { href: "/dashboard/client/chat", label: "Chat", icon: "fa-solid fa-comments" },
         ]}
       />
+
+      <LiveOrdersPanel />
 
       <StatGrid>
         <StatCard icon="fa-solid fa-sack-dollar" label="Total spend" value={CLIENT_STATS.totalSpendEUR} currency color="var(--hue-green)" />

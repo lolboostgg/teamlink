@@ -142,3 +142,7 @@ export const TEAMMATES: Teammate[] = [
 export function getTeammatesForGame(slug: string): Teammate[] {
   return TEAMMATES.filter((t) => t.gameSlugs.includes(slug));
 }
+
+export function getTeammateById(id: string): Teammate | undefined {
+  return TEAMMATES.find((t) => t.id === id);
+}

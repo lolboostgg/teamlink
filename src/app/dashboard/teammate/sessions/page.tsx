@@ -1,14 +1,11 @@
 "use client";
 
 import { SessionsList } from "@/components/dashboard/teammate/SessionsList";
-import { NotificationPanel } from "@/components/dashboard/NotificationPanel";
-import { useNotifications } from "@/components/dashboard/NotificationProvider";
+import { IncomingDispatchList } from "@/components/dashboard/teammate/IncomingDispatchList";
+import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
 import { UPCOMING_SESSIONS } from "@/lib/dashboard/teammateData";
 
 export default function TeammateSessionsPage() {
-  const { notifications } = useNotifications();
-  const pending = notifications.filter((n) => n.status === "pending");
-
   return (
     <>
       <div className="dashboard-panel">
@@ -16,12 +13,14 @@ export default function TeammateSessionsPage() {
           <div>
             <div className="dashboard-panel__title">Incoming requests</div>
             <div className="dashboard-panel__sub">
-              Simulated realtime — new requests arrive automatically while you&rsquo;re on this dashboard
+              Live dispatch — a real customer order lands here the moment it&rsquo;s sent to you
             </div>
           </div>
         </div>
-        <NotificationPanel notifications={pending.length > 0 ? pending : notifications.slice(0, 3)} />
+        <IncomingDispatchList />
       </div>
+
+      <ActiveOrderCard />
 
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">

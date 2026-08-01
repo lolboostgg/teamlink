@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 interface Props {
   open: boolean;
@@ -10,6 +11,18 @@ interface Props {
 }
 
 export function Modal({ open, onClose, children, labelledBy }: Props) {
+  // Portal to document.body so the overlay is never trapped as a containing
+  // block by an ancestor with backdrop-filter/transform (e.g. the sticky
+  // site header) — without this, `position: fixed; inset: 0` resolves
+  // against that ancestor's box instead of the viewport.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // Portal target only exists client-side; this one-time flip after
+    // mount is the standard SSR-safe way to enable it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
 
@@ -24,9 +37,9 @@ export function Modal({ open, onClose, children, labelledBy }: Props) {
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onMouseDown={onClose}>
       <div
         className="modal-panel"
@@ -40,6 +53,7 @@ export function Modal({ open, onClose, children, labelledBy }: Props) {
         </button>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

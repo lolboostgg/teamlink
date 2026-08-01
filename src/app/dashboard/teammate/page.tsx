@@ -4,6 +4,8 @@ import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AvailabilityToggle } from "@/components/dashboard/teammate/AvailabilityToggle";
 import { SessionsList } from "@/components/dashboard/teammate/SessionsList";
+import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
+import { PendingInvitesBanner } from "@/components/dashboard/teammate/PendingInvitesBanner";
 import { TEAMMATE_STATS, UPCOMING_SESSIONS } from "@/lib/dashboard/teammateData";
 
 export const metadata: Metadata = { title: "Teammate Dashboard" };
@@ -20,6 +22,8 @@ export default function TeammateDashboardPage() {
         ]}
       />
 
+      <PendingInvitesBanner />
+
       <StatGrid>
         <StatCard icon="fa-solid fa-sack-dollar" label="Total earnings" value={TEAMMATE_STATS.totalEarningsEUR} currency color="var(--hue-green)" />
         <StatCard icon="fa-solid fa-hourglass-half" label="Pending payout" value={TEAMMATE_STATS.pendingPayoutEUR} currency color="var(--hue-gold)" />
@@ -28,6 +32,8 @@ export default function TeammateDashboardPage() {
       </StatGrid>
 
       <AvailabilityToggle />
+
+      <ActiveOrderCard />
 
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">
