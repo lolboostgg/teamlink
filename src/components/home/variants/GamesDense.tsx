@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GAMES } from "@/lib/games";
 import { Reveal } from "@/components/ui/Reveal";
+import { GameCover } from "@/components/home/GameCover";
 
 // Denser grid (more columns, smaller cards, stat icon row) — eloboost.gg
 // packs far more games per row than Variant A's larger showcase cards.
@@ -19,14 +20,8 @@ export function GamesDense() {
           {GAMES.map((game, i) => (
             <Reveal key={game.slug} delay={i * 40}>
               <Link href={`/games/${game.slug}`} className="games-dense__card">
-                <div
-                  className="games-dense__cover"
-                  style={{
-                    backgroundColor: game.tint,
-                    backgroundImage: `linear-gradient(180deg, rgba(6,8,15,0) 40%, rgba(6,8,15,.92) 100%), url(${game.bannerUrl})`,
-                  }}
-                >
-                  <span>{game.name}</span>
+                <div className="games-dense__cover">
+                  <GameCover game={game} showName compact />
                 </div>
                 <div className="games-dense__stats">
                   <span><i className="fa-solid fa-gamepad" aria-hidden="true" /> {game.players}</span>

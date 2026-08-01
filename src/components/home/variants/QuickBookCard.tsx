@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { GAMES } from "@/lib/games";
 import { BOOKING_CATEGORIES } from "@/lib/bookingOptions";
+import { GameCover } from "@/components/home/GameCover";
 
 // Compact, embedded booking preview for the hero — mirrors tapin.gg's
 // actual homepage pattern of putting the game+mode+price picker directly
@@ -21,12 +22,14 @@ export function QuickBookCard() {
             key={game.slug}
             type="button"
             className={`quickbook__game${game.slug === activeGame.slug ? " is-active" : ""}`}
-            style={{ backgroundImage: `linear-gradient(180deg, rgba(6,8,15,.15), rgba(6,8,15,.65)), url(${game.bannerUrl})` }}
             onClick={() => setActiveGame(game)}
             aria-label={game.name}
             title={game.name}
           >
-            {game.slug === activeGame.slug && <i className="fa-solid fa-check" aria-hidden="true" />}
+            <GameCover game={game} compact />
+            {game.slug === activeGame.slug && (
+              <i className="fa-solid fa-check quickbook__game-check" aria-hidden="true" />
+            )}
           </button>
         ))}
       </div>

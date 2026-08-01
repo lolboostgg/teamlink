@@ -3,6 +3,7 @@ import { GAMES } from "@/lib/games";
 import { LOLBOOST_ASSETS } from "@/lib/assets";
 import { Reveal } from "@/components/ui/Reveal";
 import { FloatingShapes } from "@/components/ui/FloatingShapes";
+import { GameCover } from "@/components/home/GameCover";
 
 export function Hero() {
   return (
@@ -43,13 +44,9 @@ export function Hero() {
           <div className="game-picker">
             {GAMES.slice(0, 6).map((game) => (
               <Link key={game.slug} href={`/games/${game.slug}`} className="game-pick">
-                <span
-                  className="game-pick__cover"
-                  style={{
-                    backgroundColor: game.tint,
-                    backgroundImage: `linear-gradient(180deg, rgba(6,8,15,0) 30%, rgba(6,8,15,.85) 100%), url(${game.bannerUrl})`,
-                  }}
-                />
+                <div className="game-pick__cover">
+                  <GameCover game={game} compact />
+                </div>
                 <span className="game-pick__name">{game.name}</span>
                 <span className="game-pick__players">{game.players} matched</span>
               </Link>

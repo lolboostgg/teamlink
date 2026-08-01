@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
 import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
+import { GameCover } from "@/components/home/GameCover";
 
 interface Props {
   game: Game;
@@ -46,15 +47,9 @@ export function BookingWidget({ game }: Props) {
       <div>
         <Reveal>
           <div className="booking-header">
-            <div
-              className="booking-header__cover"
-              style={{
-                backgroundColor: game.tint,
-                backgroundImage: `url(${game.bannerUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
+            <div className="booking-header__cover">
+              <GameCover game={game} compact />
+            </div>
             <div>
               <h1>{game.name}</h1>
               <p>{game.players} players matched so far</p>

@@ -32,7 +32,6 @@
 
 html {
   color-scheme: dark;
-  scroll-behavior: smooth;
 }
 
 #how-it-works,
@@ -543,10 +542,8 @@ ul {
 }
 
 .game-pick__cover {
+  position: relative;
   height: 72px;
-  display: block;
-  background-size: cover;
-  background-position: center;
   transition: transform 0.4s ease;
 }
 
@@ -566,6 +563,58 @@ ul {
   padding: 0 10px 10px;
   font-size: 10.5px;
   color: var(--text-faint);
+}
+
+/* ── Game cover (shared, resilient — see GameCover.tsx) ─────── */
+.game-cover {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--bg-elevated-2), #05070d);
+  border-top: 3px solid var(--game-tint, var(--accent));
+}
+
+.game-cover__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-cover__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 8, 15, 0) 40%, rgba(6, 8, 15, 0.92) 100%);
+}
+
+.game-cover__code {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.08);
+}
+
+.game-cover--compact .game-cover__code {
+  font-size: 18px;
+}
+
+.game-cover__name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 12px;
+  font-weight: 800;
+  color: #fff;
+  font-size: 13px;
 }
 
 /* ── Popular games grid (marketing) ────────────────────────── */
@@ -593,14 +642,6 @@ ul {
 .game-card__cover {
   position: relative;
   height: 150px;
-  display: flex;
-  align-items: flex-end;
-  padding: 14px;
-  font-weight: 800;
-  font-size: 14px;
-  color: #fff;
-  background-size: cover;
-  background-position: center;
   transition: transform 0.5s ease;
 }
 
@@ -1001,9 +1042,11 @@ ul {
 }
 
 .booking-header__cover {
+  position: relative;
   width: 56px;
   height: 56px;
   border-radius: var(--radius-md);
+  overflow: hidden;
   display: grid;
   place-items: center;
   font-weight: 800;
@@ -1549,8 +1592,7 @@ ul {
   height: 52px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
   display: grid;
   place-items: center;
   color: #fff;
@@ -1564,6 +1606,22 @@ ul {
 .quickbook__game.is-active {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent);
+}
+
+.quickbook__game-check {
+  position: absolute;
+  z-index: 2;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .quickbook__title {
@@ -2016,18 +2074,13 @@ ul {
 }
 
 .games-dense__cover {
+  position: relative;
   height: 100px;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: flex-end;
-  padding: 8px;
 }
 
-.games-dense__cover span {
+.games-dense__cover .game-cover__name {
   font-size: 11.5px;
-  font-weight: 800;
-  color: #fff;
+  padding: 8px;
 }
 
 .games-dense__stats {

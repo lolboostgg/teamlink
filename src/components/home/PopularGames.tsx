@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GAMES } from "@/lib/games";
 import { Reveal } from "@/components/ui/Reveal";
+import { GameCover } from "@/components/home/GameCover";
 
 export function PopularGames() {
   return (
@@ -27,14 +28,8 @@ export function PopularGames() {
           {GAMES.map((game, i) => (
             <Reveal key={game.slug} delay={i * 60}>
               <Link href={`/games/${game.slug}`} className="game-card">
-                <div
-                  className="game-card__cover"
-                  style={{
-                    backgroundColor: game.tint,
-                    backgroundImage: `linear-gradient(180deg, rgba(6,8,15,0) 35%, rgba(6,8,15,.9) 100%), url(${game.bannerUrl})`,
-                  }}
-                >
-                  {game.name}
+                <div className="game-card__cover">
+                  <GameCover game={game} showName />
                 </div>
                 <div className="game-card__meta">
                   <span className="game-card__name">{game.shortName}</span>
