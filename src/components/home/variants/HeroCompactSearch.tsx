@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { GAMES } from "@/lib/games";
 import { Reveal } from "@/components/ui/Reveal";
+import { TrustBadge } from "@/components/ui/TrustBadge";
 
 // Compact, search-first hero — closer to eloboost.gg's minimal hero than
 // to a full-bleed image. The primary affordance is the search bar, not a
@@ -17,8 +18,9 @@ export function HeroCompactSearch() {
   }, [query]);
 
   return (
-    <section className="hero-compact">
-      <div className="container">
+    <section className="hero-compact section-relative">
+      <span className="bg-glow bg-glow--blue" style={{ width: 480, height: 300, left: "50%", top: "-40px", transform: "translateX(-50%)" }} aria-hidden="true" />
+      <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <Reveal>
           <div className="hero-compact__pills">
             <span>Boosting</span>
@@ -57,7 +59,7 @@ export function HeroCompactSearch() {
 
         <Reveal delay={200}>
           <div className="hero-compact__stats">
-            <span><strong>4.9</strong> rating</span>
+            <TrustBadge />
             <span className="hero-compact__dot" />
             <span><strong>{GAMES.length}+</strong> games</span>
             <span className="hero-compact__dot" />

@@ -17,7 +17,7 @@ export function BentoFeatures() {
         <div className="bento">
           <Reveal className="bento__cell bento__cell--tall">
             <div className="bento-card">
-              <div className="bento-card__icon">
+              <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-green)" }}>
                 <i className="fa-solid fa-shield-halved" aria-hidden="true" />
               </div>
               <h3>Privacy first</h3>
@@ -50,7 +50,7 @@ export function BentoFeatures() {
 
           <Reveal className="bento__cell" delay={140}>
             <div className="bento-card">
-              <div className="bento-card__icon">
+              <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-gold)" }}>
                 <i className="fa-solid fa-headset" aria-hidden="true" />
               </div>
               <h3>Tier-1 support</h3>
@@ -60,7 +60,7 @@ export function BentoFeatures() {
 
           <Reveal className="bento__cell" delay={210}>
             <div className="bento-card">
-              <div className="bento-card__icon">
+              <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-pink)" }}>
                 <i className="fa-solid fa-bell" aria-hidden="true" />
               </div>
               <h3>Real-time updates</h3>

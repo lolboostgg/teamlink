@@ -1,5 +1,4 @@
 import { HOW_IT_WORKS } from "@/lib/content";
-import { LOLBOOST_ASSETS } from "@/lib/assets";
 import { Reveal } from "@/components/ui/Reveal";
 import { FloatingShapes } from "@/components/ui/FloatingShapes";
 
@@ -26,9 +25,11 @@ export function HowItWorks() {
         <div className="how-steps">
           {HOW_IT_WORKS.map((step, i) => (
             <Reveal key={step.step} delay={i * 90}>
-              <div className="how-step">
-                <div className="how-step__img">
-                  <img src={`${LOLBOOST_ASSETS}/landing/illustrations/${step.image}`} alt="" loading="lazy" />
+              <div className="how-step" style={{ ["--item-color" as string]: step.color }}>
+                <div className="how-step__visual">
+                  <span className="how-step__ring how-step__ring--1" />
+                  <span className="how-step__ring how-step__ring--2" />
+                  <i className={step.icon} aria-hidden="true" />
                 </div>
                 <span className="how-step__number">{step.step}</span>
                 <h3>{step.title}</h3>

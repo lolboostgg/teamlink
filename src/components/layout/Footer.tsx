@@ -37,6 +37,16 @@ const SOCIALS = [
   { icon: "fa-brands fa-tiktok", href: "/tiktok", label: "TikTok" },
 ];
 
+const PAYMENT_ICONS = [
+  "fa-brands fa-cc-visa",
+  "fa-brands fa-cc-mastercard",
+  "fa-brands fa-cc-paypal",
+  "fa-brands fa-cc-apple-pay",
+  "fa-brands fa-google-pay",
+  "fa-brands fa-cc-stripe",
+  "fa-brands fa-bitcoin",
+];
+
 export function Footer() {
   const year = new Date().getFullYear();
 
@@ -70,6 +80,12 @@ export function Footer() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="site-footer__payments">
+          {PAYMENT_ICONS.map((icon) => (
+            <i key={icon} className={icon} aria-hidden="true" />
+          ))}
         </div>
 
         <div className="site-footer__bottom">

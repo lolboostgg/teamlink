@@ -1,10 +1,10 @@
 import { HOW_IT_WORKS } from "@/lib/content";
-import { LOLBOOST_ASSETS } from "@/lib/assets";
 import { Reveal } from "@/components/ui/Reveal";
 
-// Alternating full-width image/text rows — structurally different from
+// Alternating full-width text/visual rows — structurally different from
 // Variant A's 3-column card grid, closer to a classic zig-zag feature
-// story (also closer to lolboost.gg's own how-it-works treatment).
+// story. Visual is a colored icon panel, not a hotlinked photo (see
+// Hero.tsx for why lolboost.gg images aren't used as a dependency here).
 export function HowItWorksZigzag() {
   return (
     <section className="section" id="how-it-works">
@@ -19,14 +19,19 @@ export function HowItWorksZigzag() {
         <div className="zigzag">
           {HOW_IT_WORKS.map((step, i) => (
             <Reveal key={step.step} delay={i * 80}>
-              <div className={`zigzag__row${i % 2 === 1 ? " zigzag__row--flip" : ""}`}>
+              <div
+                className={`zigzag__row${i % 2 === 1 ? " zigzag__row--flip" : ""}`}
+                style={{ ["--item-color" as string]: step.color }}
+              >
                 <div className="zigzag__text">
                   <span className="zigzag__number">{step.step}</span>
                   <h3>{step.title}</h3>
                   <p>{step.text}</p>
                 </div>
                 <div className="zigzag__visual">
-                  <img src={`${LOLBOOST_ASSETS}/landing/illustrations/${step.image}`} alt="" loading="lazy" />
+                  <span className="zigzag__ring zigzag__ring--1" />
+                  <span className="zigzag__ring zigzag__ring--2" />
+                  <i className={step.icon} aria-hidden="true" />
                 </div>
               </div>
             </Reveal>

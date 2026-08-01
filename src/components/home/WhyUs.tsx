@@ -18,7 +18,7 @@ export function WhyUs() {
         <div className="why-grid">
           {WHY_US.map((item, i) => (
             <Reveal key={item.title} delay={i * 70}>
-              <div className="why-card">
+              <div className="why-card" style={{ ["--item-color" as string]: item.color }}>
                 <span className="why-card__icon">
                   <i className={item.icon} aria-hidden="true" />
                 </span>

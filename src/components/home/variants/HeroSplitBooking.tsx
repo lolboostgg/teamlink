@@ -1,21 +1,21 @@
-import { LOLBOOST_ASSETS } from "@/lib/assets";
 import { Reveal } from "@/components/ui/Reveal";
 import { FloatingShapes } from "@/components/ui/FloatingShapes";
+import { TrustBadge } from "@/components/ui/TrustBadge";
 import { QuickBookCard } from "./QuickBookCard";
 
 // Split hero: copy on the left, a live booking preview on the right —
 // the primary affordance is "configure right here", not "browse then
 // click into a page" (that's Variant A). Matches tapin.gg's homepage,
-// where the full booking flow lives in the hero itself.
+// where the full booking flow lives in the hero itself. No hero photo —
+// see Hero.tsx for why (lolboost.gg hotlink reliability).
 export function HeroSplitBooking() {
   return (
-    <section className="hero-split">
-      <div className="hero-split__bg" aria-hidden="true">
-        <img src={`${LOLBOOST_ASSETS}/landing/lolboost-hero-multigame6.webp`} alt="" loading="eager" fetchPriority="high" />
-      </div>
+    <section className="hero-split section-relative">
+      <span className="bg-glow bg-glow--blue" style={{ width: 480, height: 480, left: "-140px", top: "-140px" }} aria-hidden="true" />
+      <div className="bg-grid" aria-hidden="true" />
       <FloatingShapes />
 
-      <div className="container hero-split__grid">
+      <div className="container hero-split__grid" style={{ position: "relative", zIndex: 1 }}>
         <div>
           <Reveal>
             <span className="hero__eyebrow">
@@ -34,10 +34,7 @@ export function HeroSplitBooking() {
             </p>
           </Reveal>
           <Reveal delay={200}>
-            <div className="hero__trust" style={{ marginBottom: 0 }}>
-              <span className="hero__trust-stars">★★★★★</span>
-              <span>4.9/5 · 2,400+ reviews</span>
-            </div>
+            <TrustBadge />
           </Reveal>
         </div>
 
