@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
 import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { TeammatePicker } from "@/components/booking/TeammatePicker";
 import { TEAMMATES } from "@/lib/teammates";
@@ -81,7 +82,10 @@ export function BookingWidget({ game }: Props) {
                       <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
                     </span>
                     <span>
-                      <span className="booking-option__name">{option.name}</span>
+                      <span className="booking-option__name">
+                        {option.name}
+                        <InfoTooltip text={option.description} />
+                      </span>
                       <br />
                       <span className="booking-option__desc">{option.description}</span>
                     </span>

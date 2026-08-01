@@ -774,18 +774,21 @@ ul {
 
 .trust-badge__stars {
   display: flex;
-  gap: 3px;
+  gap: 2px;
   flex: 0 0 auto;
 }
 
 .trust-badge__star {
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
+  width: 21px;
+  height: 21px;
+  border-radius: 3px;
   display: grid;
   place-items: center;
-  background: var(--hue-green);
-  color: #06080f;
+  /* Matches the real review-platform green (not our site accent green)
+     since this widget is deliberately styled to read as an authentic,
+     familiar rating badge. */
+  background: #00b67a;
+  color: #fff;
   font-size: 11px;
 }
 
@@ -840,7 +843,12 @@ ul {
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
-  padding: 4px 2px 8px;
+  /* Extra padding so the active card's glow ring has room to render
+     instead of being clipped by the scroll container's edge — offset by
+     a matching negative margin so cards still start flush with the rest
+     of the hero content above/below. */
+  padding: 20px 28px 20px;
+  margin: -16px -28px -12px;
 }
 
 .hero-carousel__track::-webkit-scrollbar {
@@ -1675,12 +1683,11 @@ ul {
 /* ── Game page hero banner ─────────────────────────────────── */
 .game-page-hero {
   position: relative;
-  height: 280px;
+  height: 340px;
   margin-bottom: 40px;
   background-color: var(--bg-elevated-2);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: right -20px top;
+  background-size: cover;
+  background-position: center 25%;
   overflow: hidden;
 }
 
@@ -1688,8 +1695,8 @@ ul {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(6, 8, 15, 0.05) 0%, rgba(6, 8, 15, 0.25) 55%, var(--bg) 100%),
-    linear-gradient(90deg, rgba(6, 8, 15, 0.55) 0%, transparent 45%);
+  background: linear-gradient(180deg, rgba(6, 8, 15, 0.15) 0%, rgba(6, 8, 15, 0.4) 55%, var(--bg) 100%),
+    linear-gradient(90deg, rgba(6, 8, 15, 0.7) 0%, transparent 55%);
 }
 
 .game-page-hero__inner {
@@ -1811,8 +1818,15 @@ ul {
 }
 
 .booking-option__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   font-weight: 700;
+}
+
+.booking-option__name .info-tooltip {
+  font-size: 11px;
 }
 
 .booking-option__desc {
@@ -3279,7 +3293,8 @@ ul {
   overflow-y: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-strong);
-  background: var(--bg-elevated);
+  background: rgba(13, 17, 32, 0.78);
+  backdrop-filter: blur(18px);
   box-shadow: var(--shadow-lg);
   padding: 6px;
   animation: modalPanelIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
@@ -3470,14 +3485,18 @@ ul {
   border-radius: 50%;
 }
 
-/* ── Info tooltip (gamemode explainers) ───────────────────────────── */
-.info-tooltip {
+/* ── Custom tooltips (replaces native title="" everywhere) ───────────── */
+.info-tooltip,
+.tooltip-host {
   position: relative;
   display: inline-flex;
   align-items: center;
+  outline: none;
+}
+
+.info-tooltip {
   color: var(--text-faint);
   cursor: help;
-  outline: none;
 }
 
 .info-tooltip:hover,
@@ -3485,13 +3504,14 @@ ul {
   color: var(--accent);
 }
 
-.info-tooltip__bubble {
+.tooltip-bubble {
   position: absolute;
   bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  width: 200px;
-  padding: 9px 11px;
+  width: max-content;
+  max-width: 200px;
+  padding: 7px 10px;
   border-radius: var(--radius-sm);
   background: var(--bg-elevated-2);
   border: 1px solid var(--border-strong);
@@ -3510,8 +3530,10 @@ ul {
   z-index: 30;
 }
 
-.info-tooltip:hover .info-tooltip__bubble,
-.info-tooltip:focus-visible .info-tooltip__bubble {
+.info-tooltip:hover .tooltip-bubble,
+.info-tooltip:focus-visible .tooltip-bubble,
+.tooltip-host:hover .tooltip-bubble,
+.tooltip-host:focus-visible .tooltip-bubble {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);

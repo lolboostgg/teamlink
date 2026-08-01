@@ -3,6 +3,7 @@ import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta, championIcon } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
+import { Tooltip } from "@/components/ui/Tooltip";
 
 interface Props {
   teammate: Teammate;
@@ -53,8 +54,10 @@ export function TeammateCard({ teammate, selected, onSelect }: Props) {
       {teammate.lolChampions && teammate.lolChampions.length > 0 && (
         <div className="teammate-card__champions">
           {teammate.lolChampions.map((champ) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={champ} src={championIcon(champ)} alt={champ} title={champ} className="teammate-card__champion-icon" />
+            <Tooltip key={champ} label={champ}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={championIcon(champ)} alt={champ} className="teammate-card__champion-icon" />
+            </Tooltip>
           ))}
         </div>
       )}
