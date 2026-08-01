@@ -11,6 +11,7 @@ export function Header() {
 
         <nav className="site-header__nav" aria-label="Primary">
           <Link href="/games">Games</Link>
+          <Link href="/#how-it-works">How it works</Link>
           <Link href="/#why-us">Why TeamLink</Link>
           <Link href="/#faq">FAQ</Link>
         </nav>

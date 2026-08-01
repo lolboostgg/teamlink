@@ -57,6 +57,7 @@ html {
   color-scheme: dark;
 }
 
+#how-it-works,
 #why-us,
 #faq {
   scroll-margin-top: calc(var(--header-h) + 16px);
@@ -1106,6 +1107,103 @@ ul {
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+/* ── How it works (compact vertical timeline) ───────────────── */
+.how-timeline {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 56px;
+  align-items: center;
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.how-timeline__visual {
+  position: relative;
+  height: 200px;
+  display: grid;
+  place-items: center;
+  font-size: 36px;
+  color: var(--accent);
+}
+
+.how-timeline__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent-soft);
+}
+
+.how-timeline__ring--1 {
+  width: 100px;
+  height: 100px;
+}
+
+.how-timeline__ring--2 {
+  width: 160px;
+  height: 160px;
+  border-color: rgba(64, 102, 255, 0.14);
+}
+
+.how-timeline__steps {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.how-timeline__steps::before {
+  content: "";
+  position: absolute;
+  left: 19px;
+  top: 24px;
+  bottom: 24px;
+  width: 1px;
+  background: var(--border);
+}
+
+.how-timeline__step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  position: relative;
+}
+
+.how-timeline__num {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  color: var(--accent);
+  flex: 0 0 auto;
+  z-index: 1;
+}
+
+.how-timeline__step h3 {
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.how-timeline__step p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .how-timeline {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .how-timeline__visual {
+    height: 120px;
+  }
 }
 
 /* ── FAQ ────────────────────────────────────────────────────── */
