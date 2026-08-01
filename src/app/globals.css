@@ -2097,17 +2097,47 @@ ul {
 /* Modal that opens from the booking sidebar's Teammate row (see
    TeammateModal.tsx) — this used to be a permanent carousel section on
    the page; moving it into a modal is most of why the booking panel is
-   shorter now. .modal-panel's default max-width (see the login/signup
-   modal) is sized for a compact form, too narrow for a 3-across card
-   grid, so widen it just for this modal via :has(). */
-/* Near-fullsize instead of a centered compact panel — matches the
-   eloboost.gg booster-search modal reference. */
+   shorter now. .modal-panel's default max-width/padding (see the
+   login/signup modal) is sized for a compact form, so both are
+   overridden just for this modal via :has(). Near-fullsize and anchored
+   to the bottom of the viewport (free space stays at the top instead of
+   the bottom) — matches the eloboost.gg booster-search modal reference. */
 .modal-overlay:has(.teammate-modal) {
-  padding: 32px 24px;
+  align-items: flex-end;
+  padding: 32px 24px 24px;
 }
 
 .modal-panel:has(.teammate-modal) {
   max-width: 1300px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.teammate-modal {
+  display: flex;
+  align-items: stretch;
+}
+
+.teammate-modal__filters {
+  flex: 0 0 220px;
+  padding: 28px 20px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-elevated-2);
+}
+
+.teammate-modal__filters-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.teammate-modal__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 28px 32px;
 }
 
 .teammate-modal__title {
@@ -2123,6 +2153,24 @@ ul {
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 22px;
+}
+
+.teammate-modal__empty {
+  font-size: 13px;
+  color: var(--text-faint);
+  padding: 20px 0;
+}
+
+@media (max-width: 720px) {
+  .teammate-modal {
+    flex-direction: column;
+  }
+
+  .teammate-modal__filters {
+    flex: 0 0 auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 /* Flex-wrap, not grid — with a small roster (some games only have one
@@ -2502,7 +2550,8 @@ ul {
   margin-bottom: 6px;
 }
 
-.form-row input {
+.form-row input,
+.form-row select {
   width: 100%;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
@@ -2512,7 +2561,12 @@ ul {
   font-size: 14px;
 }
 
-.form-row input:focus {
+.form-row select {
+  color-scheme: dark;
+}
+
+.form-row input:focus,
+.form-row select:focus {
   outline: none;
   border-color: var(--accent);
 }
@@ -2601,20 +2655,27 @@ ul {
 }
 
 /* Concrete guarantees, not a generic "secure" badge — right before paying
-   is exactly where purchase anxiety peaks, see CheckoutTrust.tsx. */
-.checkout-trust {
+   or booking is exactly where hesitation peaks. Self-contained panel (see
+   TrustPoints.tsx) so it can drop into the checkout sidebar or the booking
+   sidebar without needing an outer card wrapper. */
+.trust-points {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  padding: 20px;
+  margin-top: 16px;
 }
 
-.checkout-trust__point {
+.trust-points__point {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
 
-.checkout-trust__icon {
+.trust-points__icon {
   width: 34px;
   height: 34px;
   flex: 0 0 auto;
@@ -2626,23 +2687,23 @@ ul {
   font-size: 13px;
 }
 
-.checkout-trust__label {
+.trust-points__label {
   font-size: 13px;
   font-weight: 700;
 }
 
-.checkout-trust__desc {
+.trust-points__desc {
   font-size: 12px;
   color: var(--text-faint);
   margin-top: 1px;
 }
 
-.checkout-trust__payments {
+.trust-points__payments {
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
 
-.checkout-trust__payments-label {
+.trust-points__payments-label {
   display: block;
   font-size: 11px;
   font-weight: 700;
@@ -2652,7 +2713,7 @@ ul {
   margin-bottom: 10px;
 }
 
-.checkout-trust__payment-icons {
+.trust-points__payment-icons {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;

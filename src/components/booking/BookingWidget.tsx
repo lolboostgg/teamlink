@@ -8,6 +8,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { TeammateModal } from "@/components/booking/TeammateModal";
+import { TrustPoints } from "@/components/ui/TrustPoints";
 import { TEAMMATES } from "@/lib/teammates";
 
 interface Props {
@@ -102,46 +103,50 @@ export function BookingWidget({ game }: Props) {
         ))}
       </div>
 
-      <aside className="booking-sidebar">
-        <div className="booking-sidebar__title">Your session</div>
+      <div>
+        <aside className="booking-sidebar">
+          <div className="booking-sidebar__title">Your session</div>
 
-        <div className="booking-sidebar__row">
-          <span>Game</span>
-          <span>{game.name}</span>
-        </div>
-        <div className="booking-sidebar__row">
-          <span>Option</span>
-          <span>{selected.name}</span>
-        </div>
-        <button type="button" className="booking-sidebar__row booking-sidebar__row--action" onClick={() => setTeammateModalOpen(true)}>
-          <span>Teammate</span>
-          <span>
-            {selectedTeammateName}
-            <i className="fa-solid fa-pen" aria-hidden="true" />
-          </span>
-        </button>
-        <div className="booking-sidebar__row booking-sidebar__row--last">
-          <span>Group size</span>
-          <div className="booking-stepper">
-            <button type="button" onClick={() => setTeammates((n) => Math.max(1, n - 1))} aria-label="Decrease">
-              <i className="fa-solid fa-minus" aria-hidden="true" />
-            </button>
-            <span>{teammates}</span>
-            <button type="button" onClick={() => setTeammates((n) => Math.min(4, n + 1))} aria-label="Increase">
-              <i className="fa-solid fa-plus" aria-hidden="true" />
-            </button>
+          <div className="booking-sidebar__row">
+            <span>Game</span>
+            <span>{game.name}</span>
           </div>
-        </div>
+          <div className="booking-sidebar__row">
+            <span>Option</span>
+            <span>{selected.name}</span>
+          </div>
+          <button type="button" className="booking-sidebar__row booking-sidebar__row--action" onClick={() => setTeammateModalOpen(true)}>
+            <span>Teammate</span>
+            <span>
+              {selectedTeammateName}
+              <i className="fa-solid fa-pen" aria-hidden="true" />
+            </span>
+          </button>
+          <div className="booking-sidebar__row booking-sidebar__row--last">
+            <span>Group size</span>
+            <div className="booking-stepper">
+              <button type="button" onClick={() => setTeammates((n) => Math.max(1, n - 1))} aria-label="Decrease">
+                <i className="fa-solid fa-minus" aria-hidden="true" />
+              </button>
+              <span>{teammates}</span>
+              <button type="button" onClick={() => setTeammates((n) => Math.min(4, n + 1))} aria-label="Increase">
+                <i className="fa-solid fa-plus" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
 
-        <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
-          <span>Total</span>
-          <PriceTag amountEUR={total} />
-        </div>
+          <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
+            <span>Total</span>
+            <PriceTag amountEUR={total} />
+          </div>
 
-        <button type="button" className="btn btn--vivid btn--block" onClick={goToCheckout}>
-          Continue to checkout
-        </button>
-      </aside>
+          <button type="button" className="btn btn--vivid btn--block" onClick={goToCheckout}>
+            Continue to checkout
+          </button>
+        </aside>
+
+        <TrustPoints />
+      </div>
 
       <TeammateModal
         open={teammateModalOpen}

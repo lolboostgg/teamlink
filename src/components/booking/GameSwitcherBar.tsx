@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 import { heroCardBackground, heroCardWordmark } from "@/lib/gameArt";
@@ -21,6 +21,29 @@ interface Props {
 export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  // Only show an arrow when it would actually do something — no point
+  // offering "back" before the track has scrolled, or "more" once it's
+  // already at the end.
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    function updateScrollState() {
+      setCanScrollPrev(el!.scrollLeft > 4);
+      setCanScrollNext(el!.scrollLeft + el!.clientWidth < el!.scrollWidth - 4);
+    }
+
+    updateScrollState();
+    el.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+    return () => {
+      el.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [games]);
 
   // Whichever game is actually active becomes "the last game", regardless
   // of how the visitor got here (this carousel, the /games listing, a
@@ -72,12 +95,16 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
         })}
       </div>
 
-      <button type="button" className="hero-carousel__prev" onClick={() => scrollBy(-300)} aria-label="Show previous games">
-        <i className="fa-solid fa-chevron-left" aria-hidden="true" />
-      </button>
-      <button type="button" className="hero-carousel__next" onClick={() => scrollBy(300)} aria-label="Show more games">
-        <i className="fa-solid fa-chevron-right" aria-hidden="true" />
-      </button>
+      {canScrollPrev && (
+        <button type="button" className="hero-carousel__prev" onClick={() => scrollBy(-300)} aria-label="Show previous games">
+          <i className="fa-solid fa-chevron-left" aria-hidden="true" />
+        </button>
+      )}
+      {canScrollNext && (
+        <button type="button" className="hero-carousel__next" onClick={() => scrollBy(300)} aria-label="Show more games">
+          <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

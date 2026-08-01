@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckoutIdentityStep } from "@/components/checkout/CheckoutIdentityStep";
 import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
-import { CheckoutTrust } from "@/components/checkout/CheckoutTrust";
+import { TrustPoints } from "@/components/ui/TrustPoints";
 import { Reveal } from "@/components/ui/Reveal";
 import { calculateFee, getPaymentMethod, perMinuteRate, type PaymentMethodKey } from "@/lib/payments";
 import { createOrder } from "@/lib/matchmaking/store";
@@ -143,7 +143,7 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateId
           />
         </Reveal>
         <Reveal delay={140}>
-          <CheckoutTrust />
+          <TrustPoints />
         </Reveal>
       </div>
     </div>
