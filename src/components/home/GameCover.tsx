@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import type { Game } from "@/lib/games";
+import { localGameBanner } from "@/lib/gameArt";
 
 interface Props {
   game: Game;
@@ -19,26 +20,32 @@ interface Props {
 // short-code watermark) instead of the old bare tint-color rectangle.
 // This is also *the* fix for "the background looks inconsistent": every
 // card now shares the same structure regardless of whether art loads.
+// Three-tier fallback: hotlinked lolboost.gg banner -> local hand-authored
+// SVG (public/games/{slug}.svg, see lib/gameArt.ts) -> CSS tint+shortcode
+// watermark as the final safety net. Tier 0 is the common case; tier 1 is
+// the actual fix for hotlink unreliability; tier 2 only fires if even the
+// local asset is somehow missing.
 export function GameCover({ game, showName, compact, className }: Props) {
-  const [broken, setBroken] = useState(false);
+  const [tier, setTier] = useState<0 | 1 | 2>(0);
 
   const style = { "--game-tint": game.tint } as CSSProperties;
+  const src = tier === 0 ? game.bannerUrl : localGameBanner(game.slug);
 
   return (
     <div
       className={`game-cover${compact ? " game-cover--compact" : ""}${className ? ` ${className}` : ""}`}
       style={style}
     >
-      {!broken && (
+      {tier < 2 && (
         <img
           className="game-cover__img"
-          src={game.bannerUrl}
+          src={src}
           alt=""
           loading="lazy"
-          onError={() => setBroken(true)}
+          onError={() => setTier((t) => (t === 0 ? 1 : 2))}
         />
       )}
-      {broken && <span className="game-cover__code">{game.shortName}</span>}
+      {tier === 2 && <span className="game-cover__code">{game.shortName}</span>}
       <span className="game-cover__scrim" aria-hidden="true" />
       {showName && <span className="game-cover__name">{game.name}</span>}
     </div>

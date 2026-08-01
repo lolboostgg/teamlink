@@ -1,0 +1,28 @@
+import { ViewTransition } from "react";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
+
+// Sibling of the (marketing) route group, so /dashboard/* gets its own
+// shell (sidebar + topbar) instead of inheriting the marketing Header/
+// Footer. The ViewTransition here mirrors the one in (marketing)/layout.tsx
+// via matching transition types (dashboard-enter/dashboard-exit) so the two
+// sides animate as one continuous motion instead of two independent swaps.
+// In-dashboard navigation (sidebar anchors, role switch) carries no
+// transition type, so it hits default:"none" — a quiet instant update.
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="dashboard-shell">
+      <DashboardSidebar />
+      <div className="dashboard-shell__main">
+        <DashboardTopbar />
+        <ViewTransition
+          enter={{ "dashboard-enter": "dash-in-fwd", default: "none" }}
+          exit={{ "dashboard-exit": "dash-out-back", default: "none" }}
+          default="none"
+        >
+          <main className="dashboard-content">{children}</main>
+        </ViewTransition>
+      </div>
+    </div>
+  );
+}

@@ -6,6 +6,7 @@ import type { Game } from "@/lib/games";
 import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
 import { GameCover } from "@/components/home/GameCover";
+import { PriceTag } from "@/components/currency/PriceTag";
 
 interface Props {
   game: Game;
@@ -81,7 +82,7 @@ export function BookingWidget({ game }: Props) {
                   </span>
                   <span className="booking-option__price">
                     <span className="booking-option__price-value">
-                      ${option.price.toFixed(2)}
+                      <PriceTag amountEUR={option.price} />
                       {option.unit}
                     </span>
                     <br />
@@ -120,7 +121,7 @@ export function BookingWidget({ game }: Props) {
 
         <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
           <span>Total</span>
-          <span>${total.toFixed(2)}</span>
+          <PriceTag amountEUR={total} />
         </div>
 
         <button type="button" className="btn btn--primary btn--block" onClick={goToCheckout}>

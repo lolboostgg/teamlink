@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
+import { AppProviders } from "@/components/providers/AppProviders";
+import { RoleSwitcher } from "@/components/role/RoleSwitcher";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,11 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body>
-        <AuthModalProvider>
-          <Header />
+        <AppProviders>
           {children}
-          <Footer />
-        </AuthModalProvider>
+          <RoleSwitcher />
+        </AppProviders>
       </body>
     </html>
   );

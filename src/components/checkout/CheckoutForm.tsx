@@ -1,27 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const PAYMENT_METHODS = [
-  { key: "card", icon: "fa-solid fa-credit-card", label: "Card" },
-  { key: "paypal", icon: "fa-brands fa-paypal", label: "PayPal" },
-  { key: "crypto", icon: "fa-brands fa-bitcoin", label: "Crypto" },
-];
+import { CheckoutIdentityStep } from "@/components/checkout/CheckoutIdentityStep";
+import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
+import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
+import { calculateFee, getPaymentMethod, type PaymentMethodKey } from "@/lib/payments";
 
 interface Props {
-  total: number;
+  gameName: string;
+  option: string;
+  teammates: number;
+  baseTotalEUR: number;
 }
 
-// Mock checkout only — no real payment provider wired up (per the "mock
-// data first" decision). Submitting just simulates success.
-export function CheckoutForm({ total }: Props) {
+type Step = "identity" | "payment";
+type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
+
+// Orchestrates the checkout flow: identity (guest email or login/register)
+// -> payment method + fee -> mock submit. Owns both columns because the
+// order summary must react live to the selected payment method's fee.
+export function CheckoutForm({ gameName, option, teammates, baseTotalEUR }: Props) {
   const router = useRouter();
-  const [method, setMethod] = useState("card");
+  const [step, setStep] = useState<Step>("identity");
+  const [identity, setIdentity] = useState<Identity>(null);
+  const [method, setMethod] = useState<PaymentMethodKey>("card");
   const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const feeEUR = useMemo(() => calculateFee(baseTotalEUR, method), [baseTotalEUR, method]);
+  const totalEUR = baseTotalEUR + feeEUR;
+  const feeLabel = feeEUR > 0 ? `${getPaymentMethod(method).brandLabel} fee` : undefined;
+
+  function handleGuestContinue(email: string) {
+    setIdentity({ mode: "guest", email });
+    setStep("payment");
+  }
+
+  function handleLoggedIn() {
+    setIdentity({ mode: "account" });
+    setStep("payment");
+  }
+
+  function handlePaymentSubmit() {
     setSubmitting(true);
     setTimeout(() => {
       router.push("/checkout/success");
@@ -29,62 +49,45 @@ export function CheckoutForm({ total }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div className="checkout-card">
-        <div className="checkout-card__title">Payment method</div>
-        <div className="payment-methods">
-          {PAYMENT_METHODS.map((pm) => (
-            <button
-              key={pm.key}
-              type="button"
-              className={`payment-method${method === pm.key ? " is-selected" : ""}`}
-              onClick={() => setMethod(pm.key)}
-            >
-              <i className={pm.icon} aria-hidden="true" />
-              {pm.label}
-            </button>
-          ))}
-        </div>
+    <div className="checkout-layout">
+      <div>
+        {step === "identity" && (
+          <CheckoutIdentityStep onContinueAsGuest={handleGuestContinue} onLoggedIn={handleLoggedIn} />
+        )}
+
+        {step === "payment" && (
+          <>
+            <div className="checkout-card checkout-card--identity">
+              <span className="checkout-card__identity-text">
+                <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                {identity?.mode === "guest"
+                  ? `Checking out as guest (${identity.email})`
+                  : "Checking out as logged-in user"}
+              </span>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("identity")}>
+                Change
+              </button>
+            </div>
+            <CheckoutPaymentStep
+              method={method}
+              onMethodChange={setMethod}
+              totalEUR={totalEUR}
+              submitting={submitting}
+              onSubmit={handlePaymentSubmit}
+            />
+          </>
+        )}
       </div>
 
-      {method === "card" && (
-        <div className="checkout-card">
-          <div className="checkout-card__title">Card details</div>
-          <div className="form-row">
-            <label htmlFor="cc-number">Card number</label>
-            <input id="cc-number" type="text" placeholder="1234 1234 1234 1234" required />
-          </div>
-          <div className="form-row-grid">
-            <div className="form-row">
-              <label htmlFor="cc-expiry">Expiry</label>
-              <input id="cc-expiry" type="text" placeholder="MM/YY" required />
-            </div>
-            <div className="form-row">
-              <label htmlFor="cc-cvc">CVC</label>
-              <input id="cc-cvc" type="text" placeholder="123" required />
-            </div>
-          </div>
-          <div className="form-row">
-            <label htmlFor="cc-name">Name on card</label>
-            <input id="cc-name" type="text" placeholder="Jane Doe" required />
-          </div>
-        </div>
-      )}
-
-      {method !== "card" && (
-        <div className="checkout-card">
-          <div className="checkout-card__title">
-            {method === "paypal" ? "PayPal" : "Crypto"}
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            You&rsquo;ll be redirected to complete payment after clicking below.
-          </p>
-        </div>
-      )}
-
-      <button type="submit" className="btn btn--primary btn--block" disabled={submitting}>
-        {submitting ? "Processing..." : `Pay $${total.toFixed(2)}`}
-      </button>
-    </form>
+      <CheckoutOrderSummary
+        gameName={gameName}
+        option={option}
+        teammates={teammates}
+        subtotalEUR={baseTotalEUR}
+        feeEUR={feeEUR}
+        feeLabel={feeLabel}
+        totalEUR={totalEUR}
+      />
+    </div>
   );
 }

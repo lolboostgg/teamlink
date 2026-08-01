@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { HeaderAuthButtons } from "@/components/auth/HeaderAuthButtons";
+import { HeaderUtilities } from "@/components/layout/HeaderUtilities";
 
 export function Header() {
   return (
@@ -20,6 +21,7 @@ export function Header() {
         </div>
 
         <div className="site-header__actions">
+          <HeaderUtilities />
           <HeaderAuthButtons />
         </div>
       </div>

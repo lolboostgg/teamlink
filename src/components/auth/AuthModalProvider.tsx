@@ -1,12 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { Modal } from "@/components/ui/Modal";
 
 type Mode = "login" | "signup" | null;
 
 interface AuthModalContextValue {
-  open: (mode: Exclude<Mode, null>) => void;
+  open: (mode: Exclude<Mode, null>, onSuccess?: () => void) => void;
 }
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -19,16 +19,20 @@ export function useAuthModal() {
 
 // Single shared login/signup modal instance for the whole app (mounted once
 // in the root layout) so any button anywhere — header, CTA band, booking
-// sidebar — can trigger it via useAuthModal() without prop-drilling. Mock
-// auth only, per the mock-data-first decision; modeled after tapin.gg's
-// Discord-or-email modal.
+// sidebar, checkout's identity step — can trigger it via useAuthModal()
+// without prop-drilling. Mock auth only, per the mock-data-first decision;
+// modeled after tapin.gg's Discord-or-email modal. The optional onSuccess
+// callback lets callers (like checkout) react once the mock login/signup
+// "completes", without the provider knowing anything about them.
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<Mode>(null);
   const [notice, setNotice] = useState(false);
+  const onSuccessRef = useRef<(() => void) | undefined>(undefined);
 
-  const open = useCallback((next: Exclude<Mode, null>) => {
+  const open = useCallback((next: Exclude<Mode, null>, onSuccess?: () => void) => {
     setMode(next);
     setNotice(false);
+    onSuccessRef.current = onSuccess;
   }, []);
 
   const close = useCallback(() => {
@@ -39,6 +43,11 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setNotice(true);
+    const onSuccess = onSuccessRef.current;
+    window.setTimeout(() => {
+      onSuccess?.();
+      close();
+    }, 700);
   }
 
   const value = useMemo(() => ({ open }), [open]);
