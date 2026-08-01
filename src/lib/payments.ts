@@ -10,6 +10,8 @@ export interface PaymentMethodMeta {
   /** Flat fee in EUR, illustrative only. */
   feeFixedEUR: number;
   note: string;
+  /** Supports "connect once, keep playing, get billed continuously" instead of a single upfront charge. */
+  payAsYouGo?: boolean;
 }
 
 // Mock payment placeholders — no live Stripe/PayPal SDK or crypto wallet
@@ -33,6 +35,7 @@ export const PAYMENT_METHODS: PaymentMethodMeta[] = [
     feePercent: 2.9,
     feeFixedEUR: 0.35,
     note: "PayPal processing fee applies.",
+    payAsYouGo: true,
   },
   {
     key: "crypto",
@@ -54,4 +57,12 @@ export function getPaymentMethod(key: PaymentMethodKey): PaymentMethodMeta {
 export function calculateFee(subtotalEUR: number, method: PaymentMethodKey): number {
   const meta = getPaymentMethod(method);
   return subtotalEUR * (meta.feePercent / 100) + meta.feeFixedEUR;
+}
+
+// "Pay as you play" has no real duration to bill against (no backend
+// tracking actual session length), so this illustrative helper assumes the
+// checkout total represents a ~15-minute session and derives a per-minute
+// rate from it — purely for the live-ticking demo meter.
+export function perMinuteRate(baseTotalEUR: number): number {
+  return Math.max(0.05, baseTotalEUR / 15);
 }

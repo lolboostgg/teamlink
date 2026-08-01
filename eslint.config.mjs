@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Raw lolboost.gg asset dump (source material to curate files from into
+    // public/ — see lib/gameArt.ts, lib/lolAssets.ts) — not part of the app.
+    "assets/**",
   ]),
 ]);
 

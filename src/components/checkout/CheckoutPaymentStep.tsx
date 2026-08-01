@@ -16,6 +16,7 @@ interface Props {
   totalEUR: number;
   submitting: boolean;
   onSubmit: () => void;
+  onStartPayAsYouGo?: () => void;
 }
 
 // Mock payment placeholders only — Card is branded as Stripe (no live SDK,
@@ -23,12 +24,17 @@ interface Props {
 // visible processing fee that flows into the order summary via
 // lib/payments.ts's calculateFee. Submitting just simulates success, same
 // pattern as the rest of this mock-data-first project.
-export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitting, onSubmit }: Props) {
+export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitting, onSubmit, onStartPayAsYouGo }: Props) {
   const [crypto, setCrypto] = useState("btc");
+  const [paypalMode, setPaypalMode] = useState<"once" | "payg">("once");
   const active = PAYMENT_METHODS.find((m) => m.key === method) ?? PAYMENT_METHODS[0];
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (method === "paypal" && paypalMode === "payg" && onStartPayAsYouGo) {
+      onStartPayAsYouGo();
+      return;
+    }
     onSubmit();
   }
 
@@ -87,10 +93,40 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
             <i className="fa-brands fa-paypal" aria-hidden="true" style={{ marginRight: 8 }} />
             PayPal
           </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>
-            You&rsquo;ll be redirected to PayPal to complete payment after clicking below.
-          </p>
-          <p style={{ fontSize: 12, color: "var(--warning)" }}>
+
+          <div className="payg-toggle">
+            <button
+              type="button"
+              className={`payg-toggle__option${paypalMode === "once" ? " is-active" : ""}`}
+              onClick={() => setPaypalMode("once")}
+            >
+              <span className="payg-toggle__title">Pay once</span>
+              <span className="payg-toggle__desc">Charge the full total now.</span>
+            </button>
+            <button
+              type="button"
+              className={`payg-toggle__option${paypalMode === "payg" ? " is-active" : ""}`}
+              onClick={() => setPaypalMode("payg")}
+            >
+              <span className="payg-toggle__title">
+                <i className="fa-solid fa-infinity" aria-hidden="true" /> Pay as you play
+              </span>
+              <span className="payg-toggle__desc">Connect PayPal once, keep playing — billed as you go.</span>
+            </button>
+          </div>
+
+          {paypalMode === "once" ? (
+            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "14px 0 0" }}>
+              You&rsquo;ll be redirected to PayPal to complete payment after clicking below.
+            </p>
+          ) : (
+            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "14px 0 0" }}>
+              You&rsquo;ll connect PayPal, then the session starts immediately. No upfront charge — you&rsquo;re billed
+              for the time you actually play.
+            </p>
+          )}
+
+          <p style={{ fontSize: 12, color: "var(--warning)", marginTop: 8 }}>
             <i className="fa-solid fa-circle-info" aria-hidden="true" /> {active.note} (
             {active.feePercent}% + <PriceTag amountEUR={active.feeFixedEUR} />)
           </p>
@@ -126,7 +162,15 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
       )}
 
       <button type="submit" className="btn btn--vivid btn--block" disabled={submitting}>
-        {submitting ? "Processing..." : <>Pay <PriceTag amountEUR={totalEUR} /></>}
+        {submitting ? (
+          "Processing..."
+        ) : method === "paypal" && paypalMode === "payg" ? (
+          <>
+            <i className="fa-brands fa-paypal" aria-hidden="true" /> Connect PayPal &amp; start playing
+          </>
+        ) : (
+          <>Pay <PriceTag amountEUR={totalEUR} /></>
+        )}
       </button>
     </form>
   );

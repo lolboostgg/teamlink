@@ -1,12 +1,15 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Modal } from "@/components/ui/Modal";
 
 type Mode = "login" | "signup" | null;
+const SESSION_KEY = "teamlink:authenticated";
 
 interface AuthModalContextValue {
   open: (mode: Exclude<Mode, null>, onSuccess?: () => void) => void;
+  isAuthenticated: boolean;
+  logout: () => void;
 }
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -19,15 +22,24 @@ export function useAuthModal() {
 
 // Single shared login/signup modal instance for the whole app (mounted once
 // in the root layout) so any button anywhere — header, CTA band, booking
-// sidebar, checkout's identity step — can trigger it via useAuthModal()
-// without prop-drilling. Mock auth only, per the mock-data-first decision;
-// modeled after tapin.gg's Discord-or-email modal. The optional onSuccess
-// callback lets callers (like checkout) react once the mock login/signup
-// "completes", without the provider knowing anything about them.
+// sidebar, checkout's identity step, the dashboard auth gate — can trigger
+// it via useAuthModal() without prop-drilling. Mock auth only, per the
+// mock-data-first decision: there's no backend, so "logged in" is just a
+// localStorage flag set when the mock form "succeeds", not a real session.
+// The optional onSuccess callback lets callers (like checkout) react once
+// the mock login/signup completes, without the provider knowing about them.
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<Mode>(null);
   const [notice, setNotice] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const onSuccessRef = useRef<(() => void) | undefined>(undefined);
+
+  useEffect(() => {
+    // Hydration-safe: default false on first render (matches SSR), then
+    // sync from the client-only localStorage flag right after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsAuthenticated(window.localStorage.getItem(SESSION_KEY) === "1");
+  }, []);
 
   const open = useCallback((next: Exclude<Mode, null>, onSuccess?: () => void) => {
     setMode(next);
@@ -40,17 +52,24 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     setNotice(false);
   }, []);
 
+  const logout = useCallback(() => {
+    setIsAuthenticated(false);
+    window.localStorage.removeItem(SESSION_KEY);
+  }, []);
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setNotice(true);
     const onSuccess = onSuccessRef.current;
     window.setTimeout(() => {
+      setIsAuthenticated(true);
+      window.localStorage.setItem(SESSION_KEY, "1");
       onSuccess?.();
       close();
     }, 700);
   }
 
-  const value = useMemo(() => ({ open }), [open]);
+  const value = useMemo(() => ({ open, isAuthenticated, logout }), [open, isAuthenticated, logout]);
 
   return (
     <AuthModalContext.Provider value={value}>

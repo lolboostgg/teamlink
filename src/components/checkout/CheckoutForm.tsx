@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { CheckoutIdentityStep } from "@/components/checkout/CheckoutIdentityStep";
 import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
-import { calculateFee, getPaymentMethod, type PaymentMethodKey } from "@/lib/payments";
+import { calculateFee, getPaymentMethod, perMinuteRate, type PaymentMethodKey } from "@/lib/payments";
 
 interface Props {
   gameName: string;
   option: string;
   teammates: number;
+  teammateName?: string;
   baseTotalEUR: number;
 }
 
@@ -20,7 +21,7 @@ type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 // Orchestrates the checkout flow: identity (guest email or login/register)
 // -> payment method + fee -> mock submit. Owns both columns because the
 // order summary must react live to the selected payment method's fee.
-export function CheckoutForm({ gameName, option, teammates, baseTotalEUR }: Props) {
+export function CheckoutForm({ gameName, option, teammates, teammateName, baseTotalEUR }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identity");
   const [identity, setIdentity] = useState<Identity>(null);
@@ -46,6 +47,18 @@ export function CheckoutForm({ gameName, option, teammates, baseTotalEUR }: Prop
     setTimeout(() => {
       router.push("/checkout/success");
     }, 900);
+  }
+
+  function handleStartPayAsYouGo() {
+    setSubmitting(true);
+    const params = new URLSearchParams({
+      game: gameName,
+      option,
+      rate: perMinuteRate(baseTotalEUR).toFixed(2),
+    });
+    setTimeout(() => {
+      router.push(`/checkout/session?${params.toString()}`);
+    }, 700);
   }
 
   return (
@@ -74,6 +87,7 @@ export function CheckoutForm({ gameName, option, teammates, baseTotalEUR }: Prop
               totalEUR={totalEUR}
               submitting={submitting}
               onSubmit={handlePaymentSubmit}
+              onStartPayAsYouGo={handleStartPayAsYouGo}
             />
           </>
         )}
@@ -83,6 +97,7 @@ export function CheckoutForm({ gameName, option, teammates, baseTotalEUR }: Prop
         gameName={gameName}
         option={option}
         teammates={teammates}
+        teammateName={teammateName}
         subtotalEUR={baseTotalEUR}
         feeEUR={feeEUR}
         feeLabel={feeLabel}

@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { CurrencySwitcher } from "@/components/currency/CurrencySwitcher";
-import { LanguageSwitcher } from "@/components/language/LanguageSwitcher";
+import { useRouter, usePathname } from "next/navigation";
+import { SettingsTrigger } from "@/components/layout/SettingsTrigger";
+import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { DASHBOARD_ROLES } from "@/lib/roles";
 
 export function DashboardTopbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuthModal();
   const roleMeta = DASHBOARD_ROLES.find((r) => pathname.startsWith(r.href)) ?? DASHBOARD_ROLES[0];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -29,6 +32,12 @@ export function DashboardTopbar() {
     };
   }, [open]);
 
+  function handleLogout() {
+    setOpen(false);
+    logout();
+    router.push("/");
+  }
+
   return (
     <header className="dashboard-topbar">
       <div>
@@ -37,8 +46,8 @@ export function DashboardTopbar() {
       </div>
 
       <div className="dashboard-topbar__actions">
-        <CurrencySwitcher />
-        <LanguageSwitcher />
+        <SettingsTrigger />
+        <NotificationBell />
 
         <div className="dropdown-switcher" ref={ref}>
           <button
@@ -62,12 +71,7 @@ export function DashboardTopbar() {
               >
                 <i className="fa-solid fa-arrow-left" aria-hidden="true" /> Back to site
               </Link>
-              <button
-                type="button"
-                className="dropdown-switcher__item"
-                role="menuitem"
-                onClick={() => setOpen(false)}
-              >
+              <button type="button" className="dropdown-switcher__item" role="menuitem" onClick={handleLogout}>
                 <i className="fa-solid fa-right-from-bracket" aria-hidden="true" /> Log out
               </button>
             </div>

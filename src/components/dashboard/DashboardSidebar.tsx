@@ -5,24 +5,23 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { DASHBOARD_ROLES, type DashboardRole } from "@/lib/roles";
 
-// Sidebar links are in-page anchors on the current role's single overview
-// page, not real sub-routes — each dashboard is one page (stat cards + a
-// couple of tables/lists), kept deliberately scoped so this is shippable.
-const SECTIONS: Record<DashboardRole, { id: string; label: string; icon: string }[]> = {
+const SECTIONS: Record<DashboardRole, { href: string; label: string; icon: string }[]> = {
   client: [
-    { id: "overview", label: "Overview", icon: "fa-solid fa-gauge" },
-    { id: "bookings", label: "Bookings", icon: "fa-solid fa-calendar-check" },
-    { id: "favorites", label: "Favorites", icon: "fa-solid fa-heart" },
+    { href: "/dashboard/client", label: "Overview", icon: "fa-solid fa-gauge" },
+    { href: "/dashboard/client/orders", label: "Orders", icon: "fa-solid fa-calendar-check" },
+    { href: "/dashboard/client/chat", label: "Chat", icon: "fa-solid fa-comments" },
+    { href: "/dashboard/client/favorites", label: "Favorites", icon: "fa-solid fa-heart" },
   ],
   admin: [
-    { id: "overview", label: "Overview", icon: "fa-solid fa-gauge" },
-    { id: "signups", label: "Signups", icon: "fa-solid fa-users" },
-    { id: "payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
+    { href: "/dashboard/admin", label: "Overview", icon: "fa-solid fa-gauge" },
+    { href: "/dashboard/admin/signups", label: "Signups", icon: "fa-solid fa-users" },
+    { href: "/dashboard/admin/payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
   ],
   teammate: [
-    { id: "overview", label: "Overview", icon: "fa-solid fa-gauge" },
-    { id: "sessions", label: "Sessions", icon: "fa-solid fa-calendar-check" },
-    { id: "reviews", label: "Reviews", icon: "fa-solid fa-star" },
+    { href: "/dashboard/teammate", label: "Overview", icon: "fa-solid fa-gauge" },
+    { href: "/dashboard/teammate/sessions", label: "Sessions", icon: "fa-solid fa-calendar-check" },
+    { href: "/dashboard/teammate/chat", label: "Chat", icon: "fa-solid fa-comments" },
+    { href: "/dashboard/teammate/reviews", label: "Reviews", icon: "fa-solid fa-star" },
   ],
 };
 
@@ -39,12 +38,20 @@ export function DashboardSidebar() {
       </div>
 
       <nav className="dashboard-sidebar__nav" aria-label="Dashboard sections">
-        {sections.map((s) => (
-          <a key={s.id} href={`#${s.id}`} className="dashboard-sidebar__nav-link">
-            <i className={s.icon} aria-hidden="true" />
-            {s.label}
-          </a>
-        ))}
+        {sections.map((s) => {
+          const isOverview = s.href === `/dashboard/${role}`;
+          const active = isOverview ? pathname === s.href : pathname.startsWith(s.href);
+          return (
+            <Link
+              key={s.href}
+              href={s.href}
+              className={`dashboard-sidebar__nav-link${active ? " is-active" : ""}`}
+            >
+              <i className={s.icon} aria-hidden="true" />
+              {s.label}
+            </Link>
+          );
+        })}
       </nav>
 
       <Link href="/" className="dashboard-sidebar__back" transitionTypes={["dashboard-exit"]}>

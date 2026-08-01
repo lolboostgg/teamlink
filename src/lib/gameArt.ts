@@ -1,8 +1,10 @@
-// Local, code-authored SVG banners in public/games/{slug}.svg — one per
-// entry in lib/games.ts. Used as the second fallback tier in GameCover when
-// the hotlinked lolboost.gg banner fails to load, so the site has reliable
-// local art instead of depending entirely on an external, occasionally
-// bot-challenge-blocked host.
+// Local game art in public/games/. Three games (League of Legends, Valorant,
+// TFT) have real lolboost.gg key art (public/games/{slug}.webp); the rest
+// use the hand-authored SVG banners. GameCover.tsx just renders whatever
+// this returns, so upgrading a game's art is a one-line change here.
+const REAL_ART_SLUGS = new Set(["league-of-legends", "valorant", "teamfight-tactics"]);
+
 export function localGameBanner(slug: string): string {
+  if (REAL_ART_SLUGS.has(slug)) return `/games/${slug}.webp`;
   return `/games/${slug}.svg`;
 }

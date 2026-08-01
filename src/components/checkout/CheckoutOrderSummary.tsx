@@ -4,13 +4,14 @@ interface Props {
   gameName: string;
   option: string;
   teammates: number;
+  teammateName?: string;
   subtotalEUR: number;
   feeEUR: number;
   feeLabel?: string;
   totalEUR: number;
 }
 
-export function CheckoutOrderSummary({ gameName, option, teammates, subtotalEUR, feeEUR, feeLabel, totalEUR }: Props) {
+export function CheckoutOrderSummary({ gameName, option, teammates, teammateName, subtotalEUR, feeEUR, feeLabel, totalEUR }: Props) {
   return (
     <aside className="checkout-card">
       <div className="checkout-card__title">Order summary</div>
@@ -22,8 +23,14 @@ export function CheckoutOrderSummary({ gameName, option, teammates, subtotalEUR,
         <span>Option</span>
         <span>{option}</span>
       </div>
+      {teammateName && (
+        <div className="order-summary__item">
+          <span>Teammate</span>
+          <span>{teammateName}</span>
+        </div>
+      )}
       <div className="order-summary__item">
-        <span>Teammates</span>
+        <span>Group size</span>
         <span>{teammates}</span>
       </div>
       <div className="order-summary__item">

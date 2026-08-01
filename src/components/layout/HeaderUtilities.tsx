@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CurrencySwitcher } from "@/components/currency/CurrencySwitcher";
-import { LanguageSwitcher } from "@/components/language/LanguageSwitcher";
+import { SettingsTrigger } from "@/components/layout/SettingsTrigger";
 import { useRole } from "@/components/role/RoleProvider";
 import { getRoleMeta } from "@/lib/roles";
 
@@ -12,8 +11,7 @@ export function HeaderUtilities() {
 
   return (
     <div className="header-utilities">
-      <CurrencySwitcher />
-      <LanguageSwitcher />
+      <SettingsTrigger />
       <Link
         href={roleMeta.href}
         className="btn btn--outline btn--sm header-utilities__dashboard"
