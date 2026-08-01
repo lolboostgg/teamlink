@@ -19,7 +19,7 @@ export function SettingsPanel() {
   const activeLanguage = LANGUAGES.find((l) => l.code === language);
 
   return (
-    <div className="dropdown-switcher__menu dropdown-switcher__menu--settings settings-panel">
+    <div className="dropdown-switcher__menu dropdown-switcher__menu--right dropdown-switcher__menu--settings settings-panel">
       <div className="settings-panel__tabs">
         <button
           type="button"

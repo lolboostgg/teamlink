@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { GameCover } from "@/components/home/GameCover";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
+import { useActiveBackground } from "@/components/home/ActiveBackgroundProvider";
 import { GAMES } from "@/lib/games";
 import { BOOKING_CATEGORIES } from "@/lib/bookingOptions";
 
@@ -18,6 +19,13 @@ export function Hero() {
   const [activeGame, setActiveGame] = useState(GAMES[0]);
   const options = BOOKING_CATEGORIES[0].options;
   const [activeOption, setActiveOption] = useState(options[0]);
+  const { setActiveBackground } = useActiveBackground();
+
+  // The ambient backdrop should always match the selected game — including
+  // on first paint, not just after a hover/click.
+  useEffect(() => {
+    setActiveBackground(activeGame.slug);
+  }, [activeGame, setActiveBackground]);
 
   return (
     <section className="hero">
@@ -57,6 +65,8 @@ export function Hero() {
                 type="button"
                 className={`game-pick${game.slug === activeGame.slug ? " is-active" : ""}`}
                 onClick={() => setActiveGame(game)}
+                onMouseEnter={() => setActiveBackground(game.slug)}
+                onMouseLeave={() => setActiveBackground(activeGame.slug)}
               >
                 <div className="game-pick__cover">
                   <GameCover game={game} />
@@ -67,7 +77,7 @@ export function Hero() {
                 <div className="game-pick__meta">
                   <span className="game-pick__name">{game.name}</span>
                   <span className="game-pick__players">
-                    <i className="fa-solid fa-circle" aria-hidden="true" /> {game.players}
+                    <i className="fa-solid fa-user-group" aria-hidden="true" /> {game.players}
                   </span>
                 </div>
               </button>

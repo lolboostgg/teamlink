@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
 import { GameCover } from "@/components/home/GameCover";
+import { useActiveBackground } from "@/components/home/ActiveBackgroundProvider";
 
 export function GamesSearchGrid({ games }: { games: Game[] }) {
   const [query, setQuery] = useState("");
+  const { setActiveBackground } = useActiveBackground();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -29,9 +31,14 @@ export function GamesSearchGrid({ games }: { games: Game[] }) {
       {filtered.length === 0 ? (
         <p className="games-page-empty">No games match &ldquo;{query}&rdquo;.</p>
       ) : (
-        <div className="games-grid">
+        <div className="games-grid" onMouseLeave={() => setActiveBackground(null)}>
           {filtered.map((game) => (
-            <Link key={game.slug} href={`/games/${game.slug}`} className="game-card">
+            <Link
+              key={game.slug}
+              href={`/games/${game.slug}`}
+              className="game-card"
+              onMouseEnter={() => setActiveBackground(game.slug)}
+            >
               <div className="game-card__cover">
                 <GameCover game={game} showName />
               </div>

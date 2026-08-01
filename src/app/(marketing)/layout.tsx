@@ -2,6 +2,8 @@ import { ViewTransition } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PromoBanner } from "@/components/layout/PromoBanner";
+import { ActiveBackgroundProvider } from "@/components/home/ActiveBackgroundProvider";
+import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
 
 // Marketing chrome (Header/Footer) lives here instead of the root layout so
 // /dashboard/* gets its own shell. The ViewTransition below is the "flying
@@ -13,7 +15,8 @@ import { PromoBanner } from "@/components/layout/PromoBanner";
 // visually anchor between the two shells.
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <ActiveBackgroundProvider>
+      <AmbientGameBackground />
       <Header />
       <PromoBanner />
       <ViewTransition
@@ -24,6 +27,6 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         {children}
       </ViewTransition>
       <Footer />
-    </>
+    </ActiveBackgroundProvider>
   );
 }

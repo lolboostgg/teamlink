@@ -14,3 +14,16 @@ export function localGameBanner(slug: string): string {
 export function gameIcon(slug: string): string {
   return `/games/icons/${slug}.png`;
 }
+
+const BACKGROUND_EXTENSIONS: Record<string, string> = {
+  "apex-legends": "avif",
+  "league-of-legends": "avif",
+  "marvel-rivals": "avif",
+  "rocket-league": "avif",
+};
+
+// Wide ambient art for the full-page backdrop that shifts with the
+// hovered/selected game (see ActiveBackgroundProvider).
+export function gameBackground(slug: string): string {
+  return `/games/backgrounds/${slug}.${BACKGROUND_EXTENSIONS[slug] ?? "webp"}`;
+}

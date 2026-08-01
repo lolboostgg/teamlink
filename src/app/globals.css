@@ -204,6 +204,40 @@ body::before {
   }
 }
 
+/* Ambient game backdrop — shifts with the hovered/selected game on the
+   hero picker and /games listing (see ActiveBackgroundProvider). Sits
+   above the starfield, below all normal-flow content. */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-bg__layer {
+  position: absolute;
+  inset: -5%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(8px) brightness(0.4) saturate(1.15);
+  transform: scale(1.05);
+  opacity: 0;
+  animation: ambientBgIn 1s ease forwards;
+}
+
+@keyframes ambientBgIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-bg__layer {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;
