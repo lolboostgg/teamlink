@@ -1884,9 +1884,15 @@ ul {
   margin-top: 2px;
 }
 
-.booking-sidebar {
+/* Sticky lives on the wrapper, not .booking-sidebar itself, so the trust
+   points panel underneath (see TrustPoints.tsx) scrolls as one unit with
+   it instead of being left behind. */
+.booking-sidebar-wrap {
   position: sticky;
   top: calc(var(--offset-h, var(--header-h)) + 20px);
+}
+
+.booking-sidebar {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -2116,6 +2122,10 @@ ul {
 .teammate-modal {
   display: flex;
   align-items: stretch;
+  /* Fixed floor so picking a narrower filter (fewer matching teammates)
+     never visibly shrinks the modal — it should feel like a stable panel,
+     not one that jumps around as you filter. */
+  min-height: 640px;
 }
 
 .teammate-modal__filters {
@@ -2159,6 +2169,103 @@ ul {
   font-size: 13px;
   color: var(--text-faint);
   padding: 20px 0;
+}
+
+/* Custom dropdown (see FieldSelect.tsx) — label above, icon + value +
+   chevron trigger, dark floating menu. Used instead of a native <select>
+   so the option list actually respects the dark theme. */
+.field-select {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.field-select__label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.field-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 700;
+  transition: border-color 0.15s ease;
+}
+
+.field-select__trigger:hover {
+  border-color: var(--border-strong);
+}
+
+.field-select__trigger[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+
+.field-select__trigger > i {
+  font-size: 10px;
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+.field-select__value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field-select__value i {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.field-select__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: rgba(10, 13, 24, 0.97);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  animation: modalPanelIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.field-select__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.field-select__item:hover,
+.field-select__item.is-active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.field-select__item i {
+  width: 14px;
+  color: var(--text-faint);
 }
 
 @media (max-width: 720px) {
@@ -2550,8 +2657,7 @@ ul {
   margin-bottom: 6px;
 }
 
-.form-row input,
-.form-row select {
+.form-row input {
   width: 100%;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border);
@@ -2561,12 +2667,7 @@ ul {
   font-size: 14px;
 }
 
-.form-row select {
-  color-scheme: dark;
-}
-
-.form-row input:focus,
-.form-row select:focus {
+.form-row input:focus {
   outline: none;
   border-color: var(--accent);
 }

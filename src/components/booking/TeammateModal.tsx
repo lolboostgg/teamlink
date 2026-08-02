@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { FieldSelect } from "@/components/ui/FieldSelect";
 import { getTeammatesForGame } from "@/lib/teammates";
+import { RANK_TIERS, type LolRankTier } from "@/lib/lolAssets";
 import { TeammateCard } from "@/components/booking/TeammateCard";
 
 interface Props {
@@ -13,7 +15,14 @@ interface Props {
   onChange: (id: string) => void;
 }
 
-const MIN_RATING_OPTIONS = [0, 4.5, 4.8, 4.9];
+const MIN_RATING_OPTIONS = [
+  { value: "0", label: "Any" },
+  { value: "4.5", label: "4.5+" },
+  { value: "4.8", label: "4.8+" },
+  { value: "4.9", label: "4.9+" },
+];
+
+const RANK_ORDER = RANK_TIERS.map((r) => r.tier);
 
 // Picking a specific teammate used to be a permanent, full-width carousel
 // section on the booking page — moved into a modal (triggered from the
@@ -23,16 +32,36 @@ const MIN_RATING_OPTIONS = [0, 4.5, 4.8, 4.9];
 export function TeammateModal({ open, onClose, gameSlug, selected, onChange }: Props) {
   const teammates = getTeammatesForGame(gameSlug);
   const [query, setQuery] = useState("");
-  const [minRating, setMinRating] = useState(0);
+  const [minRating, setMinRating] = useState("0");
+  const [minRank, setMinRank] = useState("any");
+
+  // Only games whose teammates actually carry a rank (League of Legends,
+  // right now) show this filter — an empty/meaningless dropdown is worse
+  // than no dropdown.
+  const rankOptions = useMemo(() => {
+    const present = new Set(teammates.map((t) => t.lolRank).filter((r): r is LolRankTier => !!r));
+    if (present.size === 0) return null;
+    const tiers = RANK_ORDER.filter((tier) => present.has(tier));
+    return [
+      { value: "any", label: "Any" },
+      ...tiers.map((tier) => ({ value: tier, label: `${RANK_TIERS.find((r) => r.tier === tier)!.label}+` })),
+    ];
+  }, [teammates]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
+    const minRatingNum = Number(minRating);
+    const minRankIndex = minRank === "any" ? -1 : RANK_ORDER.indexOf(minRank as LolRankTier);
     return teammates.filter((t) => {
-      if (t.rating < minRating) return false;
+      if (t.rating < minRatingNum) return false;
+      if (minRankIndex >= 0) {
+        const rankIndex = t.lolRank ? RANK_ORDER.indexOf(t.lolRank) : -1;
+        if (rankIndex < minRankIndex) return false;
+      }
       if (q && !t.name.toLowerCase().includes(q) && !t.tagline.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [teammates, query, minRating]);
+  }, [teammates, query, minRating, minRank]);
 
   function choose(id: string) {
     onChange(id);
@@ -56,16 +85,9 @@ export function TeammateModal({ open, onClose, gameSlug, selected, onChange }: P
             />
           </div>
 
-          <div className="form-row">
-            <label htmlFor="teammate-min-rating">Minimum rating</label>
-            <select id="teammate-min-rating" value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}>
-              {MIN_RATING_OPTIONS.map((r) => (
-                <option key={r} value={r}>
-                  {r === 0 ? "Any" : `${r.toFixed(1)}+`}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FieldSelect label="Minimum rating" value={minRating} options={MIN_RATING_OPTIONS} onChange={setMinRating} />
+
+          {rankOptions && <FieldSelect label="Rank" value={minRank} options={rankOptions} onChange={setMinRank} />}
         </div>
 
         <div className="teammate-modal__content">

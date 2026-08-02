@@ -16,12 +16,10 @@ export default async function CheckoutPage({ searchParams }: Props) {
   const params = await searchParams;
   const game = params.game ? getGameBySlug(params.game) : undefined;
   const option = params.option ?? "Duo";
-  const teammates = Number(params.teammates ?? 1);
+  const teammateIds = (params.teammate ?? "random").split(",");
+  const teammates = Number(params.teammates ?? teammateIds.length);
   const total = Number(params.total ?? 4.99);
-  const teammateName =
-    !params.teammate || params.teammate === "random"
-      ? "Random match"
-      : TEAMMATES.find((t) => t.id === params.teammate)?.name ?? "Random match";
+  const teammateNames = teammateIds.map((id) => (id === "random" ? "Random match" : TEAMMATES.find((t) => t.id === id)?.name ?? "Random match"));
 
   return (
     <main className="checkout-page section-relative">
@@ -38,8 +36,8 @@ export default async function CheckoutPage({ searchParams }: Props) {
           gameName={game?.name ?? "Your game"}
           option={option}
           teammates={teammates}
-          teammateId={params.teammate}
-          teammateName={teammateName}
+          teammateIds={teammateIds}
+          teammateName={teammateNames.join(", ")}
           baseTotalEUR={total}
         />
       </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Game } from "@/lib/games";
-import { gamesPageBanner, heroCardWordmark } from "@/lib/gameArt";
+import { heroCardBackground, heroCardWordmark } from "@/lib/gameArt";
 
 interface Props {
   game: Game;
@@ -10,9 +10,11 @@ interface Props {
   className?: string;
 }
 
-// Shared big-card markup (key art + wordmark + stats) used by both the
-// horizontal sliders (GamesPageSlider) and the full, non-scrolling grid
-// (GamesFullGrid) — same visual language, different container layout.
+// Shared big-card markup (key art + wordmark) used by the horizontal
+// sliders (GamesPageSlider), the full non-scrolling grid (GamesFullGrid),
+// and matches GameSwitcherBar's hero-carousel cards exactly — same
+// heroCardBackground art source, so a game looks identical everywhere
+// it's picked from instead of using a differently-cropped banner here.
 export function GameShowcaseCard({ game, onHover, className = "" }: Props) {
   const wordmark = heroCardWordmark(game.slug);
   return (
@@ -23,7 +25,7 @@ export function GameShowcaseCard({ game, onHover, className = "" }: Props) {
       onMouseLeave={() => onHover?.(null)}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="hero-card__bg" src={gamesPageBanner(game.slug)} alt="" loading="lazy" />
+      <img className="hero-card__bg" src={heroCardBackground(game.slug)} alt="" loading="lazy" />
       <span className="hero-card__scrim" aria-hidden="true" />
       <div className="hero-card__footer">
         {wordmark ? (

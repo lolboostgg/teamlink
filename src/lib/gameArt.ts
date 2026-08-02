@@ -58,20 +58,3 @@ const HERO_SECTION_WORDMARK_SLUGS = new Set([
 export function heroCardWordmark(slug: string): string | null {
   return HERO_SECTION_WORDMARK_SLUGS.has(slug) ? `/games/hero-section/fonts/${slug}.webp` : null;
 }
-
-// Dedicated per-game landscape banners for the /games listing page's card
-// slider — covers 7 of 8 games; Fortnite falls back to the hero carousel's
-// art since no dedicated banner was provided for it.
-const GAMES_PAGE_BANNER_SLUGS = new Set([
-  "league-of-legends",
-  "valorant",
-  "teamfight-tactics",
-  "marvel-rivals",
-  "apex-legends",
-  "overwatch-2",
-  "rocket-league",
-]);
-
-export function gamesPageBanner(slug: string): string {
-  return GAMES_PAGE_BANNER_SLUGS.has(slug) ? `/games/hero-section/games/${slug}.avif` : heroCardBackground(slug);
-}
