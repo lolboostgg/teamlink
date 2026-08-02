@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
-import { StatGrid } from "@/components/dashboard/StatGrid";
-import { StatCard } from "@/components/dashboard/StatCard";
 import { AvailabilityToggle } from "@/components/dashboard/teammate/AvailabilityToggle";
-import { SessionsList } from "@/components/dashboard/teammate/SessionsList";
 import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
 import { PendingInvitesBanner } from "@/components/dashboard/teammate/PendingInvitesBanner";
-import { TEAMMATE_STATS, UPCOMING_SESSIONS } from "@/lib/dashboard/teammateData";
+import { TeammateOverviewPanels } from "@/components/dashboard/teammate/TeammateOverviewPanels";
 
 export const metadata: Metadata = { title: "Teammate Dashboard" };
 
@@ -23,27 +20,9 @@ export default function TeammateDashboardPage() {
       />
 
       <PendingInvitesBanner />
-
-      <StatGrid>
-        <StatCard icon="fa-solid fa-sack-dollar" label="Total earnings" value={TEAMMATE_STATS.totalEarningsEUR} currency color="var(--hue-green)" />
-        <StatCard icon="fa-solid fa-hourglass-half" label="Pending payout" value={TEAMMATE_STATS.pendingPayoutEUR} currency color="var(--hue-gold)" />
-        <StatCard icon="fa-solid fa-star" label="Average rating" value={TEAMMATE_STATS.avgRating.toFixed(1)} color="var(--hue-gold)" />
-        <StatCard icon="fa-solid fa-flag-checkered" label="Sessions completed" value={TEAMMATE_STATS.sessionsCompleted} color="var(--accent)" />
-      </StatGrid>
-
+      <TeammateOverviewPanels />
       <AvailabilityToggle />
-
       <ActiveOrderCard />
-
-      <div className="dashboard-panel">
-        <div className="dashboard-panel__head">
-          <div>
-            <div className="dashboard-panel__title">Upcoming sessions</div>
-            <div className="dashboard-panel__sub">Your next booked sessions</div>
-          </div>
-        </div>
-        <SessionsList sessions={UPCOMING_SESSIONS} />
-      </div>
     </>
   );
 }

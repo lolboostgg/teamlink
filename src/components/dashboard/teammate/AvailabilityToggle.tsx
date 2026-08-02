@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { isAvailable, setAvailable, useIsAvailable } from "@/lib/availability";
 
 export function AvailabilityToggle() {
-  const [available, setAvailable] = useState(true);
+  const available = useIsAvailable();
 
   return (
     <div className="dashboard-panel" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
@@ -20,7 +20,7 @@ export function AvailabilityToggle() {
           background: available ? "var(--hue-green)" : "rgba(255,255,255,0.08)",
           color: available ? "#06080f" : "var(--text)",
         }}
-        onClick={() => setAvailable((v) => !v)}
+        onClick={() => setAvailable(!isAvailable())}
         aria-pressed={available}
       >
         <i className={`fa-solid ${available ? "fa-toggle-on" : "fa-toggle-off"}`} aria-hidden="true" />

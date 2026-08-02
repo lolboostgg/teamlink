@@ -1,22 +1,36 @@
 import { getGameBySlug } from "@/lib/games";
 import { GameCover } from "@/components/home/GameCover";
-import type { UpcomingSession } from "@/lib/dashboard/teammateData";
+import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
+import type { DispatchOrder } from "@/lib/matchmaking/types";
 
-export function SessionsList({ sessions }: { sessions: UpcomingSession[] }) {
+const STATUS_LABEL: Partial<Record<DispatchOrder["status"], string>> = {
+  assigned: "Starting soon",
+  in_progress: "In progress",
+  completed: "Completed",
+};
+
+// Sourced from the real dispatch store, scoped to orders this teammate is
+// actually assigned to (see useIncomingDispatches/useAllOrders callers) —
+// not a static mock list.
+export function SessionsList({ orders }: { orders: DispatchOrder[] }) {
   return (
     <div className="dashboard-list">
-      {sessions.map((s) => {
-        const game = getGameBySlug(s.gameSlug);
+      {orders.map((order) => {
+        const game = getGameBySlug(order.gameSlug);
         return (
-          <div className="dashboard-list-item" key={s.id}>
+          <div className="dashboard-list-item" key={order.id}>
             {game && (
               <div className="dashboard-row-game__cover">
                 <GameCover game={game} compact />
               </div>
             )}
             <div className="dashboard-list-item__meta">
-              <div className="dashboard-list-item__title">{s.gameName} with {s.client}</div>
-              <div className="dashboard-list-item__sub">{s.date} · {s.durationMin} min</div>
+              <div className="dashboard-list-item__title">
+                {order.gameName} with {order.customerLabel}
+              </div>
+              <div className="dashboard-list-item__sub">
+                {formatOrderDate(order.createdAt)} · {STATUS_LABEL[order.status] ?? order.status}
+              </div>
             </div>
           </div>
         );

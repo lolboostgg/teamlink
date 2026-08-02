@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { ReviewsList } from "@/components/dashboard/teammate/ReviewsList";
-import { RECENT_REVIEWS } from "@/lib/dashboard/teammateData";
+import { TeammateReviewsPanel } from "@/components/dashboard/teammate/TeammateReviewsPanel";
 
 export const metadata: Metadata = { title: "Reviews" };
 
@@ -13,7 +12,7 @@ export default function TeammateReviewsPage() {
           <div className="dashboard-panel__sub">What clients are saying</div>
         </div>
       </div>
-      <ReviewsList reviews={RECENT_REVIEWS} />
+      <TeammateReviewsPanel />
     </div>
   );
 }
