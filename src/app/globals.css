@@ -973,11 +973,15 @@ ul {
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.hero-card:first-child {
+/* Scoped to the scrolling carousel track specifically — .hero-card is also
+   reused (via GameShowcaseCard) inside .games-full-grid, a CSS grid where
+   :first-child/:last-child would otherwise land on just the top-left and
+   bottom-right cards and throw the grid off-balance. */
+.hero-carousel__track > .hero-card:first-child {
   margin-left: 28px;
 }
 
-.hero-card:last-child {
+.hero-carousel__track > .hero-card:last-child {
   margin-right: 28px;
 }
 
@@ -1207,7 +1211,9 @@ ul {
 
 .games-full-grid__card {
   width: 100%;
-  aspect-ratio: 4 / 3.3;
+  /* No aspect-ratio override — inherits .hero-card's 3/4 portrait ratio so
+     the key art (same source as the hero carousel) shows in full instead
+     of being cropped into a squarer frame. */
 }
 
 /* ── Game cover (shared, resilient — see GameCover.tsx) ─────── */
@@ -3362,6 +3368,16 @@ ul {
   border-bottom: 1px solid var(--border);
   font-size: 14px;
   font-weight: 600;
+  /* Reset native <button> chrome — without this, browsers render their own
+     default button background/border under our styles. */
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .preferences-modal__row > span:first-child {
@@ -4284,6 +4300,13 @@ ul {
   font-size: 13.5px;
   color: var(--text);
   text-align: left;
+  /* Reset native <button> chrome — see .preferences-modal__row. */
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .help-modal__item:last-child {

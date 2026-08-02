@@ -195,11 +195,21 @@ export function listActiveOrders(): DispatchOrder[] {
     .filter((o): o is DispatchOrder => o !== null && !TERMINAL_STATUSES.includes(o.status));
 }
 
+// Full order history (any status), newest first — powers the client
+// dashboard's order list/stats instead of a separate static mock array.
+export function listAllOrders(): DispatchOrder[] {
+  return readIndex()
+    .map((id) => getOrder(id))
+    .filter((o): o is DispatchOrder => o !== null)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
 export function createOrder(input: {
   gameSlug: string;
   gameName: string;
   option: string;
   priceEUR: number;
+  teammates: number;
   requestedTeammateId: string | null;
   customerLabel: string;
   // "Keep playing with the same teammate" path — skips the normal
@@ -235,6 +245,7 @@ export function createOrder(input: {
     gameName: input.gameName,
     option: input.option,
     priceEUR: input.priceEUR,
+    teammates: input.teammates,
     requestedTeammateId: input.requestedTeammateId,
     candidates,
     status: "candidates_ready",
@@ -270,6 +281,7 @@ export function createReplayOrder(order: DispatchOrder): DispatchOrder | null {
     gameName: order.gameName,
     option: order.option,
     priceEUR: order.priceEUR,
+    teammates: order.teammates,
     requestedTeammateId: order.selectedTeammateId,
     customerLabel: order.customerLabel,
     forceAcceptFast: true,

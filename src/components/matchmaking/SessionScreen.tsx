@@ -131,6 +131,7 @@ export function SessionScreen({ orderId }: Props) {
       gameName: order!.gameName,
       option: order!.option,
       priceEUR: order!.priceEUR,
+      teammates: order!.teammates,
       requestedTeammateId: null,
       customerLabel: order!.customerLabel,
     });

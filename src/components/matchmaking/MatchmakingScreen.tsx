@@ -31,6 +31,34 @@ function formatMMSS(totalSeconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// Shared by both the searching and picking phases — same destructive
+// action (give up the request, no charge carried through), same dialog.
+function CancelRequestModal({ open, onClose, onConfirm }: { open: boolean; onClose: () => void; onConfirm: () => void }) {
+  return (
+    <Modal open={open} onClose={onClose} labelledBy="cancel-request-title">
+      <div className="cancel-confirm">
+        <span className="modal-icon modal-icon--warning" aria-hidden="true">
+          <i className="fa-solid fa-triangle-exclamation" />
+        </span>
+        <h2 id="cancel-request-title" className="cancel-confirm__title">
+          Cancel this request?
+        </h2>
+        <p className="cancel-confirm__sub">
+          We&rsquo;ll stop searching for a teammate. No charge was carried through beyond this mock checkout.
+        </p>
+        <div className="cancel-confirm__actions">
+          <button type="button" className="btn btn--ghost btn--block" onClick={onClose}>
+            Keep searching
+          </button>
+          <button type="button" className="btn btn--danger btn--block" onClick={onConfirm}>
+            Cancel request
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // Center slot = whoever accepts first (the auto-confirmed priority pick if
 // the customer doesn't act) with the rest split up to two per side — this
 // only ever runs once order.status is "selecting", so a winner is guaranteed
@@ -66,6 +94,12 @@ export function MatchmakingScreen({ orderId }: Props) {
   const [prefsModalOpen, setPrefsModalOpen] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [selectedAnimId, setSelectedAnimId] = useState<string | null>(null);
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+
+  function handleConfirmCancelRequest() {
+    cancelOrder();
+    setCancelConfirmOpen(false);
+  }
 
   // The "Selected!" beat is purely cosmetic — order.status already flipped
   // to "assigned" the moment confirmSelection() ran, so this just delays
@@ -137,7 +171,11 @@ export function MatchmakingScreen({ orderId }: Props) {
               )}
             </button>
 
-            <button type="button" className="btn btn--ghost btn--sm matching-screen__cancel" onClick={cancelOrder}>
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm matching-screen__cancel"
+              onClick={() => setCancelConfirmOpen(true)}
+            >
               Cancel request
             </button>
 
@@ -147,6 +185,11 @@ export function MatchmakingScreen({ orderId }: Props) {
               conversationPref={order.conversationPref}
               playStylePref={order.playStylePref}
               onSave={updatePreferences}
+            />
+            <CancelRequestModal
+              open={cancelConfirmOpen}
+              onClose={() => setCancelConfirmOpen(false)}
+              onConfirm={handleConfirmCancelRequest}
             />
           </>
         )}
@@ -312,9 +355,19 @@ export function MatchmakingScreen({ orderId }: Props) {
         </div>
       </div>
 
-      <button type="button" className="btn btn--ghost btn--sm matching-screen__cancel" onClick={cancelOrder}>
+      <button
+        type="button"
+        className="btn btn--ghost btn--sm matching-screen__cancel"
+        onClick={() => setCancelConfirmOpen(true)}
+      >
         Cancel request
       </button>
+
+      <CancelRequestModal
+        open={cancelConfirmOpen}
+        onClose={() => setCancelConfirmOpen(false)}
+        onConfirm={handleConfirmCancelRequest}
+      />
 
       <Modal open={!!confirmingId} onClose={() => setConfirmingId(null)} labelledBy="select-teammate-title">
         <div className="select-confirm">

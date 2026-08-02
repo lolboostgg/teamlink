@@ -55,6 +55,7 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
         gameName,
         option,
         priceEUR: totalEUR,
+        teammates,
         requestedTeammateId: null,
         customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
       });

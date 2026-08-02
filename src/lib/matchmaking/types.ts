@@ -28,6 +28,7 @@ export interface DispatchOrder {
   gameName: string;
   option: string;
   priceEUR: number;
+  teammates: number;
   requestedTeammateId: string | null;
   candidates: DispatchCandidate[];
   status: OrderStatus;
