@@ -52,3 +52,13 @@ next-env.d.ts
 # Video references dropped directly in the repo root by the chat client
 # (e.g. a reference clip the user pasted in) — not project content.
 /*.mp4
+
+/src/generated/prisma
+
+# Agent-facing Prisma reference docs, auto-installed by `prisma init` for
+# three different AI tool conventions at once — pure documentation, not
+# project content, kept on disk locally but not worth the repo noise.
+/.agents/skills/prisma-*
+/.claude/skills/prisma-*
+/.windsurf/skills/prisma-*
+/skills-lock.json

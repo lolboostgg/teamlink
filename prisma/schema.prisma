@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Real accounts — replaces the mock "teamlink:authenticated" localStorage
+// flag once auth is wired up (phase 2). Nullable relations to Order/Review
+// below let those keep working before every caller has a real User yet.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  discordId    String?  @unique
+  role         Role     @default(CLIENT)
+  createdAt    DateTime @default(now())
+
+  teammate       Teammate? @relation("UserTeammate")
+  ordersAsClient Order[]   @relation("ClientOrders")
+  reviewsWritten Review[]  @relation("ReviewsWritten")
+}
+
+enum Role {
+  CLIENT
+  TEAMMATE
+  ADMIN
+}
+
+// The booster/duo-partner roster — currently the static TEAMMATES array in
+// src/lib/teammates.ts. `available` folds in what used to be the separate
+// lib/availability.ts localStorage flag (that store had nothing else to key
+// off of besides "the one demo teammate", so it lives on the row now).
+model Teammate {
+  id             String   @id
+  userId         String?  @unique
+  user           User?    @relation("UserTeammate", fields: [userId], references: [id])
+  name           String
+  avatarInitials String
+  tagline        String?  @db.Text
+  timezone       String?
+  rating         Float    @default(5.0)
+  sessionsCount  Int      @default(0)
+  gameSlugs      Json
+  languages      Json
+  lolRank        String?
+  lolChampions   Json?
+  available      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  candidacies       DispatchCandidate[]
+  reviewsReceived   Review[]
+}
+
+enum OrderStatus {
+  SEARCHING
+  CANDIDATES_READY
+  SELECTING
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  CANCEL_PENDING
+  NO_MATCH
+}
+
+// One booking — was DispatchOrder in src/lib/matchmaking/types.ts. The old
+// `selectedTeammateId` / `selectedTeammateIds[]` fields don't need their own
+// columns here: which candidates are "the team" is just
+// DispatchCandidate.selected/isPrimary on this order's candidate rows.
+model Order {
+  id                  String    @id @default(cuid())
+  clientUserId        String?
+  clientUser          User?     @relation("ClientOrders", fields: [clientUserId], references: [id])
+  customerLabel       String
+  gameSlug            String
+  gameName            String
+  option              String
+  priceEUR            Decimal   @db.Decimal(10, 2)
+  teammatesRequested  Int       @default(1)
+  requestedTeammateId String?
+  status              OrderStatus @default(SEARCHING)
+  dispatchDeadline    DateTime
+  selectionDeadline   DateTime?
+  assignedAt          DateTime?
+  rerollDeadline      DateTime?
+  sessionStartAt      DateTime?
+  sessionCompleteAt   DateTime?
+  isReplay            Boolean   @default(false)
+  vibe                String?
+  conversationPref    String?
+  playStylePref       String?
+  cancelApprovedAt    DateTime?
+  createdAt           DateTime  @default(now())
+
+  candidates DispatchCandidate[]
+  review     Review?
+
+  @@index([clientUserId])
+  @@index([status])
+}
+
+enum CandidateStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TIMED_OUT
+}
+
+// One teammate's slot in an order's dispatch wave. `selected`/`isPrimary`
+// mark which accepted candidates ended up on the booking — MySQL has no
+// native array column, so this replaces DispatchOrder.selectedTeammateIds.
+model DispatchCandidate {
+  id                 String           @id @default(cuid())
+  orderId            String
+  order              Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  teammateId         String
+  teammate           Teammate         @relation(fields: [teammateId], references: [id])
+  status             CandidateStatus  @default(PENDING)
+  simulatedRespondAt DateTime
+  simulatedOutcome   CandidateStatus
+  respondedAt        DateTime?
+  manual             Boolean          @default(false)
+  selected           Boolean          @default(false)
+  isPrimary          Boolean          @default(false)
+
+  @@unique([orderId, teammateId])
+  @@index([teammateId, status])
+}
+
+// One rating per order, same rule as the old lib/reviews.ts (re-rating an
+// order overwrites via the orderId unique constraint instead of stacking).
+model Review {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  teammateId    String
+  teammate      Teammate @relation(fields: [teammateId], references: [id])
+  clientUserId  String?
+  clientUser    User?    @relation("ReviewsWritten", fields: [clientUserId], references: [id])
+  rating        Int
+  createdAt     DateTime @default(now())
+
+  @@index([teammateId])
+}
