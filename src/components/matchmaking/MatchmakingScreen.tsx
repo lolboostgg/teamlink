@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
 import { firstAcceptedCandidate } from "@/lib/matchmaking/store";
@@ -13,14 +12,18 @@ interface Props {
   orderId: string;
 }
 
-// Splits the roster into one center slot (whoever accepts first — the
-// priority pick, auto-confirmed if the customer doesn't act) plus up to two
-// flanking slots on each side. Before anyone has accepted yet, the first
-// candidate holds the center spot provisionally; the moment someone actually
-// accepts, they take over the middle instead.
+function formatMMSS(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+// Center slot = whoever accepts first (the auto-confirmed priority pick if
+// the customer doesn't act) with the rest split up to two per side — this
+// only ever runs once order.status is "selecting", so a winner is guaranteed
+// to exist.
 function arrangeCandidates(candidates: DispatchCandidate[], winner: DispatchCandidate | undefined) {
-  if (candidates.length === 0) return { center: null as DispatchCandidate | null, left: [], right: [] };
-  const center = winner ?? candidates[0];
+  const center = winner ?? candidates[0] ?? null;
   const rest = candidates.filter((c) => c !== center);
   const left: DispatchCandidate[] = [];
   const right: DispatchCandidate[] = [];
@@ -28,36 +31,40 @@ function arrangeCandidates(candidates: DispatchCandidate[], winner: DispatchCand
   return { center, left, right };
 }
 
-// Drives the customer-facing "Champion Select"-style live screen end to
-// end — searching, up to 5 candidate alerts resolving in real time, then
+// Drives the customer-facing live screen end to end — a pure "searching"
+// beat first (no candidate boxes at all, just how far along it is), then
+// once someone has actually accepted, the "pick your teammate" reveal, then
 // (once assigned) the live session/chat and eventual Session Complete view
 // — all on this one page/URL, no route change, so the site header never
 // disappears behind a different shell partway through an order.
 export function MatchmakingScreen({ orderId }: Props) {
-  const { order, dispatchSecondsLeft, selectionSecondsLeft, confirmSelection, cancelOrder } =
+  const { order, loaded, selectionSecondsLeft, searchElapsedSeconds, dispatchWindowMs, confirmSelection, cancelOrder } =
     useDispatchOrder(orderId);
-  const [showSearching, setShowSearching] = useState(true);
 
-  useEffect(() => {
-    const t = setTimeout(() => setShowSearching(false), 500);
-    return () => clearTimeout(t);
-  }, []);
-
-  // showSearching is guaranteed true for the first 500ms of every mount —
-  // including the client's very first paint, before useDispatchOrder's
-  // effect has loaded the order from localStorage — so this branch (which
-  // doesn't depend on `order` existing yet) has to come before the `!order`
-  // check below, or a valid order would flash "not found" for a frame while
-  // still loading.
-  if (showSearching) {
+  // Covers both "still loading from localStorage" (loaded===false, which is
+  // also exactly what the server rendered, so no hydration mismatch) and the
+  // real "actively searching" phase once the order is in — same visual
+  // either way, just with real details once available.
+  if (!loaded || order?.status === "candidates_ready") {
     return (
       <div className="matching-screen">
-        <span className="matching-screen__spinner" aria-hidden="true" />
-        <h1 className="matching-screen__title">Finding your teammate...</h1>
+        <span className="matching-screen__spinner matching-screen__spinner--lg" aria-hidden="true" />
+        <h1 className="matching-screen__title">Searching for your perfect teammate...</h1>
         {order && (
-          <p className="matching-screen__sub">
-            Searching {order.candidates.length > 1 ? `up to ${order.candidates.length} teammates` : "your requested teammate"} for {order.gameName}
-          </p>
+          <>
+            <p className="matching-screen__sub">
+              {order.gameName} · {order.option} · <PriceTag amountEUR={order.priceEUR} />
+            </p>
+            <div className="matching-screen__elapsed">
+              <span className="matching-screen__elapsed-time">{formatMMSS(searchElapsedSeconds)}</span>
+              <span className="matching-screen__elapsed-label">
+                Estimated under {formatMMSS(Math.ceil(dispatchWindowMs / 1000))}
+              </span>
+            </div>
+            <button type="button" className="btn btn--ghost btn--sm matching-screen__cancel" onClick={cancelOrder}>
+              Cancel request
+            </button>
+          </>
         )}
       </div>
     );
@@ -105,29 +112,19 @@ export function MatchmakingScreen({ orderId }: Props) {
   }
 
   const winner = firstAcceptedCandidate(order.candidates);
-  const selecting = order.status === "selecting";
   const { center, left, right } = arrangeCandidates(order.candidates, winner);
 
   return (
     <div className="matching-screen matching-screen--wide">
       <div className="matching-screen__head">
-        <h1 className="matching-screen__title">
-          {selecting ? "Pick your teammate" : "Dispatching your request..."}
-        </h1>
+        <h1 className="matching-screen__title">Pick your teammate</h1>
         <p className="matching-screen__sub">
           {order.gameName} · {order.option} · <PriceTag amountEUR={order.priceEUR} />
         </p>
-        {!selecting && (
-          <p className="matching-screen__countdown">
-            <i className="fa-regular fa-clock" aria-hidden="true" /> {dispatchSecondsLeft}s left to respond
-          </p>
-        )}
-        {selecting && (
-          <p className="matching-screen__countdown">
-            <i className="fa-regular fa-clock" aria-hidden="true" /> Auto-confirming the first acceptor in{" "}
-            {selectionSecondsLeft}s
-          </p>
-        )}
+        <p className="matching-screen__countdown">
+          <i className="fa-regular fa-clock" aria-hidden="true" /> Auto-confirming the first acceptor in{" "}
+          {selectionSecondsLeft}s
+        </p>
       </div>
 
       <div className="candidate-stage">
@@ -138,7 +135,7 @@ export function MatchmakingScreen({ orderId }: Props) {
               candidate={c}
               isFirstAccepted={false}
               isSelected={order.selectedTeammateId === c.teammateId}
-              selectable={selecting}
+              selectable
               onSelect={() => confirmSelection(c.teammateId)}
             />
           ))}
@@ -148,9 +145,10 @@ export function MatchmakingScreen({ orderId }: Props) {
           <div className="candidate-stage__center">
             <CandidateSlot
               candidate={center}
+              size="lg"
               isFirstAccepted={winner?.teammateId === center.teammateId}
               isSelected={order.selectedTeammateId === center.teammateId}
-              selectable={selecting}
+              selectable
               onSelect={() => confirmSelection(center.teammateId)}
             />
           </div>
@@ -163,7 +161,7 @@ export function MatchmakingScreen({ orderId }: Props) {
               candidate={c}
               isFirstAccepted={false}
               isSelected={order.selectedTeammateId === c.teammateId}
-              selectable={selecting}
+              selectable
               onSelect={() => confirmSelection(c.teammateId)}
             />
           ))}

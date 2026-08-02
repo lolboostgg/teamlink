@@ -3033,6 +3033,32 @@ ul {
   font-size: 20px;
 }
 
+.matching-screen__spinner--lg {
+  width: 76px;
+  height: 76px;
+  border-width: 4px;
+}
+
+.matching-screen__elapsed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 4px 0 22px;
+}
+
+.matching-screen__elapsed-time {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 400;
+  color: var(--cta-vivid);
+}
+
+.matching-screen__elapsed-label {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
 @keyframes matchingSpin {
   to { transform: rotate(360deg); }
 }
@@ -3098,19 +3124,30 @@ ul {
 }
 
 .candidate-stage__side .candidate-slot {
-  width: 220px;
+  width: 190px;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+.candidate-stage__side .candidate-slot:hover,
+.candidate-stage__side .candidate-slot--accepted.is-selected {
+  opacity: 1;
 }
 
 .candidate-stage__center {
   flex: 0 0 auto;
   z-index: 1;
+  position: relative;
 }
 
-.candidate-stage__center .candidate-slot {
-  width: 260px;
-  padding: 20px;
-  transform: scale(1.04);
-  box-shadow: var(--shadow-card);
+/* Soft glow behind the priority pick so it reads as "the" candidate, not
+   just a slightly bigger card in a row. */
+.candidate-stage__center::before {
+  content: "";
+  position: absolute;
+  inset: -30px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 70%);
+  z-index: -1;
 }
 
 @media (max-width: 760px) {
@@ -3124,10 +3161,9 @@ ul {
     justify-content: center;
   }
 
-  .candidate-stage__center .candidate-slot,
   .candidate-stage__side .candidate-slot {
-    width: 260px;
-    transform: none;
+    width: 220px;
+    opacity: 1;
   }
 }
 
@@ -3141,6 +3177,44 @@ ul {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* The center/priority slot — noticeably bigger, not just a subtle scale
+   bump, so "this is the one" reads instantly. */
+.candidate-slot--lg {
+  width: 300px;
+  padding: 26px 24px;
+  gap: 10px;
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.candidate-slot--lg .candidate-slot__avatar {
+  width: 64px;
+  height: 64px;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.candidate-slot--lg .candidate-slot__name {
+  font-size: 19px;
+}
+
+.candidate-slot--lg .candidate-slot__rating {
+  font-size: 12.5px;
+}
+
+.candidate-slot--lg .candidate-slot__tagline {
+  font-size: 13px;
+}
+
+.candidate-slot--lg .candidate-slot__status {
+  font-size: 13px;
+}
+
+.candidate-slot--lg.candidate-slot--pending,
+.candidate-slot--lg.candidate-slot--out {
+  padding: 34px 24px;
 }
 
 .candidate-slot--pending,

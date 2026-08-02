@@ -22,6 +22,10 @@ export function useDispatchOrder(orderId: string | null) {
   // effect below instead — same pattern as AuthModalProvider's auth flag.
   const [order, setOrder] = useState<DispatchOrder | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Distinguishes "still loading from localStorage" from "genuinely no such
+  // order" — both render order===null, but only the latter should ever show
+  // a "not found" message instead of a loading state.
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     if (!orderId) return;
@@ -29,6 +33,7 @@ export function useDispatchOrder(orderId: string | null) {
     function refresh() {
       setOrder(getOrder(id));
       setNow(Date.now());
+      setLoaded(true);
     }
     refresh();
     const unsubscribe = subscribeToDispatch(refresh);
@@ -44,13 +49,16 @@ export function useDispatchOrder(orderId: string | null) {
     order?.selectionDeadline != null ? Math.max(0, Math.ceil((order.selectionDeadline - now) / 1000)) : 0;
   const sessionElapsedSeconds =
     order?.assignedAt != null ? Math.max(0, Math.floor((now - order.assignedAt) / 1000)) : 0;
+  const searchElapsedSeconds = order ? Math.max(0, Math.floor((now - order.createdAt) / 1000)) : 0;
 
   return {
     order,
     now,
+    loaded,
     dispatchSecondsLeft,
     selectionSecondsLeft,
     sessionElapsedSeconds,
+    searchElapsedSeconds,
     dispatchWindowMs: DISPATCH_WINDOW_MS,
     confirmSelection: (teammateId: string) => orderId && setOrder(confirmSelection(orderId, teammateId)),
     cancelOrder: () => orderId && setOrder(cancelOrder(orderId)),

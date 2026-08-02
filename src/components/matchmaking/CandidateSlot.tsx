@@ -11,15 +11,18 @@ interface Props {
   isSelected: boolean;
   selectable: boolean;
   onSelect: () => void;
+  /** "lg" for the center/priority slot in the candidate stage — bigger avatar and type. */
+  size?: "sm" | "lg";
 }
 
-export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectable, onSelect }: Props) {
+export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectable, onSelect, size = "sm" }: Props) {
   const teammate = getTeammateById(candidate.teammateId);
   if (!teammate) return null;
+  const sizeClass = size === "lg" ? " candidate-slot--lg" : "";
 
   if (candidate.status === "pending") {
     return (
-      <div className="candidate-slot candidate-slot--pending">
+      <div className={`candidate-slot candidate-slot--pending${sizeClass}`}>
         <span className="candidate-slot__avatar candidate-slot__avatar--pending">
           <AvatarIcon seed={teammate.id} />
         </span>
@@ -33,7 +36,7 @@ export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectab
 
   if (candidate.status === "declined" || candidate.status === "timed_out") {
     return (
-      <div className="candidate-slot candidate-slot--out">
+      <div className={`candidate-slot candidate-slot--out${sizeClass}`}>
         <span className="candidate-slot__avatar">
           <AvatarIcon seed={teammate.id} />
         </span>
@@ -50,7 +53,7 @@ export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectab
   return (
     <button
       type="button"
-      className={`candidate-slot candidate-slot--accepted${isSelected ? " is-selected" : ""}${!selectable ? " is-static" : ""}`}
+      className={`candidate-slot candidate-slot--accepted${sizeClass}${isSelected ? " is-selected" : ""}${!selectable ? " is-static" : ""}`}
       onClick={selectable ? onSelect : undefined}
       disabled={!selectable}
     >
