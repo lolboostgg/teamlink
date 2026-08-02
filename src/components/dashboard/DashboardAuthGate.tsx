@@ -6,7 +6,12 @@ import { useAuthModal } from "@/components/auth/AuthModalProvider";
 // Gates /dashboard/* behind the same mock login used everywhere else on the
 // site — guest checkout stays guest-accessible, this gate is dashboard-only.
 export function DashboardAuthGate({ children }: { children: ReactNode }) {
-  const { isAuthenticated, open } = useAuthModal();
+  const { isAuthenticated, isLoading, open } = useAuthModal();
+
+  // The dashboard layouts pass a server-fetched session into a nested
+  // SessionProvider, so this should already be resolved by the time it
+  // renders — this is just a defensive fallback, not the primary fix.
+  if (isLoading) return null;
 
   if (!isAuthenticated) {
     return (

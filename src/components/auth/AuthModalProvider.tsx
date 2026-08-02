@@ -10,6 +10,12 @@ type Mode = "login" | "signup" | null;
 interface AuthModalContextValue {
   open: (mode: Exclude<Mode, null>, onSuccess?: () => void) => void;
   isAuthenticated: boolean;
+  // True only while next-auth is still resolving the session on first
+  // load — distinct from "resolved to signed-out". Consumers should render
+  // neither the signed-in nor signed-out UI while this is true, or every
+  // page load flashes the wrong one for a frame (see HeaderAuthButtons,
+  // DashboardAuthGate).
+  isLoading: boolean;
   logout: () => void;
 }
 
@@ -37,6 +43,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [submitting, setSubmitting] = useState(false);
   const onSuccessRef = useRef<(() => void) | undefined>(undefined);
   const isAuthenticated = status === "authenticated";
+  const isLoading = status === "loading";
 
   const open = useCallback((next: Exclude<Mode, null>, onSuccess?: () => void) => {
     setMode(next);
@@ -94,7 +101,10 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     close();
   }
 
-  const value = useMemo(() => ({ open, isAuthenticated, logout }), [open, isAuthenticated, logout]);
+  const value = useMemo(
+    () => ({ open, isAuthenticated, isLoading, logout }),
+    [open, isAuthenticated, isLoading, logout],
+  );
 
   return (
     <AuthModalContext.Provider value={value}>

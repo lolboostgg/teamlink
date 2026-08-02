@@ -3,9 +3,12 @@
 import { useAuthModal } from "./AuthModalProvider";
 
 export function HeaderAuthButtons() {
-  const { open, isAuthenticated } = useAuthModal();
+  const { open, isAuthenticated, isLoading } = useAuthModal();
 
-  if (isAuthenticated) return null;
+  // Don't assume signed-out while the session is still resolving — that's
+  // what was flashing "Log in / Sign up" for a frame on every load even
+  // when actually signed in.
+  if (isLoading || isAuthenticated) return null;
 
   return (
     <>
