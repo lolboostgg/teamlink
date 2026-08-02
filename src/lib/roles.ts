@@ -33,3 +33,18 @@ export function dashboardHrefForRole(role: string | undefined | null): string {
       return "/dashboard/client";
   }
 }
+
+// Where the header profile menu's "My profile" item links to — admin
+// accounts have no personal profile page yet (their dashboard is the
+// platform, not a personal presence), so this returns null and the menu
+// item is omitted for them.
+export function profileHrefForRole(role: string | undefined | null): string | null {
+  switch (role) {
+    case "TEAMMATE":
+      return "/dashboard/teammate/profile";
+    case "CLIENT":
+      return "/dashboard/client/profile";
+    default:
+      return null;
+  }
+}

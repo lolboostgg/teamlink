@@ -2909,6 +2909,12 @@ ul {
   max-width: 640px;
 }
 
+.client-profile-form__divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
 .teammate-profile-modal__title {
   font-family: var(--font-display);
   font-size: 22px;
@@ -5604,10 +5610,164 @@ ul {
   display: none;
 }
 
+.credits-widget {
+  position: relative;
+}
+
+.credits-widget__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.credits-widget__pill:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.credits-widget__pill i.fa-coins {
+  color: var(--hue-gold);
+  font-size: 12px;
+}
+
+.credits-widget__add {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--cta-vivid);
+  color: var(--cta-vivid-ink);
+  font-size: 10px;
+}
+
+.credits-widget__panel {
+  width: 320px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.credits-widget__panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.credits-widget__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.credits-widget__row:last-child {
+  border-bottom: none;
+}
+
+.credits-widget__row-amount {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.credits-widget__bonus {
+  color: var(--hue-green);
+  font-weight: 700;
+}
+
+.credits-widget__badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.credits-widget__badge--popular {
+  background: color-mix(in srgb, var(--hue-purple) 18%, transparent);
+  color: var(--hue-purple);
+}
+
+.credits-widget__badge--best {
+  background: color-mix(in srgb, var(--hue-gold) 18%, transparent);
+  color: var(--hue-gold);
+}
+
+.credits-widget__confirm p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.credits-widget__confirm-note {
+  font-size: 11.5px !important;
+  color: var(--text-faint) !important;
+}
+
+.credits-widget__confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 @media (min-width: 700px) {
   .header-utilities__dashboard {
     display: inline-flex;
   }
+}
+
+.profile-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--cta-vivid);
+  color: var(--cta-vivid-ink);
+  border: none;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.dropdown-switcher__account {
+  padding: 8px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dropdown-switcher__account-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dropdown-switcher__account-email {
+  display: block;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Dropdown switcher (currency/language, shared) ─────────────── */

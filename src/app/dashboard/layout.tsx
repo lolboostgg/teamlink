@@ -1,5 +1,4 @@
 import { ViewTransition } from "react";
-import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
@@ -17,36 +16,33 @@ import { DispatchAlertPopup } from "@/components/dashboard/teammate/DispatchAler
 // DashboardAuthGate wraps the *entire* shell (not just the content area) —
 // when logged out you see only the lock screen, no half-rendered sidebar.
 //
-// The nested SessionProvider (with the server-fetched session already in
-// hand) is what stops the "log in to view your dashboard" flash on every
-// load for people who ARE logged in — without it, the root SessionProvider
-// starts every page at status:"loading" and fetches the session client-side
-// from scratch, so client components briefly render the signed-out UI
-// before that resolves. Scoped to just this dashboard subtree (already
-// dynamic, already calling auth() further down for role checks) rather
-// than the root layout, so marketing pages keep their static generation.
+// initiallyAuthenticated (from the server-fetched session here) is what
+// stops the "log in to view your dashboard" flash on every load for people
+// who ARE logged in — without it, the root SessionProvider starts every
+// page at status:"loading" and fetches the session client-side from
+// scratch, so client components briefly render the signed-out UI before
+// that resolves. See DashboardAuthGate for why this is a plain prop and
+// not a second nested SessionProvider (that broke the header instead).
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   return (
-    <SessionProvider session={session}>
-      <DashboardAuthGate>
-        <NotificationProvider>
-          <DispatchAlertPopup />
-          <div className="dashboard-shell">
-            <DashboardSidebar />
-            <div className="dashboard-shell__main">
-              <DashboardTopbar />
-              <ViewTransition
-                enter={{ "dashboard-enter": "dash-in-fwd", default: "none" }}
-                exit={{ "dashboard-exit": "dash-out-back", default: "none" }}
-                default="none"
-              >
-                <main className="dashboard-content">{children}</main>
-              </ViewTransition>
-            </div>
+    <DashboardAuthGate initiallyAuthenticated={!!session}>
+      <NotificationProvider>
+        <DispatchAlertPopup />
+        <div className="dashboard-shell">
+          <DashboardSidebar />
+          <div className="dashboard-shell__main">
+            <DashboardTopbar />
+            <ViewTransition
+              enter={{ "dashboard-enter": "dash-in-fwd", default: "none" }}
+              exit={{ "dashboard-exit": "dash-out-back", default: "none" }}
+              default="none"
+            >
+              <main className="dashboard-content">{children}</main>
+            </ViewTransition>
           </div>
-        </NotificationProvider>
-      </DashboardAuthGate>
-    </SessionProvider>
+        </div>
+      </NotificationProvider>
+    </DashboardAuthGate>
   );
 }

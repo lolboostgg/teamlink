@@ -14,17 +14,47 @@ datasource db {
 // flag once auth is wired up (phase 2). Nullable relations to Order/Review
 // below let those keep working before every caller has a real User yet.
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String?
-  passwordHash String?
-  discordId    String?  @unique
-  role         Role     @default(CLIENT)
-  createdAt    DateTime @default(now())
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  name               String?
+  avatarUrl          String?  @db.Text
+  passwordHash       String?
+  discordId          String?  @unique
+  role               Role     @default(CLIENT)
+  creditBalanceCents Int      @default(0)
+  createdAt          DateTime @default(now())
 
-  teammate       Teammate? @relation("UserTeammate")
-  ordersAsClient Order[]   @relation("ClientOrders")
-  reviewsWritten Review[]  @relation("ReviewsWritten")
+  teammate           Teammate?           @relation("UserTeammate")
+  ordersAsClient     Order[]             @relation("ClientOrders")
+  reviewsWritten     Review[]            @relation("ReviewsWritten")
+  creditTransactions CreditTransaction[]
+}
+
+enum CreditTxType {
+  TOPUP
+  BONUS
+  ADMIN_ADJUST
+  SPEND
+  REFUND
+}
+
+// Store credit ledger — every balance change is a row here, User.
+// creditBalanceCents is a denormalized running total kept in sync inside
+// the same transaction as each insert (see purchaseCredits action), so the
+// balance is cheap to read while the ledger stays the source of truth /
+// audit trail. A topup package with a bonus writes two rows (TOPUP +
+// BONUS) rather than one, so the bonus portion stays visible as its own
+// line in a future transaction-history view.
+model CreditTransaction {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  type        CreditTxType
+  amountCents Int
+  note        String?
+  createdAt   DateTime     @default(now())
+
+  @@index([userId])
 }
 
 enum Role {

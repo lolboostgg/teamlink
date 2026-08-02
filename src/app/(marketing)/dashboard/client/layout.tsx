@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { SessionProvider } from "next-auth/react";
 import { auth } from "@/auth";
 import { dashboardHrefForRole } from "@/lib/roles";
 import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
@@ -19,19 +18,15 @@ export default async function ClientDashboardLayout({ children }: { children: Re
     redirect(dashboardHrefForRole(session.user.role));
   }
 
-  // Nested SessionProvider carrying the already-fetched session — stops
-  // the "log in to view your dashboard" flash for signed-in visitors (the
-  // root SessionProvider in AppProviders has no session to start from, so
-  // it fetches client-side and starts every page at status:"loading"). See
-  // the longer explanation in src/app/dashboard/layout.tsx.
+  // initiallyAuthenticated stops the "log in to view your dashboard" flash
+  // for signed-in visitors without a second nested SessionProvider — see
+  // the longer explanation in DashboardAuthGate/src/app/dashboard/layout.tsx.
   return (
-    <SessionProvider session={session}>
-      <DashboardAuthGate>
-        <div className="client-dashboard container">
-          <ClientDashboardNav />
-          <div className="client-dashboard__content">{children}</div>
-        </div>
-      </DashboardAuthGate>
-    </SessionProvider>
+    <DashboardAuthGate initiallyAuthenticated={!!session}>
+      <div className="client-dashboard container">
+        <ClientDashboardNav />
+        <div className="client-dashboard__content">{children}</div>
+      </div>
+    </DashboardAuthGate>
   );
 }

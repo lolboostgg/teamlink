@@ -4,14 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { dashboardHrefForRole } from "@/lib/roles";
+import { dashboardHrefForRole, profileHrefForRole } from "@/lib/roles";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
 
 const CLOSE_DELAY_MS = 200;
 
+function initialsFrom(name: string | null | undefined, email: string | null | undefined): string {
+  const source = name?.trim() || email?.split("@")[0] || "";
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+}
+
 // Same hover/click dropdown pattern as SettingsTrigger. Every account now
 // has exactly one real dashboard (see dashboardHrefForRole) instead of the
 // old 3-way demo switcher anyone could click through regardless of role.
+// Trigger is a small avatar-initials circle rather than a "Dashboard" text
+// button — the dropdown itself carries the dashboard/profile/logout links.
 export function DashboardTrigger() {
   const { data: session } = useSession();
   const { logout } = useAuthModal();
@@ -20,6 +30,8 @@ export function DashboardTrigger() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const href = dashboardHrefForRole(session?.user?.role);
+  const profileHref = profileHrefForRole(session?.user?.role);
+  const initials = initialsFrom(session?.user?.name, session?.user?.email);
   // The client dashboard lives inside this same marketing shell now (see
   // (marketing)/dashboard/client/layout.tsx) — only admin/teammate still
   // swap into the separate dashboard shell, so only they get the transition.
@@ -67,18 +79,27 @@ export function DashboardTrigger() {
     >
       <button
         type="button"
-        className="btn btn--outline btn--sm"
+        className="profile-avatar-btn"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label="Account menu"
       >
-        <i className="fa-solid fa-gauge" aria-hidden="true" />
-        Dashboard
-        <i className="fa-solid fa-chevron-down" aria-hidden="true" />
+        {initials}
       </button>
 
       {open && (
         <div className="dropdown-switcher__menu dropdown-switcher__menu--right" role="menu">
+          <div className="dropdown-switcher__account">
+            <span className="dropdown-switcher__account-name">{session?.user?.name || "Account"}</span>
+            <span className="dropdown-switcher__account-email">{session?.user?.email}</span>
+          </div>
+          {profileHref && (
+            <Link href={profileHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}>
+              <i className="fa-solid fa-id-card" aria-hidden="true" />
+              <span>My profile</span>
+            </Link>
+          )}
           <Link
             href={href}
             className="dropdown-switcher__item"

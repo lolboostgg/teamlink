@@ -2,6 +2,7 @@
 
 import { SettingsTrigger } from "@/components/layout/SettingsTrigger";
 import { DashboardTrigger } from "@/components/layout/DashboardTrigger";
+import { CreditsWidget } from "@/components/layout/CreditsWidget";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
 
 export function HeaderUtilities() {
@@ -10,6 +11,7 @@ export function HeaderUtilities() {
   return (
     <div className="header-utilities">
       <SettingsTrigger />
+      {isAuthenticated && <CreditsWidget />}
       {isAuthenticated && <DashboardTrigger />}
     </div>
   );
