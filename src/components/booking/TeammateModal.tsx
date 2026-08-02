@@ -11,8 +11,8 @@ interface Props {
   open: boolean;
   onClose: () => void;
   gameSlug: string;
-  selected: string;
-  onChange: (id: string) => void;
+  selectedIds: string[];
+  onChange: (ids: string[]) => void;
 }
 
 const MIN_RATING_OPTIONS = [
@@ -24,16 +24,19 @@ const MIN_RATING_OPTIONS = [
 
 const RANK_ORDER = RANK_TIERS.map((r) => r.tier);
 
-// Picking a specific teammate used to be a permanent, full-width carousel
-// section on the booking page — moved into a modal (triggered from the
-// sidebar's Teammate row) so the main flow stays short; "random match" is
-// the default, this is only for people who want to pick. Filters (left)
-// only act on real teammates, not the always-available Random match card.
-export function TeammateModal({ open, onClose, gameSlug, selected, onChange }: Props) {
+// One modal picks every slot in the group at once — selectedIds has one
+// entry per slot ("random" for open ones); clicking a teammate fills the
+// first open slot, clicking a filled one frees it back to random, so you
+// never have to reopen this per slot. Filters (left) only act on real
+// teammates, not the always-available Random match card.
+export function TeammateModal({ open, onClose, gameSlug, selectedIds, onChange }: Props) {
   const teammates = getTeammatesForGame(gameSlug);
   const [query, setQuery] = useState("");
   const [minRating, setMinRating] = useState("0");
   const [minRank, setMinRank] = useState("any");
+
+  const pickedCount = selectedIds.filter((id) => id !== "random").length;
+  const allRandom = pickedCount === 0;
 
   // Only games whose teammates actually carry a rank (League of Legends,
   // right now) show this filter — an empty/meaningless dropdown is worse
@@ -63,9 +66,24 @@ export function TeammateModal({ open, onClose, gameSlug, selected, onChange }: P
     });
   }, [teammates, query, minRating, minRank]);
 
-  function choose(id: string) {
-    onChange(id);
-    onClose();
+  function toggle(id: string) {
+    const slot = selectedIds.indexOf(id);
+    if (slot !== -1) {
+      // Already assigned to a slot — free it back to random.
+      const next = [...selectedIds];
+      next[slot] = "random";
+      onChange(next);
+      return;
+    }
+    const openSlot = selectedIds.indexOf("random");
+    if (openSlot === -1) return; // every slot already has a specific pick
+    const next = [...selectedIds];
+    next[openSlot] = id;
+    onChange(next);
+  }
+
+  function resetToRandom() {
+    onChange(selectedIds.map(() => "random"));
   }
 
   return (
@@ -91,19 +109,32 @@ export function TeammateModal({ open, onClose, gameSlug, selected, onChange }: P
         </div>
 
         <div className="teammate-modal__content">
-          <h2 id="teammate-modal-title" className="teammate-modal__title">
-            Choose your teammate
-          </h2>
-          <p className="teammate-modal__sub">Pick a specific teammate, or let us match you with the fastest one available.</p>
+          <div className="teammate-modal__head">
+            <div>
+              <h2 id="teammate-modal-title" className="teammate-modal__title">
+                Choose your teammates
+              </h2>
+              <p className="teammate-modal__sub">
+                {selectedIds.length > 1
+                  ? `Pick up to ${selectedIds.length} teammates — ${pickedCount} of ${selectedIds.length} selected.`
+                  : "Pick a specific teammate, or let us match you with the fastest one available."}
+              </p>
+            </div>
+            {selectedIds.length > 1 && (
+              <button type="button" className="btn btn--ghost btn--sm" onClick={resetToRandom} disabled={allRandom}>
+                Reset to random
+              </button>
+            )}
+          </div>
 
           <div className="teammate-modal__grid">
             <button
               type="button"
-              className={`teammate-card teammate-card--random${selected === "random" ? " is-selected" : ""}`}
-              onClick={() => choose("random")}
+              className={`teammate-card teammate-card--random${allRandom ? " is-selected" : ""}`}
+              onClick={resetToRandom}
             >
               <div className="teammate-card__banner teammate-card__banner--random">
-                {selected === "random" && <i className="fa-solid fa-check teammate-card__check" aria-hidden="true" />}
+                {allRandom && <i className="fa-solid fa-check teammate-card__check" aria-hidden="true" />}
               </div>
               <div className="teammate-card__body">
                 <span className="teammate-card__avatar teammate-card__avatar--random">
@@ -112,13 +143,23 @@ export function TeammateModal({ open, onClose, gameSlug, selected, onChange }: P
                 <div className="teammate-card__head teammate-card__head--random">
                   <span className="teammate-card__name">Random match</span>
                 </div>
-                <p className="teammate-card__tagline">Fastest available teammate, recommended for the quickest match.</p>
+                <p className="teammate-card__tagline">Fastest available teammate(s), recommended for the quickest match.</p>
               </div>
             </button>
 
-            {filtered.map((t) => (
-              <TeammateCard key={t.id} teammate={t} gameSlug={gameSlug} selected={selected === t.id} onSelect={() => choose(t.id)} />
-            ))}
+            {filtered.map((t) => {
+              const slot = selectedIds.indexOf(t.id);
+              return (
+                <TeammateCard
+                  key={t.id}
+                  teammate={t}
+                  gameSlug={gameSlug}
+                  selected={slot !== -1}
+                  slotNumber={selectedIds.length > 1 && slot !== -1 ? slot + 1 : undefined}
+                  onSelect={() => toggle(t.id)}
+                />
+              );
+            })}
 
             {filtered.length === 0 && teammates.length > 0 && (
               <p className="teammate-modal__empty">No teammates match those filters.</p>

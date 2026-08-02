@@ -404,6 +404,12 @@ ul {
   background: rgba(255, 255, 255, 0.09);
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
 .btn--block {
   width: 100%;
 }
@@ -794,9 +800,16 @@ ul {
 .hero__sub {
   font-size: 16px;
   color: var(--text-muted);
-  max-width: 480px;
   margin: 0 auto 28px;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .hero__sub {
+    white-space: normal;
+    max-width: 480px;
+  }
 }
 
 .hero__trust {
@@ -915,7 +928,12 @@ ul {
   position: relative;
   flex: 0 0 auto;
   width: 220px;
-  aspect-ratio: 4 / 3.3;
+  /* Taller than the original 4/3.3 — more portrait so more of each
+     game's key art actually shows instead of being mostly cropped away.
+     .games-full-grid__card/.games-slider__card opt back into the old,
+     more landscape ratio below — this taller one is specifically for the
+     "choose game" carousel (home hero + booking page). */
+  aspect-ratio: 3 / 4;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   overflow: hidden;
@@ -1109,6 +1127,7 @@ ul {
 
 .games-slider__card {
   width: 300px;
+  aspect-ratio: 4 / 3.3;
 }
 
 .games-slider__card .hero-card__wordmark {
@@ -1130,15 +1149,38 @@ ul {
 }
 
 /* ── /games listing: full grid, every game visible, no scrolling ── */
+/* Fixed column counts instead of auto-fill/minmax — auto-fill's column
+   count can end up different from what the eye expects depending on the
+   exact container width, which was producing uneven-looking card sizes
+   between rows. A fixed count guarantees every card is identical. */
 .games-full-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 28px;
   margin-top: 8px;
+}
+
+@media (max-width: 980px) {
+  .games-full-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .games-full-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 460px) {
+  .games-full-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .games-full-grid__card {
   width: 100%;
+  aspect-ratio: 4 / 3.3;
 }
 
 /* ── Game cover (shared, resilient — see GameCover.tsx) ─────── */
@@ -1361,7 +1403,8 @@ ul {
 .marquee__card {
   display: flex;
   align-items: stretch;
-  width: 292px;
+  width: 320px;
+  min-height: 128px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -1371,7 +1414,7 @@ ul {
 
 .marquee__banner {
   position: relative;
-  width: 72px;
+  width: 88px;
   flex: 0 0 auto;
   overflow: hidden;
 }
@@ -1430,9 +1473,11 @@ ul {
 .marquee__quote {
   font-size: 12px;
   color: var(--text-muted);
-  white-space: nowrap;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .marquee__foot {
@@ -1945,8 +1990,15 @@ ul {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  min-width: 0;
   color: var(--text);
   font-weight: 600;
+}
+
+.booking-sidebar__row-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .booking-sidebar__row--action i {
@@ -2150,6 +2202,14 @@ ul {
   padding: 28px 32px;
 }
 
+.teammate-modal__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
 .teammate-modal__title {
   font-family: var(--font-heading);
   font-size: 22px;
@@ -2162,7 +2222,6 @@ ul {
 .teammate-modal__sub {
   font-size: 13px;
   color: var(--text-muted);
-  margin-bottom: 22px;
 }
 
 .teammate-modal__empty {
@@ -2352,6 +2411,7 @@ ul {
   background: var(--accent);
   color: #fff;
   font-size: 10px;
+  font-weight: 800;
   display: grid;
   place-items: center;
   box-shadow: 0 0 0 2px rgba(6, 8, 15, 0.7);

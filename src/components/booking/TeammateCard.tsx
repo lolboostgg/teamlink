@@ -9,20 +9,24 @@ interface Props {
   teammate: Teammate;
   gameSlug: string;
   selected: boolean;
+  /** When picking multiple teammates at once, shows which slot (1, 2, ...) this pick occupies instead of a plain checkmark. */
+  slotNumber?: number;
   onSelect: () => void;
 }
 
 // Booster-search-style card (key art banner + overlapping avatar + rating +
 // rank + flags) instead of a flat info card — matches the richer profile
 // card pattern from the reference the user pointed to (eloboost.gg).
-export function TeammateCard({ teammate, gameSlug, selected, onSelect }: Props) {
+export function TeammateCard({ teammate, gameSlug, selected, slotNumber, onSelect }: Props) {
   const rank = teammate.lolRank ? getRankMeta(teammate.lolRank) : null;
 
   return (
     <button type="button" className={`teammate-card${selected ? " is-selected" : ""}`} onClick={onSelect}>
       <div className="teammate-card__banner" style={{ backgroundImage: `url(${heroCardBackground(gameSlug)})` }}>
         <span className="teammate-card__banner-scrim" aria-hidden="true" />
-        {selected && <i className="fa-solid fa-check teammate-card__check" aria-hidden="true" />}
+        {selected && (
+          <span className="teammate-card__check">{slotNumber ?? <i className="fa-solid fa-check" aria-hidden="true" />}</span>
+        )}
       </div>
 
       <div className="teammate-card__body">

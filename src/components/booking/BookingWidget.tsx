@@ -36,7 +36,7 @@ export function BookingWidget({ game }: Props) {
   // one "teammate" choice silently applying to the whole group.
   const [teammateIds, setTeammateIds] = useState<string[]>(["random"]);
   const [pulsing, setPulsing] = useState(false);
-  const [editingSlot, setEditingSlot] = useState<number | null>(null);
+  const [teammateModalOpen, setTeammateModalOpen] = useState(false);
   const firstRender = useRef(true);
 
   const teammates = teammateIds.length;
@@ -61,11 +61,6 @@ export function BookingWidget({ game }: Props) {
       if (clamped > prev.length) return [...prev, ...Array(clamped - prev.length).fill("random")];
       return prev.slice(0, clamped);
     });
-  }
-
-  function handleTeammateChange(id: string) {
-    if (editingSlot === null) return;
-    setTeammateIds((prev) => prev.map((v, i) => (i === editingSlot ? id : v)));
   }
 
   function goToCheckout() {
@@ -136,20 +131,13 @@ export function BookingWidget({ game }: Props) {
             <span>{selected.name}</span>
           </div>
 
-          {teammateIds.map((id, i) => (
-            <button
-              key={i}
-              type="button"
-              className="booking-sidebar__row booking-sidebar__row--action"
-              onClick={() => setEditingSlot(i)}
-            >
-              <span>{teammateIds.length > 1 ? `Teammate ${i + 1}` : "Teammate"}</span>
-              <span>
-                {teammateName(id)}
-                <i className="fa-solid fa-pen" aria-hidden="true" />
-              </span>
-            </button>
-          ))}
+          <button type="button" className="booking-sidebar__row booking-sidebar__row--action" onClick={() => setTeammateModalOpen(true)}>
+            <span>{teammateIds.length > 1 ? "Teammates" : "Teammate"}</span>
+            <span>
+              <span className="booking-sidebar__row-value">{teammateIds.map(teammateName).join(", ")}</span>
+              <i className="fa-solid fa-pen" aria-hidden="true" />
+            </span>
+          </button>
 
           <div className="booking-sidebar__row booking-sidebar__row--last">
             <span>Group size</span>
@@ -178,11 +166,11 @@ export function BookingWidget({ game }: Props) {
       </div>
 
       <TeammateModal
-        open={editingSlot !== null}
-        onClose={() => setEditingSlot(null)}
+        open={teammateModalOpen}
+        onClose={() => setTeammateModalOpen(false)}
         gameSlug={game.slug}
-        selected={editingSlot !== null ? teammateIds[editingSlot] : "random"}
-        onChange={handleTeammateChange}
+        selectedIds={teammateIds}
+        onChange={setTeammateIds}
       />
     </div>
   );
