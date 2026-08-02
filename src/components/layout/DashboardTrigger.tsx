@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DASHBOARD_ROLES } from "@/lib/roles";
 import { useRole } from "@/components/role/RoleProvider";
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
 
 const CLOSE_DELAY_MS = 200;
 
@@ -13,6 +15,8 @@ const CLOSE_DELAY_MS = 200;
 // header's Dashboard button to pick which one.
 export function DashboardTrigger() {
   const { role, setRole } = useRole();
+  const { logout } = useAuthModal();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -39,6 +43,12 @@ export function DashboardTrigger() {
   }, [open]);
 
   useEffect(() => () => clearCloseTimer(), []);
+
+  function handleLogout() {
+    setOpen(false);
+    logout();
+    router.push("/");
+  }
 
   return (
     <div
@@ -73,12 +83,19 @@ export function DashboardTrigger() {
                 setRole(r.role);
                 setOpen(false);
               }}
-              transitionTypes={["dashboard-enter"]}
+              // Client dashboard lives inside this same marketing shell now
+              // (see (marketing)/dashboard/client/layout.tsx) — only admin/
+              // teammate still swap into the separate dashboard shell.
+              transitionTypes={r.role === "client" ? undefined : ["dashboard-enter"]}
             >
               <i className={r.icon} aria-hidden="true" />
               <span>{r.label}</span>
             </Link>
           ))}
+          <button type="button" className="dropdown-switcher__item" role="menuitem" onClick={handleLogout}>
+            <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
+            <span>Log out</span>
+          </button>
         </div>
       )}
     </div>

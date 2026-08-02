@@ -12,7 +12,10 @@ export function DashboardTopbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuthModal();
-  const roleMeta = DASHBOARD_ROLES.find((r) => pathname.startsWith(r.href)) ?? DASHBOARD_ROLES[0];
+  // This topbar only ever renders for admin/teammate now — client has its
+  // own tab strip (see ClientDashboardNav.tsx) instead of this shell.
+  const roleMeta =
+    DASHBOARD_ROLES.find((r) => r.role !== "client" && pathname.startsWith(r.href)) ?? DASHBOARD_ROLES[1];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 

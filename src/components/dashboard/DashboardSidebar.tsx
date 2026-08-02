@@ -3,15 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
-import { DASHBOARD_ROLES, type DashboardRole } from "@/lib/roles";
 
-const SECTIONS: Record<DashboardRole, { href: string; label: string; icon: string }[]> = {
-  client: [
-    { href: "/dashboard/client", label: "Overview", icon: "fa-solid fa-gauge" },
-    { href: "/dashboard/client/orders", label: "Orders", icon: "fa-solid fa-calendar-check" },
-    { href: "/dashboard/client/chat", label: "Chat", icon: "fa-solid fa-comments" },
-    { href: "/dashboard/client/favorites", label: "Favorites", icon: "fa-solid fa-heart" },
-  ],
+// Client dashboard has its own tab strip instead (see
+// ClientDashboardNav.tsx) — it no longer uses this shell/sidebar at all.
+type ShellRole = "admin" | "teammate";
+
+const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[]> = {
   admin: [
     { href: "/dashboard/admin", label: "Overview", icon: "fa-solid fa-gauge" },
     { href: "/dashboard/admin/signups", label: "Signups", icon: "fa-solid fa-users" },
@@ -27,8 +24,7 @@ const SECTIONS: Record<DashboardRole, { href: string; label: string; icon: strin
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const role: DashboardRole =
-    DASHBOARD_ROLES.find((r) => pathname.startsWith(r.href))?.role ?? "client";
+  const role: ShellRole = pathname.startsWith("/dashboard/admin") ? "admin" : "teammate";
   const sections = SECTIONS[role];
 
   return (
