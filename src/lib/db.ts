@@ -7,7 +7,17 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 // on every file save.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
+if (!process.env.DATABASE_URL) {
+  // Fails loudly and clearly instead of a cryptic "Cannot read properties
+  // of undefined (reading 'prepareCacheLength')" from the adapter — that
+  // crash means exactly this: DATABASE_URL isn't set wherever this build
+  // is running (e.g. the Hostinger deploy env, not just local .env).
+  throw new Error(
+    "DATABASE_URL is not set. Add it as an environment variable wherever this app runs (locally: .env; on the Hostinger deploy: the hosting panel's environment variables — .env is gitignored and never gets deployed).",
+  );
+}
+
+const adapter = new PrismaMariaDb(process.env.DATABASE_URL);
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 

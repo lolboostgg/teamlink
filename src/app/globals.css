@@ -4815,8 +4815,15 @@ ul {
   margin-bottom: 22px;
 }
 
-.auth-modal__discord {
+.auth-modal__oauth {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 18px;
+}
+
+.auth-modal__discord {
+  margin-bottom: 0;
 }
 
 .auth-modal__divider {

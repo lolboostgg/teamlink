@@ -111,10 +111,20 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
               : "Takes less than 30 seconds. No credit card required."}
           </p>
 
-          <button type="button" className="btn btn--outline btn--block auth-modal__discord">
-            <i className="fa-brands fa-discord" aria-hidden="true" />
-            Continue with Discord
-          </button>
+          <div className="auth-modal__oauth">
+            <button
+              type="button"
+              className="btn btn--outline btn--block auth-modal__discord"
+              onClick={() => signIn("discord")}
+            >
+              <i className="fa-brands fa-discord" aria-hidden="true" />
+              Continue with Discord
+            </button>
+            <button type="button" className="btn btn--outline btn--block" onClick={() => signIn("google")}>
+              <i className="fa-brands fa-google" aria-hidden="true" />
+              Continue with Google
+            </button>
+          </div>
 
           <div className="auth-modal__divider">
             <span>or</span>
