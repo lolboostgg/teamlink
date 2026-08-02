@@ -10,6 +10,10 @@ interface Props {
   feeEUR: number;
   feeLabel?: string;
   totalEUR: number;
+  discountEUR?: number;
+  couponCode?: string | null;
+  onOpenCoupon?: () => void;
+  onRemoveCoupon?: () => void;
 }
 
 export function CheckoutOrderSummary({
@@ -21,6 +25,10 @@ export function CheckoutOrderSummary({
   feeEUR,
   feeLabel,
   totalEUR,
+  discountEUR = 0,
+  couponCode,
+  onOpenCoupon,
+  onRemoveCoupon,
 }: Props) {
   return (
     <aside className="checkout-card order-summary">
@@ -52,6 +60,28 @@ export function CheckoutOrderSummary({
           </span>
           <PriceTag amountEUR={feeEUR} />
         </div>
+      )}
+
+      {discountEUR > 0 && couponCode ? (
+        <div className="order-summary__item order-summary__item--discount">
+          <span>
+            <i className="fa-solid fa-ticket" aria-hidden="true" /> Coupon {couponCode}
+          </span>
+          <span>
+            −<PriceTag amountEUR={discountEUR} />
+            {onRemoveCoupon && (
+              <button type="button" className="order-summary__coupon-remove" onClick={onRemoveCoupon} aria-label="Remove coupon">
+                <i className="fa-solid fa-xmark" aria-hidden="true" />
+              </button>
+            )}
+          </span>
+        </div>
+      ) : (
+        onOpenCoupon && (
+          <button type="button" className="order-summary__coupon-trigger" onClick={onOpenCoupon}>
+            <i className="fa-solid fa-ticket" aria-hidden="true" /> Coupon?
+          </button>
+        )
       )}
 
       <div className="order-summary__total">

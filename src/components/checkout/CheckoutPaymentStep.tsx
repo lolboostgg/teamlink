@@ -17,17 +17,35 @@ interface Props {
   submitting: boolean;
   onSubmit: () => void;
   onStartPayAsYouGo?: () => void;
+  // Credits only make sense for a signed-in account (guests have no
+  // balance) — hidden entirely rather than shown disabled-and-confusing.
+  creditsEnabled?: boolean;
+  creditBalanceCents?: number | null;
 }
 
 // Mock payment placeholders only — Card is branded as Stripe (no live SDK,
 // this project has no backend to hold API keys), PayPal/Crypto surface a
 // visible processing fee that flows into the order summary via
 // lib/payments.ts's calculateFee. Submitting just simulates success, same
-// pattern as the rest of this mock-data-first project.
-export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitting, onSubmit, onStartPayAsYouGo }: Props) {
+// pattern as the rest of this mock-data-first project. Credits is the one
+// real path here — it actually deducts from a real Postgres balance (see
+// spendCredits in app/actions/credits.ts) instead of simulating success.
+export function CheckoutPaymentStep({
+  method,
+  onMethodChange,
+  totalEUR,
+  submitting,
+  onSubmit,
+  onStartPayAsYouGo,
+  creditsEnabled,
+  creditBalanceCents,
+}: Props) {
   const [crypto, setCrypto] = useState("btc");
   const [paypalMode, setPaypalMode] = useState<"once" | "payg">("once");
   const active = PAYMENT_METHODS.find((m) => m.key === method) ?? PAYMENT_METHODS[0];
+  const visibleMethods = PAYMENT_METHODS.filter((pm) => pm.key !== "credits" || creditsEnabled);
+  const balanceEUR = creditBalanceCents != null ? creditBalanceCents / 100 : null;
+  const insufficientCredits = method === "credits" && balanceEUR !== null && balanceEUR < totalEUR;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,6 +53,7 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
       onStartPayAsYouGo();
       return;
     }
+    if (insufficientCredits) return;
     onSubmit();
   }
 
@@ -43,7 +62,7 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
       <div className="checkout-card">
         <div className="checkout-card__title">Payment method</div>
         <div className="payment-methods">
-          {PAYMENT_METHODS.map((pm) => (
+          {visibleMethods.map((pm) => (
             <button
               key={pm.key}
               type="button"
@@ -161,7 +180,32 @@ export function CheckoutPaymentStep({ method, onMethodChange, totalEUR, submitti
         </div>
       )}
 
-      <button type="submit" className="btn btn--vivid btn--block" disabled={submitting}>
+      {method === "credits" && (
+        <div className="checkout-card">
+          <div className="checkout-card__title">
+            <i className="fa-solid fa-coins" aria-hidden="true" style={{ marginRight: 8 }} />
+            TeamLink Credits
+          </div>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            Your balance:{" "}
+            {balanceEUR !== null ? (
+              <strong style={{ color: "var(--text)" }}>
+                <PriceTag amountEUR={balanceEUR} />
+              </strong>
+            ) : (
+              "loading..."
+            )}
+          </p>
+          {insufficientCredits && (
+            <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 8 }}>
+              <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> Not enough credits for this total —
+              top up or choose another payment method.
+            </p>
+          )}
+        </div>
+      )}
+
+      <button type="submit" className="btn btn--vivid btn--block" disabled={submitting || insufficientCredits}>
         {submitting ? (
           "Processing..."
         ) : method === "paypal" && paypalMode === "payg" ? (

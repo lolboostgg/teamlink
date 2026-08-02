@@ -1,34 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import type { ChatConversation, ChatMessage } from "@/lib/dashboard/chatData";
+import type { ChatConversation } from "@/lib/dashboard/chatData";
+import { useConversationMessages, sendChatMessage, getLastMessage } from "@/lib/matchmaking/chatStore";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 
-export function DashboardChat({ conversations: initial }: { conversations: ChatConversation[] }) {
-  const [conversations, setConversations] = useState(initial);
-  const [activeId, setActiveId] = useState(initial[0]?.id);
+interface Props {
+  conversations: ChatConversation[];
+  // Which side this dashboard belongs to — decides which stored messages
+  // render as "me" vs "them" and who a sent message is attributed to.
+  from: "client" | "teammate";
+}
+
+export function DashboardChat({ conversations, from }: Props) {
+  const [activeId, setActiveId] = useState(conversations[0]?.id);
   const [draft, setDraft] = useState("");
 
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
-
-  function selectConversation(id: string) {
-    setActiveId(id);
-    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, unread: 0 } : c)));
-  }
+  const { messages, refresh } = useConversationMessages(active?.conversationKey);
 
   function sendMessage(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
     if (!text || !active) return;
-    const message: ChatMessage = {
-      id: `local-${Date.now()}`,
-      from: "me",
-      text,
-      time: "Now",
-    };
-    setConversations((prev) =>
-      prev.map((c) => (c.id === active.id ? { ...c, messages: [...c.messages, message], lastMessage: text } : c)),
-    );
+    sendChatMessage(active.conversationKey, from, text);
+    refresh();
     setDraft("");
   }
 
@@ -39,23 +35,25 @@ export function DashboardChat({ conversations: initial }: { conversations: ChatC
   return (
     <div className="chat-layout">
       <div className="chat-list">
-        {conversations.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`chat-list__item${c.id === active.id ? " is-active" : ""}`}
-            onClick={() => selectConversation(c.id)}
-          >
-            <span className="chat-list__avatar">
-              <AvatarIcon seed={c.id + c.withName} />
-            </span>
-            <span className="chat-list__meta">
-              <span className="chat-list__name">{c.withName}</span>
-              <span className="chat-list__last">{c.lastMessage}</span>
-            </span>
-            {c.unread > 0 && <span className="chat-list__badge">{c.unread}</span>}
-          </button>
-        ))}
+        {conversations.map((c) => {
+          const preview = getLastMessage(c.conversationKey);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              className={`chat-list__item${c.id === active.id ? " is-active" : ""}`}
+              onClick={() => setActiveId(c.id)}
+            >
+              <span className="chat-list__avatar">
+                <AvatarIcon seed={c.id + c.withName} />
+              </span>
+              <span className="chat-list__meta">
+                <span className="chat-list__name">{c.withName}</span>
+                <span className="chat-list__last">{preview ? preview.text : `Matched for ${c.gameName}`}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="chat-thread">
@@ -70,10 +68,13 @@ export function DashboardChat({ conversations: initial }: { conversations: ChatC
         </div>
 
         <div className="chat-thread__messages">
-          {active.messages.map((m) => (
-            <div key={m.id} className={`chat-bubble chat-bubble--${m.from}`}>
+          {messages.length === 0 && (
+            <p className="chat-thread__empty">No messages yet — say hello to get the conversation started.</p>
+          )}
+          {messages.map((m) => (
+            <div key={m.id} className={`chat-bubble chat-bubble--${m.from === from ? "me" : "them"}`}>
               <p>{m.text}</p>
-              <span>{m.time}</span>
+              <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
             </div>
           ))}
         </div>

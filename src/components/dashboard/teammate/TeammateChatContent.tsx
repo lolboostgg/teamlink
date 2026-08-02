@@ -3,11 +3,14 @@
 import { useMemo } from "react";
 import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
 import { useCurrentTeammateId } from "@/lib/matchmaking/useCurrentTeammateId";
+import { conversationKey } from "@/lib/matchmaking/chatStore";
 import { DashboardChat } from "@/components/dashboard/chat/DashboardChat";
 import type { ChatConversation } from "@/lib/dashboard/chatData";
 
 // Inverse of ClientChatContent — one conversation per real client this
-// teammate has actually been matched with, most recent first.
+// teammate has actually been matched with, most recent first. Same real,
+// shared message store (lib/matchmaking/chatStore.ts) as the in-session
+// chat and the client's own dashboard chat tab.
 export function TeammateChatContent() {
   const orders = useAllOrders();
   const teammateId = useCurrentTeammateId();
@@ -28,9 +31,7 @@ export function TeammateChatContent() {
         id: `${client}-${i}`,
         withName: client,
         gameName: info.gameName,
-        lastMessage: `Matched for ${info.gameName}`,
-        unread: 0,
-        messages: [{ id: "m1", from: "me" as const, text: `Hi! Ready when you are for ${info.gameName}.`, time: "" }],
+        conversationKey: teammateId ? conversationKey(teammateId, client) : "",
       }));
   }, [orders, teammateId]);
 
@@ -43,5 +44,5 @@ export function TeammateChatContent() {
     );
   }
 
-  return <DashboardChat conversations={conversations} />;
+  return <DashboardChat conversations={conversations} from="teammate" />;
 }

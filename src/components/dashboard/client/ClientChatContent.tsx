@@ -3,23 +3,28 @@
 import { useMemo } from "react";
 import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
 import { getTeammateById } from "@/lib/teammates";
+import { conversationKey } from "@/lib/matchmaking/chatStore";
 import { DashboardChat } from "@/components/dashboard/chat/DashboardChat";
 import type { ChatConversation } from "@/lib/dashboard/chatData";
 
 // One conversation per real matched teammate (any order with a
 // selectedTeammateId), most recently matched first — not a static mock
-// list. Message content itself isn't persisted anywhere (same as the
-// in-session chat), so each thread just seeds a short greeting.
+// list. Messages themselves are real too now (see lib/matchmaking/
+// chatStore.ts): the same conversation the in-session chat writes to.
 export function ClientChatContent() {
   const orders = useAllOrders();
 
   const conversations: ChatConversation[] = useMemo(() => {
-    const byTeammate = new Map<string, { gameName: string; createdAt: number }>();
+    const byTeammate = new Map<string, { gameName: string; createdAt: number; customerLabel: string }>();
     orders.forEach((order) => {
       if (!order.selectedTeammateId) return;
       const existing = byTeammate.get(order.selectedTeammateId);
       if (!existing || order.createdAt > existing.createdAt) {
-        byTeammate.set(order.selectedTeammateId, { gameName: order.gameName, createdAt: order.createdAt });
+        byTeammate.set(order.selectedTeammateId, {
+          gameName: order.gameName,
+          createdAt: order.createdAt,
+          customerLabel: order.customerLabel,
+        });
       }
     });
 
@@ -31,9 +36,7 @@ export function ClientChatContent() {
           id: teammateId,
           withName: name,
           gameName: info.gameName,
-          lastMessage: `Matched for ${info.gameName}`,
-          unread: 0,
-          messages: [{ id: "m1", from: "them" as const, text: `Hi! Ready when you are for ${info.gameName}.`, time: "" }],
+          conversationKey: conversationKey(teammateId, info.customerLabel),
         };
       });
   }, [orders]);
@@ -47,5 +50,5 @@ export function ClientChatContent() {
     );
   }
 
-  return <DashboardChat conversations={conversations} />;
+  return <DashboardChat conversations={conversations} from="client" />;
 }

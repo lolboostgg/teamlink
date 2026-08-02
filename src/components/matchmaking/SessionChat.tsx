@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useConversationMessages, sendChatMessage } from "@/lib/matchmaking/chatStore";
 
-interface Message {
+interface SystemLine {
   id: string;
-  from: "me" | "them" | "system";
   text: string;
-  time: string;
 }
 
 interface Props {
+  conversationKey: string;
   teammateName: string;
   vibe?: string | null;
   conversationPref?: string | null;
@@ -18,57 +18,72 @@ interface Props {
 
 const QUICK_REPLIES = ["Hello", "Okay", "Waiting for invite", "Thank you", "GG", "On the way", "Logging in..."];
 
-// Local-only thread (no persistence, same as the generic DashboardChat) —
-// seeded with a system notice, the preferences set during search (if any),
-// and a first hello from the teammate so the screen doesn't open empty.
-export function SessionChat({ teammateName, vibe, conversationPref, playStylePref }: Props) {
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const seed: Message[] = [
-      {
-        id: "sys-1",
-        from: "system",
-        text: `You'll receive a message from ${teammateName} now, so please don't close this chat. Let them know how you'd like to play and your goals (default is to win).`,
-        time: "Now",
-      },
-    ];
-    if (vibe) {
-      seed.push({ id: "sys-vibe", from: "system", text: `Vibe set: ${vibe.charAt(0).toUpperCase()}${vibe.slice(1)}`, time: "Now" });
-    }
-    if (conversationPref || playStylePref) {
-      const lines = ["My preferences are,"];
-      if (conversationPref) lines.push(`Conversation: ${conversationPref}`);
-      if (playStylePref) lines.push(`Play style: ${playStylePref}`);
-      seed.push({ id: "me-prefs", from: "me", text: lines.join("\n"), time: "Now" });
-    }
-    seed.push({ id: "them-1", from: "them", text: `Hi! This is ${teammateName} — ready when you are.`, time: "Now" });
-    return seed;
-  });
+// Real, persisted thread (see lib/matchmaking/chatStore.ts) — the same
+// conversation the client's dashboard "Chat" tab shows, not a separate
+// local-only thread that disappears on reload. The intro/preferences
+// notices stay client-only decoration (system lines, not real messages)
+// since they're generated from this order's own settings, not something
+// either side actually typed.
+export function SessionChat({ conversationKey, teammateName, vibe, conversationPref, playStylePref }: Props) {
+  const { messages, refresh } = useConversationMessages(conversationKey);
   const [draft, setDraft] = useState("");
+  const seededRef = useRef(false);
+
+  // Seeds the teammate's opening line into the real store once per
+  // conversation (not on every mount) so it's part of the same persisted
+  // thread the dashboard chat reads, instead of purely decorative.
+  useEffect(() => {
+    if (seededRef.current || messages.length > 0) return;
+    seededRef.current = true;
+    sendChatMessage(conversationKey, "teammate", `Hi! This is ${teammateName} — ready when you are.`);
+    // BroadcastChannel never delivers a message back to the tab that sent
+    // it, so this tab's own subscription won't fire on its own write —
+    // refresh() closes that gap for the sender specifically.
+    refresh();
+  }, [conversationKey, teammateName, messages.length, refresh]);
+
+  const systemLines: SystemLine[] = [];
+  if (vibe) systemLines.push({ id: "sys-vibe", text: `Vibe set: ${vibe.charAt(0).toUpperCase()}${vibe.slice(1)}` });
+  if (conversationPref || playStylePref) {
+    const lines = ["My preferences are,"];
+    if (conversationPref) lines.push(`Conversation: ${conversationPref}`);
+    if (playStylePref) lines.push(`Play style: ${playStylePref}`);
+    systemLines.push({ id: "sys-prefs", text: lines.join("\n") });
+  }
 
   function sendText(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    setMessages((prev) => [...prev, { id: `me-${Date.now()}-${Math.random()}`, from: "me", text: trimmed, time: "Now" }]);
+    sendChatMessage(conversationKey, "client", text);
+    refresh();
   }
 
   function send(e: FormEvent) {
     e.preventDefault();
-    sendText(draft);
+    const trimmed = draft.trim();
+    if (!trimmed) return;
+    sendText(trimmed);
     setDraft("");
   }
 
   return (
     <div className="session-chat">
       <div className="chat-thread__messages session-chat__messages">
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={`chat-bubble chat-bubble--${m.from === "me" ? "me" : "them"}${m.from === "system" ? " chat-bubble--system" : ""}`}
-          >
-            {m.text.split("\n").map((line, i) => (
-              <p key={i}>{line}</p>
+        <div className="chat-bubble chat-bubble--system">
+          <p>
+            You&rsquo;ll receive a message from {teammateName} now, so please don&rsquo;t close this chat. Let them know how
+            you&rsquo;d like to play and your goals (default is to win).
+          </p>
+        </div>
+        {systemLines.map((line) => (
+          <div key={line.id} className="chat-bubble chat-bubble--system">
+            {line.text.split("\n").map((l, i) => (
+              <p key={i}>{l}</p>
             ))}
-            <span>{m.time}</span>
+          </div>
+        ))}
+        {messages.map((m) => (
+          <div key={m.id} className={`chat-bubble chat-bubble--${m.from === "client" ? "me" : "them"}`}>
+            <p>{m.text}</p>
+            <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
           </div>
         ))}
       </div>

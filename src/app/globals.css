@@ -2895,6 +2895,74 @@ ul {
   padding-left: 38px;
 }
 
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.avatar-upload:hover,
+.avatar-upload.is-dragover {
+  border-color: var(--cta-vivid);
+  background: color-mix(in srgb, var(--cta-vivid) 6%, transparent);
+}
+
+.avatar-upload__preview {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-faint);
+  font-size: 18px;
+  overflow: hidden;
+}
+
+.avatar-upload__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload__hint {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.avatar-upload__hint strong {
+  color: var(--text);
+}
+
+.avatar-upload__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.avatar-upload__remove {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.avatar-upload__remove:hover {
+  color: var(--danger);
+}
+
 .teammate-profile-form__actions {
   display: flex;
   justify-content: flex-end;
@@ -2990,6 +3058,124 @@ ul {
   color: var(--accent);
   margin-right: 7px;
   font-size: 11px;
+}
+
+.order-summary__item--discount {
+  color: var(--hue-green);
+  font-weight: 700;
+}
+
+.order-summary__item--discount i {
+  color: var(--hue-green);
+}
+
+.order-summary__coupon-remove {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.order-summary__coupon-remove:hover {
+  color: var(--danger);
+}
+
+.order-summary__coupon-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 0;
+  margin: 4px 0;
+  background: none;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.order-summary__coupon-trigger:hover {
+  border-color: var(--cta-vivid);
+  color: var(--text);
+}
+
+.coupon-modal__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  margin-bottom: 16px;
+}
+
+.coupon-modal__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.coupon-modal__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.coupon-modal__code {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin-right: 8px;
+}
+
+.coupon-modal__discount {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--hue-green);
+}
+
+.coupon-modal__manual label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.coupon-modal__manual-row {
+  display: flex;
+  gap: 8px;
+}
+
+.coupon-modal__manual-row input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: monospace;
+  text-transform: uppercase;
+}
+
+.coupon-modal__manual-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.coupon-modal__empty-note {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-top: 8px;
 }
 
 /* Concrete guarantees, not a generic "secure" badge — right before paying
@@ -4737,26 +4923,38 @@ ul {
   align-items: start;
 }
 
-.session-complete__teammate-row {
+.session-complete__teammate-hero {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 16px 0;
-  margin-top: 6px;
+  text-align: center;
+  gap: 6px;
+  padding: 20px 0 16px;
 }
 
-.session-complete__teammate-meta {
-  flex: 1;
-  min-width: 0;
+.session-complete__hero-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-strong);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--cta-vivid) 20%, transparent);
+  margin-bottom: 4px;
+}
+
+.session-complete__hero-avatar :is(img, svg) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .session-complete__teammate-name {
-  font-size: 14.5px;
+  font-size: 17px;
   font-weight: 800;
 }
 
 .session-complete__teammate-rating {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-faint);
 }
 
@@ -4764,23 +4962,42 @@ ul {
   color: var(--hue-gold);
 }
 
+.session-complete__stars-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding-bottom: 16px;
+}
+
 .session-complete__stars {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .session-complete__star {
-  font-size: 20px;
+  font-size: 28px;
   color: var(--text-faint);
   transition: transform 0.1s ease, color 0.1s ease;
 }
 
 .session-complete__star:hover {
-  transform: scale(1.12);
+  transform: scale(1.15);
 }
 
 .session-complete__star i.fa-solid {
   color: var(--hue-gold);
+}
+
+.session-complete__stars-note {
+  font-size: 12px;
+  color: var(--text-faint);
+  min-height: 16px;
+}
+
+.session-complete__stars-note i {
+  color: var(--hue-green);
 }
 
 .session-complete__actions-row {
@@ -4818,10 +5035,28 @@ ul {
   font-weight: 700;
 }
 
-.session-complete__tip-btn.is-active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-soft);
+.session-complete__tip-btn:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.session-complete__tip-sent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--hue-green);
+}
+
+.tip-confirm__custom {
+  text-align: left;
+  margin-bottom: 14px;
+}
+
+.tip-confirm__note {
+  font-size: 11.5px !important;
+  color: var(--text-faint) !important;
 }
 
 .session-complete__discount {
@@ -6915,6 +7150,13 @@ ul {
 
 .chat-thread__messages::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
+}
+
+.chat-thread__empty {
+  margin: auto;
+  font-size: 12.5px;
+  color: var(--text-faint);
+  text-align: center;
 }
 
 .chat-bubble {

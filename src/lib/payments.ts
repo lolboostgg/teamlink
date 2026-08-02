@@ -1,4 +1,4 @@
-export type PaymentMethodKey = "card" | "paypal" | "crypto";
+export type PaymentMethodKey = "card" | "paypal" | "crypto" | "credits";
 
 export interface PaymentMethodMeta {
   key: PaymentMethodKey;
@@ -45,6 +45,15 @@ export const PAYMENT_METHODS: PaymentMethodMeta[] = [
     feePercent: 1.5,
     feeFixedEUR: 0,
     note: "Network fee applies.",
+  },
+  {
+    key: "credits",
+    label: "Credits",
+    brandLabel: "TeamLink Credits",
+    icon: "fa-solid fa-coins",
+    feePercent: 0,
+    feeFixedEUR: 0,
+    note: "Deducted from your balance instantly — no fee.",
   },
 ];
 

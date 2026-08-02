@@ -8,6 +8,10 @@ import { createOrder, createReplayOrder } from "@/lib/matchmaking/store";
 import { getTeammateById } from "@/lib/teammates";
 import { setFavorite, useFavoriteIds } from "@/lib/favorites";
 import { addReview } from "@/lib/reviews";
+import { addTip, getTipForOrder } from "@/lib/tips";
+import { addCoupon } from "@/lib/coupons";
+import { conversationKey } from "@/lib/matchmaking/chatStore";
+import { spendCredits } from "@/app/actions/credits";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
@@ -57,7 +61,11 @@ export function SessionScreen({ orderId }: Props) {
   const favoriteIds = useFavoriteIds();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
-  const [tip, setTip] = useState<number | null>(null);
+  const [rated, setRated] = useState(false);
+  const [tipTarget, setTipTarget] = useState<number | null>(null);
+  const [tipCustom, setTipCustom] = useState("");
+  const [sendingTip, setSendingTip] = useState(false);
+  const [tipSent, setTipSent] = useState<number | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -77,6 +85,23 @@ export function SessionScreen({ orderId }: Props) {
     const t = setTimeout(() => router.push("/"), 1600);
     return () => clearTimeout(t);
   }, [order?.status, order?.cancelApprovedAt, router]);
+
+  // Turns the discount code shown below into a real, checkout-redeemable
+  // coupon the moment this screen appears (addCoupon is idempotent by
+  // code), and restores tip-sent state from the real tip store so a reload
+  // doesn't show the tip buttons as if nothing had been sent yet.
+  useEffect(() => {
+    if (order?.status !== "completed") return;
+    addCoupon(discountCodeFor(order.id), 10, order.id);
+    const existingTip = getTipForOrder(order.id);
+    // Restores tip-sent state from the real store on reload — a
+    // necessary sync with external (localStorage) state, not avoidable
+    // via lazy initial state since `order` itself only resolves async.
+    if (existingTip) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTipSent(existingTip.amountEUR);
+    }
+  }, [order?.status, order?.id]);
 
   if (!order) {
     return (
@@ -154,8 +179,18 @@ export function SessionScreen({ orderId }: Props) {
     setTimeout(() => setCopied(false), 1800);
   }
 
-  function handleKeepPlaying() {
+  // Rebooking skips the full checkout form (it's the same game/option/
+  // price as the order you just finished), so credits are the payment
+  // method here — a real deduction from the Postgres balance, same action
+  // checkout's "pay with credits" option uses.
+  async function handleKeepPlaying() {
     setStartingReplay(true);
+    const result = await spendCredits(order!.priceEUR, `Replay · ${order!.gameName}`);
+    if (!result.ok) {
+      setStartingReplay(false);
+      showToast(result.error ?? "Couldn't charge credits for this replay.", "error");
+      return;
+    }
     const replay = createReplayOrder(order!);
     if (replay) router.push(`/checkout/matching?order=${replay.id}`);
   }
@@ -165,15 +200,19 @@ export function SessionScreen({ orderId }: Props) {
     showToast("Your teammate initiated a refund for your game(s) and we've credited your account.", "success");
   }
 
-  function handleBuyMore() {
+  async function handleBuyMore() {
     setBuyingMore(true);
-    for (let i = 0; i < buyMoreQty; i++) createReplayOrder(order!);
-    setTimeout(() => {
+    const result = await spendCredits(order!.priceEUR * buyMoreQty, `${buyMoreQty}x replay · ${order!.gameName}`);
+    if (!result.ok) {
       setBuyingMore(false);
-      setBuyMoreOpen(false);
-      setBuyMoreQty(1);
-      showToast(`Added ${buyMoreQty} more game${buyMoreQty > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
-    }, 500);
+      showToast(result.error ?? "Couldn't charge credits for this purchase.", "error");
+      return;
+    }
+    for (let i = 0; i < buyMoreQty; i++) createReplayOrder(order!);
+    setBuyingMore(false);
+    setBuyMoreOpen(false);
+    setBuyMoreQty(1);
+    showToast(`Added ${buyMoreQty} more game${buyMoreQty > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
   }
 
   function handlePoke() {
@@ -204,19 +243,17 @@ export function SessionScreen({ orderId }: Props) {
         <div className="session-complete__grid">
           <Reveal delay={60}>
             <div className="dashboard-panel session-complete__rate">
-              <div className="dashboard-panel__title">Rate your teammate</div>
-              <p className="dashboard-panel__sub">All ratings are anonymous and don&rsquo;t show up on their profile.</p>
-
-              <div className="session-complete__teammate-row">
-                <span className="chat-list__avatar">
+              <div className="session-complete__teammate-hero">
+                <span className="session-complete__hero-avatar">
                   <AvatarIcon seed={teammate.id} />
                 </span>
-                <div className="session-complete__teammate-meta">
-                  <div className="session-complete__teammate-name">{teammate.name}</div>
-                  <div className="session-complete__teammate-rating">
-                    <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} ({teammate.sessions})
-                  </div>
+                <div className="session-complete__teammate-name">{teammate.name}</div>
+                <div className="session-complete__teammate-rating">
+                  <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} ({teammate.sessions} sessions)
                 </div>
+              </div>
+
+              <div className="session-complete__stars-block">
                 <div className="session-complete__stars">
                   {[1, 2, 3, 4, 5].map((n) => (
                     <button
@@ -228,6 +265,7 @@ export function SessionScreen({ orderId }: Props) {
                       onMouseLeave={() => setHoverRating(0)}
                       onClick={() => {
                         setRating(n);
+                        setRated(true);
                         addReview(teammate.id, order.id, n);
                       }}
                     >
@@ -238,6 +276,15 @@ export function SessionScreen({ orderId }: Props) {
                     </button>
                   ))}
                 </div>
+                <p className="session-complete__stars-note">
+                  {rated ? (
+                    <>
+                      <i className="fa-solid fa-circle-check" aria-hidden="true" /> Thanks — your rating was saved.
+                    </>
+                  ) : (
+                    "All ratings are anonymous and don't show up on their profile."
+                  )}
+                </p>
               </div>
 
               <div className="session-complete__actions-row">
@@ -260,21 +307,22 @@ export function SessionScreen({ orderId }: Props) {
 
               <div className="session-complete__tip">
                 <span>Add a tip for {teammate.name}</span>
-                <div className="session-complete__tip-options">
-                  {[1, 2, 3].map((amount) => (
-                    <button
-                      key={amount}
-                      type="button"
-                      className={`session-complete__tip-btn${tip === amount ? " is-active" : ""}`}
-                      onClick={() => setTip(amount)}
-                    >
-                      {amount}€
+                {tipSent !== null ? (
+                  <span className="session-complete__tip-sent">
+                    <i className="fa-solid fa-circle-check" aria-hidden="true" /> Tip sent · €{tipSent}
+                  </span>
+                ) : (
+                  <div className="session-complete__tip-options">
+                    {[1, 2, 3].map((amount) => (
+                      <button key={amount} type="button" className="session-complete__tip-btn" onClick={() => setTipTarget(amount)}>
+                        {amount}€
+                      </button>
+                    ))}
+                    <button type="button" className="session-complete__tip-btn" onClick={() => setTipTarget(-1)}>
+                      Custom
                     </button>
-                  ))}
-                  <button type="button" className="session-complete__tip-btn" onClick={() => setTip(null)}>
-                    Edit
-                  </button>
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </Reveal>
@@ -300,10 +348,18 @@ export function SessionScreen({ orderId }: Props) {
         <Reveal delay={140}>
           <div className="dashboard-panel session-complete__keep-playing">
             <div className="dashboard-panel__title">Keep playing</div>
-            <p className="dashboard-panel__sub">Would you like to continue playing with {teammate.name}?</p>
+            <p className="dashboard-panel__sub">
+              Would you like to continue playing with {teammate.name}? Charged from your credits balance.
+            </p>
             <div className="session-complete__keep-playing-row">
               <button type="button" className="btn btn--vivid" onClick={handleKeepPlaying} disabled={startingReplay}>
-                {startingReplay ? "Sending request..." : `Play again with ${teammate.name}`}
+                {startingReplay ? (
+                  "Charging credits..."
+                ) : (
+                  <>
+                    Play again with {teammate.name} · <PriceTag amountEUR={order.priceEUR} />
+                  </>
+                )}
               </button>
               <Link href="/games" className="btn btn--ghost">
                 Not now
@@ -311,6 +367,62 @@ export function SessionScreen({ orderId }: Props) {
             </div>
           </div>
         </Reveal>
+
+        <Modal open={tipTarget !== null} onClose={() => setTipTarget(null)} labelledBy="tip-confirm-title">
+          <div className="cancel-confirm">
+            <span className="modal-icon modal-icon--accent" aria-hidden="true">
+              <i className="fa-solid fa-hand-holding-dollar" />
+            </span>
+            <h2 id="tip-confirm-title" className="cancel-confirm__title">
+              Tip {teammate.name}
+            </h2>
+            {tipTarget === -1 ? (
+              <div className="form-row tip-confirm__custom">
+                <label htmlFor="tip-custom-amount">Amount (EUR)</label>
+                <input
+                  id="tip-custom-amount"
+                  type="number"
+                  min={1}
+                  max={200}
+                  step="1"
+                  value={tipCustom}
+                  onChange={(e) => setTipCustom(e.target.value)}
+                  placeholder="5"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <p className="cancel-confirm__sub">
+                Confirm a <strong>€{tipTarget}</strong> tip — 100% goes to {teammate.name}.
+              </p>
+            )}
+            <p className="cancel-confirm__sub tip-confirm__note">Mock payment for this demo — no real charge.</p>
+            <div className="cancel-confirm__actions">
+              <button type="button" className="btn btn--ghost btn--block" onClick={() => setTipTarget(null)} disabled={sendingTip}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn--vivid btn--block"
+                disabled={sendingTip || (tipTarget === -1 && !(Number(tipCustom) > 0))}
+                onClick={() => {
+                  const amount = tipTarget === -1 ? Number(tipCustom) : tipTarget!;
+                  if (!(amount > 0)) return;
+                  setSendingTip(true);
+                  setTimeout(() => {
+                    addTip(teammate.id, order.id, amount);
+                    setTipSent(amount);
+                    setSendingTip(false);
+                    setTipTarget(null);
+                    showToast(`Tip of €${amount} sent to ${teammate.name}.`, "success");
+                  }, 700);
+                }}
+              >
+                {sendingTip ? "Processing payment..." : `Pay €${tipTarget === -1 ? tipCustom || "0" : tipTarget}`}
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     );
   }
@@ -493,6 +605,7 @@ export function SessionScreen({ orderId }: Props) {
               </button>
             </div>
             <SessionChat
+              conversationKey={conversationKey(teammate.id, order.customerLabel)}
               teammateName={teammate.name}
               vibe={order.vibe}
               conversationPref={order.conversationPref}

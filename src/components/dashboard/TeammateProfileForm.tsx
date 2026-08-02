@@ -5,6 +5,7 @@ import { LANGUAGES, type LanguageCode } from "@/lib/i18n";
 import { GAMES } from "@/lib/games";
 import { RANK_TIERS, CHAMPION_NAMES, LOL_LANES, championIcon, getRankMeta, type LolRankTier, type ChampionName, type LolLane } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
+import { AvatarUpload } from "@/components/ui/AvatarUpload";
 import type { TeammateProfileInput } from "@/lib/teammateProfile";
 
 export interface TeammateProfileFormValue extends TeammateProfileInput {
@@ -61,15 +62,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
         </div>
       )}
 
-      <div className="form-row">
-        <label htmlFor="tp-avatar">Profile picture URL</label>
-        <input
-          id="tp-avatar"
-          value={avatarUrl}
-          onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder="https://..."
-        />
-      </div>
+      <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
 
       <div className="form-row-grid">
         <div className="form-row">

@@ -5,10 +5,15 @@ import { useRouter } from "next/navigation";
 import { CheckoutIdentityStep } from "@/components/checkout/CheckoutIdentityStep";
 import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
+import { CouponModal } from "@/components/checkout/CouponModal";
 import { TrustPoints } from "@/components/ui/TrustPoints";
 import { Reveal } from "@/components/ui/Reveal";
 import { calculateFee, getPaymentMethod, perMinuteRate, type PaymentMethodKey } from "@/lib/payments";
 import { createOrder } from "@/lib/matchmaking/store";
+import { markCouponUsed, type Coupon } from "@/lib/coupons";
+import { useCreditBalance } from "@/lib/useCreditBalance";
+import { spendCredits } from "@/app/actions/credits";
+import { useToast } from "@/components/ui/ToastProvider";
 
 interface Props {
   gameSlug: string;
@@ -26,13 +31,18 @@ type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 // order summary must react live to the selected payment method's fee.
 export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalEUR }: Props) {
   const router = useRouter();
+  const { showToast } = useToast();
   const [step, setStep] = useState<Step>("identity");
   const [identity, setIdentity] = useState<Identity>(null);
   const [method, setMethod] = useState<PaymentMethodKey>("card");
   const [submitting, setSubmitting] = useState(false);
+  const [couponModalOpen, setCouponModalOpen] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const { balanceCents: creditBalanceCents } = useCreditBalance(identity?.mode === "account");
 
   const feeEUR = useMemo(() => calculateFee(baseTotalEUR, method), [baseTotalEUR, method]);
-  const totalEUR = baseTotalEUR + feeEUR;
+  const discountEUR = appliedCoupon ? Math.round(baseTotalEUR * (appliedCoupon.discountPercent / 100) * 100) / 100 : 0;
+  const totalEUR = Math.max(0, baseTotalEUR + feeEUR - discountEUR);
   const feeLabel = feeEUR > 0 ? `${getPaymentMethod(method).brandLabel} fee` : undefined;
 
   function handleGuestContinue(email: string) {
@@ -45,8 +55,21 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
     setStep("payment");
   }
 
-  function handlePaymentSubmit() {
+  async function handlePaymentSubmit() {
     setSubmitting(true);
+
+    // The one real payment path here — deducts from the actual Postgres
+    // balance before the order is created, instead of simulating success
+    // like card/paypal/crypto do.
+    if (method === "credits") {
+      const result = await spendCredits(totalEUR, `${gameName} · ${option}`);
+      if (!result.ok) {
+        setSubmitting(false);
+        showToast(result.error ?? "Couldn't pay with credits.", "error");
+        return;
+      }
+    }
+
     setTimeout(() => {
       // Who you actually get is decided by the live dispatch/pick flow
       // after checkout, never chosen up front.
@@ -59,6 +82,10 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
         requestedTeammateId: null,
         customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
       });
+      // Only burns the coupon once the order is actually placed — applying
+      // it in the modal alone doesn't consume it, so abandoning checkout
+      // leaves it usable.
+      if (appliedCoupon) markCouponUsed(appliedCoupon.code);
       router.push(order ? `/checkout/matching?order=${order.id}` : "/checkout/success");
     }, 900);
   }
@@ -123,6 +150,8 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
                 submitting={submitting}
                 onSubmit={handlePaymentSubmit}
                 onStartPayAsYouGo={handleStartPayAsYouGo}
+                creditsEnabled={identity?.mode === "account"}
+                creditBalanceCents={creditBalanceCents}
               />
             </Reveal>
           </>
@@ -140,12 +169,18 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
             feeEUR={feeEUR}
             feeLabel={feeLabel}
             totalEUR={totalEUR}
+            discountEUR={discountEUR}
+            couponCode={appliedCoupon?.code}
+            onOpenCoupon={() => setCouponModalOpen(true)}
+            onRemoveCoupon={() => setAppliedCoupon(null)}
           />
         </Reveal>
         <Reveal delay={140}>
           <TrustPoints />
         </Reveal>
       </div>
+
+      <CouponModal open={couponModalOpen} onClose={() => setCouponModalOpen(false)} onApply={setAppliedCoupon} />
     </div>
   );
 }

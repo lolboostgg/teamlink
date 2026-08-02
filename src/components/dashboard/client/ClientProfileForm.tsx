@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { updateProfile, changePassword } from "@/app/(marketing)/dashboard/client/profile/actions";
 import { useToast } from "@/components/ui/ToastProvider";
+import { AvatarUpload } from "@/components/ui/AvatarUpload";
 
 interface Props {
   initial: { name: string; email: string; avatarUrl: string };
@@ -59,10 +60,7 @@ export function ClientProfileForm({ initial }: Props) {
           <label htmlFor="cp-email">Email</label>
           <input id="cp-email" value={initial.email} disabled />
         </div>
-        <div className="form-row">
-          <label htmlFor="cp-avatar">Profile picture URL</label>
-          <input id="cp-avatar" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} placeholder="https://..." />
-        </div>
+        <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
         {profileError && (
           <p className="form-row__error">
             <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {profileError}
