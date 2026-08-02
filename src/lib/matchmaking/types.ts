@@ -33,9 +33,12 @@ export interface DispatchOrder {
   selectedTeammateId: string | null;
   dispatchDeadline: number;
   selectionDeadline: number | null;
-  // Precomputed once the order reaches "assigned" — drives the simulated
-  // assigned -> in_progress -> completed progression (see reconcile() in
-  // store.ts), same pattern as the dispatch candidates themselves.
+  // Set once, the moment the order first reaches "assigned" — everything
+  // below is computed from this single timestamp (see reconcile() in
+  // store.ts): a 2-minute reroll window, the order flipping to
+  // "in_progress" at 5 minutes, and an eventual simulated completion.
+  assignedAt: number | null;
+  rerollDeadline: number | null;
   sessionStartAt: number | null;
   sessionCompleteAt: number | null;
   // True for a "keep playing" order created from a completed session's

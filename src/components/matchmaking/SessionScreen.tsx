@@ -12,7 +12,7 @@ import { FlagIcon } from "@/components/ui/FlagIcon";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { Reveal } from "@/components/ui/Reveal";
-import { SessionChat } from "@/components/dashboard/client/SessionChat";
+import { SessionChat } from "@/components/matchmaking/SessionChat";
 
 interface Props {
   orderId: string;
@@ -29,14 +29,15 @@ function discountCodeFor(orderId: string): string {
   return `TL10-${clean.slice(-6)}`;
 }
 
-// The post-checkout "live session" screen, reached once a teammate has been
-// assigned (see MatchmakingScreen's "Continue" button). One component drives
-// two very different phases off the same order: the invite/chat view while
-// assigned/in_progress, and the rate + discount + keep-playing view once
-// completed — same pattern as MatchmakingScreen switching on order.status.
+// The "live session" phase — rendered in place by MatchmakingScreen once a
+// teammate has been assigned (no route change: same page, same persistent
+// site header throughout the whole order, not the dashboard shell). One
+// component drives two phases off the same order: the invite/chat view
+// while assigned/in_progress, and the rate + discount + keep-playing view
+// once completed.
 export function SessionScreen({ orderId }: Props) {
   const router = useRouter();
-  const { order, sessionElapsedSeconds, cancelOrder } = useDispatchOrder(orderId);
+  const { order, now, sessionElapsedSeconds, cancelOrder } = useDispatchOrder(orderId);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [tip, setTip] = useState<number | null>(null);
@@ -48,10 +49,9 @@ export function SessionScreen({ orderId }: Props) {
 
   if (!order) {
     return (
-      <div className="dashboard-panel">
-        <div className="dashboard-panel__title">Session not found</div>
-        <p className="dashboard-panel__sub">
-          <Link href="/dashboard/client/orders">Back to your orders</Link>
+      <div className="matching-screen">
+        <p className="matching-screen__lost">
+          We couldn&rsquo;t find that session. <Link href="/games">Back to games</Link>
         </p>
       </div>
     );
@@ -62,10 +62,9 @@ export function SessionScreen({ orderId }: Props) {
 
   if (!teammate || !liveStatuses.includes(order.status)) {
     return (
-      <div className="dashboard-panel">
-        <div className="dashboard-panel__title">This session isn&rsquo;t ready yet</div>
-        <p className="dashboard-panel__sub">
-          <Link href={`/checkout/matching?order=${order.id}`}>Go back to matching</Link>
+      <div className="matching-screen">
+        <p className="matching-screen__lost">
+          This session isn&rsquo;t ready yet. <Link href={`/checkout/matching?order=${order.id}`}>Go back to matching</Link>
         </p>
       </div>
     );
@@ -87,7 +86,7 @@ export function SessionScreen({ orderId }: Props) {
 
   function handleAskCancel() {
     cancelOrder();
-    router.push("/dashboard/client/orders");
+    router.push("/games");
   }
 
   function handleCopyCode() {
@@ -99,7 +98,7 @@ export function SessionScreen({ orderId }: Props) {
   function handleKeepPlaying() {
     setStartingReplay(true);
     const replay = createReplayOrder(order!);
-    if (replay) router.push(`/dashboard/client/session/${replay.id}`);
+    if (replay) router.push(`/checkout/matching?order=${replay.id}`);
   }
 
   if (order.status === "completed") {
@@ -216,7 +215,7 @@ export function SessionScreen({ orderId }: Props) {
               <button type="button" className="btn btn--vivid" onClick={handleKeepPlaying} disabled={startingReplay}>
                 {startingReplay ? "Sending request..." : `Play again with ${teammate.name}`}
               </button>
-              <Link href="/dashboard/client" className="btn btn--ghost">
+              <Link href="/games" className="btn btn--ghost">
                 Not now
               </Link>
             </div>
@@ -228,20 +227,15 @@ export function SessionScreen({ orderId }: Props) {
 
   const inSession = order.status === "in_progress";
   const rank = teammate.lolRank ? getRankMeta(teammate.lolRank) : null;
+  const rerollSecondsLeft = order.rerollDeadline != null ? Math.max(0, Math.ceil((order.rerollDeadline - now) / 1000)) : 0;
+  const canReroll = rerollSecondsLeft > 0;
 
   return (
     <div className="session-screen">
       <Reveal>
-        <div className={`session-screen__status${inSession ? " is-live" : ""}`}>
-          {inSession ? (
-            <>
-              <span className="pulse-dot" aria-hidden="true" /> In session · {formatClock(sessionElapsedSeconds)}
-            </>
-          ) : (
-            <>
-              <i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" /> Connecting you now...
-            </>
-          )}
+        <div className="session-screen__status is-live">
+          <span className="pulse-dot" aria-hidden="true" /> {inSession ? "In session" : "Session start"} ·{" "}
+          {formatClock(sessionElapsedSeconds)}
         </div>
       </Reveal>
 
@@ -304,9 +298,14 @@ export function SessionScreen({ orderId }: Props) {
             <p className="session-screen__bio">{teammate.tagline}</p>
 
             <div className="session-screen__buttons">
-              <button type="button" className="btn btn--ghost btn--block" onClick={handleReroll} disabled={rerolling}>
-                <i className="fa-solid fa-shuffle" aria-hidden="true" /> {rerolling ? "Rerolling..." : "Reroll new teammate"}
-              </button>
+              {canReroll && (
+                <>
+                  <button type="button" className="btn btn--ghost btn--block" onClick={handleReroll} disabled={rerolling}>
+                    <i className="fa-solid fa-shuffle" aria-hidden="true" /> {rerolling ? "Rerolling..." : "Reroll new teammate"}
+                  </button>
+                  <span className="session-screen__reroll-note">Available for {formatClock(rerollSecondsLeft)}</span>
+                </>
+              )}
               <button type="button" className="session-screen__cancel-link" onClick={handleAskCancel}>
                 Ask to cancel session
               </button>

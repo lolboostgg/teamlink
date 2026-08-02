@@ -223,7 +223,7 @@ body::before {
   inset: -5%;
   background-size: cover;
   background-position: center 20%;
-  filter: brightness(0.45) saturate(1.1);
+  filter: brightness(0.3) saturate(1.1);
   transform: scale(1.05);
   opacity: 0;
   animation: ambientBgIn 1s ease forwards;
@@ -3002,7 +3002,7 @@ ul {
 }
 
 .matching-screen--wide {
-  max-width: 900px;
+  max-width: 1040px;
 }
 
 .matching-screen__spinner {
@@ -3079,10 +3079,56 @@ ul {
   margin: 28px auto 0;
 }
 
-.candidate-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+/* Center (first-to-accept, the auto-confirmed priority pick) + up to two
+   flanking slots each side — see arrangeCandidates() in MatchmakingScreen.
+   Whoever accepts first visually moves into the middle. */
+.candidate-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.candidate-stage__side {
+  display: flex;
+  flex-direction: column;
   gap: 14px;
+  flex: 0 0 auto;
+}
+
+.candidate-stage__side .candidate-slot {
+  width: 220px;
+}
+
+.candidate-stage__center {
+  flex: 0 0 auto;
+  z-index: 1;
+}
+
+.candidate-stage__center .candidate-slot {
+  width: 260px;
+  padding: 20px;
+  transform: scale(1.04);
+  box-shadow: var(--shadow-card);
+}
+
+@media (max-width: 760px) {
+  .candidate-stage {
+    flex-direction: column;
+  }
+
+  .candidate-stage__side {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .candidate-stage__center .candidate-slot,
+  .candidate-stage__side .candidate-slot {
+    width: 260px;
+    transform: none;
+  }
 }
 
 .candidate-slot {
@@ -3380,6 +3426,12 @@ ul {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+}
+
+.session-screen__reroll-note {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: -6px;
 }
 
 .session-screen__cancel-link {

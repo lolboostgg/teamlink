@@ -10,8 +10,13 @@ import type { CandidateStatus, DispatchCandidate, DispatchOrder, OrderStatus } f
 // Accept — a real manual response just pre-empts the simulated one.
 export const CURRENT_TEAMMATE_ID = "tm-nova";
 
-export const DISPATCH_WINDOW_MS = 20_000;
+// Each notified candidate's alert lasts 5-8s — short and urgent, matching a
+// real "someone's phone is buzzing right now" invite rather than a relaxed
+// open-ended queue.
+export const DISPATCH_WINDOW_MS = 8_000;
 export const SELECTION_WINDOW_MS = 30_000;
+export const REROLL_WINDOW_MS = 2 * 60_000;
+export const SESSION_START_DELAY_MS = 5 * 60_000;
 const MAX_CANDIDATES = 5;
 const CHANNEL_NAME = "teamlink-dispatch";
 const INDEX_KEY = "teamlink:dispatch:index";
@@ -90,6 +95,8 @@ function reconcile(order: DispatchOrder): DispatchOrder {
   let status = order.status;
   let selectedTeammateId = order.selectedTeammateId;
   let selectionDeadline = order.selectionDeadline;
+  let assignedAt = order.assignedAt;
+  let rerollDeadline = order.rerollDeadline;
   let sessionStartAt = order.sessionStartAt;
   let sessionCompleteAt = order.sessionCompleteAt;
 
@@ -120,15 +127,19 @@ function reconcile(order: DispatchOrder): DispatchOrder {
   }
 
   // Session lifecycle — same precomputed-timestamp pattern as the dispatch
-  // candidates: once assigned, schedule a short "connecting" beat before the
-  // session is considered live, then a session length before it wraps up.
-  // A real manual startOrder()/completeOrder() call (teammate dashboard)
-  // simply overwrites status directly and these checks stop firing once
-  // status has moved past "assigned"/"in_progress".
-  if (status === "assigned" && sessionStartAt === null) {
+  // candidates, all derived from the single moment the order first becomes
+  // assigned: a 2-minute window where "reroll" is still offered, the order
+  // is formally "in_progress" (being played, tracked by the teammate) from
+  // 5 minutes on, and an eventual simulated completion standing in for the
+  // teammate marking it done. A real manual startOrder()/completeOrder()
+  // call (teammate dashboard) simply overwrites status directly and these
+  // checks stop firing once status has moved past "assigned"/"in_progress".
+  if (status === "assigned" && assignedAt === null) {
     changed = true;
-    sessionStartAt = now + 2000 + Math.random() * 3000;
-    sessionCompleteAt = sessionStartAt + 40000 + Math.random() * 30000;
+    assignedAt = now;
+    rerollDeadline = now + REROLL_WINDOW_MS;
+    sessionStartAt = now + SESSION_START_DELAY_MS;
+    sessionCompleteAt = sessionStartAt + 3 * 60_000 + Math.random() * 3 * 60_000;
   }
 
   if (status === "assigned" && sessionStartAt !== null && now >= sessionStartAt) {
@@ -142,7 +153,17 @@ function reconcile(order: DispatchOrder): DispatchOrder {
   }
 
   if (!changed) return order;
-  return { ...order, candidates, status, selectedTeammateId, selectionDeadline, sessionStartAt, sessionCompleteAt };
+  return {
+    ...order,
+    candidates,
+    status,
+    selectedTeammateId,
+    selectionDeadline,
+    assignedAt,
+    rerollDeadline,
+    sessionStartAt,
+    sessionCompleteAt,
+  };
 }
 
 export function getOrder(id: string): DispatchOrder | null {
@@ -189,7 +210,7 @@ export function createOrder(input: {
   const candidates: DispatchCandidate[] = pool.map((teammateId) => ({
     teammateId,
     status: "pending",
-    simulatedRespondAt: input.forceAcceptFast ? now + 1000 + Math.random() * 2000 : now + 3000 + Math.random() * 15000,
+    simulatedRespondAt: input.forceAcceptFast ? now + 1000 + Math.random() * 1500 : now + 2000 + Math.random() * 6000,
     simulatedOutcome: input.forceAcceptFast ? "accepted" : Math.random() < 0.65 ? "accepted" : "declined",
   }));
 
@@ -205,6 +226,8 @@ export function createOrder(input: {
     selectedTeammateId: null,
     dispatchDeadline: now + DISPATCH_WINDOW_MS,
     selectionDeadline: null,
+    assignedAt: null,
+    rerollDeadline: null,
     sessionStartAt: null,
     sessionCompleteAt: null,
     isReplay: !!input.isReplay,
@@ -255,7 +278,7 @@ export function confirmSelection(orderId: string, teammateId: string): DispatchO
   if (!order || order.status !== "selecting") return order;
   const candidate = order.candidates.find((c) => c.teammateId === teammateId && c.status === "accepted");
   if (!candidate) return order;
-  const updated: DispatchOrder = { ...order, status: "assigned", selectedTeammateId: teammateId };
+  const updated = reconcile({ ...order, status: "assigned", selectedTeammateId: teammateId });
   writeOrder(updated);
   broadcast(orderId);
   return updated;

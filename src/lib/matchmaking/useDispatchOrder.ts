@@ -15,7 +15,12 @@ import type { DispatchOrder } from "@/lib/matchmaking/types";
 // on a 1s tick, since simulated candidates and deadlines need to advance
 // even with no cross-tab messages at all.
 export function useDispatchOrder(orderId: string | null) {
-  const [order, setOrder] = useState<DispatchOrder | null>(() => (orderId ? getOrder(orderId) : null));
+  // Hydration-safe: getOrder() reads localStorage, which doesn't exist
+  // server-side, so seeding this from it during the initial render would
+  // make the client's first paint diverge from the SSR markup. Start null
+  // (matches what the server rendered) and load the real value in the
+  // effect below instead — same pattern as AuthModalProvider's auth flag.
+  const [order, setOrder] = useState<DispatchOrder | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -38,7 +43,7 @@ export function useDispatchOrder(orderId: string | null) {
   const selectionSecondsLeft =
     order?.selectionDeadline != null ? Math.max(0, Math.ceil((order.selectionDeadline - now) / 1000)) : 0;
   const sessionElapsedSeconds =
-    order?.sessionStartAt != null ? Math.max(0, Math.floor((now - order.sessionStartAt) / 1000)) : 0;
+    order?.assignedAt != null ? Math.max(0, Math.floor((now - order.assignedAt) / 1000)) : 0;
 
   return {
     order,
