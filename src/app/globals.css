@@ -3030,18 +3030,15 @@ ul {
    and Pick your teammate, built from the site's existing cta-vivid cyan
    instead of a clashing new palette — same color language, turned up for
    the one moment on the site meant to feel electric. ─────────────────── */
+/* The glow lives only on the rings themselves (.match-ring,
+   .selection-countdown__ring — see their own box-shadow) — this class
+   used to also paint a big ambient page-level glow behind the whole
+   screen, which bled up into the sticky (semi-transparent-at-rest)
+   header above it. Kept as a hook in case something needs the
+   isolation/stacking-context behavior later, just without the glow. */
 .matching-screen--arena {
   position: relative;
   isolation: isolate;
-}
-
-.matching-screen--arena::before {
-  content: "";
-  position: absolute;
-  inset: -80px -40px;
-  z-index: -1;
-  background: radial-gradient(ellipse 60% 50% at 50% 0%, color-mix(in srgb, var(--cta-vivid) 16%, transparent), transparent 70%);
-  pointer-events: none;
 }
 
 .matching-screen__title--glow {
@@ -6579,6 +6576,27 @@ ul {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Default OS scrollbars render light/system-themed even on this dark
+     panel — force a dark thumb/track so it doesn't stand out as a pale bar. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+.chat-thread__messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-thread__messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-thread__messages::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 8px;
+}
+
+.chat-thread__messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .chat-bubble {

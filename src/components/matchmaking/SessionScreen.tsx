@@ -61,6 +61,7 @@ export function SessionScreen({ orderId }: Props) {
   const [blocked, setBlocked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [rerolling, setRerolling] = useState(false);
+  const [rerollModalOpen, setRerollModalOpen] = useState(false);
   const [startingReplay, setStartingReplay] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [helpModalOpen, setHelpModalOpen] = useState(false);
@@ -127,6 +128,7 @@ export function SessionScreen({ orderId }: Props) {
   }
 
   function handleReroll() {
+    setRerollModalOpen(false);
     setRerolling(true);
     cancelOrder();
     const fresh = createOrder({
@@ -446,7 +448,12 @@ export function SessionScreen({ orderId }: Props) {
             <div className="session-screen__buttons">
               {canReroll && (
                 <>
-                  <button type="button" className="btn btn--ghost btn--block" onClick={handleReroll} disabled={rerolling}>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--block"
+                    onClick={() => setRerollModalOpen(true)}
+                    disabled={rerolling}
+                  >
                     <i className="fa-solid fa-shuffle" aria-hidden="true" /> {rerolling ? "Rerolling..." : "Reroll new teammate"}
                   </button>
                   <span className="session-screen__reroll-note">Available for {formatClock(rerollSecondsLeft)}</span>
@@ -517,6 +524,29 @@ export function SessionScreen({ orderId }: Props) {
             </button>
             <button type="button" className="btn btn--danger btn--block" onClick={handleConfirmCancel}>
               Confirm
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={rerollModalOpen} onClose={() => setRerollModalOpen(false)} labelledBy="reroll-session-title">
+        <div className="cancel-confirm">
+          <span className="modal-icon modal-icon--warning" aria-hidden="true">
+            <i className="fa-solid fa-shuffle" />
+          </span>
+          <h2 id="reroll-session-title" className="cancel-confirm__title">
+            Reroll for a new teammate?
+          </h2>
+          <p className="cancel-confirm__sub">
+            This ends your session with {teammate.name} and starts a fresh search. Your existing session stays cancelled
+            even if you change your mind afterward.
+          </p>
+          <div className="cancel-confirm__actions">
+            <button type="button" className="btn btn--ghost btn--block" onClick={() => setRerollModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn--danger btn--block" onClick={handleReroll}>
+              Reroll
             </button>
           </div>
         </div>

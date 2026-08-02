@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 import { HeaderAuthButtons } from "@/components/auth/HeaderAuthButtons";
 import { HeaderUtilities } from "@/components/layout/HeaderUtilities";
@@ -13,12 +14,17 @@ import { useScrolled } from "@/lib/useScrolled";
 // background/border once the page actually scrolls (see useScrolled).
 export function Header() {
   const scrolled = useScrolled();
+  const pathname = usePathname();
+  // The live matchmaking screen (searching/pick-your-teammate) is its own
+  // focused moment — searching for a different game mid-flow isn't a thing
+  // you'd do there, so the search bar just adds noise.
+  const hideSearch = pathname.startsWith("/checkout/matching");
 
   return (
     <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
       <div className="site-header__inner">
         <Logo />
-        <HeaderSearch />
+        {!hideSearch && <HeaderSearch />}
 
         <div className="site-header__actions">
           <HeaderUtilities />
