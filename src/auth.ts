@@ -67,7 +67,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // save) — re-reads the DB instead of trusting a client-supplied
       // patch, so the header avatar/name reflect what was actually saved.
       if (trigger === "update" && token.id) {
-        const fresh = await prisma.user.findUnique({ where: { id: token.id } });
+        const fresh = await prisma.user.findUnique({ where: { id: token.id as string } });
         if (fresh) {
           token.name = fresh.name;
           token.picture = fresh.avatarUrl;
