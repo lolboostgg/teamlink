@@ -3086,6 +3086,76 @@ ul {
   box-shadow: var(--shadow-card);
 }
 
+/* ── Matchmaking's own visual identity: an "arena" glow behind Searching
+   and Pick your teammate, built from the site's existing cta-vivid cyan
+   instead of a clashing new palette — same color language, turned up for
+   the one moment on the site meant to feel electric. ─────────────────── */
+.matching-screen--arena {
+  position: relative;
+  isolation: isolate;
+}
+
+.matching-screen--arena::before {
+  content: "";
+  position: absolute;
+  inset: -80px -40px;
+  z-index: -1;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, color-mix(in srgb, var(--cta-vivid) 16%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+.matching-screen__title--glow {
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--cta-vivid) 55%, transparent);
+}
+
+/* ── Glowing countdown ring (Searching phase) — replaces the plain
+   spinner with a conic-gradient progress ring + the live mm:ss inside,
+   the matchmaking flow's signature visual moment. ────────────────────── */
+.match-ring {
+  --match-progress: 0%;
+  position: relative;
+  width: 108px;
+  height: 108px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--cta-vivid) var(--match-progress), var(--border) 0);
+  box-shadow: 0 0 36px color-mix(in srgb, var(--cta-vivid) 45%, transparent);
+  animation: matchRingPulse 2.4s ease-in-out infinite;
+}
+
+.match-ring::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+}
+
+.match-ring__time {
+  position: relative;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--cta-vivid);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--cta-vivid) 60%, transparent);
+}
+
+@keyframes matchRingPulse {
+  0%, 100% { box-shadow: 0 0 36px color-mix(in srgb, var(--cta-vivid) 45%, transparent); }
+  50% { box-shadow: 0 0 52px color-mix(in srgb, var(--cta-vivid) 65%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .match-ring {
+    animation: none;
+  }
+}
+
 @media (max-width: 560px) {
   .matching-screen--card {
     padding: 36px 22px;
@@ -3126,24 +3196,11 @@ ul {
   border-width: 4px;
 }
 
-.matching-screen__elapsed {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  margin: 4px 0 22px;
-}
-
-.matching-screen__elapsed-time {
-  font-family: var(--font-heading);
-  font-size: 26px;
-  font-weight: 400;
-  color: var(--cta-vivid);
-}
-
 .matching-screen__elapsed-label {
   font-size: 12px;
   color: var(--text-faint);
+  text-align: center;
+  margin: 0 0 22px;
 }
 
 .matching-screen__vibe {
@@ -3644,9 +3701,21 @@ ul {
 .candidate-stage__center::before {
   content: "";
   position: absolute;
-  inset: -30px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 70%);
+  inset: -36px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cta-vivid) 26%, transparent) 0%, transparent 70%);
   z-index: -1;
+  animation: matchGlowPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes matchGlowPulse {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candidate-stage__center::before {
+    animation: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -3684,8 +3753,8 @@ ul {
   width: 300px;
   padding: 26px 24px;
   gap: 10px;
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-card);
+  border-color: color-mix(in srgb, var(--cta-vivid) 35%, var(--border-strong));
+  box-shadow: var(--shadow-card), 0 0 30px color-mix(in srgb, var(--cta-vivid) 20%, transparent);
 }
 
 .candidate-slot--lg .candidate-slot__avatar {
@@ -3769,7 +3838,7 @@ ul {
 
 .candidate-slot--accepted.is-selected {
   border-color: var(--cta-vivid);
-  box-shadow: 0 0 0 2px var(--cta-vivid);
+  box-shadow: 0 0 0 2px var(--cta-vivid), 0 0 24px color-mix(in srgb, var(--cta-vivid) 45%, transparent);
 }
 
 .candidate-slot__badge {

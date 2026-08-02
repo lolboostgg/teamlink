@@ -154,18 +154,23 @@ export function MatchmakingScreen({ orderId }: Props) {
   // either way, just with real details (and preferences) once available.
   if (!loaded || order?.status === "candidates_ready") {
     const optionDescription = order ? getBookingOptionDescription(order.option) : undefined;
+    const dispatchWindowSeconds = Math.max(1, Math.ceil(dispatchWindowMs / 1000));
+    const progressPct = order ? Math.min(100, (searchElapsedSeconds / dispatchWindowSeconds) * 100) : 0;
     return (
-      <div className="matching-screen matching-screen--card">
-        <span className="matching-screen__spinner matching-screen__spinner--lg" aria-hidden="true" />
-        <h1 className="matching-screen__title">Searching for your perfect teammate...</h1>
+      <div className="matching-screen matching-screen--card matching-screen--arena">
+        {order ? (
+          <div className="match-ring" style={{ "--match-progress": `${progressPct}%` } as React.CSSProperties}>
+            <span className="match-ring__time">{formatMMSS(searchElapsedSeconds)}</span>
+          </div>
+        ) : (
+          <span className="matching-screen__spinner matching-screen__spinner--lg" aria-hidden="true" />
+        )}
+        <h1 className="matching-screen__title matching-screen__title--glow">Searching for your perfect teammate&hellip;</h1>
         {order && (
           <>
-            <div className="matching-screen__elapsed">
-              <span className="matching-screen__elapsed-time">{formatMMSS(searchElapsedSeconds)}</span>
-              <span className="matching-screen__elapsed-label">
-                Estimated under {formatMMSS(Math.ceil(dispatchWindowMs / 1000))}
-              </span>
-            </div>
+            <p className="matching-screen__elapsed-label">
+              Estimated under {formatMMSS(dispatchWindowSeconds)}
+            </p>
 
             <div className="matching-screen__summary">
               <div className="matching-screen__summary-row">
@@ -387,9 +392,9 @@ export function MatchmakingScreen({ orderId }: Props) {
   }
 
   return (
-    <div className="matching-screen matching-screen--wide">
+    <div className="matching-screen matching-screen--wide matching-screen--arena">
       <div className="matching-screen__head">
-        <h1 className="matching-screen__title">Pick your teammate</h1>
+        <h1 className="matching-screen__title matching-screen__title--glow">Pick your teammate</h1>
         <p className="matching-screen__sub">
           {order.gameName} · {order.option} · <PriceTag amountEUR={order.priceEUR} />
         </p>
