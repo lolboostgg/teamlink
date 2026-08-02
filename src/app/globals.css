@@ -5660,6 +5660,25 @@ ul {
   color: var(--text-faint);
 }
 
+.dashboard-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.dashboard-empty i {
+  font-size: 26px;
+  color: var(--text-faint);
+}
+
+.dashboard-empty p {
+  font-size: 13.5px;
+}
+
 .dashboard-table {
   width: 100%;
   border-collapse: collapse;

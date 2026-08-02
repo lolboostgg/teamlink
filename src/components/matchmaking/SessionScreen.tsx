@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
 import { createOrder, createReplayOrder } from "@/lib/matchmaking/store";
 import { getTeammateById } from "@/lib/teammates";
+import { setFavorite, useFavoriteIds } from "@/lib/favorites";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
@@ -52,10 +53,10 @@ export function SessionScreen({ orderId }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const { order, now, sessionElapsedSeconds, cancelOrder, requestCancelSession } = useDispatchOrder(orderId);
+  const favoriteIds = useFavoriteIds();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [tip, setTip] = useState<number | null>(null);
-  const [favorited, setFavorited] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [copied, setCopied] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -111,6 +112,7 @@ export function SessionScreen({ orderId }: Props) {
   }
 
   const teammate = order.selectedTeammateId ? getTeammateById(order.selectedTeammateId) : null;
+  const favorited = teammate ? favoriteIds.includes(teammate.id) : false;
   const liveStatuses: string[] = ["assigned", "in_progress", "completed"];
 
   if (!teammate || !liveStatuses.includes(order.status)) {
@@ -243,7 +245,7 @@ export function SessionScreen({ orderId }: Props) {
                 <button
                   type="button"
                   className={`btn btn--ghost btn--sm${favorited ? " is-active" : ""}`}
-                  onClick={() => setFavorited((v) => !v)}
+                  onClick={() => setFavorite(teammate.id, !favorited)}
                 >
                   <i className={favorited ? "fa-solid fa-heart" : "fa-regular fa-heart"} aria-hidden="true" />{" "}
                   {favorited ? "Favorited" : "Mark as favorite"}

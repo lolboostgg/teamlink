@@ -2,15 +2,18 @@ import Link from "next/link";
 import { getGameBySlug } from "@/lib/games";
 import { GameCover } from "@/components/home/GameCover";
 import { PriceTag } from "@/components/currency/PriceTag";
-import type { ClientBooking } from "@/lib/dashboard/clientData";
+import { displayStatus, formatOrderDate } from "@/lib/dashboard/orderDisplay";
+import type { DispatchOrder } from "@/lib/matchmaking/types";
 
-const STATUS_PILL: Record<ClientBooking["status"], string> = {
+const STATUS_PILL = {
   upcoming: "dashboard-pill--success",
   completed: "dashboard-pill--muted",
   cancelled: "dashboard-pill--warning",
-};
+} as const;
 
-export function BookingsTable({ bookings }: { bookings: ClientBooking[] }) {
+// Sourced from the live matchmaking store (see useAllOrders) — every real
+// order this browser has created, not a static mock list.
+export function BookingsTable({ orders }: { orders: DispatchOrder[] }) {
   return (
     <table className="dashboard-table">
       <thead>
@@ -24,10 +27,11 @@ export function BookingsTable({ bookings }: { bookings: ClientBooking[] }) {
         </tr>
       </thead>
       <tbody>
-        {bookings.map((b) => {
-          const game = getGameBySlug(b.gameSlug);
+        {orders.map((order) => {
+          const game = getGameBySlug(order.gameSlug);
+          const status = displayStatus(order.status);
           return (
-            <tr key={b.id}>
+            <tr key={order.id}>
               <td>
                 <div className="dashboard-row-game">
                   {game && (
@@ -35,20 +39,26 @@ export function BookingsTable({ bookings }: { bookings: ClientBooking[] }) {
                       <GameCover game={game} compact />
                     </div>
                   )}
-                  <span className="dashboard-table__primary">{b.gameName}</span>
+                  <span className="dashboard-table__primary">{order.gameName}</span>
                 </div>
               </td>
-              <td>{b.option} · {b.teammates} teammate{b.teammates > 1 ? "s" : ""}</td>
-              <td>{b.date}</td>
               <td>
-                <PriceTag amountEUR={b.priceEUR} />
+                {order.option} · {order.teammates} teammate{order.teammates > 1 ? "s" : ""}
+              </td>
+              <td>{formatOrderDate(order.createdAt)}</td>
+              <td>
+                <PriceTag amountEUR={order.priceEUR} />
               </td>
               <td>
-                <span className={`dashboard-pill ${STATUS_PILL[b.status]}`}>{b.status}</span>
+                <span className={`dashboard-pill ${STATUS_PILL[status]}`}>{status}</span>
               </td>
               <td>
-                {b.status !== "cancelled" && (
-                  <Link href={`/games/${b.gameSlug}`} className="btn btn--ghost btn--sm">
+                {status === "upcoming" ? (
+                  <Link href={`/checkout/matching?order=${order.id}`} className="btn btn--ghost btn--sm">
+                    Continue
+                  </Link>
+                ) : (
+                  <Link href={`/games/${order.gameSlug}`} className="btn btn--ghost btn--sm">
                     Rebook
                   </Link>
                 )}

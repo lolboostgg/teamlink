@@ -14,32 +14,8 @@ export interface ChatConversation {
   messages: ChatMessage[];
 }
 
-export const CLIENT_CONVERSATIONS: ChatConversation[] = [
-  {
-    id: "conv-1",
-    withName: "Nova",
-    gameName: "League of Legends",
-    lastMessage: "Ready when you are, invite sent!",
-    unread: 2,
-    messages: [
-      { id: "m1", from: "them", text: "Hey! I'll be your teammate for tonight's session 👋", time: "18:02" },
-      { id: "m2", from: "me", text: "Awesome, give me 2 minutes to finish loading", time: "18:03" },
-      { id: "m3", from: "them", text: "No rush, take your time", time: "18:03" },
-      { id: "m4", from: "them", text: "Ready when you are, invite sent!", time: "18:07" },
-    ],
-  },
-  {
-    id: "conv-2",
-    withName: "Kestrel",
-    gameName: "Valorant",
-    lastMessage: "GGs, thanks for playing!",
-    unread: 0,
-    messages: [
-      { id: "m1", from: "them", text: "GGs, thanks for playing!", time: "Yesterday" },
-      { id: "m2", from: "me", text: "That was fun, same time next week?", time: "Yesterday" },
-    ],
-  },
-];
+// Client-side conversations are now derived from real matched teammates —
+// see ClientChatContent.tsx — instead of a static mock list here.
 
 export const TEAMMATE_CONVERSATIONS: ChatConversation[] = [
   {

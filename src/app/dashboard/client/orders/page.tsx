@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { BookingsTable } from "@/components/dashboard/client/BookingsTable";
-import { CLIENT_BOOKINGS } from "@/lib/dashboard/clientData";
+import { OrdersHistoryPanel } from "@/components/dashboard/client/OrdersHistoryPanel";
 
 export const metadata: Metadata = { title: "Orders" };
 
@@ -13,7 +12,7 @@ export default function ClientOrdersPage() {
           <div className="dashboard-panel__sub">Every booking: upcoming, completed, and cancelled</div>
         </div>
       </div>
-      <BookingsTable bookings={CLIENT_BOOKINGS} />
+      <OrdersHistoryPanel />
     </div>
   );
 }

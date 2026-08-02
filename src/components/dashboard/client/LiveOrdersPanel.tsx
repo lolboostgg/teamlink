@@ -31,9 +31,9 @@ const STATUS_PILL: Record<OrderStatus, string> = {
   no_match: "dashboard-pill--muted",
 };
 
-// Sourced from the live matchmaking store, separate from the static
-// CLIENT_BOOKINGS mock history — this shows orders currently moving
-// through the dispatch flow started from this browser.
+// Only the still-in-flight subset of the order history (see useAllOrders
+// for the full history) — orders currently moving through the dispatch
+// flow started from this browser.
 export function LiveOrdersPanel() {
   const [orders, setOrders] = useState<DispatchOrder[]>([]);
 
