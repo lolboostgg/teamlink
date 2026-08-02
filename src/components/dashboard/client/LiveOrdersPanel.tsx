@@ -85,6 +85,11 @@ export function LiveOrdersPanel() {
                     </button>
                   </>
                 )}
+                {(order.status === "assigned" || order.status === "in_progress") && (
+                  <Link href={`/dashboard/client/session/${order.id}`} className="btn btn--sm btn--ghost">
+                    Continue
+                  </Link>
+                )}
               </div>
             </div>
           );

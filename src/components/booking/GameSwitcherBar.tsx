@@ -64,6 +64,15 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
     trackRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   }
 
+  // Picking a game here means "I want to book this" — jump straight to the
+  // booking panel instead of leaving the visitor stranded up at the
+  // carousel with the order form off-screen below. #booking is part of the
+  // same persistent Hero composition on both / and /games/[slug], so it's
+  // always present to scroll to regardless of where this navigation lands.
+  function scrollToBooking() {
+    document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="hero-carousel">
       <div className="hero-carousel__track" ref={trackRef} onMouseLeave={() => onHover?.(null)}>
@@ -77,6 +86,7 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
               href={`/games/${game.slug}`}
               className={`hero-card${isActive ? " is-active" : ""}`}
               onMouseEnter={() => onHover?.(game.slug)}
+              onClick={scrollToBooking}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="hero-card__bg" src={heroCardBackground(game.slug)} alt="" loading="lazy" />

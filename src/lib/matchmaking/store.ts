@@ -90,6 +90,8 @@ function reconcile(order: DispatchOrder): DispatchOrder {
   let status = order.status;
   let selectedTeammateId = order.selectedTeammateId;
   let selectionDeadline = order.selectionDeadline;
+  let sessionStartAt = order.sessionStartAt;
+  let sessionCompleteAt = order.sessionCompleteAt;
 
   const anyAccepted = candidates.some((c) => c.status === "accepted");
   const allTerminal = candidates.every((c) => c.status !== "pending");
@@ -117,8 +119,30 @@ function reconcile(order: DispatchOrder): DispatchOrder {
     }
   }
 
+  // Session lifecycle — same precomputed-timestamp pattern as the dispatch
+  // candidates: once assigned, schedule a short "connecting" beat before the
+  // session is considered live, then a session length before it wraps up.
+  // A real manual startOrder()/completeOrder() call (teammate dashboard)
+  // simply overwrites status directly and these checks stop firing once
+  // status has moved past "assigned"/"in_progress".
+  if (status === "assigned" && sessionStartAt === null) {
+    changed = true;
+    sessionStartAt = now + 2000 + Math.random() * 3000;
+    sessionCompleteAt = sessionStartAt + 40000 + Math.random() * 30000;
+  }
+
+  if (status === "assigned" && sessionStartAt !== null && now >= sessionStartAt) {
+    changed = true;
+    status = "in_progress";
+  }
+
+  if (status === "in_progress" && sessionCompleteAt !== null && now >= sessionCompleteAt) {
+    changed = true;
+    status = "completed";
+  }
+
   if (!changed) return order;
-  return { ...order, candidates, status, selectedTeammateId, selectionDeadline };
+  return { ...order, candidates, status, selectedTeammateId, selectionDeadline, sessionStartAt, sessionCompleteAt };
 }
 
 export function getOrder(id: string): DispatchOrder | null {
@@ -142,6 +166,11 @@ export function createOrder(input: {
   priceEUR: number;
   requestedTeammateId: string | null;
   customerLabel: string;
+  // "Keep playing with the same teammate" path — skips the normal
+  // 3-18s/65% dice roll so a replay reliably and quickly reconnects you
+  // with someone you've just played with, instead of risking a decline.
+  forceAcceptFast?: boolean;
+  isReplay?: boolean;
 }): DispatchOrder | null {
   if (typeof window === "undefined") return null;
   const now = Date.now();
@@ -160,8 +189,8 @@ export function createOrder(input: {
   const candidates: DispatchCandidate[] = pool.map((teammateId) => ({
     teammateId,
     status: "pending",
-    simulatedRespondAt: now + 3000 + Math.random() * 15000,
-    simulatedOutcome: Math.random() < 0.65 ? "accepted" : "declined",
+    simulatedRespondAt: input.forceAcceptFast ? now + 1000 + Math.random() * 2000 : now + 3000 + Math.random() * 15000,
+    simulatedOutcome: input.forceAcceptFast ? "accepted" : Math.random() < 0.65 ? "accepted" : "declined",
   }));
 
   const order: DispatchOrder = {
@@ -176,6 +205,9 @@ export function createOrder(input: {
     selectedTeammateId: null,
     dispatchDeadline: now + DISPATCH_WINDOW_MS,
     selectionDeadline: null,
+    sessionStartAt: null,
+    sessionCompleteAt: null,
+    isReplay: !!input.isReplay,
     customerLabel: input.customerLabel,
     createdAt: now,
   };
@@ -184,6 +216,23 @@ export function createOrder(input: {
   writeIndex([...readIndex(), order.id]);
   broadcast(order.id);
   return order;
+}
+
+// "Keep playing" from the Session Complete screen — books a fresh order
+// with the same teammate, game and option, fast-tracked so it reconnects
+// reliably instead of going through the full open-dispatch odds again.
+export function createReplayOrder(order: DispatchOrder): DispatchOrder | null {
+  if (!order.selectedTeammateId) return null;
+  return createOrder({
+    gameSlug: order.gameSlug,
+    gameName: order.gameName,
+    option: order.option,
+    priceEUR: order.priceEUR,
+    requestedTeammateId: order.selectedTeammateId,
+    customerLabel: order.customerLabel,
+    forceAcceptFast: true,
+    isReplay: true,
+  });
 }
 
 export function respondToCandidate(orderId: string, teammateId: string, accept: boolean): DispatchOrder | null {

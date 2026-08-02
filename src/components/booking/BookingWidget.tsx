@@ -131,11 +131,21 @@ export function BookingWidget({ game }: Props) {
             <span>{selected.name}</span>
           </div>
 
-          <button type="button" className="booking-sidebar__row booking-sidebar__row--action" onClick={() => setTeammateModalOpen(true)}>
-            <span>{teammateIds.length > 1 ? "Teammates" : "Teammate"}</span>
-            <span>
-              <span className="booking-sidebar__row-value">{teammateIds.map(teammateName).join(", ")}</span>
+          <button
+            type="button"
+            className="booking-sidebar__row booking-sidebar__row--action booking-sidebar__row--teammates"
+            onClick={() => setTeammateModalOpen(true)}
+          >
+            <span className="booking-sidebar__row-label">
+              <span>{teammateIds.length > 1 ? "Teammates" : "Teammate"}</span>
               <i className="fa-solid fa-pen" aria-hidden="true" />
+            </span>
+            <span className="booking-sidebar__chips">
+              {teammateIds.map((id, i) => (
+                <span key={i} className={`booking-sidebar__chip${id === "random" ? " is-random" : ""}`}>
+                  {teammateName(id)}
+                </span>
+              ))}
             </span>
           </button>
 

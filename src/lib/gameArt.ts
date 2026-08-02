@@ -28,20 +28,13 @@ export function gameBackground(slug: string): string {
   return `/games/backgrounds/${slug}.${BACKGROUND_EXTENSIONS[slug] ?? "webp"}`;
 }
 
-// Landscape key art for the hero carousel cards (tapin.gg style) — only
-// exists for a subset of the roster; the rest fall back to the tall poster
-// banner (still fine cropped via object-fit: cover at this card size).
-const HERO_SECTION_SLUGS = new Set([
-  "league-of-legends",
-  "valorant",
-  "fortnite",
-  "teamfight-tactics",
-  "marvel-rivals",
-  "apex-legends",
-]);
-
+// Art for every "choose game" card (hero carousel, /games grid, teammate
+// card banners) — always the tall poster banner. A landscape hero-section
+// variant used to cover part of the roster, but its aspect ratio didn't
+// match this card shape and cropped badly; the banner set is a uniform
+// ~3:4 portrait across the whole roster, so it's used everywhere now.
 export function heroCardBackground(slug: string): string {
-  return HERO_SECTION_SLUGS.has(slug) ? `/games/hero-section/${slug}.webp` : localGameBanner(slug);
+  return localGameBanner(slug);
 }
 
 // Stylized wordmark image overlaid on the card instead of plain text —

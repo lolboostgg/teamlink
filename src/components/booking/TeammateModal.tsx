@@ -119,9 +119,18 @@ export function TeammateModal({ open, onClose, gameSlug, selectedIds, onChange }
                   ? `Pick up to ${selectedIds.length} teammates — ${pickedCount} of ${selectedIds.length} selected.`
                   : "Pick a specific teammate, or let us match you with the fastest one available."}
               </p>
+              {selectedIds.length > 1 && (
+                <div className="teammate-modal__slots" aria-hidden="true">
+                  {selectedIds.map((id, i) => (
+                    <span key={i} className={`teammate-modal__slot${id !== "random" ? " is-filled" : ""}`}>
+                      {i + 1}/{selectedIds.length}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             {selectedIds.length > 1 && (
-              <button type="button" className="btn btn--ghost btn--sm" onClick={resetToRandom} disabled={allRandom}>
+              <button type="button" className="btn btn--ghost btn--sm teammate-modal__reset" onClick={resetToRandom} disabled={allRandom}>
                 Reset to random
               </button>
             )}

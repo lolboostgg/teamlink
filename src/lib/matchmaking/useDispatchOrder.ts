@@ -37,11 +37,15 @@ export function useDispatchOrder(orderId: string | null) {
   const dispatchSecondsLeft = order ? Math.max(0, Math.ceil((order.dispatchDeadline - now) / 1000)) : 0;
   const selectionSecondsLeft =
     order?.selectionDeadline != null ? Math.max(0, Math.ceil((order.selectionDeadline - now) / 1000)) : 0;
+  const sessionElapsedSeconds =
+    order?.sessionStartAt != null ? Math.max(0, Math.floor((now - order.sessionStartAt) / 1000)) : 0;
 
   return {
     order,
+    now,
     dispatchSecondsLeft,
     selectionSecondsLeft,
+    sessionElapsedSeconds,
     dispatchWindowMs: DISPATCH_WINDOW_MS,
     confirmSelection: (teammateId: string) => orderId && setOrder(confirmSelection(orderId, teammateId)),
     cancelOrder: () => orderId && setOrder(cancelOrder(orderId)),

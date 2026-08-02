@@ -87,7 +87,9 @@ export function MatchmakingScreen({ orderId }: Props) {
         <button
           type="button"
           className="btn btn--vivid"
-          onClick={() => router.push(`/checkout/success?teammate=${teammateId ?? ""}`)}
+          onClick={() =>
+            router.push(teammateId ? `/dashboard/client/session/${orderId}` : `/checkout/success?teammate=`)
+          }
         >
           Continue
         </button>
