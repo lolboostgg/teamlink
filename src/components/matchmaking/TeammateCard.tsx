@@ -22,51 +22,51 @@ export function TeammateCard({ teammate, isCenter, isFirstAccepted, isSelected, 
   return (
     <button
       type="button"
-      className={`teammate-card${isCenter ? " teammate-card--center" : ""}${isSelected ? " is-selected" : ""}`}
+      className={`pick-card${isCenter ? " pick-card--center" : ""}${isSelected ? " is-selected" : ""}`}
       onClick={onSelect}
       aria-pressed={isSelected}
       aria-label={`${teammate.name}, ${teammate.rating.toFixed(1)} rating, ${isSelected ? "selected" : "select this teammate"}`}
     >
       {isCenter && (
-        <span className="teammate-card__auto-label">
+        <span className="pick-card__auto-label">
           {isFirstAccepted ? "Auto select" : "Top pick"}
         </span>
       )}
 
-      <span className="teammate-card__art" aria-hidden="true">
+      <span className="pick-card__art" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/avatars/default.webp" alt="" />
       </span>
 
-      <span className="teammate-card__rating">
+      <span className="pick-card__rating">
         <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} ({teammate.sessions})
       </span>
 
       {isSelected && (
-        <span className="teammate-card__check" aria-hidden="true">
+        <span className="pick-card__check" aria-hidden="true">
           <i className="fa-solid fa-check" />
         </span>
       )}
 
-      <span className="teammate-card__body">
-        {isFirstAccepted && isCenter && <span className="teammate-card__hint">First to accept</span>}
-        <span className="teammate-card__flags">
+      <span className="pick-card__body">
+        {isFirstAccepted && isCenter && <span className="pick-card__hint">First to accept</span>}
+        <span className="pick-card__flags">
           {teammate.languages.map((lang) => (
             <FlagIcon key={lang} iso={getLanguageMeta(lang).flagIso} label={getLanguageMeta(lang).label} />
           ))}
         </span>
-        <span className="teammate-card__name">{teammate.name}</span>
-        <span className="teammate-card__status">
-          <span className="teammate-card__status-dot" aria-hidden="true" /> Available
+        <span className="pick-card__name">{teammate.name}</span>
+        <span className="pick-card__status">
+          <span className="pick-card__status-dot" aria-hidden="true" /> Available
         </span>
         {rank && (
-          <span className="teammate-card__rank">
+          <span className="pick-card__rank">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={rank.icon} alt="" />
             {rank.label}+
           </span>
         )}
-        <span className="teammate-card__select-btn">
+        <span className="pick-card__select-btn">
           {isSelected ? (
             <>
               <i className="fa-solid fa-check" aria-hidden="true" />

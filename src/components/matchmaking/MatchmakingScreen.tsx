@@ -13,7 +13,6 @@ import { SelectionCountdown } from "@/components/matchmaking/SelectionCountdown"
 import { TeammateCard } from "@/components/matchmaking/TeammateCard";
 import { SearchingCard } from "@/components/matchmaking/SearchingCard";
 import { TeammateDetailsPanel } from "@/components/matchmaking/TeammateDetailsPanel";
-import { SelectionConfirmationBar } from "@/components/matchmaking/SelectionConfirmationBar";
 import { SessionScreen } from "@/components/matchmaking/SessionScreen";
 import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
 import { Modal } from "@/components/ui/Modal";
@@ -26,6 +25,8 @@ interface Slot {
   position: SlotPosition;
   candidate: DispatchCandidate | null;
 }
+
+type PickAction = "select" | "add" | "remove";
 
 // Exactly 5 fixed visual slots, filled center-out: the winner (first
 // accepted, or the customer's own pick order otherwise) takes the middle,
@@ -118,6 +119,7 @@ export function MatchmakingScreen({ orderId }: Props) {
 
   const [prefsModalOpen, setPrefsModalOpen] = useState(false);
   const [pickedIds, setPickedIds] = useState<string[]>([]);
+  const [confirmTarget, setConfirmTarget] = useState<{ teammateId: string; action: PickAction } | null>(null);
   const [selectedAnimIds, setSelectedAnimIds] = useState<string[]>([]);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const pickSoundPlayed = useRef(false);
@@ -237,7 +239,9 @@ export function MatchmakingScreen({ orderId }: Props) {
                     className={`matching-screen__vibe-btn${order.vibe === v.value ? " is-selected" : ""}`}
                     onClick={() => updatePreferences({ vibe: v.value })}
                   >
-                    <i className={v.icon} aria-hidden="true" />
+                    <span className="matching-screen__vibe-icon">
+                      <i className={v.icon} aria-hidden="true" />
+                    </span>
                     {v.label}
                   </button>
                 ))}
@@ -372,40 +376,40 @@ export function MatchmakingScreen({ orderId }: Props) {
   const multiPick = order.teammates > 1;
   const maxPicks = multiPick ? order.teammates : 1;
 
-  function handlePick(teammateId: string) {
-    setPickedIds((prev) => {
-      if (prev.includes(teammateId)) return prev.filter((id) => id !== teammateId);
-      if (!multiPick) return [teammateId];
-      if (prev.length >= maxPicks) return prev;
-      return [...prev, teammateId];
-    });
+  // Clicking a card never selects it directly — it opens a confirm modal
+  // (select / add-to-team / remove-from-team depending on mode and current
+  // state), and only actually confirming there changes anything.
+  function handleCardClick(teammateId: string) {
+    if (!multiPick) {
+      setConfirmTarget({ teammateId, action: "select" });
+      return;
+    }
+    if (pickedIds.includes(teammateId)) {
+      setConfirmTarget({ teammateId, action: "remove" });
+    } else if (pickedIds.length < maxPicks) {
+      setConfirmTarget({ teammateId, action: "add" });
+    }
   }
 
-  function handleConfirm() {
-    if (pickedIds.length === 0) return;
-    if (multiPick) {
-      confirmMultiSelection(pickedIds);
-    } else {
-      confirmSelection(pickedIds[0]);
+  function handleModalConfirm() {
+    if (!confirmTarget) return;
+    const { teammateId, action } = confirmTarget;
+    if (action === "select") {
+      confirmSelection(teammateId);
+      setSelectedAnimIds([teammateId]);
+    } else if (action === "add") {
+      const next = [...pickedIds, teammateId];
+      if (next.length >= maxPicks) {
+        confirmMultiSelection(next);
+        setSelectedAnimIds(next);
+        setPickedIds([]);
+      } else {
+        setPickedIds(next);
+      }
+    } else if (action === "remove") {
+      setPickedIds((prev) => prev.filter((id) => id !== teammateId));
     }
-    setSelectedAnimIds(pickedIds);
-    setPickedIds([]);
-  }
-
-  function handleUseAutoSelect() {
-    if (!winner) return;
-    const accepted = [...order!.candidates]
-      .filter((c) => c.status === "accepted")
-      .sort((a, b) => (a.respondedAt ?? 0) - (b.respondedAt ?? 0));
-    const ordered = [winner, ...accepted.filter((c) => c.teammateId !== winner.teammateId)];
-    const ids = ordered.slice(0, maxPicks).map((c) => c.teammateId);
-    if (multiPick) {
-      confirmMultiSelection(ids);
-    } else {
-      confirmSelection(ids[0]);
-    }
-    setSelectedAnimIds(ids);
-    setPickedIds([]);
+    setConfirmTarget(null);
   }
 
   function pickRankFor(teammateId: string): number | undefined {
@@ -418,9 +422,14 @@ export function MatchmakingScreen({ orderId }: Props) {
   const selectionElapsed = selectionWindowSeconds - selectionSecondsLeft;
   const selectionProgressPct = Math.min(100, Math.max(0, (selectionElapsed / selectionWindowSeconds) * 100));
   const countdownCaption = multiPick
-    ? `Pick up to ${order.teammates} teammates — auto-selecting in ${selectionSecondsLeft}s`
+    ? `${pickedIds.length}/${maxPicks} selected — auto-selecting in ${selectionSecondsLeft}s`
     : `Auto-selecting in ${selectionSecondsLeft}s`;
-  const pickedTeammates = pickedIds.map((id) => getTeammateById(id)).filter((t) => t !== undefined);
+  const confirmTeammate = confirmTarget ? getTeammateById(confirmTarget.teammateId) : null;
+  const confirmCopy: Record<PickAction, string> = {
+    select: `Are you sure you want to select ${confirmTeammate?.name ?? "this teammate"} as your teammate?`,
+    add: `Add ${confirmTeammate?.name ?? "this teammate"} to your team? (${pickedIds.length + 1}/${maxPicks})`,
+    remove: `Remove ${confirmTeammate?.name ?? "this teammate"} from your team?`,
+  };
 
   return (
     <div className="matching-screen matching-screen--full matching-screen--arena">
@@ -451,7 +460,7 @@ export function MatchmakingScreen({ orderId }: Props) {
                   isFirstAccepted={winner?.teammateId === slot.candidate.teammateId}
                   isSelected={pickedIds.includes(slot.candidate.teammateId)}
                   pickRank={pickRankFor(slot.candidate.teammateId)}
-                  onSelect={() => handlePick(slot.candidate!.teammateId)}
+                  onSelect={() => handleCardClick(slot.candidate!.teammateId)}
                 />
               ) : (
                 <SearchingCard isCenter={isCenter} />
@@ -461,15 +470,6 @@ export function MatchmakingScreen({ orderId }: Props) {
           );
         })}
       </div>
-
-      <SelectionConfirmationBar
-        selected={pickedTeammates}
-        multiPick={multiPick}
-        teammatesNeeded={order.teammates}
-        hasWinner={!!winner}
-        onConfirm={handleConfirm}
-        onUseAutoSelect={handleUseAutoSelect}
-      />
 
       <button
         type="button"
@@ -484,6 +484,31 @@ export function MatchmakingScreen({ orderId }: Props) {
         onClose={() => setCancelConfirmOpen(false)}
         onConfirm={handleConfirmCancelRequest}
       />
+
+      <Modal open={!!confirmTarget} onClose={() => setConfirmTarget(null)} labelledBy="pick-confirm-title">
+        <div className="pick-confirm">
+          <span className="pick-confirm__avatar">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/avatars/default.webp" alt="" />
+          </span>
+          <h2 id="pick-confirm-title" className="pick-confirm__title">
+            {confirmTarget?.action === "remove" ? "Remove teammate" : "Select teammate"}
+          </h2>
+          <p className="pick-confirm__sub">{confirmTarget && confirmCopy[confirmTarget.action]}</p>
+          <div className="pick-confirm__actions">
+            <button type="button" className="btn btn--ghost btn--block" onClick={() => setConfirmTarget(null)}>
+              No
+            </button>
+            <button
+              type="button"
+              className={`btn btn--block ${confirmTarget?.action === "remove" ? "btn--danger" : "btn--vivid"}`}
+              onClick={handleModalConfirm}
+            >
+              Yes
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
