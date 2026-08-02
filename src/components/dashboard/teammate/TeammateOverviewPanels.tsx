@@ -2,7 +2,7 @@
 
 import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
 import { useReviews } from "@/lib/reviews";
-import { CURRENT_TEAMMATE_ID } from "@/lib/matchmaking/store";
+import { useCurrentTeammateId } from "@/lib/matchmaking/useCurrentTeammateId";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SessionsList } from "@/components/dashboard/teammate/SessionsList";
@@ -16,10 +16,11 @@ function shareOf(order: DispatchOrder): number {
 }
 
 // Stats + upcoming sessions computed from the real dispatch store, scoped
-// to the fixed demo identity (Nova) — not a static mock.
+// to whichever real teammate is signed in — not a static mock.
 export function TeammateOverviewPanels() {
-  const orders = useAllOrders().filter((o) => o.selectedTeammateIds.includes(CURRENT_TEAMMATE_ID));
-  const reviews = useReviews().filter((r) => r.teammateId === CURRENT_TEAMMATE_ID);
+  const teammateId = useCurrentTeammateId();
+  const orders = useAllOrders().filter((o) => o.selectedTeammateIds.includes(teammateId ?? ""));
+  const reviews = useReviews().filter((r) => r.teammateId === teammateId);
 
   const completed = orders.filter((o) => o.status === "completed");
   const pending = orders.filter((o) => o.status === "assigned" || o.status === "in_progress");

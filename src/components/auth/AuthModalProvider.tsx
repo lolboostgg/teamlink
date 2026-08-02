@@ -41,6 +41,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<Mode>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const onSuccessRef = useRef<(() => void) | undefined>(undefined);
   const isAuthenticated = status === "authenticated";
   const isLoading = status === "loading";
@@ -67,6 +68,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     const email = String(data.get("auth-email") ?? "").trim();
     const password = String(data.get("auth-password") ?? "");
     const username = String(data.get("auth-username") ?? "").trim();
+    const remember = data.get("auth-remember") === "on";
     const missing = !email || !password || (mode === "signup" && !username);
     if (missing) {
       setFormError("Fill in every field to continue.");
@@ -89,7 +91,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    const result = await signIn("credentials", { email, password, redirect: false });
+    const result = await signIn("credentials", { email, password, remember: String(remember), redirect: false });
     setSubmitting(false);
     if (result?.error) {
       setFormError("Incorrect email or password.");
@@ -153,8 +155,31 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
             </div>
             <div className="form-row">
               <label htmlFor="auth-password">Password</label>
-              <input id="auth-password" name="auth-password" type="password" placeholder="••••••••" />
+              <div className="auth-modal__password-field">
+                <input
+                  id="auth-password"
+                  name="auth-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  className="auth-modal__password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                >
+                  <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
+                </button>
+              </div>
             </div>
+
+            {mode === "login" && (
+              <label className="auth-modal__remember">
+                <input type="checkbox" id="auth-remember" name="auth-remember" defaultChecked />
+                Remember me
+              </label>
+            )}
 
             {formError && (
               <p className="form-row__error">

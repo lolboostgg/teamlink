@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n";
 import { GAMES } from "@/lib/games";
-import { RANK_TIERS, CHAMPION_NAMES, LOL_LANES, type LolRankTier, type ChampionName, type LolLane } from "@/lib/lolAssets";
+import { RANK_TIERS, CHAMPION_NAMES, LOL_LANES, championIcon, getRankMeta, type LolRankTier, type ChampionName, type LolLane } from "@/lib/lolAssets";
+import { FlagIcon } from "@/components/ui/FlagIcon";
 import type { TeammateProfileInput } from "@/lib/teammateProfile";
 
 export interface TeammateProfileFormValue extends TeammateProfileInput {
@@ -77,14 +78,20 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
         </div>
         <div className="form-row">
           <label htmlFor="tp-rank">League of Legends rank</label>
-          <select id="tp-rank" value={lolRank ?? ""} onChange={(e) => setLolRank((e.target.value || null) as LolRankTier | null)}>
-            <option value="">Not set</option>
-            {RANK_TIERS.map((r) => (
-              <option key={r.tier} value={r.tier}>
-                {r.label}
-              </option>
-            ))}
-          </select>
+          <div className="rank-select">
+            {lolRank && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={getRankMeta(lolRank).icon} alt="" className="rank-select__icon" />
+            )}
+            <select id="tp-rank" value={lolRank ?? ""} onChange={(e) => setLolRank((e.target.value || null) as LolRankTier | null)}>
+              <option value="">Not set</option>
+              {RANK_TIERS.map((r) => (
+                <option key={r.tier} value={r.tier}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -103,6 +110,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
                 checked={languages.includes(l.code)}
                 onChange={() => setLanguages((prev) => toggle(prev, l.code))}
               />
+              <FlagIcon iso={l.flagIso} />
               {l.label}
             </label>
           ))}
@@ -119,6 +127,8 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
                 checked={lolChampions.includes(c)}
                 onChange={() => setLolChampions((prev) => toggle(prev, c))}
               />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={championIcon(c)} alt="" className="chip-check__icon" />
               {c}
             </label>
           ))}

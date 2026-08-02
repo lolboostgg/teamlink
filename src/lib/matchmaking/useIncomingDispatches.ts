@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  CURRENT_TEAMMATE_ID,
   DISPATCH_WINDOW_MS,
   listActiveOrders,
   respondToCandidate,
@@ -10,15 +9,18 @@ import {
   completeOrder,
   subscribeToDispatch,
 } from "@/lib/matchmaking/store";
+import { useCurrentTeammateId } from "@/lib/matchmaking/useCurrentTeammateId";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 import { useToast } from "@/components/ui/ToastProvider";
 
-// Teammate-side view, scoped to the fixed demo identity (Nova) — see
-// CURRENT_TEAMMATE_ID in store.ts. Pending invites are orders where Nova is
-// a candidate still awaiting a response; active orders are ones assigned to
-// her that are in progress or ready to start.
+// Teammate-side view, scoped to whichever real teammate is signed in (see
+// useCurrentTeammateId). Pending invites are orders where they're a
+// candidate still awaiting a response; active orders are ones assigned to
+// them that are in progress or ready to start. Returns empty lists while
+// the identity is still resolving or for a non-teammate account.
 export function useIncomingDispatches() {
   const { showToast } = useToast();
+  const teammateId = useCurrentTeammateId();
   const [orders, setOrders] = useState<DispatchOrder[]>(() => listActiveOrders());
 
   useEffect(() => {
@@ -34,20 +36,24 @@ export function useIncomingDispatches() {
     };
   }, []);
 
-  const pendingInvites = orders.filter((o) =>
-    o.candidates.some((c) => c.teammateId === CURRENT_TEAMMATE_ID && c.status === "pending"),
-  );
+  const pendingInvites = teammateId
+    ? orders.filter((o) => o.candidates.some((c) => c.teammateId === teammateId && c.status === "pending"))
+    : [];
 
-  const activeOrders = orders.filter(
-    (o) => o.selectedTeammateIds.includes(CURRENT_TEAMMATE_ID) && (o.status === "assigned" || o.status === "in_progress"),
-  );
+  const activeOrders = teammateId
+    ? orders.filter(
+        (o) => o.selectedTeammateIds.includes(teammateId) && (o.status === "assigned" || o.status === "in_progress"),
+      )
+    : [];
 
   return {
+    teammateId,
     pendingInvites,
     activeOrders,
     dispatchWindowMs: DISPATCH_WINDOW_MS,
     respond: (orderId: string, accept: boolean) => {
-      const updated = respondToCandidate(orderId, CURRENT_TEAMMATE_ID, accept);
+      if (!teammateId) return;
+      const updated = respondToCandidate(orderId, teammateId, accept);
       if (updated) {
         setOrders(listActiveOrders());
         showToast(accept ? "Request accepted" : "Request declined", accept ? "success" : "info");

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { auth } from "@/auth";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { AdminOverviewPanels } from "@/components/dashboard/admin/AdminOverviewPanels";
 import { AdminUsersTable, type AdminUserRow } from "@/components/dashboard/admin/AdminUsersTable";
@@ -13,7 +14,8 @@ export const metadata: Metadata = { title: "Admin Dashboard" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const users = await getUsersWithTeammate();
+  const [session, users] = await Promise.all([auth(), getUsersWithTeammate()]);
+  const displayName = session?.user?.name || session?.user?.email?.split("@")[0] || "Admin";
   const recentRows: AdminUserRow[] = users.slice(0, 5).map((u) => ({
     id: u.id,
     email: u.email,
@@ -26,7 +28,7 @@ export default async function AdminDashboardPage() {
   return (
     <>
       <WelcomeBanner
-        name="Welcome back, Admin"
+        name={displayName}
         message="Platform health at a glance."
         links={[
           { href: "/dashboard/admin/users", label: "Users", icon: "fa-solid fa-users" },

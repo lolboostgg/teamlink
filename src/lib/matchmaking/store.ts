@@ -8,7 +8,15 @@ import type { CandidateStatus, DispatchCandidate, DispatchOrder, OrderStatus } f
 // creation time (see createOrder) so the flow always resolves within the
 // dispatch window even with nobody on the teammate dashboard to click
 // Accept — a real manual response just pre-empts the simulated one.
-export const CURRENT_TEAMMATE_ID = "tm-nova";
+//
+// This is purely a *dispatch-priority* choice, not an identity — when a
+// client books "any teammate" for a game Nova is eligible for, she's
+// candidate #1 so the demo roster always has someone realistic to show
+// accepting first. It has nothing to do with who's actually logged in on
+// the teammate side; see useCurrentTeammateId() for that (real session ->
+// real Teammate.id, so the teammate dashboard reflects whichever real
+// account is signed in instead of always assuming it's Nova).
+export const DEMO_PRIORITY_TEAMMATE_ID = "tm-nova";
 
 // The dispatch window is a full 60s, but resolves as soon as every notified
 // candidate has actually responded (see reconcile()) — the "Pick your
@@ -235,8 +243,8 @@ export function createOrder(input: {
     pool = [input.requestedTeammateId];
   } else {
     const eligible = getTeammatesForGame(input.gameSlug).map((t) => t.id);
-    const novaFirst = eligible.includes(CURRENT_TEAMMATE_ID)
-      ? [CURRENT_TEAMMATE_ID, ...eligible.filter((id) => id !== CURRENT_TEAMMATE_ID)]
+    const novaFirst = eligible.includes(DEMO_PRIORITY_TEAMMATE_ID)
+      ? [DEMO_PRIORITY_TEAMMATE_ID, ...eligible.filter((id) => id !== DEMO_PRIORITY_TEAMMATE_ID)]
       : eligible;
     pool = novaFirst.slice(0, MAX_CANDIDATES);
   }

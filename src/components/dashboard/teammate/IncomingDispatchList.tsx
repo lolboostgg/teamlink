@@ -1,7 +1,7 @@
 "use client";
 
 import { PriceTag } from "@/components/currency/PriceTag";
-import { CURRENT_TEAMMATE_ID, DISPATCH_WINDOW_MS } from "@/lib/matchmaking/store";
+import { DISPATCH_WINDOW_MS } from "@/lib/matchmaking/store";
 import { useIncomingDispatches } from "@/lib/matchmaking/useIncomingDispatches";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 
@@ -9,11 +9,11 @@ function secondsLeft(order: DispatchOrder): number {
   return Math.max(0, Math.ceil((order.dispatchDeadline - Date.now()) / 1000));
 }
 
-// Real, order-accurate invites for the fixed demo teammate identity (Nova)
-// — see CURRENT_TEAMMATE_ID in lib/matchmaking/store.ts. Distinct from the
-// ambient NotificationPanel (random flavor notifications, unrelated orders).
+// Real, order-accurate invites for whichever real teammate is signed in
+// (see useCurrentTeammateId). Distinct from the ambient NotificationPanel
+// (random flavor notifications, unrelated orders).
 export function IncomingDispatchList() {
-  const { pendingInvites, respond } = useIncomingDispatches();
+  const { teammateId, pendingInvites, respond } = useIncomingDispatches();
 
   if (pendingInvites.length === 0) {
     return (
@@ -29,7 +29,7 @@ export function IncomingDispatchList() {
   return (
     <div className="notification-panel">
       {pendingInvites.map((order) => {
-        const candidate = order.candidates.find((c) => c.teammateId === CURRENT_TEAMMATE_ID);
+        const candidate = order.candidates.find((c) => c.teammateId === teammateId);
         if (!candidate) return null;
         const pct = Math.round((secondsLeft(order) / (DISPATCH_WINDOW_MS / 1000)) * 100);
         return (

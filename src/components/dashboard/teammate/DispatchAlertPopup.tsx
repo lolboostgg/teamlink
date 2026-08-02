@@ -6,10 +6,10 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { useIncomingDispatches } from "@/lib/matchmaking/useIncomingDispatches";
 import { playNotificationSound } from "@/lib/notificationSound";
 
-// Global popup + sound alert for the demo teammate identity (Nova) — fires
-// once per newly-arrived dispatch invite regardless of which dashboard page
-// is open, since a real incoming request shouldn't require sitting on the
-// Sessions page to notice it. Scoped to real teammate accounts only.
+// Global popup + sound alert for whichever real teammate is signed in (see
+// useCurrentTeammateId) — fires once per newly-arrived dispatch invite
+// regardless of which dashboard page is open, since a real incoming
+// request shouldn't require sitting on the Sessions page to notice it.
 export function DispatchAlertPopup() {
   const { data: session } = useSession();
   const isTeammate = session?.user?.role === "TEAMMATE";

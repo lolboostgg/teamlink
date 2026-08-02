@@ -1,4 +1,5 @@
 import type { Teammate } from "@/lib/teammates";
+import { championIcon, type ChampionName } from "@/lib/lolAssets";
 
 interface Props {
   teammate: Teammate | null;
@@ -27,7 +28,11 @@ export function TeammateDetailsPanel({ teammate }: Props) {
           <span className="teammate-details__label">Top champions</span>
           <ul className="teammate-details__list">
             {champions.slice(0, 3).map((c) => (
-              <li key={c}>{c}</li>
+              <li key={c}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={championIcon(c as ChampionName)} alt="" className="teammate-details__champion-icon" />
+                {c}
+              </li>
             ))}
           </ul>
         </>

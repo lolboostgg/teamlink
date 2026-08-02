@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
-import { CURRENT_TEAMMATE_ID } from "@/lib/matchmaking/store";
+import { useCurrentTeammateId } from "@/lib/matchmaking/useCurrentTeammateId";
 import { DashboardChat } from "@/components/dashboard/chat/DashboardChat";
 import type { ChatConversation } from "@/lib/dashboard/chatData";
 
@@ -10,11 +10,12 @@ import type { ChatConversation } from "@/lib/dashboard/chatData";
 // teammate has actually been matched with, most recent first.
 export function TeammateChatContent() {
   const orders = useAllOrders();
+  const teammateId = useCurrentTeammateId();
 
   const conversations: ChatConversation[] = useMemo(() => {
     const byClient = new Map<string, { gameName: string; createdAt: number }>();
     orders.forEach((order) => {
-      if (!order.selectedTeammateIds.includes(CURRENT_TEAMMATE_ID)) return;
+      if (!teammateId || !order.selectedTeammateIds.includes(teammateId)) return;
       const existing = byClient.get(order.customerLabel);
       if (!existing || order.createdAt > existing.createdAt) {
         byClient.set(order.customerLabel, { gameName: order.gameName, createdAt: order.createdAt });
@@ -31,7 +32,7 @@ export function TeammateChatContent() {
         unread: 0,
         messages: [{ id: "m1", from: "me" as const, text: `Hi! Ready when you are for ${info.gameName}.`, time: "" }],
       }));
-  }, [orders]);
+  }, [orders, teammateId]);
 
   if (conversations.length === 0) {
     return (

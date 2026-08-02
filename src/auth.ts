@@ -11,14 +11,18 @@ import { prisma } from "@/lib/db";
 // Discord/Google don't use a Prisma adapter either, for the same reason:
 // the jwt() callback below finds-or-creates the matching User row by email
 // itself instead of relying on adapter-managed Account rows.
+const REMEMBERED_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days
+const NOT_REMEMBERED_MAX_AGE_SECONDS = 24 * 60 * 60; // 1 day
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: REMEMBERED_MAX_AGE_SECONDS },
   trustHost: true,
   providers: [
     Credentials({
       credentials: {
         email: {},
         password: {},
+        remember: {},
       },
       async authorize(credentials) {
         const email = String(credentials?.email ?? "").trim().toLowerCase();
@@ -32,7 +36,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const valid = await bcrypt.compare(password, user.passwordHash);
           if (!valid) return null;
 
-          return { id: user.id, email: user.email, role: user.role };
+          // Stashed on the returned user object so the jwt() callback below
+          // can read it on initial sign-in (only `authorize` sees the raw
+          // credentials) — not a real User field, just a one-shot carrier.
+          const remember = credentials?.remember !== "false";
+          return { id: user.id, email: user.email, role: user.role, remember };
         } catch (err) {
           // Logged server-side instead of surfacing raw DB errors through
           // NextAuth's generic CredentialsSignin error — check the
@@ -59,6 +67,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "credentials") {
         token.id = user.id!;
         token.role = user.role;
+        // "Remember me" unchecked -> shorten this token's own expiry below
+        // the session-wide 30-day maxAge. The default JWT encoder honors an
+        // explicit exp claim if one's already set, so this makes the
+        // session expire in 1 day without touching the cookie itself.
+        if ((user as { remember?: boolean }).remember === false) {
+          token.exp = Math.floor(Date.now() / 1000) + NOT_REMEMBERED_MAX_AGE_SECONDS;
+        }
         return token;
       }
 

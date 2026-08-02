@@ -4,11 +4,12 @@ import { SessionsList } from "@/components/dashboard/teammate/SessionsList";
 import { IncomingDispatchList } from "@/components/dashboard/teammate/IncomingDispatchList";
 import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
 import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
-import { CURRENT_TEAMMATE_ID } from "@/lib/matchmaking/store";
+import { useCurrentTeammateId } from "@/lib/matchmaking/useCurrentTeammateId";
 
 export default function TeammateSessionsPage() {
+  const teammateId = useCurrentTeammateId();
   const orders = useAllOrders().filter(
-    (o) => o.selectedTeammateIds.includes(CURRENT_TEAMMATE_ID) && o.status !== "cancelled"
+    (o) => teammateId !== null && o.selectedTeammateIds.includes(teammateId) && o.status !== "cancelled"
   );
   const upcoming = orders.filter((o) => o.status === "assigned" || o.status === "in_progress");
   const completed = orders.filter((o) => o.status === "completed");

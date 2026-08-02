@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
-import { randomBookingRequest, type BookingRequestNotification } from "@/lib/dashboard/notifications";
-
-const MAX_HISTORY = 8;
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { useSession } from "next-auth/react";
+import { useIncomingDispatches } from "@/lib/matchmaking/useIncomingDispatches";
+import type { BookingRequestNotification } from "@/lib/dashboard/notifications";
 
 interface NotificationContextValue {
   notifications: BookingRequestNotification[];
@@ -22,48 +21,43 @@ export function useNotifications() {
   return ctx;
 }
 
-// Simulated realtime: no backend to push a real booking event from, so a
-// randomized interval generates one while a teammate is looking at their
-// dashboard — the same "you got a request, accept or decline it" shape a
-// real push notification would have, just client-generated. Capped history
-// so it never turns into an unbounded list.
+// Bell dropdown, sourced from the same real dispatch data as
+// DispatchAlertPopup (see useIncomingDispatches/useCurrentTeammateId) —
+// this used to be a randomly-generated fake feed with working-looking
+// Accept/Decline buttons that didn't actually do anything, which was
+// actively misleading (indistinguishable from a real request). Empty for
+// non-teammate accounts, same as before.
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const isTeammateView = pathname.startsWith("/dashboard/teammate");
-  const [notifications, setNotifications] = useState<BookingRequestNotification[]>([]);
-  const [seenCount, setSeenCount] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { data: session } = useSession();
+  const isTeammate = session?.user?.role === "TEAMMATE";
+  const { pendingInvites, respond } = useIncomingDispatches();
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (!isTeammateView) return;
+  const notifications: BookingRequestNotification[] = useMemo(() => {
+    if (!isTeammate) return [];
+    return pendingInvites.map((order) => ({
+      id: order.id,
+      type: "booking-request" as const,
+      status: "pending" as const,
+      clientName: order.customerLabel,
+      gameName: order.gameName,
+      option: order.option,
+      priceEUR: order.priceEUR,
+      createdAt: order.createdAt,
+    }));
+  }, [isTeammate, pendingInvites]);
 
-    function scheduleNext() {
-      const delay = 25000 + Math.random() * 20000;
-      timerRef.current = setTimeout(() => {
-        setNotifications((prev) => [randomBookingRequest(), ...prev].slice(0, MAX_HISTORY));
-        scheduleNext();
-      }, delay);
-    }
-    scheduleNext();
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [isTeammateView]);
-
-  const unreadCount = notifications.length - seenCount > 0 ? notifications.length - seenCount : 0;
+  const unreadCount = notifications.filter((n) => !seenIds.has(n.id)).length;
 
   const value = useMemo<NotificationContextValue>(
     () => ({
       notifications,
       unreadCount,
-      markAllSeen: () => setSeenCount(notifications.length),
-      accept: (id) =>
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, status: "accepted" } : n))),
-      decline: (id) =>
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, status: "declined" } : n))),
+      markAllSeen: () => setSeenIds(new Set(notifications.map((n) => n.id))),
+      accept: (id) => respond(id, true),
+      decline: (id) => respond(id, false),
     }),
-    [notifications, unreadCount],
+    [notifications, unreadCount, respond],
   );
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

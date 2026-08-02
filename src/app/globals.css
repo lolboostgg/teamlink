@@ -2864,6 +2864,37 @@ ul {
   accent-color: var(--cta-vivid);
 }
 
+.chip-check__icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.chip-check .flag-icon {
+  width: 16px;
+  height: 12px;
+}
+
+.rank-select {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rank-select__icon {
+  position: absolute;
+  left: 11px;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.rank-select:has(.rank-select__icon) select {
+  padding-left: 38px;
+}
+
 .teammate-profile-form__actions {
   display: flex;
   justify-content: flex-end;
@@ -4125,6 +4156,17 @@ ul {
 .teammate-details__list li {
   font-size: 12px;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.teammate-details__champion-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex: none;
 }
 
 .teammate-details__tagline {
@@ -5297,6 +5339,51 @@ ul {
   flex: 1;
   height: 1px;
   background: var(--border);
+}
+
+.auth-modal__password-field {
+  position: relative;
+  display: flex;
+}
+
+.auth-modal__password-field input {
+  padding-right: 42px;
+}
+
+.auth-modal__password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.auth-modal__password-toggle:hover {
+  color: var(--text);
+}
+
+.auth-modal__remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -6px 0 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.auth-modal__remember input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--cta-vivid);
 }
 
 .auth-modal__notice {
