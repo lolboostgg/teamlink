@@ -25,13 +25,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
 
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user?.passwordHash) return null;
+        try {
+          const user = await prisma.user.findUnique({ where: { email } });
+          if (!user?.passwordHash) return null;
 
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+          const valid = await bcrypt.compare(password, user.passwordHash);
+          if (!valid) return null;
 
-        return { id: user.id, email: user.email, role: user.role };
+          return { id: user.id, email: user.email, role: user.role };
+        } catch (err) {
+          // Logged server-side instead of surfacing raw DB errors through
+          // NextAuth's generic CredentialsSignin error — check the
+          // Hostinger app logs for the real cause (same class of issue as
+          // api/auth/register: a database that couldn't be reached).
+          console.error("[auth] credentials lookup failed:", err);
+          return null;
+        }
       },
     }),
     Discord({

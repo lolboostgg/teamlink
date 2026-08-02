@@ -20,13 +20,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
   }
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
+  try {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    await prisma.user.create({ data: { email, name, passwordHash } });
+
+    return NextResponse.json({ ok: true }, { status: 201 });
+  } catch (err) {
+    // Logged server-side (check the Hostinger app logs) instead of leaking
+    // connection strings/internals to the client — the client only learns
+    // it's an infra problem, not a form-input mistake, so retrying blindly
+    // isn't the obvious next move.
+    console.error("[register] failed:", err);
+    return NextResponse.json(
+      { error: "We couldn't create your account right now — the database is unreachable. Try again in a moment." },
+      { status: 503 },
+    );
   }
-
-  const passwordHash = await bcrypt.hash(password, 12);
-  await prisma.user.create({ data: { email, name, passwordHash } });
-
-  return NextResponse.json({ ok: true }, { status: 201 });
 }
