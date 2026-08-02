@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
@@ -12,11 +12,24 @@ import { FlagIcon } from "@/components/ui/FlagIcon";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { Reveal } from "@/components/ui/Reveal";
+import { Modal } from "@/components/ui/Modal";
+import { useToast } from "@/components/ui/ToastProvider";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
 
 interface Props {
   orderId: string;
 }
+
+const HELP_REASONS = [
+  "Teammate did not show up",
+  "Teammate was rude, toxic, or inappropriate",
+  "Teammate was late or disconnected from the game",
+  "Teammate was spamming chat or pings",
+  "I had a bad game",
+  "Teammate refused voice chat",
+  "Teammate took my in-game role",
+  "Other",
+];
 
 function formatClock(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
@@ -37,7 +50,8 @@ function discountCodeFor(orderId: string): string {
 // once completed.
 export function SessionScreen({ orderId }: Props) {
   const router = useRouter();
-  const { order, now, sessionElapsedSeconds, cancelOrder } = useDispatchOrder(orderId);
+  const { showToast } = useToast();
+  const { order, now, sessionElapsedSeconds, cancelOrder, requestCancelSession } = useDispatchOrder(orderId);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [tip, setTip] = useState<number | null>(null);
@@ -46,6 +60,20 @@ export function SessionScreen({ orderId }: Props) {
   const [copied, setCopied] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [startingReplay, setStartingReplay] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [helpModalOpen, setHelpModalOpen] = useState(false);
+  const [buyMoreOpen, setBuyMoreOpen] = useState(false);
+  const [buyMoreQty, setBuyMoreQty] = useState(1);
+  const [buyingMore, setBuyingMore] = useState(false);
+
+  // Same as MatchmakingScreen's copy — a cancellation with cancelApprovedAt
+  // set went through the "teammate approves" flow, so send the customer
+  // home automatically once it lands, instead of leaving them stranded.
+  useEffect(() => {
+    if (order?.status !== "cancelled" || order.cancelApprovedAt === null) return;
+    const t = setTimeout(() => router.push("/"), 1600);
+    return () => clearTimeout(t);
+  }, [order?.status, order?.cancelApprovedAt, router]);
 
   if (!order) {
     return (
@@ -53,6 +81,31 @@ export function SessionScreen({ orderId }: Props) {
         <p className="matching-screen__lost">
           We couldn&rsquo;t find that session. <Link href="/games">Back to games</Link>
         </p>
+      </div>
+    );
+  }
+
+  // Mirrors MatchmakingScreen's own cancel_pending/cancelled branches — this
+  // bridges the brief gap before the parent's own poll catches up and takes
+  // over rendering entirely (see requestCancelSession() below).
+  if (order.status === "cancel_pending") {
+    return (
+      <div className="matching-screen">
+        <span className="matching-screen__spinner" aria-hidden="true" />
+        <h1 className="matching-screen__title">Cancelling your session...</h1>
+        <p className="matching-screen__sub">Waiting for your teammate to confirm.</p>
+      </div>
+    );
+  }
+
+  if (order.status === "cancelled" && order.cancelApprovedAt !== null) {
+    return (
+      <div className="matching-screen">
+        <span className="matching-screen__spinner matching-screen__spinner--done" aria-hidden="true">
+          <i className="fa-solid fa-check" aria-hidden="true" />
+        </span>
+        <h1 className="matching-screen__title">Session cancelled</h1>
+        <p className="matching-screen__sub">Your teammate confirmed the cancellation. Taking you home...</p>
       </div>
     );
   }
@@ -84,9 +137,9 @@ export function SessionScreen({ orderId }: Props) {
     if (fresh) router.push(`/checkout/matching?order=${fresh.id}`);
   }
 
-  function handleAskCancel() {
-    cancelOrder();
-    router.push("/games");
+  function handleConfirmCancel() {
+    requestCancelSession();
+    setCancelModalOpen(false);
   }
 
   function handleCopyCode() {
@@ -99,6 +152,34 @@ export function SessionScreen({ orderId }: Props) {
     setStartingReplay(true);
     const replay = createReplayOrder(order!);
     if (replay) router.push(`/checkout/matching?order=${replay.id}`);
+  }
+
+  function handleHelpReason() {
+    setHelpModalOpen(false);
+    showToast("Your teammate initiated a refund for your game(s) and we've credited your account.", "success");
+  }
+
+  function handleBuyMore() {
+    setBuyingMore(true);
+    for (let i = 0; i < buyMoreQty; i++) createReplayOrder(order!);
+    setTimeout(() => {
+      setBuyingMore(false);
+      setBuyMoreOpen(false);
+      setBuyMoreQty(1);
+      showToast(`Added ${buyMoreQty} more game${buyMoreQty > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
+    }, 500);
+  }
+
+  function handlePoke() {
+    showToast(`You poked ${teammate!.name}.`, "info");
+  }
+
+  function handleGG() {
+    showToast(`Sent "GG" to ${teammate!.name}.`, "info");
+  }
+
+  function handleStartVoice() {
+    showToast(`Voice invite sent to ${teammate!.name}.`, "info");
   }
 
   if (order.status === "completed") {
@@ -229,13 +310,19 @@ export function SessionScreen({ orderId }: Props) {
   const rank = teammate.lolRank ? getRankMeta(teammate.lolRank) : null;
   const rerollSecondsLeft = order.rerollDeadline != null ? Math.max(0, Math.ceil((order.rerollDeadline - now) / 1000)) : 0;
   const canReroll = rerollSecondsLeft > 0;
+  const buyMoreTotal = order.priceEUR * buyMoreQty;
 
   return (
     <div className="session-screen">
       <Reveal>
-        <div className="session-screen__status is-live">
-          <span className="pulse-dot" aria-hidden="true" /> {inSession ? "In session" : "Session start"} ·{" "}
-          {formatClock(sessionElapsedSeconds)}
+        <div className="session-screen__bar">
+          <span>
+            <span className="pulse-dot" aria-hidden="true" /> {inSession ? "In session" : "Session start"} ·{" "}
+            {formatClock(sessionElapsedSeconds)}
+          </span>
+          <span className="session-screen__bar-game">
+            {order.gameName} · {order.option}
+          </span>
         </div>
       </Reveal>
 
@@ -297,6 +384,36 @@ export function SessionScreen({ orderId }: Props) {
 
             <p className="session-screen__bio">{teammate.tagline}</p>
 
+            <div className="session-screen__buy-more">
+              <div className="session-screen__buy-more-head">
+                <span>Having a good time?</span>
+                <p>Keep the streak going. Add another game with {teammate.name}.</p>
+              </div>
+              {!buyMoreOpen ? (
+                <button type="button" className="btn btn--vivid btn--sm" onClick={() => setBuyMoreOpen(true)}>
+                  <i className="fa-solid fa-plus" aria-hidden="true" /> Add games
+                </button>
+              ) : (
+                <div className="session-screen__buy-more-form">
+                  <div className="session-screen__buy-more-row">
+                    <span>Add more games</span>
+                    <div className="booking-stepper">
+                      <button type="button" onClick={() => setBuyMoreQty((q) => Math.max(1, q - 1))} aria-label="Decrease">
+                        <i className="fa-solid fa-minus" aria-hidden="true" />
+                      </button>
+                      <span>{buyMoreQty}</span>
+                      <button type="button" onClick={() => setBuyMoreQty((q) => Math.min(9, q + 1))} aria-label="Increase">
+                        <i className="fa-solid fa-plus" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                  <button type="button" className="btn btn--vivid btn--block btn--sm" onClick={handleBuyMore} disabled={buyingMore}>
+                    {buyingMore ? "Adding..." : <>Checkout · <PriceTag amountEUR={buyMoreTotal} /></>}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="session-screen__buttons">
               {canReroll && (
                 <>
@@ -306,7 +423,7 @@ export function SessionScreen({ orderId }: Props) {
                   <span className="session-screen__reroll-note">Available for {formatClock(rerollSecondsLeft)}</span>
                 </>
               )}
-              <button type="button" className="session-screen__cancel-link" onClick={handleAskCancel}>
+              <button type="button" className="session-screen__cancel-link" onClick={() => setCancelModalOpen(true)}>
                 Ask to cancel session
               </button>
             </div>
@@ -315,10 +432,75 @@ export function SessionScreen({ orderId }: Props) {
 
         <Reveal delay={100}>
           <div className="dashboard-panel session-screen__chat-panel">
-            <SessionChat teammateName={teammate.name} />
+            <div className="session-screen__chat-head">
+              <span className="session-screen__chat-head-name">{teammate.name}</span>
+              <div className="session-screen__chat-head-actions">
+                <button type="button" className="btn btn--ghost btn--sm" onClick={handlePoke}>
+                  Poke
+                </button>
+                <button type="button" className="btn btn--vivid btn--sm" onClick={handleGG}>
+                  GG
+                </button>
+              </div>
+            </div>
+            <div className="session-screen__voice-bar">
+              <i className="fa-solid fa-headset" aria-hidden="true" />
+              <span>
+                <strong>Voice chat</strong> — talk instead of typing. {teammate.name} sees the moment you join.
+              </span>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={handleStartVoice}>
+                Start voice
+              </button>
+            </div>
+            <SessionChat
+              teammateName={teammate.name}
+              vibe={order.vibe}
+              conversationPref={order.conversationPref}
+              playStylePref={order.playStylePref}
+            />
+            <button type="button" className="session-screen__help-link" onClick={() => setHelpModalOpen(true)}>
+              <i className="fa-solid fa-circle-question" aria-hidden="true" /> Need help?
+            </button>
           </div>
         </Reveal>
       </div>
+
+      <Modal open={cancelModalOpen} onClose={() => setCancelModalOpen(false)} labelledBy="cancel-session-title">
+        <div className="cancel-confirm">
+          <h2 id="cancel-session-title" className="cancel-confirm__title">
+            Ask to cancel {order.gameName} · {order.option}
+          </h2>
+          <p className="cancel-confirm__sub">
+            We&rsquo;ll request cancellation from your teammate, who can usually process refunds within minutes.
+            Contact our customer support for further assistance or questions.
+          </p>
+          <div className="cancel-confirm__actions">
+            <button type="button" className="btn btn--ghost btn--block" onClick={() => setCancelModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn--danger btn--block" onClick={handleConfirmCancel}>
+              Confirm
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={helpModalOpen} onClose={() => setHelpModalOpen(false)} labelledBy="help-modal-title">
+        <div className="help-modal">
+          <h2 id="help-modal-title" className="help-modal__title">
+            Money-back guarantee
+          </h2>
+          <p className="help-modal__sub">Let us know what you&rsquo;re having trouble with so we can help.</p>
+          <div className="help-modal__list">
+            {HELP_REASONS.map((reason) => (
+              <button key={reason} type="button" className="help-modal__item" onClick={handleHelpReason}>
+                {reason}
+                <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

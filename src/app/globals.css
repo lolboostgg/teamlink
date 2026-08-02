@@ -414,6 +414,15 @@ ul {
   width: 100%;
 }
 
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: color-mix(in srgb, var(--danger) 88%, #000);
+}
+
 /* ── Promo banner ───────────────────────────────────────────── */
 .promo-banner {
   position: relative;
@@ -1836,10 +1845,39 @@ ul {
   margin-bottom: 12px;
 }
 
+.booking-group-size {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.booking-group-size__pill {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.booking-group-size__pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.booking-group-size__pill.is-selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
 /* Compact rows, not tiles — a full tile grid per category ran the page
    very tall/dense; a flat row list keeps every option visible at a glance
-   without the scroll depth (only the teammate picker, which genuinely
-   needs bigger cards, moved out to its own modal — see TeammateModal). */
+   without the scroll depth. Which specific teammate you get is decided
+   after checkout by the live dispatch/pick flow, not chosen here. */
 .booking-option {
   position: relative;
   display: flex;
@@ -3059,6 +3097,68 @@ ul {
   color: var(--text-faint);
 }
 
+.matching-screen__vibe {
+  margin: 4px 0 18px;
+}
+
+.matching-screen__vibe-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.matching-screen__vibe-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.matching-screen__vibe-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.matching-screen__vibe-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.matching-screen__vibe-btn.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.matching-screen__prefs-btn {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.matching-screen__prefs-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  font-size: 9px;
+  margin-left: 6px;
+}
+
 @keyframes matchingSpin {
   to { transform: rotate(360deg); }
 }
@@ -3103,6 +3203,194 @@ ul {
 .matching-screen__cancel {
   display: block;
   margin: 28px auto 0;
+}
+
+/* ── Selected!" beat — a brief pause between confirming a pick and
+   handing off to the live session ─────────────────────────────── */
+.selected-anim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 40px 0;
+}
+
+.selected-anim__card {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--success);
+  box-shadow: 0 0 40px rgba(47, 191, 113, 0.35);
+  animation: selectedPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.selected-anim__avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.selected-anim__check {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--success);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  border: 3px solid var(--bg);
+}
+
+.selected-anim__name {
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 10px;
+}
+
+.selected-anim__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--success);
+}
+
+@keyframes selectedPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ── Select-teammate confirm dialog ────────────────────────────── */
+.select-confirm__title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.select-confirm__sub {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.select-confirm__actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Preferences modal (searching screen) ──────────────────────── */
+.preferences-modal__title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  margin-bottom: 6px;
+}
+
+.preferences-modal__title--center {
+  text-align: center;
+}
+
+.preferences-modal__sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.preferences-modal__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preferences-modal__row > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.preferences-modal__row > span:first-child i {
+  color: var(--accent);
+  width: 14px;
+}
+
+.preferences-modal__row-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  max-width: 60%;
+  text-align: right;
+}
+
+.preferences-modal__row-value i {
+  font-size: 10px;
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+.preferences-modal__confirm {
+  margin-top: 22px;
+}
+
+.preferences-modal__back {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+  margin-bottom: 16px;
+}
+
+.preferences-modal__back:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.preferences-modal__options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 22px;
+}
+
+.preferences-modal__option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.preferences-modal__option input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
 }
 
 /* Center (first-to-accept, the auto-confirmed priority pick) + up to two
@@ -3351,24 +3639,24 @@ ul {
 /* Reached once a teammate is assigned (MatchmakingScreen's "Continue"
    button) — "your teammate is inviting you now" + live chat while the
    session runs, see SessionScreen.tsx. */
-.session-screen__status {
-  display: inline-flex;
+.session-screen__bar {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 12.5px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(47, 191, 113, 0.3);
+  background: rgba(47, 191, 113, 0.12);
+  color: var(--success);
+  font-size: 13px;
   font-weight: 700;
-  color: var(--text-muted);
   margin-bottom: 18px;
 }
 
-.session-screen__status.is-live {
-  border-color: rgba(47, 191, 113, 0.3);
-  background: rgba(47, 191, 113, 0.1);
-  color: var(--success);
+.session-screen__bar-game {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .session-screen__grid {
@@ -3523,7 +3811,106 @@ ul {
   padding: 0;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
   min-height: 520px;
+}
+
+.session-screen__chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.session-screen__chat-head-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.session-screen__chat-head-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.session-screen__voice-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 12.5px;
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+.session-screen__voice-bar i {
+  color: var(--accent);
+  font-size: 15px;
+}
+
+.session-screen__voice-bar span {
+  flex: 1;
+}
+
+.session-screen__voice-bar strong {
+  color: var(--text);
+}
+
+.session-screen__help-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+.session-screen__help-link:hover {
+  color: var(--text-muted);
+}
+
+.session-screen__buy-more {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(47, 191, 113, 0.25);
+  background: rgba(47, 191, 113, 0.06);
+  margin-bottom: 20px;
+}
+
+.session-screen__buy-more-head {
+  margin-bottom: 12px;
+}
+
+.session-screen__buy-more-head span {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.session-screen__buy-more-head p {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.session-screen__buy-more-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.session-screen__buy-more-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 @media (max-width: 860px) {
@@ -3536,28 +3923,36 @@ ul {
 .session-chat {
   display: flex;
   flex-direction: column;
+  flex: 1;
   width: 100%;
   min-height: 0;
 }
 
-.session-chat__notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-faint);
-  line-height: 1.5;
-}
-
-.session-chat__notice i {
-  color: var(--accent);
-  margin-top: 2px;
-}
-
 .session-chat__messages {
   flex: 1;
+}
+
+.session-chat__quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 18px 12px;
+}
+
+.session-chat__quick-reply {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+
+.session-chat__quick-reply:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
 }
 
 .chat-bubble--system {
@@ -3756,6 +4151,75 @@ ul {
   .session-complete__grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Ask-to-cancel confirm dialog ───────────────────────────────── */
+.cancel-confirm__title {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  margin-bottom: 12px;
+}
+
+.cancel-confirm__sub {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+
+.cancel-confirm__actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Need help / money-back guarantee modal ────────────────────── */
+.help-modal__title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  margin-bottom: 6px;
+}
+
+.help-modal__sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.help-modal__list {
+  display: flex;
+  flex-direction: column;
+}
+
+.help-modal__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  color: var(--text);
+  text-align: left;
+}
+
+.help-modal__item:last-child {
+  border-bottom: none;
+}
+
+.help-modal__item:hover {
+  color: var(--accent);
+}
+
+.help-modal__item i {
+  font-size: 11px;
+  color: var(--text-faint);
+  flex: 0 0 auto;
 }
 
 /* ── Dispatch invite (teammate dashboard) ────────────────────── */

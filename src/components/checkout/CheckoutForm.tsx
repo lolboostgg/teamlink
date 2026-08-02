@@ -15,8 +15,6 @@ interface Props {
   gameName: string;
   option: string;
   teammates: number;
-  teammateIds?: string[];
-  teammateName?: string;
   baseTotalEUR: number;
 }
 
@@ -26,7 +24,7 @@ type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 // Orchestrates the checkout flow: identity (guest email or login/register)
 // -> payment method + fee -> mock submit. Owns both columns because the
 // order summary must react live to the selected payment method's fee.
-export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateIds, teammateName, baseTotalEUR }: Props) {
+export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalEUR }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("identity");
   const [identity, setIdentity] = useState<Identity>(null);
@@ -50,18 +48,14 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateId
   function handlePaymentSubmit() {
     setSubmitting(true);
     setTimeout(() => {
-      // The mock dispatch/matchmaking flow was built around a single
-      // requested teammate per order — with multiple slots now pickable,
-      // the first specific (non-random) pick drives that simulation; any
-      // other slots stay reflected in the order summary but don't change
-      // who gets dispatched to.
-      const requestedTeammateId = teammateIds?.find((id) => id !== "random") ?? null;
+      // Who you actually get is decided by the live dispatch/pick flow
+      // after checkout, never chosen up front.
       const order = createOrder({
         gameSlug,
         gameName,
         option,
         priceEUR: totalEUR,
-        requestedTeammateId,
+        requestedTeammateId: null,
         customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
       });
       router.push(order ? `/checkout/matching?order=${order.id}` : "/checkout/success");
@@ -141,7 +135,6 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, teammateId
             gameName={gameName}
             option={option}
             teammates={teammates}
-            teammateName={teammateName}
             subtotalEUR={baseTotalEUR}
             feeEUR={feeEUR}
             feeLabel={feeLabel}

@@ -15,6 +15,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   in_progress: "In progress",
   completed: "Completed",
   cancelled: "Cancelled",
+  cancel_pending: "Cancelling",
   no_match: "No match found",
 };
 
@@ -26,6 +27,7 @@ const STATUS_PILL: Record<OrderStatus, string> = {
   in_progress: "dashboard-pill--success",
   completed: "dashboard-pill--muted",
   cancelled: "dashboard-pill--muted",
+  cancel_pending: "dashboard-pill--warning",
   no_match: "dashboard-pill--muted",
 };
 

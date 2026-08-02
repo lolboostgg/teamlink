@@ -48,3 +48,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Video references dropped directly in the repo root by the chat client
+# (e.g. a reference clip the user pasted in) — not project content.
+/*.mp4

@@ -6,7 +6,6 @@ interface Props {
   gameName: string;
   option: string;
   teammates: number;
-  teammateName?: string;
   subtotalEUR: number;
   feeEUR: number;
   feeLabel?: string;
@@ -18,7 +17,6 @@ export function CheckoutOrderSummary({
   gameName,
   option,
   teammates,
-  teammateName,
   subtotalEUR,
   feeEUR,
   feeLabel,
@@ -41,14 +39,6 @@ export function CheckoutOrderSummary({
         </span>
         <span>{teammates}</span>
       </div>
-      {teammateName && (
-        <div className="order-summary__item">
-          <span>
-            <i className="fa-solid fa-user-check" aria-hidden="true" /> Teammate
-          </span>
-          <span>{teammateName}</span>
-        </div>
-      )}
       <div className="order-summary__item">
         <span>
           <i className="fa-solid fa-receipt" aria-hidden="true" /> Subtotal

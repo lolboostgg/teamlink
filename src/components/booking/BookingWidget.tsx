@@ -7,9 +7,7 @@ import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
-import { TeammateModal } from "@/components/booking/TeammateModal";
 import { TrustPoints } from "@/components/ui/TrustPoints";
-import { TEAMMATES } from "@/lib/teammates";
 
 interface Props {
   game: Game;
@@ -22,25 +20,20 @@ const CATEGORY_ICONS: Record<string, string> = {
   Coaching: "fa-solid fa-chalkboard-user",
 };
 
-const MAX_TEAMMATES = 4;
+const MAX_TEAMMATES = 9;
+const GROUP_SIZES = Array.from({ length: MAX_TEAMMATES }, (_, i) => i + 1);
 
-function teammateName(id: string): string {
-  return id === "random" ? "Random match" : TEAMMATES.find((t) => t.id === id)?.name ?? "Random match";
-}
-
+// Which specific teammate you get is decided by the live dispatch/pick flow
+// after checkout (see MatchmakingScreen), not up front — this widget only
+// books the game, mode and group size.
 export function BookingWidget({ game }: Props) {
   const router = useRouter();
   const [selected, setSelected] = useState<BookingOption>(BOOKING_CATEGORIES[0].options[0]);
-  // One entry per teammate slot — length always matches group size, so
-  // increasing it (e.g. to 3) opens up 2 more pickable slots instead of
-  // one "teammate" choice silently applying to the whole group.
-  const [teammateIds, setTeammateIds] = useState<string[]>(["random"]);
+  const [groupSize, setGroupSize] = useState(1);
   const [pulsing, setPulsing] = useState(false);
-  const [teammateModalOpen, setTeammateModalOpen] = useState(false);
   const firstRender = useRef(true);
 
-  const teammates = teammateIds.length;
-  const total = useMemo(() => selected.price * teammates, [selected, teammates]);
+  const total = useMemo(() => selected.price * groupSize, [selected, groupSize]);
 
   // Small "flash" on the total whenever the selection changes, so the price
   // update reads as live/reactive rather than just appearing.
@@ -54,22 +47,12 @@ export function BookingWidget({ game }: Props) {
     return () => clearTimeout(t);
   }, [total]);
 
-  function setGroupSize(next: number) {
-    const clamped = Math.max(1, Math.min(MAX_TEAMMATES, next));
-    setTeammateIds((prev) => {
-      if (clamped === prev.length) return prev;
-      if (clamped > prev.length) return [...prev, ...Array(clamped - prev.length).fill("random")];
-      return prev.slice(0, clamped);
-    });
-  }
-
   function goToCheckout() {
     const params = new URLSearchParams({
       game: game.slug,
       option: selected.name,
-      teammates: String(teammates),
+      teammates: String(groupSize),
       total: total.toFixed(2),
-      teammate: teammateIds.join(","),
     });
     router.push(`/checkout?${params.toString()}`);
   }
@@ -116,6 +99,24 @@ export function BookingWidget({ game }: Props) {
             </div>
           </Reveal>
         ))}
+
+        <Reveal delay={90}>
+          <div className="booking-category">
+            <div className="booking-category__title">How many teammates</div>
+            <div className="booking-group-size">
+              {GROUP_SIZES.map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`booking-group-size__pill${n === groupSize ? " is-selected" : ""}`}
+                  onClick={() => setGroupSize(n)}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Reveal>
       </div>
 
       <div className="booking-sidebar-wrap">
@@ -130,36 +131,9 @@ export function BookingWidget({ game }: Props) {
             <span>Option</span>
             <span>{selected.name}</span>
           </div>
-
-          <button
-            type="button"
-            className="booking-sidebar__row booking-sidebar__row--action booking-sidebar__row--teammates"
-            onClick={() => setTeammateModalOpen(true)}
-          >
-            <span className="booking-sidebar__row-label">
-              <span>{teammateIds.length > 1 ? "Teammates" : "Teammate"}</span>
-              <i className="fa-solid fa-pen" aria-hidden="true" />
-            </span>
-            <span className="booking-sidebar__chips">
-              {teammateIds.map((id, i) => (
-                <span key={i} className={`booking-sidebar__chip${id === "random" ? " is-random" : ""}`}>
-                  {teammateName(id)}
-                </span>
-              ))}
-            </span>
-          </button>
-
           <div className="booking-sidebar__row booking-sidebar__row--last">
-            <span>Group size</span>
-            <div className="booking-stepper">
-              <button type="button" onClick={() => setGroupSize(teammates - 1)} aria-label="Decrease">
-                <i className="fa-solid fa-minus" aria-hidden="true" />
-              </button>
-              <span>{teammates}</span>
-              <button type="button" onClick={() => setGroupSize(teammates + 1)} aria-label="Increase">
-                <i className="fa-solid fa-plus" aria-hidden="true" />
-              </button>
-            </div>
+            <span>Teammates</span>
+            <span>{groupSize}</span>
           </div>
 
           <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
@@ -174,14 +148,6 @@ export function BookingWidget({ game }: Props) {
 
         <TrustPoints />
       </div>
-
-      <TeammateModal
-        open={teammateModalOpen}
-        onClose={() => setTeammateModalOpen(false)}
-        gameSlug={game.slug}
-        selectedIds={teammateIds}
-        onChange={setTeammateIds}
-      />
     </div>
   );
 }

@@ -1,16 +1,29 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
 import { firstAcceptedCandidate } from "@/lib/matchmaking/store";
+import { getTeammateById } from "@/lib/teammates";
 import { CandidateSlot } from "@/components/matchmaking/CandidateSlot";
 import { SessionScreen } from "@/components/matchmaking/SessionScreen";
+import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
+import { Modal } from "@/components/ui/Modal";
+import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { PriceTag } from "@/components/currency/PriceTag";
 import type { DispatchCandidate } from "@/lib/matchmaking/types";
 
 interface Props {
   orderId: string;
 }
+
+const VIBE_OPTIONS = [
+  { value: "chill", label: "Chill", icon: "fa-solid fa-cloud" },
+  { value: "tryhard", label: "Tryhard", icon: "fa-solid fa-fire" },
+  { value: "social", label: "Social", icon: "fa-solid fa-comment-dots" },
+  { value: "tilted", label: "Tilted", icon: "fa-solid fa-face-angry" },
+];
 
 function formatMMSS(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
@@ -32,19 +45,51 @@ function arrangeCandidates(candidates: DispatchCandidate[], winner: DispatchCand
 }
 
 // Drives the customer-facing live screen end to end — a pure "searching"
-// beat first (no candidate boxes at all, just how far along it is), then
-// once someone has actually accepted, the "pick your teammate" reveal, then
-// (once assigned) the live session/chat and eventual Session Complete view
-// — all on this one page/URL, no route change, so the site header never
-// disappears behind a different shell partway through an order.
+// beat (with vibe/preferences you can set while it runs), then once someone
+// has actually accepted, a "pick your teammate" reveal (click -> confirm ->
+// a brief "Selected" beat), then (once assigned) the live session/chat and
+// eventual Session Complete view — all on this one page/URL, no route
+// change, so the site header never disappears behind a different shell.
 export function MatchmakingScreen({ orderId }: Props) {
-  const { order, loaded, selectionSecondsLeft, searchElapsedSeconds, dispatchWindowMs, confirmSelection, cancelOrder } =
-    useDispatchOrder(orderId);
+  const router = useRouter();
+  const {
+    order,
+    loaded,
+    selectionSecondsLeft,
+    searchElapsedSeconds,
+    dispatchWindowMs,
+    confirmSelection,
+    cancelOrder,
+    updatePreferences,
+  } = useDispatchOrder(orderId);
+
+  const [prefsModalOpen, setPrefsModalOpen] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [selectedAnimId, setSelectedAnimId] = useState<string | null>(null);
+
+  // The "Selected!" beat is purely cosmetic — order.status already flipped
+  // to "assigned" the moment confirmSelection() ran, so this just delays
+  // handing off to SessionScreen for a moment.
+  useEffect(() => {
+    if (!selectedAnimId) return;
+    const t = setTimeout(() => setSelectedAnimId(null), 1400);
+    return () => clearTimeout(t);
+  }, [selectedAnimId]);
+
+  // A cancellation that went through requestCancelSession() (i.e. it has a
+  // cancelApprovedAt) means a real teammate "approved" it — send the
+  // customer back to the landing page automatically once that lands,
+  // instead of leaving them on a dead order screen.
+  useEffect(() => {
+    if (order?.status !== "cancelled" || order.cancelApprovedAt === null) return;
+    const t = setTimeout(() => router.push("/"), 1600);
+    return () => clearTimeout(t);
+  }, [order?.status, order?.cancelApprovedAt, router]);
 
   // Covers both "still loading from localStorage" (loaded===false, which is
   // also exactly what the server rendered, so no hydration mismatch) and the
   // real "actively searching" phase once the order is in — same visual
-  // either way, just with real details once available.
+  // either way, just with real details (and preferences) once available.
   if (!loaded || order?.status === "candidates_ready") {
     return (
       <div className="matching-screen">
@@ -61,9 +106,48 @@ export function MatchmakingScreen({ orderId }: Props) {
                 Estimated under {formatMMSS(Math.ceil(dispatchWindowMs / 1000))}
               </span>
             </div>
+
+            <div className="matching-screen__vibe">
+              <span className="matching-screen__vibe-label">What&rsquo;s your vibe?</span>
+              <div className="matching-screen__vibe-options">
+                {VIBE_OPTIONS.map((v) => (
+                  <button
+                    key={v.value}
+                    type="button"
+                    className={`matching-screen__vibe-btn${order.vibe === v.value ? " is-selected" : ""}`}
+                    onClick={() => updatePreferences({ vibe: v.value })}
+                  >
+                    <i className={v.icon} aria-hidden="true" />
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm matching-screen__prefs-btn"
+              onClick={() => setPrefsModalOpen(true)}
+            >
+              <i className="fa-solid fa-sliders" aria-hidden="true" /> Set preferences
+              {(order.conversationPref || order.playStylePref) && (
+                <span className="matching-screen__prefs-badge">
+                  <i className="fa-solid fa-check" aria-hidden="true" />
+                </span>
+              )}
+            </button>
+
             <button type="button" className="btn btn--ghost btn--sm matching-screen__cancel" onClick={cancelOrder}>
               Cancel request
             </button>
+
+            <PreferencesModal
+              open={prefsModalOpen}
+              onClose={() => setPrefsModalOpen(false)}
+              conversationPref={order.conversationPref}
+              playStylePref={order.playStylePref}
+              onSave={updatePreferences}
+            />
           </>
         )}
       </div>
@@ -80,7 +164,28 @@ export function MatchmakingScreen({ orderId }: Props) {
     );
   }
 
+  if (order.status === "cancel_pending") {
+    return (
+      <div className="matching-screen">
+        <span className="matching-screen__spinner" aria-hidden="true" />
+        <h1 className="matching-screen__title">Cancelling your session...</h1>
+        <p className="matching-screen__sub">Waiting for your teammate to confirm.</p>
+      </div>
+    );
+  }
+
   if (order.status === "cancelled") {
+    if (order.cancelApprovedAt !== null) {
+      return (
+        <div className="matching-screen">
+          <span className="matching-screen__spinner matching-screen__spinner--done" aria-hidden="true">
+            <i className="fa-solid fa-check" aria-hidden="true" />
+          </span>
+          <h1 className="matching-screen__title">Session cancelled</h1>
+          <p className="matching-screen__sub">Your teammate confirmed the cancellation. Taking you home...</p>
+        </div>
+      );
+    }
     return (
       <div className="matching-screen">
         <h1 className="matching-screen__title">Request cancelled</h1>
@@ -107,12 +212,44 @@ export function MatchmakingScreen({ orderId }: Props) {
     );
   }
 
+  if (selectedAnimId) {
+    const teammate = getTeammateById(selectedAnimId);
+    return (
+      <div className="matching-screen">
+        <div className="selected-anim">
+          <div className="selected-anim__card">
+            <span className="selected-anim__avatar">
+              <AvatarIcon seed={selectedAnimId} />
+            </span>
+            <span className="selected-anim__check">
+              <i className="fa-solid fa-check" aria-hidden="true" />
+            </span>
+          </div>
+          {teammate && <div className="selected-anim__name">{teammate.name}</div>}
+          <div className="selected-anim__label">Selected</div>
+        </div>
+      </div>
+    );
+  }
+
   if (order.status === "assigned" || order.status === "in_progress" || order.status === "completed") {
     return <SessionScreen orderId={orderId} />;
   }
 
   const winner = firstAcceptedCandidate(order.candidates);
   const { center, left, right } = arrangeCandidates(order.candidates, winner);
+  const confirmingTeammate = confirmingId ? getTeammateById(confirmingId) : null;
+
+  function handlePick(teammateId: string) {
+    setConfirmingId(teammateId);
+  }
+
+  function handleConfirmYes() {
+    if (!confirmingId) return;
+    confirmSelection(confirmingId);
+    setSelectedAnimId(confirmingId);
+    setConfirmingId(null);
+  }
 
   return (
     <div className="matching-screen matching-screen--wide">
@@ -136,7 +273,7 @@ export function MatchmakingScreen({ orderId }: Props) {
               isFirstAccepted={false}
               isSelected={order.selectedTeammateId === c.teammateId}
               selectable
-              onSelect={() => confirmSelection(c.teammateId)}
+              onSelect={() => handlePick(c.teammateId)}
             />
           ))}
         </div>
@@ -149,7 +286,7 @@ export function MatchmakingScreen({ orderId }: Props) {
               isFirstAccepted={winner?.teammateId === center.teammateId}
               isSelected={order.selectedTeammateId === center.teammateId}
               selectable
-              onSelect={() => confirmSelection(center.teammateId)}
+              onSelect={() => handlePick(center.teammateId)}
             />
           </div>
         )}
@@ -162,7 +299,7 @@ export function MatchmakingScreen({ orderId }: Props) {
               isFirstAccepted={false}
               isSelected={order.selectedTeammateId === c.teammateId}
               selectable
-              onSelect={() => confirmSelection(c.teammateId)}
+              onSelect={() => handlePick(c.teammateId)}
             />
           ))}
         </div>
@@ -171,6 +308,25 @@ export function MatchmakingScreen({ orderId }: Props) {
       <button type="button" className="btn btn--ghost btn--sm matching-screen__cancel" onClick={cancelOrder}>
         Cancel request
       </button>
+
+      <Modal open={!!confirmingId} onClose={() => setConfirmingId(null)} labelledBy="select-teammate-title">
+        <div className="select-confirm">
+          <h2 id="select-teammate-title" className="select-confirm__title">
+            Select teammate
+          </h2>
+          <p className="select-confirm__sub">
+            You want to select {confirmingTeammate?.name ?? "this teammate"} to be your teammate?
+          </p>
+          <div className="select-confirm__actions">
+            <button type="button" className="btn btn--ghost btn--block" onClick={() => setConfirmingId(null)}>
+              No
+            </button>
+            <button type="button" className="btn btn--danger btn--block" onClick={handleConfirmYes}>
+              Yes
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

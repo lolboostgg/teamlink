@@ -14,9 +14,11 @@ export const CURRENT_TEAMMATE_ID = "tm-nova";
 // real "someone's phone is buzzing right now" invite rather than a relaxed
 // open-ended queue.
 export const DISPATCH_WINDOW_MS = 8_000;
-export const SELECTION_WINDOW_MS = 30_000;
+export const SELECTION_WINDOW_MS = 60_000;
 export const REROLL_WINDOW_MS = 2 * 60_000;
 export const SESSION_START_DELAY_MS = 5 * 60_000;
+const CANCEL_APPROVAL_MS_MIN = 3_000;
+const CANCEL_APPROVAL_MS_RANGE = 5_000;
 const MAX_CANDIDATES = 5;
 const CHANNEL_NAME = "teamlink-dispatch";
 const INDEX_KEY = "teamlink:dispatch:index";
@@ -152,6 +154,14 @@ function reconcile(order: DispatchOrder): DispatchOrder {
     status = "completed";
   }
 
+  // "Ask to cancel" from a live session waits on a simulated teammate
+  // approval instead of cancelling outright — see requestCancelSession().
+  const cancelApprovedAt = order.cancelApprovedAt;
+  if (status === "cancel_pending" && cancelApprovedAt !== null && now >= cancelApprovedAt) {
+    changed = true;
+    status = "cancelled";
+  }
+
   if (!changed) return order;
   return {
     ...order,
@@ -163,6 +173,7 @@ function reconcile(order: DispatchOrder): DispatchOrder {
     rerollDeadline,
     sessionStartAt,
     sessionCompleteAt,
+    cancelApprovedAt,
   };
 }
 
@@ -231,6 +242,10 @@ export function createOrder(input: {
     sessionStartAt: null,
     sessionCompleteAt: null,
     isReplay: !!input.isReplay,
+    vibe: null,
+    conversationPref: null,
+    playStylePref: null,
+    cancelApprovedAt: null,
     customerLabel: input.customerLabel,
     createdAt: now,
   };
@@ -295,4 +310,39 @@ function setStatus(orderId: string, status: OrderStatus): DispatchOrder | null {
 
 export const startOrder = (orderId: string) => setStatus(orderId, "in_progress");
 export const completeOrder = (orderId: string) => setStatus(orderId, "completed");
+// Immediate — used while still searching/picking, before there's a real
+// teammate to ask. Once a session is live, use requestCancelSession()
+// instead (that one waits on a simulated teammate approval).
 export const cancelOrder = (orderId: string) => setStatus(orderId, "cancelled");
+
+// Set while searching, shown to the teammate once matched (chat system
+// message + the customer's own preferences bubble) — partial updates only
+// touch the fields passed in.
+export function updatePreferences(
+  orderId: string,
+  prefs: { vibe?: string; conversationPref?: string; playStylePref?: string },
+): DispatchOrder | null {
+  const order = getOrder(orderId);
+  if (!order) return null;
+  const updated: DispatchOrder = { ...order, ...prefs };
+  writeOrder(updated);
+  broadcast(orderId);
+  return updated;
+}
+
+// "Ask to cancel" from a live session — doesn't cancel outright, it waits
+// on a simulated teammate approval (reconcile() flips it to "cancelled"
+// once cancelApprovedAt passes).
+export function requestCancelSession(orderId: string): DispatchOrder | null {
+  const order = getOrder(orderId);
+  if (!order) return null;
+  const now = Date.now();
+  const updated: DispatchOrder = {
+    ...order,
+    status: "cancel_pending",
+    cancelApprovedAt: now + CANCEL_APPROVAL_MS_MIN + Math.random() * CANCEL_APPROVAL_MS_RANGE,
+  };
+  writeOrder(updated);
+  broadcast(orderId);
+  return updated;
+}

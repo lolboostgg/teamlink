@@ -19,6 +19,7 @@ export type OrderStatus =
   | "in_progress"
   | "completed"
   | "cancelled"
+  | "cancel_pending"
   | "no_match";
 
 export interface DispatchOrder {
@@ -45,6 +46,15 @@ export interface DispatchOrder {
   // teammate — lets the UI show a "locked in again" variant instead of the
   // first-time invite copy.
   isReplay: boolean;
+  // Set while searching, shown to the teammate once matched — see
+  // updatePreferences() in store.ts.
+  vibe: string | null;
+  conversationPref: string | null;
+  playStylePref: string | null;
+  // "Ask to cancel" during a live session doesn't cancel immediately — it
+  // waits on a simulated teammate approval (see reconcile()) before the
+  // order actually moves to "cancelled".
+  cancelApprovedAt: number | null;
   customerLabel: string;
   createdAt: number;
 }

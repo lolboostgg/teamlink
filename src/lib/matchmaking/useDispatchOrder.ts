@@ -5,7 +5,9 @@ import {
   cancelOrder,
   confirmSelection,
   getOrder,
+  requestCancelSession,
   subscribeToDispatch,
+  updatePreferences,
   DISPATCH_WINDOW_MS,
 } from "@/lib/matchmaking/store";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
@@ -62,5 +64,8 @@ export function useDispatchOrder(orderId: string | null) {
     dispatchWindowMs: DISPATCH_WINDOW_MS,
     confirmSelection: (teammateId: string) => orderId && setOrder(confirmSelection(orderId, teammateId)),
     cancelOrder: () => orderId && setOrder(cancelOrder(orderId)),
+    requestCancelSession: () => orderId && setOrder(requestCancelSession(orderId)),
+    updatePreferences: (prefs: { vibe?: string; conversationPref?: string; playStylePref?: string }) =>
+      orderId && setOrder(updatePreferences(orderId, prefs)),
   };
 }
