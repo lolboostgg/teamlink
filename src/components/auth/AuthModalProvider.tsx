@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/ToastProvider";
 
 type Mode = "login" | "signup" | null;
-const SESSION_KEY = "teamlink:authenticated";
 
 interface AuthModalContextValue {
   open: (mode: Exclude<Mode, null>, onSuccess?: () => void) => void;
@@ -24,65 +24,74 @@ export function useAuthModal() {
 // Single shared login/signup modal instance for the whole app (mounted once
 // in the root layout) so any button anywhere — header, CTA band, booking
 // sidebar, checkout's identity step, the dashboard auth gate — can trigger
-// it via useAuthModal() without prop-drilling. Mock auth only, per the
-// mock-data-first decision: there's no backend, so "logged in" is just a
-// localStorage flag set when the mock form "succeeds", not a real session.
+// it via useAuthModal() without prop-drilling. Real accounts now (see
+// src/auth.ts + api/auth/register) — signup hits the register API then
+// signs in, login goes straight through NextAuth's credentials provider.
 // The optional onSuccess callback lets callers (like checkout) react once
-// the mock login/signup completes, without the provider knowing about them.
+// login/signup completes, without the provider knowing about them.
 export function AuthModalProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
+  const { status } = useSession();
   const [mode, setMode] = useState<Mode>(null);
-  const [notice, setNotice] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const onSuccessRef = useRef<(() => void) | undefined>(undefined);
-
-  useEffect(() => {
-    // Hydration-safe: default false on first render (matches SSR), then
-    // sync from the client-only localStorage flag right after mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsAuthenticated(window.localStorage.getItem(SESSION_KEY) === "1");
-  }, []);
+  const isAuthenticated = status === "authenticated";
 
   const open = useCallback((next: Exclude<Mode, null>, onSuccess?: () => void) => {
     setMode(next);
-    setNotice(false);
     setFormError(null);
     onSuccessRef.current = onSuccess;
   }, []);
 
   const close = useCallback(() => {
     setMode(null);
-    setNotice(false);
     setFormError(null);
   }, []);
 
   const logout = useCallback(() => {
-    setIsAuthenticated(false);
-    window.localStorage.removeItem(SESSION_KEY);
+    signOut({ redirect: false });
     showToast("Logged out", "info");
   }, [showToast]);
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    const missing = ["auth-email", "auth-password", ...(mode === "signup" ? ["auth-username"] : [])].some(
-      (name) => !String(data.get(name) ?? "").trim(),
-    );
+    const email = String(data.get("auth-email") ?? "").trim();
+    const password = String(data.get("auth-password") ?? "");
+    const username = String(data.get("auth-username") ?? "").trim();
+    const missing = !email || !password || (mode === "signup" && !username);
     if (missing) {
       setFormError("Fill in every field to continue.");
       return;
     }
     setFormError(null);
-    setNotice(true);
-    const onSuccess = onSuccessRef.current;
-    window.setTimeout(() => {
-      setIsAuthenticated(true);
-      window.localStorage.setItem(SESSION_KEY, "1");
-      showToast(mode === "signup" ? "Account created" : "Logged in successfully", "success");
-      onSuccess?.();
-      close();
-    }, 700);
+    setSubmitting(true);
+
+    if (mode === "signup") {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name: username }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setFormError(body?.error ?? "Something went wrong, try again.");
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    const result = await signIn("credentials", { email, password, redirect: false });
+    setSubmitting(false);
+    if (result?.error) {
+      setFormError("Incorrect email or password.");
+      return;
+    }
+
+    showToast(mode === "signup" ? "Account created" : "Logged in successfully", "success");
+    onSuccessRef.current?.();
+    close();
   }
 
   const value = useMemo(() => ({ open, isAuthenticated, logout }), [open, isAuthenticated, logout]);
@@ -133,14 +142,8 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
               </p>
             )}
 
-            {notice && (
-              <p className="auth-modal__notice">
-                This is a demo, account creation isn&rsquo;t wired up yet.
-              </p>
-            )}
-
-            <button type="submit" className="btn btn--primary btn--block">
-              {mode === "login" ? "Log in" : "Create account"}
+            <button type="submit" className="btn btn--primary btn--block" disabled={submitting}>
+              {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
             </button>
           </form>
 
