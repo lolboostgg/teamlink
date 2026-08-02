@@ -6,6 +6,7 @@ import { ToastProvider } from "@/components/ui/ToastProvider";
 import { CurrencyProvider } from "@/components/currency/CurrencyProvider";
 import { LanguageProvider } from "@/components/language/LanguageProvider";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
+import { TeammatesSync } from "@/components/providers/TeammatesSync";
 
 // Single composition point for every app-wide client Context, mounted once
 // in the root layout. ToastProvider sits outermost since AuthModalProvider
@@ -19,7 +20,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <SessionProvider>
         <CurrencyProvider>
           <LanguageProvider>
-            <AuthModalProvider>{children}</AuthModalProvider>
+            <AuthModalProvider>
+              <TeammatesSync />
+              {children}
+            </AuthModalProvider>
           </LanguageProvider>
         </CurrencyProvider>
       </SessionProvider>

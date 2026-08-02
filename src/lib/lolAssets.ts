@@ -31,3 +31,6 @@ export type ChampionName = (typeof CHAMPION_NAMES)[number];
 export function championIcon(name: ChampionName): string {
   return `/lol/champions/${name}.png`;
 }
+
+export const LOL_LANES = ["Top", "Jungle", "Mid", "ADC", "Support"] as const;
+export type LolLane = (typeof LOL_LANES)[number];

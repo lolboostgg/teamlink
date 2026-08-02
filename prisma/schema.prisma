@@ -51,6 +51,8 @@ model Teammate {
   languages      Json
   lolRank        String?
   lolChampions   Json?
+  lolLanes       Json?
+  avatarUrl      String?  @db.Text
   available      Boolean  @default(true)
   createdAt      DateTime @default(now())
 

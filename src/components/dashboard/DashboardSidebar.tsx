@@ -12,6 +12,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   admin: [
     { href: "/dashboard/admin", label: "Overview", icon: "fa-solid fa-gauge" },
     { href: "/dashboard/admin/users", label: "Users", icon: "fa-solid fa-users" },
+    { href: "/dashboard/admin/teammates", label: "Teammates", icon: "fa-solid fa-user-gear" },
     { href: "/dashboard/admin/payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
   ],
   teammate: [
@@ -19,6 +20,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
     { href: "/dashboard/teammate/sessions", label: "Sessions", icon: "fa-solid fa-calendar-check" },
     { href: "/dashboard/teammate/chat", label: "Chat", icon: "fa-solid fa-comments" },
     { href: "/dashboard/teammate/reviews", label: "Reviews", icon: "fa-solid fa-star" },
+    { href: "/dashboard/teammate/profile", label: "Game profile", icon: "fa-solid fa-id-card" },
   ],
 };
 

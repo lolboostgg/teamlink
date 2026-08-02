@@ -1,10 +1,11 @@
 import type { LanguageCode } from "@/lib/i18n";
-import type { LolRankTier, ChampionName } from "@/lib/lolAssets";
+import type { LolRankTier, ChampionName, LolLane } from "@/lib/lolAssets";
 
 export interface Teammate {
   id: string;
   name: string;
   avatarInitials: string;
+  avatarUrl?: string | null;
   tagline: string;
   languages: LanguageCode[];
   timezone: string;
@@ -13,12 +14,17 @@ export interface Teammate {
   gameSlugs: string[];
   lolRank?: LolRankTier;
   lolChampions?: ChampionName[];
+  lolLanes?: LolLane[];
 }
 
-// Mock roster — no backend, so this is what "specific teammate" selection
-// draws from. Several are tagged for League of Legends with a rank +
-// champion pool (the real lolboost icon assets); others are generic across
-// their games.
+// Seed roster, used as the initial value of the mutable TEAMMATES array
+// below and as an offline/first-paint fallback. The real, editable roster
+// lives in Postgres (Teammate model) — TeammatesSync (mounted once in
+// AppProviders) fetches it client-side on load and calls
+// setTeammatesCache() to overwrite this array's *contents* in place, so
+// every one of the many call sites below that already do
+// `getTeammateById(id)`/`TEAMMATES.find(...)` synchronously mid-render pick
+// up real, admin/teammate-edited data without themselves becoming async.
 export const TEAMMATES: Teammate[] = [
   {
     id: "tm-nova",
@@ -145,4 +151,12 @@ export function getTeammatesForGame(slug: string): Teammate[] {
 
 export function getTeammateById(id: string): Teammate | undefined {
   return TEAMMATES.find((t) => t.id === id);
+}
+
+// Replaces TEAMMATES's contents in place (not reassignment) so the shared
+// array reference every call site already closed over stays valid.
+export function setTeammatesCache(list: Teammate[]): void {
+  if (list.length === 0) return;
+  TEAMMATES.length = 0;
+  TEAMMATES.push(...list);
 }
