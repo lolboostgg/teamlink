@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { SignupsTable } from "@/components/dashboard/admin/SignupsTable";
-import { RECENT_SIGNUPS } from "@/lib/dashboard/adminData";
 
 export const metadata: Metadata = { title: "Signups" };
 
@@ -13,7 +12,7 @@ export default function AdminSignupsPage() {
           <div className="dashboard-panel__sub">New clients and teammates</div>
         </div>
       </div>
-      <SignupsTable signups={RECENT_SIGNUPS} />
+      <SignupsTable />
     </div>
   );
 }

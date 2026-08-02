@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { PayoutQueue } from "@/components/dashboard/admin/PayoutQueue";
-import { PAYOUT_QUEUE, SUPPORT_TICKETS } from "@/lib/dashboard/adminData";
+import { AdminPayoutQueuePanel } from "@/components/dashboard/admin/AdminPayoutQueuePanel";
 
 export const metadata: Metadata = { title: "Payouts & Disputes" };
 
@@ -10,10 +9,10 @@ export default function AdminPayoutsPage() {
       <div className="dashboard-panel__head">
         <div>
           <div className="dashboard-panel__title">Payouts & disputes</div>
-          <div className="dashboard-panel__sub">Teammate payout requests waiting on review</div>
+          <div className="dashboard-panel__sub">What teammates have earned from completed sessions</div>
         </div>
       </div>
-      <PayoutQueue payouts={PAYOUT_QUEUE} tickets={SUPPORT_TICKETS} />
+      <AdminPayoutQueuePanel />
     </div>
   );
 }
