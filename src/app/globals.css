@@ -3031,6 +3031,23 @@ ul {
   color: var(--hue-green);
 }
 
+.checkout-card__identity-text--standalone {
+  margin-bottom: 16px;
+}
+
+.checkout-card__identity-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-faint);
+  margin: -6px 0 16px;
+}
+
+.checkout-card__identity-hint i {
+  color: var(--accent);
+}
+
 .order-summary__total {
   display: flex;
   align-items: center;
@@ -4046,7 +4063,12 @@ ul {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 520px;
+  /* A bounded height (not just min-height) so the message list scrolls
+     internally instead of growing the whole panel forever as messages
+     pile up — see .chat-thread__messages/.session-chat__messages below,
+     which already has overflow-y:auto but needs a capped ancestor to
+     actually kick in. */
+  height: min(640px, calc(100vh - 180px));
 }
 
 .session-screen__chat-head {

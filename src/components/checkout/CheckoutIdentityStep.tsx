@@ -16,7 +16,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // native constraint-validation popup, which is unstyled and (on this
 // machine) shows up in the OS/browser locale rather than the site's.
 export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
-  const { open } = useAuthModal();
+  const { open, isAuthenticated, logout } = useAuthModal();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -35,9 +35,36 @@ export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
     onContinueAsGuest(trimmed);
   }
 
+  // Checkout should never leave it ambiguous whether you're logged in —
+  // an authenticated visitor skips straight past the guest-email form
+  // instead of being shown it as if signed out.
+  if (isAuthenticated) {
+    return (
+      <div className="checkout-card">
+        <div className="checkout-card__title">How do you want to check out?</div>
+
+        <div className="checkout-card__identity-text checkout-card__identity-text--standalone">
+          <i className="fa-solid fa-circle-check" aria-hidden="true" />
+          You&rsquo;re logged in
+        </div>
+
+        <button type="button" className="btn btn--primary btn--block" onClick={onLoggedIn}>
+          Continue
+        </button>
+
+        <button type="button" className="btn btn--ghost btn--block" onClick={logout} style={{ marginTop: 8 }}>
+          Not you? Log out
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="checkout-card">
       <div className="checkout-card__title">How do you want to check out?</div>
+      <p className="checkout-card__identity-hint">
+        <i className="fa-solid fa-circle-info" aria-hidden="true" /> You&rsquo;re not logged in — checking out as a guest below, or log in first.
+      </p>
 
       <form onSubmit={handleGuestSubmit} noValidate>
         <div className="form-row">
