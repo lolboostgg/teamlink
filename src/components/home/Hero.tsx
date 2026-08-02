@@ -66,9 +66,14 @@ export function Hero({ game: gameProp }: Props) {
           <GameSwitcherBar games={GAMES} activeSlug={game.slug} onHover={setHoverSlug} />
         </div>
 
-        <div className="hero__scroll-cue" aria-hidden="true">
-          <i className="fa-solid fa-chevron-down" />
-        </div>
+        <button
+          type="button"
+          className="hero__scroll-cue"
+          aria-label="Scroll to booking"
+          onClick={() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        >
+          <i className="fa-solid fa-chevron-down" aria-hidden="true" />
+        </button>
       </section>
 
       {/* Separate from .hero on purpose: .hero has overflow:hidden to mask

@@ -45,3 +45,11 @@ export const BOOKING_CATEGORIES: BookingCategory[] = [
     ],
   },
 ];
+
+export function getBookingOptionDescription(name: string): string | undefined {
+  for (const cat of BOOKING_CATEGORIES) {
+    const match = cat.options.find((o) => o.name === name);
+    if (match) return match.description;
+  }
+  return undefined;
+}

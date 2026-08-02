@@ -13,9 +13,11 @@ interface Props {
   onSelect: () => void;
   /** "lg" for the center/priority slot in the candidate stage — bigger avatar and type. */
   size?: "sm" | "lg";
+  /** Multi-pick mode (order.teammates > 1) — which slot this pick fills, e.g. "2" of "2/4". */
+  pickRank?: number;
 }
 
-export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectable, onSelect, size = "sm" }: Props) {
+export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectable, onSelect, size = "sm", pickRank }: Props) {
   const teammate = getTeammateById(candidate.teammateId);
   if (!teammate) return null;
   const sizeClass = size === "lg" ? " candidate-slot--lg" : "";
@@ -58,8 +60,14 @@ export function CandidateSlot({ candidate, isFirstAccepted, isSelected, selectab
       disabled={!selectable}
     >
       {isFirstAccepted && !isSelected && <span className="candidate-slot__badge">First to accept</span>}
-      {isSelected && <span className="candidate-slot__badge candidate-slot__badge--selected">Selected</span>}
-      <span className="candidate-slot__avatar">{teammate.avatarInitials}</span>
+      {isSelected && (
+        <span className="candidate-slot__badge candidate-slot__badge--selected">
+          {pickRank ? `Pick ${pickRank}` : "Selected"}
+        </span>
+      )}
+      <span className="candidate-slot__avatar">
+        <AvatarIcon seed={teammate.id} />
+      </span>
       <span className="candidate-slot__name">{teammate.name}</span>
       <span className="candidate-slot__rating">
         <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} · {teammate.sessions} sessions

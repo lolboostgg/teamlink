@@ -7,6 +7,7 @@ import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
 import { createOrder, createReplayOrder } from "@/lib/matchmaking/store";
 import { getTeammateById } from "@/lib/teammates";
 import { setFavorite, useFavoriteIds } from "@/lib/favorites";
+import { addReview } from "@/lib/reviews";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
@@ -223,7 +224,10 @@ export function SessionScreen({ orderId }: Props) {
                       className="session-complete__star"
                       onMouseEnter={() => setHoverRating(n)}
                       onMouseLeave={() => setHoverRating(0)}
-                      onClick={() => setRating(n)}
+                      onClick={() => {
+                        setRating(n);
+                        addReview(teammate.id, order.id, n);
+                      }}
                     >
                       <i
                         className={(hoverRating || rating) >= n ? "fa-solid fa-star" : "fa-regular fa-star"}
@@ -386,6 +390,28 @@ export function SessionScreen({ orderId }: Props) {
             )}
 
             <p className="session-screen__bio">{teammate.tagline}</p>
+
+            {order.selectedTeammateIds.length > 1 && (
+              <div className="session-screen__team">
+                <span className="session-screen__team-label">
+                  +{order.selectedTeammateIds.length - 1} more teammate{order.selectedTeammateIds.length > 2 ? "s" : ""} on this
+                  order — everyone here has chat access and is paid their share
+                </span>
+                <div className="session-screen__team-list">
+                  {order.selectedTeammateIds.slice(1).map((id) => {
+                    const t = getTeammateById(id);
+                    return (
+                      <span className="session-screen__team-chip" key={id}>
+                        <span className="session-screen__team-chip-avatar">
+                          <AvatarIcon seed={id} />
+                        </span>
+                        {t?.name ?? "Teammate"}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="session-screen__buy-more">
               <div className="session-screen__buy-more-head">

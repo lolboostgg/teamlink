@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Game } from "@/lib/games";
-import { heroCardBackground, heroCardWordmark } from "@/lib/gameArt";
+import { heroCardBackground } from "@/lib/gameArt";
 import { setLastGameSlug } from "@/lib/lastGame";
 
 interface Props {
@@ -77,7 +77,6 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
     <div className="hero-carousel">
       <div className="hero-carousel__track" ref={trackRef} onMouseLeave={() => onHover?.(null)}>
         {games.map((game) => {
-          const wordmark = heroCardWordmark(game.slug);
           const isActive = game.slug === activeSlug;
           return (
             <Link
@@ -93,12 +92,7 @@ export function GameSwitcherBar({ games, activeSlug, onHover }: Props) {
               <span className="hero-card__scrim" aria-hidden="true" />
               {isActive && <i className="fa-solid fa-check hero-card__check" aria-hidden="true" />}
               <div className="hero-card__footer">
-                {wordmark ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img className="hero-card__wordmark" src={wordmark} alt={game.name} />
-                ) : (
-                  <span className="hero-card__name-text">{game.name}</span>
-                )}
+                <span className="hero-card__name-text">{game.name}</span>
               </div>
             </Link>
           );

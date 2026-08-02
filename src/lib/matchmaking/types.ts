@@ -32,7 +32,12 @@ export interface DispatchOrder {
   requestedTeammateId: string | null;
   candidates: DispatchCandidate[];
   status: OrderStatus;
+  // The primary pick — always selectedTeammateIds[0] once assigned, kept
+  // as its own field since most of the session UI (chat, profile card,
+  // reroll) is built around a single "the" teammate. selectedTeammateIds
+  // holds the whole team for orders with teammates > 1.
   selectedTeammateId: string | null;
+  selectedTeammateIds: string[];
   dispatchDeadline: number;
   selectionDeadline: number | null;
   // Set once, the moment the order first reaches "assigned" — everything

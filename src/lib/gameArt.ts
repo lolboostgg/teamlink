@@ -36,18 +36,3 @@ export function gameBackground(slug: string): string {
 export function heroCardBackground(slug: string): string {
   return localGameBanner(slug);
 }
-
-// Stylized wordmark image overlaid on the card instead of plain text —
-// only available for a few games; callers should fall back to the game
-// name as text when this returns null.
-const HERO_SECTION_WORDMARK_SLUGS = new Set([
-  "league-of-legends",
-  "valorant",
-  "fortnite",
-  "teamfight-tactics",
-  "marvel-rivals",
-]);
-
-export function heroCardWordmark(slug: string): string | null {
-  return HERO_SECTION_WORDMARK_SLUGS.has(slug) ? `/games/hero-section/fonts/${slug}.webp` : null;
-}

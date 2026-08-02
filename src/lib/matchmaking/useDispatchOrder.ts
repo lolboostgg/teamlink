@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   cancelOrder,
+  confirmMultiSelection,
   confirmSelection,
   getOrder,
   requestCancelSession,
@@ -63,6 +64,7 @@ export function useDispatchOrder(orderId: string | null) {
     searchElapsedSeconds,
     dispatchWindowMs: DISPATCH_WINDOW_MS,
     confirmSelection: (teammateId: string) => orderId && setOrder(confirmSelection(orderId, teammateId)),
+    confirmMultiSelection: (teammateIds: string[]) => orderId && setOrder(confirmMultiSelection(orderId, teammateIds)),
     cancelOrder: () => orderId && setOrder(cancelOrder(orderId)),
     requestCancelSession: () => orderId && setOrder(requestCancelSession(orderId)),
     updatePreferences: (prefs: { vibe?: string; conversationPref?: string; playStylePref?: string }) =>

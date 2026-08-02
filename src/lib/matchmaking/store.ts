@@ -97,6 +97,7 @@ function reconcile(order: DispatchOrder): DispatchOrder {
 
   let status = order.status;
   let selectedTeammateId = order.selectedTeammateId;
+  let selectedTeammateIds = order.selectedTeammateIds;
   let selectionDeadline = order.selectionDeadline;
   let assignedAt = order.assignedAt;
   let rerollDeadline = order.rerollDeadline;
@@ -114,6 +115,7 @@ function reconcile(order: DispatchOrder): DispatchOrder {
     if (order.requestedTeammateId !== null) {
       status = "assigned";
       selectedTeammateId = order.requestedTeammateId;
+      selectedTeammateIds = [order.requestedTeammateId];
     } else {
       status = "selecting";
       selectionDeadline = now + SELECTION_WINDOW_MS;
@@ -123,12 +125,18 @@ function reconcile(order: DispatchOrder): DispatchOrder {
     status = "no_match";
   }
 
+  // Auto-confirm once the pick window runs out — fills as many slots as
+  // there are accepted candidates (earliest acceptors first), up to
+  // order.teammates, instead of only ever picking one.
   if (status === "selecting" && selectionDeadline !== null && now >= selectionDeadline) {
-    const winner = firstAcceptedCandidate(candidates);
-    if (winner) {
+    const accepted = candidates
+      .filter((c) => c.status === "accepted")
+      .sort((a, b) => (a.respondedAt ?? 0) - (b.respondedAt ?? 0));
+    if (accepted.length > 0) {
       changed = true;
       status = "assigned";
-      selectedTeammateId = winner.teammateId;
+      selectedTeammateIds = accepted.slice(0, order.teammates).map((c) => c.teammateId);
+      selectedTeammateId = selectedTeammateIds[0] ?? null;
     }
   }
 
@@ -172,6 +180,7 @@ function reconcile(order: DispatchOrder): DispatchOrder {
     candidates,
     status,
     selectedTeammateId,
+    selectedTeammateIds,
     selectionDeadline,
     assignedAt,
     rerollDeadline,
@@ -250,6 +259,7 @@ export function createOrder(input: {
     candidates,
     status: "candidates_ready",
     selectedTeammateId: null,
+    selectedTeammateIds: [],
     dispatchDeadline: now + DISPATCH_WINDOW_MS,
     selectionDeadline: null,
     assignedAt: null,
@@ -304,12 +314,39 @@ export function respondToCandidate(orderId: string, teammateId: string, accept: 
   return updated;
 }
 
+// Single pick — used when order.teammates === 1 (the common case).
 export function confirmSelection(orderId: string, teammateId: string): DispatchOrder | null {
   const order = getOrder(orderId);
   if (!order || order.status !== "selecting") return order;
   const candidate = order.candidates.find((c) => c.teammateId === teammateId && c.status === "accepted");
   if (!candidate) return order;
-  const updated = reconcile({ ...order, status: "assigned", selectedTeammateId: teammateId });
+  const updated = reconcile({
+    ...order,
+    status: "assigned",
+    selectedTeammateId: teammateId,
+    selectedTeammateIds: [teammateId],
+  });
+  writeOrder(updated);
+  broadcast(orderId);
+  return updated;
+}
+
+// Multi pick — used when order.teammates > 1 and the customer built up a
+// set of picks themselves instead of relying on the auto-confirm fallback.
+// Silently drops any id that isn't actually an accepted candidate (stale
+// click, candidate declined in between, etc.) rather than failing outright.
+export function confirmMultiSelection(orderId: string, teammateIds: string[]): DispatchOrder | null {
+  const order = getOrder(orderId);
+  if (!order || order.status !== "selecting") return order;
+  const accepted = new Set(order.candidates.filter((c) => c.status === "accepted").map((c) => c.teammateId));
+  const valid = teammateIds.filter((id) => accepted.has(id));
+  if (valid.length === 0) return order;
+  const updated = reconcile({
+    ...order,
+    status: "assigned",
+    selectedTeammateId: valid[0],
+    selectedTeammateIds: valid,
+  });
   writeOrder(updated);
   broadcast(orderId);
   return updated;

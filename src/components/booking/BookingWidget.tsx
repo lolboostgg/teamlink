@@ -20,7 +20,10 @@ const CATEGORY_ICONS: Record<string, string> = {
   Coaching: "fa-solid fa-chalkboard-user",
 };
 
-const MAX_TEAMMATES = 9;
+// Flat cap for now — per-game-mode limits (e.g. Duo Normal maxes at 1,
+// Ranked 5s allows up to 4) are a future admin-dashboard setting, not
+// modeled yet.
+const MAX_TEAMMATES = 4;
 const GROUP_SIZES = Array.from({ length: MAX_TEAMMATES }, (_, i) => i + 1);
 
 // Which specific teammate you get is decided by the live dispatch/pick flow

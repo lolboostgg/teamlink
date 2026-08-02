@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
 import { firstAcceptedCandidate } from "@/lib/matchmaking/store";
 import { getTeammateById } from "@/lib/teammates";
+import { getBookingOptionDescription } from "@/lib/bookingOptions";
+import { gameIcon } from "@/lib/gameArt";
+import { playNotificationSound } from "@/lib/notificationSound";
 import { CandidateSlot } from "@/components/matchmaking/CandidateSlot";
 import { SessionScreen } from "@/components/matchmaking/SessionScreen";
 import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
@@ -60,12 +63,13 @@ function CancelRequestModal({ open, onClose, onConfirm }: { open: boolean; onClo
 }
 
 // Center slot = whoever accepts first (the auto-confirmed priority pick if
-// the customer doesn't act) with the rest split up to two per side — this
-// only ever runs once order.status is "selecting", so a winner is guaranteed
-// to exist.
+// the customer doesn't act) with the rest split up to two per side. Only
+// candidates who actually accepted are shown here at all — declined/timed
+// out candidates never make it into the picker.
 function arrangeCandidates(candidates: DispatchCandidate[], winner: DispatchCandidate | undefined) {
-  const center = winner ?? candidates[0] ?? null;
-  const rest = candidates.filter((c) => c !== center);
+  const accepted = candidates.filter((c) => c.status === "accepted");
+  const center = winner ?? accepted[0] ?? null;
+  const rest = accepted.filter((c) => c !== center);
   const left: DispatchCandidate[] = [];
   const right: DispatchCandidate[] = [];
   rest.forEach((c, i) => (i % 2 === 0 ? left : right).push(c));
@@ -73,11 +77,13 @@ function arrangeCandidates(candidates: DispatchCandidate[], winner: DispatchCand
 }
 
 // Drives the customer-facing live screen end to end — a pure "searching"
-// beat (with vibe/preferences you can set while it runs), then once someone
-// has actually accepted, a "pick your teammate" reveal (click -> confirm ->
-// a brief "Selected" beat), then (once assigned) the live session/chat and
-// eventual Session Complete view — all on this one page/URL, no route
-// change, so the site header never disappears behind a different shell.
+// beat (with vibe/preferences you can set while it runs), then once
+// candidates have actually answered, a "pick your teammate" reveal (single
+// pick asks for confirmation; picking more than one teammate lets you
+// build up the whole team before confirming), then (once assigned) the
+// live session/chat and eventual Session Complete view — all on this one
+// page/URL, no route change, so the site header never disappears behind a
+// different shell.
 export function MatchmakingScreen({ orderId }: Props) {
   const router = useRouter();
   const {
@@ -87,14 +93,18 @@ export function MatchmakingScreen({ orderId }: Props) {
     searchElapsedSeconds,
     dispatchWindowMs,
     confirmSelection,
+    confirmMultiSelection,
     cancelOrder,
     updatePreferences,
   } = useDispatchOrder(orderId);
 
   const [prefsModalOpen, setPrefsModalOpen] = useState(false);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [selectedAnimId, setSelectedAnimId] = useState<string | null>(null);
+  const [pickedIds, setPickedIds] = useState<string[]>([]);
+  const [selectedAnimIds, setSelectedAnimIds] = useState<string[]>([]);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const pickSoundPlayed = useRef(false);
+  const sessionSoundPlayed = useRef(false);
 
   function handleConfirmCancelRequest() {
     cancelOrder();
@@ -102,13 +112,13 @@ export function MatchmakingScreen({ orderId }: Props) {
   }
 
   // The "Selected!" beat is purely cosmetic — order.status already flipped
-  // to "assigned" the moment confirmSelection() ran, so this just delays
+  // to "assigned" the moment the pick was confirmed, so this just delays
   // handing off to SessionScreen for a moment.
   useEffect(() => {
-    if (!selectedAnimId) return;
-    const t = setTimeout(() => setSelectedAnimId(null), 1400);
+    if (selectedAnimIds.length === 0) return;
+    const t = setTimeout(() => setSelectedAnimIds([]), 1400);
     return () => clearTimeout(t);
-  }, [selectedAnimId]);
+  }, [selectedAnimIds]);
 
   // A cancellation that went through requestCancelSession() (i.e. it has a
   // cancelApprovedAt) means a real teammate "approved" it — send the
@@ -120,25 +130,79 @@ export function MatchmakingScreen({ orderId }: Props) {
     return () => clearTimeout(t);
   }, [order?.status, order?.cancelApprovedAt, router]);
 
+  // A short chime at the two moments that actually need the customer's
+  // attention if they've tabbed away: candidates are ready to pick from,
+  // and the session has actually started. Each only ever fires once per
+  // order thanks to the refs.
+  useEffect(() => {
+    if (order?.status === "selecting" && !pickSoundPlayed.current) {
+      pickSoundPlayed.current = true;
+      playNotificationSound();
+    }
+  }, [order?.status]);
+
+  useEffect(() => {
+    if ((order?.status === "assigned" || order?.status === "in_progress") && !sessionSoundPlayed.current) {
+      sessionSoundPlayed.current = true;
+      playNotificationSound();
+    }
+  }, [order?.status]);
+
   // Covers both "still loading from localStorage" (loaded===false, which is
   // also exactly what the server rendered, so no hydration mismatch) and the
   // real "actively searching" phase once the order is in — same visual
   // either way, just with real details (and preferences) once available.
   if (!loaded || order?.status === "candidates_ready") {
+    const optionDescription = order ? getBookingOptionDescription(order.option) : undefined;
     return (
       <div className="matching-screen matching-screen--card">
         <span className="matching-screen__spinner matching-screen__spinner--lg" aria-hidden="true" />
         <h1 className="matching-screen__title">Searching for your perfect teammate...</h1>
         {order && (
           <>
-            <p className="matching-screen__sub">
-              {order.gameName} · {order.option} · <PriceTag amountEUR={order.priceEUR} />
-            </p>
             <div className="matching-screen__elapsed">
               <span className="matching-screen__elapsed-time">{formatMMSS(searchElapsedSeconds)}</span>
               <span className="matching-screen__elapsed-label">
                 Estimated under {formatMMSS(Math.ceil(dispatchWindowMs / 1000))}
               </span>
+            </div>
+
+            <div className="matching-screen__summary">
+              <div className="matching-screen__summary-row">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={gameIcon(order.gameSlug)} alt="" className="matching-screen__summary-icon" />
+                <span className="matching-screen__summary-title">{order.gameName}</span>
+                <PriceTag amountEUR={order.priceEUR} />
+              </div>
+              <div className="matching-screen__summary-row">
+                <span className="matching-screen__summary-icon matching-screen__summary-icon--fallback" aria-hidden="true">
+                  <i className="fa-solid fa-user-group" />
+                </span>
+                <span className="matching-screen__summary-body">
+                  <span className="matching-screen__summary-title">{order.option}</span>
+                  {optionDescription && <span className="matching-screen__summary-desc">{optionDescription}</span>}
+                </span>
+                <span className="matching-screen__summary-count">{order.teammates}x game</span>
+              </div>
+            </div>
+
+            <div className="matching-screen__prefs-rows">
+              <button type="button" className="matching-screen__prefs-row" onClick={() => setPrefsModalOpen(true)}>
+                <span>
+                  <i className="fa-solid fa-comments" aria-hidden="true" /> Conversation
+                </span>
+                <span>
+                  {order.conversationPref ?? "Not set"} <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+                </span>
+              </button>
+              <button type="button" className="matching-screen__prefs-row" onClick={() => setPrefsModalOpen(true)}>
+                <span>
+                  <i className="fa-solid fa-gamepad" aria-hidden="true" /> Play style
+                </span>
+                <span>
+                  {order.playStylePref ?? "Not set"} <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+                </span>
+              </button>
             </div>
 
             <div className="matching-screen__vibe">
@@ -157,19 +221,6 @@ export function MatchmakingScreen({ orderId }: Props) {
                 ))}
               </div>
             </div>
-
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm matching-screen__prefs-btn"
-              onClick={() => setPrefsModalOpen(true)}
-            >
-              <i className="fa-solid fa-sliders" aria-hidden="true" /> Set preferences
-              {(order.conversationPref || order.playStylePref) && (
-                <span className="matching-screen__prefs-badge">
-                  <i className="fa-solid fa-check" aria-hidden="true" />
-                </span>
-              )}
-            </button>
 
             <button
               type="button"
@@ -255,28 +306,36 @@ export function MatchmakingScreen({ orderId }: Props) {
     );
   }
 
-  if (selectedAnimId) {
-    const teammate = getTeammateById(selectedAnimId);
+  if (selectedAnimIds.length > 0) {
     return (
       <div className="matching-screen">
         <div className="selected-anim">
-          <div className="selected-anim__card">
-            <span className="selected-anim__badge" aria-hidden="true">
-              <i className="fa-solid fa-check" />
-            </span>
-            <span className="selected-anim__avatar">
-              <AvatarIcon seed={selectedAnimId} />
-            </span>
-            {teammate && (
-              <>
-                <div className="selected-anim__name">{teammate.name}</div>
-                <div className="selected-anim__rating">
-                  <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} · {teammate.sessions} sessions
+          <div className="selected-anim__row">
+            {selectedAnimIds.map((id) => {
+              const teammate = getTeammateById(id);
+              return (
+                <div className="selected-anim__card" key={id}>
+                  <span className="selected-anim__badge" aria-hidden="true">
+                    <i className="fa-solid fa-check" />
+                  </span>
+                  <span className="selected-anim__avatar">
+                    <AvatarIcon seed={id} />
+                  </span>
+                  {teammate && (
+                    <>
+                      <div className="selected-anim__name">{teammate.name}</div>
+                      <div className="selected-anim__rating">
+                        <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)}
+                      </div>
+                    </>
+                  )}
                 </div>
-              </>
-            )}
+              );
+            })}
           </div>
-          <div className="selected-anim__label">You&rsquo;re locked in!</div>
+          <div className="selected-anim__label">
+            {selectedAnimIds.length > 1 ? "You're locked in with your team!" : "You're locked in!"}
+          </div>
         </div>
       </div>
     );
@@ -289,16 +348,42 @@ export function MatchmakingScreen({ orderId }: Props) {
   const winner = firstAcceptedCandidate(order.candidates);
   const { center, left, right } = arrangeCandidates(order.candidates, winner);
   const confirmingTeammate = confirmingId ? getTeammateById(confirmingId) : null;
+  const multiPick = order.teammates > 1;
 
   function handlePick(teammateId: string) {
-    setConfirmingId(teammateId);
+    if (!multiPick) {
+      setConfirmingId(teammateId);
+      return;
+    }
+    setPickedIds((prev) => {
+      if (prev.includes(teammateId)) return prev.filter((id) => id !== teammateId);
+      if (prev.length >= order!.teammates) return prev;
+      return [...prev, teammateId];
+    });
   }
 
   function handleConfirmYes() {
     if (!confirmingId) return;
     confirmSelection(confirmingId);
-    setSelectedAnimId(confirmingId);
+    setSelectedAnimIds([confirmingId]);
     setConfirmingId(null);
+  }
+
+  function handleConfirmTeam() {
+    if (pickedIds.length === 0) return;
+    confirmMultiSelection(pickedIds);
+    setSelectedAnimIds(pickedIds);
+    setPickedIds([]);
+  }
+
+  function pickRankFor(teammateId: string): number | undefined {
+    if (!multiPick) return undefined;
+    const idx = pickedIds.indexOf(teammateId);
+    return idx === -1 ? undefined : idx + 1;
+  }
+
+  function isPicked(teammateId: string): boolean {
+    return multiPick ? pickedIds.includes(teammateId) : order!.selectedTeammateId === teammateId;
   }
 
   return (
@@ -308,10 +393,17 @@ export function MatchmakingScreen({ orderId }: Props) {
         <p className="matching-screen__sub">
           {order.gameName} · {order.option} · <PriceTag amountEUR={order.priceEUR} />
         </p>
-        <p className="matching-screen__countdown">
-          <i className="fa-regular fa-clock" aria-hidden="true" /> Auto-confirming the first acceptor in{" "}
-          {selectionSecondsLeft}s
-        </p>
+        {multiPick ? (
+          <p className="matching-screen__countdown">
+            <i className="fa-regular fa-clock" aria-hidden="true" /> Pick up to {order.teammates} teammates —{" "}
+            {selectionSecondsLeft}s left
+          </p>
+        ) : (
+          <p className="matching-screen__countdown">
+            <i className="fa-regular fa-clock" aria-hidden="true" /> Auto-confirming the first acceptor in{" "}
+            {selectionSecondsLeft}s
+          </p>
+        )}
       </div>
 
       <div className="candidate-stage">
@@ -321,7 +413,8 @@ export function MatchmakingScreen({ orderId }: Props) {
               key={c.teammateId}
               candidate={c}
               isFirstAccepted={false}
-              isSelected={order.selectedTeammateId === c.teammateId}
+              isSelected={isPicked(c.teammateId)}
+              pickRank={pickRankFor(c.teammateId)}
               selectable
               onSelect={() => handlePick(c.teammateId)}
             />
@@ -334,7 +427,8 @@ export function MatchmakingScreen({ orderId }: Props) {
               candidate={center}
               size="lg"
               isFirstAccepted={winner?.teammateId === center.teammateId}
-              isSelected={order.selectedTeammateId === center.teammateId}
+              isSelected={isPicked(center.teammateId)}
+              pickRank={pickRankFor(center.teammateId)}
               selectable
               onSelect={() => handlePick(center.teammateId)}
             />
@@ -347,13 +441,25 @@ export function MatchmakingScreen({ orderId }: Props) {
               key={c.teammateId}
               candidate={c}
               isFirstAccepted={false}
-              isSelected={order.selectedTeammateId === c.teammateId}
+              isSelected={isPicked(c.teammateId)}
+              pickRank={pickRankFor(c.teammateId)}
               selectable
               onSelect={() => handlePick(c.teammateId)}
             />
           ))}
         </div>
       </div>
+
+      {multiPick && (
+        <button
+          type="button"
+          className="btn btn--vivid matching-screen__confirm-team"
+          onClick={handleConfirmTeam}
+          disabled={pickedIds.length === 0}
+        >
+          Confirm team ({pickedIds.length}/{order.teammates})
+        </button>
+      )}
 
       <button
         type="button"

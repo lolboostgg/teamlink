@@ -39,7 +39,7 @@ export function useIncomingDispatches() {
   );
 
   const activeOrders = orders.filter(
-    (o) => o.selectedTeammateId === CURRENT_TEAMMATE_ID && (o.status === "assigned" || o.status === "in_progress"),
+    (o) => o.selectedTeammateIds.includes(CURRENT_TEAMMATE_ID) && (o.status === "assigned" || o.status === "in_progress"),
   );
 
   return {
