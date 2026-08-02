@@ -17,18 +17,25 @@ export async function updateOwnProfile(input: TeammateProfileInput) {
 
   const clean = sanitizeTeammateProfileInput(input);
 
-  const { count } = await prisma.teammate.updateMany({
-    where: { userId: session.user.id },
-    data: {
-      tagline: clean.tagline || null,
-      timezone: clean.timezone || null,
-      avatarUrl: clean.avatarUrl || null,
-      languages: clean.languages,
-      lolRank: clean.lolRank,
-      lolChampions: clean.lolChampions,
-      lolLanes: clean.lolLanes,
-    },
-  });
+  // Teammates don't get a separate "account" avatar upload (only this
+  // game-profile one), so mirror it onto User.avatarUrl too — that's the
+  // field the header avatar (auth.ts's session.user.image) actually reads,
+  // same as a client's own profile picture.
+  const [{ count }] = await prisma.$transaction([
+    prisma.teammate.updateMany({
+      where: { userId: session.user.id },
+      data: {
+        tagline: clean.tagline || null,
+        timezone: clean.timezone || null,
+        avatarUrl: clean.avatarUrl || null,
+        languages: clean.languages,
+        lolRank: clean.lolRank,
+        lolChampions: clean.lolChampions,
+        lolLanes: clean.lolLanes,
+      },
+    }),
+    prisma.user.update({ where: { id: session.user.id }, data: { avatarUrl: clean.avatarUrl || null } }),
+  ]);
   if (count === 0) throw new Error("No teammate profile linked to this account.");
 
   revalidatePath("/dashboard/teammate/profile");

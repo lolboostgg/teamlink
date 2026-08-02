@@ -9,13 +9,7 @@ import { useAuthModal } from "@/components/auth/AuthModalProvider";
 
 const CLOSE_DELAY_MS = 200;
 
-function initialsFrom(name: string | null | undefined, email: string | null | undefined): string {
-  const source = name?.trim() || email?.split("@")[0] || "";
-  const parts = source.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
-}
+const DEFAULT_AVATAR = "/avatars/default.webp";
 
 // Same hover/click dropdown pattern as SettingsTrigger. Every account now
 // has exactly one real dashboard (see dashboardHrefForRole) instead of the
@@ -31,7 +25,6 @@ export function DashboardTrigger() {
   const rootRef = useRef<HTMLDivElement>(null);
   const href = dashboardHrefForRole(session?.user?.role);
   const profileHref = profileHrefForRole(session?.user?.role);
-  const initials = initialsFrom(session?.user?.name, session?.user?.email);
   // The client dashboard lives inside this same marketing shell now (see
   // (marketing)/dashboard/client/layout.tsx) — only admin/teammate still
   // swap into the separate dashboard shell, so only they get the transition.
@@ -85,7 +78,8 @@ export function DashboardTrigger() {
         aria-expanded={open}
         aria-label="Account menu"
       >
-        {initials}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={session?.user?.image || DEFAULT_AVATAR} alt="" />
       </button>
 
       {open && (

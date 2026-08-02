@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useSession } from "next-auth/react";
 import { updateProfile, changePassword } from "@/app/(marketing)/dashboard/client/profile/actions";
 import { useToast } from "@/components/ui/ToastProvider";
 import { AvatarUpload } from "@/components/ui/AvatarUpload";
@@ -11,6 +12,7 @@ interface Props {
 
 export function ClientProfileForm({ initial }: Props) {
   const { showToast } = useToast();
+  const { update: updateSession } = useSession();
   const [name, setName] = useState(initial.name);
   const [avatarUrl, setAvatarUrl] = useState(initial.avatarUrl);
   const [profilePending, startProfileTransition] = useTransition();
@@ -27,6 +29,14 @@ export function ClientProfileForm({ initial }: Props) {
     startProfileTransition(async () => {
       try {
         await updateProfile({ name, avatarUrl });
+        // Re-syncs the JWT so the header avatar/name reflect the change
+        // immediately, without needing to log out and back in — see the
+        // trigger:"update" branch in auth.ts's jwt() callback. Must pass
+        // *some* payload: next-auth's update() only POSTs (the only path
+        // that sets trigger:"update" server-side) when called with data —
+        // update() with no arguments does a plain GET that re-reads the
+        // unchanged session.
+        await updateSession({});
         showToast("Profile updated.", "success");
       } catch (err) {
         setProfileError(err instanceof Error ? err.message : "Couldn't save — try again.");

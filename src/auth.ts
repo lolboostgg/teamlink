@@ -40,7 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // can read it on initial sign-in (only `authorize` sees the raw
           // credentials) — not a real User field, just a one-shot carrier.
           const remember = credentials?.remember !== "false";
-          return { id: user.id, email: user.email, name: user.name, role: user.role, remember };
+          return { id: user.id, email: user.email, name: user.name, image: user.avatarUrl, role: user.role, remember };
         } catch (err) {
           // Logged server-side instead of surfacing raw DB errors through
           // NextAuth's generic CredentialsSignin error — check the
@@ -61,7 +61,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
+      // Fired by the client calling useSession().update() with no payload
+      // (see ClientProfileForm/TeammateProfileEditor after a successful
+      // save) — re-reads the DB instead of trusting a client-supplied
+      // patch, so the header avatar/name reflect what was actually saved.
+      if (trigger === "update" && token.id) {
+        const fresh = await prisma.user.findUnique({ where: { id: token.id } });
+        if (fresh) {
+          token.name = fresh.name;
+          token.picture = fresh.avatarUrl;
+          token.role = fresh.role;
+        }
+        return token;
+      }
+
       if (!user) return token;
 
       if (account?.provider === "credentials") {

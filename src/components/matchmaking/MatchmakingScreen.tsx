@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
@@ -54,10 +54,10 @@ interface Props {
 }
 
 const VIBE_OPTIONS = [
-  { value: "chill", label: "Chill", icon: "fa-solid fa-cloud" },
-  { value: "tryhard", label: "Tryhard", icon: "fa-solid fa-fire" },
-  { value: "social", label: "Social", icon: "fa-solid fa-comment-dots" },
-  { value: "tilted", label: "Tilted", icon: "fa-solid fa-face-angry" },
+  { value: "chill", label: "Chill", icon: "fa-solid fa-cloud", color: "var(--hue-cyan)" },
+  { value: "tryhard", label: "Tryhard", icon: "fa-solid fa-fire", color: "var(--hue-gold)" },
+  { value: "social", label: "Social", icon: "fa-solid fa-comment-dots", color: "var(--hue-purple)" },
+  { value: "tilted", label: "Tilted", icon: "fa-solid fa-face-angry", color: "var(--danger)" },
 ];
 
 function formatMMSS(totalSeconds: number): string {
@@ -237,6 +237,7 @@ export function MatchmakingScreen({ orderId }: Props) {
                     key={v.value}
                     type="button"
                     className={`matching-screen__vibe-btn${order.vibe === v.value ? " is-selected" : ""}`}
+                    style={{ "--vibe-color": v.color } as CSSProperties}
                     onClick={() => updatePreferences({ vibe: v.value })}
                   >
                     <span className="matching-screen__vibe-icon">

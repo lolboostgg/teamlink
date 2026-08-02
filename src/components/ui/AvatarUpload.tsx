@@ -10,6 +10,7 @@ interface Props {
 
 const MAX_DIMENSION = 256;
 const JPEG_QUALITY = 0.85;
+const DEFAULT_AVATAR = "/avatars/default.webp";
 
 // No object-storage backend is wired up in this app (no S3/Supabase
 // Storage bucket, no upload API route) — so instead of faking an upload
@@ -91,12 +92,8 @@ export function AvatarUpload({ value, onChange, label = "Profile picture" }: Pro
         }}
       >
         <span className="avatar-upload__preview">
-          {value ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={value} alt="" />
-          ) : (
-            <i className="fa-solid fa-camera" aria-hidden="true" />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value || DEFAULT_AVATAR} alt="" />
         </span>
         <span className="avatar-upload__hint">
           <strong>Drag &amp; drop</strong> an image, or click to browse
