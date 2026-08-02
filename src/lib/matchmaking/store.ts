@@ -10,10 +10,11 @@ import type { CandidateStatus, DispatchCandidate, DispatchOrder, OrderStatus } f
 // Accept — a real manual response just pre-empts the simulated one.
 export const CURRENT_TEAMMATE_ID = "tm-nova";
 
-// Each notified candidate's alert lasts 5-8s — short and urgent, matching a
-// real "someone's phone is buzzing right now" invite rather than a relaxed
-// open-ended queue.
-export const DISPATCH_WINDOW_MS = 8_000;
+// The dispatch window is a full 60s, but resolves as soon as every notified
+// candidate has actually responded (see reconcile()) — the "Pick your
+// teammate" screen only appears once all 5 have answered or the 60s is up,
+// whichever comes first, never on the very first accept.
+export const DISPATCH_WINDOW_MS = 60_000;
 export const SELECTION_WINDOW_MS = 60_000;
 export const REROLL_WINDOW_MS = 2 * 60_000;
 export const SESSION_START_DELAY_MS = 5 * 60_000;
@@ -104,8 +105,11 @@ function reconcile(order: DispatchOrder): DispatchOrder {
 
   const anyAccepted = candidates.some((c) => c.status === "accepted");
   const allTerminal = candidates.every((c) => c.status !== "pending");
+  // Resolve as soon as every notified candidate has actually answered —
+  // never on just the first accept — otherwise wait out the full window.
+  const dispatchSettled = allTerminal || now >= order.dispatchDeadline;
 
-  if ((status === "searching" || status === "candidates_ready") && anyAccepted) {
+  if ((status === "searching" || status === "candidates_ready") && dispatchSettled && anyAccepted) {
     changed = true;
     if (order.requestedTeammateId !== null) {
       status = "assigned";
@@ -114,7 +118,7 @@ function reconcile(order: DispatchOrder): DispatchOrder {
       status = "selecting";
       selectionDeadline = now + SELECTION_WINDOW_MS;
     }
-  } else if ((status === "searching" || status === "candidates_ready") && allTerminal && !anyAccepted) {
+  } else if ((status === "searching" || status === "candidates_ready") && dispatchSettled && !anyAccepted) {
     changed = true;
     status = "no_match";
   }
@@ -221,7 +225,7 @@ export function createOrder(input: {
   const candidates: DispatchCandidate[] = pool.map((teammateId) => ({
     teammateId,
     status: "pending",
-    simulatedRespondAt: input.forceAcceptFast ? now + 1000 + Math.random() * 1500 : now + 2000 + Math.random() * 6000,
+    simulatedRespondAt: input.forceAcceptFast ? now + 1000 + Math.random() * 1500 : now + 5000 + Math.random() * 50000,
     simulatedOutcome: input.forceAcceptFast ? "accepted" : Math.random() < 0.65 ? "accepted" : "declined",
   }));
 
