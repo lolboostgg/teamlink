@@ -11,7 +11,7 @@ type ShellRole = "admin" | "teammate";
 const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[]> = {
   admin: [
     { href: "/dashboard/admin", label: "Overview", icon: "fa-solid fa-gauge" },
-    { href: "/dashboard/admin/signups", label: "Signups", icon: "fa-solid fa-users" },
+    { href: "/dashboard/admin/users", label: "Users", icon: "fa-solid fa-users" },
     { href: "/dashboard/admin/payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
   ],
   teammate: [
