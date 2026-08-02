@@ -1,31 +1,32 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { useIncomingDispatches } from "@/lib/matchmaking/useIncomingDispatches";
-import { useRole } from "@/components/role/RoleProvider";
 import { playNotificationSound } from "@/lib/notificationSound";
 
 // Global popup + sound alert for the demo teammate identity (Nova) — fires
 // once per newly-arrived dispatch invite regardless of which dashboard page
 // is open, since a real incoming request shouldn't require sitting on the
-// Sessions page to notice it. Scoped to the teammate role view only.
+// Sessions page to notice it. Scoped to real teammate accounts only.
 export function DispatchAlertPopup() {
-  const { role } = useRole();
+  const { data: session } = useSession();
+  const isTeammate = session?.user?.role === "TEAMMATE";
   const { pendingInvites, respond } = useIncomingDispatches();
   const announced = useRef<Set<string>>(new Set());
   const [visibleIds, setVisibleIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (role !== "teammate") return;
+    if (!isTeammate) return;
     const fresh = pendingInvites.filter((o) => !announced.current.has(o.id));
     if (fresh.length === 0) return;
     fresh.forEach((o) => announced.current.add(o.id));
     playNotificationSound();
     setVisibleIds((prev) => [...prev, ...fresh.map((o) => o.id)]);
-  }, [pendingInvites, role]);
+  }, [pendingInvites, isTeammate]);
 
-  if (role !== "teammate") return null;
+  if (!isTeammate) return null;
 
   const visibleOrders = pendingInvites.filter((o) => visibleIds.includes(o.id));
   if (visibleOrders.length === 0) return null;

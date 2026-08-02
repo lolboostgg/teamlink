@@ -5,7 +5,6 @@ import { SessionProvider } from "next-auth/react";
 import { ToastProvider } from "@/components/ui/ToastProvider";
 import { CurrencyProvider } from "@/components/currency/CurrencyProvider";
 import { LanguageProvider } from "@/components/language/LanguageProvider";
-import { RoleProvider } from "@/components/role/RoleProvider";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 
 // Single composition point for every app-wide client Context, mounted once
@@ -20,9 +19,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <SessionProvider>
         <CurrencyProvider>
           <LanguageProvider>
-            <RoleProvider>
-              <AuthModalProvider>{children}</AuthModalProvider>
-            </RoleProvider>
+            <AuthModalProvider>{children}</AuthModalProvider>
           </LanguageProvider>
         </CurrencyProvider>
       </SessionProvider>
