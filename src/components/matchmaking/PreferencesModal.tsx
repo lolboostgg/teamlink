@@ -40,10 +40,13 @@ export function PreferencesModal({ open, onClose, conversationPref, playStylePre
     <Modal open={open} onClose={handleClose} labelledBy="preferences-modal-title">
       {step === "main" && (
         <div className="preferences-modal">
-          <h2 id="preferences-modal-title" className="preferences-modal__title">
+          <span className="modal-icon modal-icon--accent" aria-hidden="true">
+            <i className="fa-solid fa-sliders" />
+          </span>
+          <h2 id="preferences-modal-title" className="preferences-modal__title preferences-modal__title--center">
             Preferences
           </h2>
-          <p className="preferences-modal__sub">
+          <p className="preferences-modal__sub preferences-modal__sub--center">
             Your teammate will be notified and may be able to accommodate your preferences.
           </p>
 
@@ -76,6 +79,9 @@ export function PreferencesModal({ open, onClose, conversationPref, playStylePre
           <button type="button" className="preferences-modal__back" onClick={() => setStep("main")} aria-label="Back">
             <i className="fa-solid fa-arrow-left" aria-hidden="true" />
           </button>
+          <span className="modal-icon modal-icon--accent" aria-hidden="true">
+            <i className="fa-solid fa-comments" />
+          </span>
           <h2 className="preferences-modal__title preferences-modal__title--center">Conversation</h2>
           <div className="preferences-modal__options">
             {CONVERSATION_OPTIONS.map((opt) => (
@@ -101,6 +107,9 @@ export function PreferencesModal({ open, onClose, conversationPref, playStylePre
           <button type="button" className="preferences-modal__back" onClick={() => setStep("main")} aria-label="Back">
             <i className="fa-solid fa-arrow-left" aria-hidden="true" />
           </button>
+          <span className="modal-icon modal-icon--accent" aria-hidden="true">
+            <i className="fa-solid fa-gamepad" />
+          </span>
           <h2 className="preferences-modal__title preferences-modal__title--center">Play style</h2>
           <div className="preferences-modal__options">
             {PLAY_STYLE_OPTIONS.map((opt) => (

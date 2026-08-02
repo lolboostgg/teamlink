@@ -92,7 +92,7 @@ export function MatchmakingScreen({ orderId }: Props) {
   // either way, just with real details (and preferences) once available.
   if (!loaded || order?.status === "candidates_ready") {
     return (
-      <div className="matching-screen">
+      <div className="matching-screen matching-screen--card">
         <span className="matching-screen__spinner matching-screen__spinner--lg" aria-hidden="true" />
         <h1 className="matching-screen__title">Searching for your perfect teammate...</h1>
         {order && (
@@ -218,15 +218,22 @@ export function MatchmakingScreen({ orderId }: Props) {
       <div className="matching-screen">
         <div className="selected-anim">
           <div className="selected-anim__card">
+            <span className="selected-anim__badge" aria-hidden="true">
+              <i className="fa-solid fa-check" />
+            </span>
             <span className="selected-anim__avatar">
               <AvatarIcon seed={selectedAnimId} />
             </span>
-            <span className="selected-anim__check">
-              <i className="fa-solid fa-check" aria-hidden="true" />
-            </span>
+            {teammate && (
+              <>
+                <div className="selected-anim__name">{teammate.name}</div>
+                <div className="selected-anim__rating">
+                  <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} · {teammate.sessions} sessions
+                </div>
+              </>
+            )}
           </div>
-          {teammate && <div className="selected-anim__name">{teammate.name}</div>}
-          <div className="selected-anim__label">Selected</div>
+          <div className="selected-anim__label">You&rsquo;re locked in!</div>
         </div>
       </div>
     );
@@ -311,17 +318,22 @@ export function MatchmakingScreen({ orderId }: Props) {
 
       <Modal open={!!confirmingId} onClose={() => setConfirmingId(null)} labelledBy="select-teammate-title">
         <div className="select-confirm">
+          {confirmingId && (
+            <span className="select-confirm__avatar">
+              <AvatarIcon seed={confirmingId} />
+            </span>
+          )}
           <h2 id="select-teammate-title" className="select-confirm__title">
             Select teammate
           </h2>
           <p className="select-confirm__sub">
-            You want to select {confirmingTeammate?.name ?? "this teammate"} to be your teammate?
+            You want to select <strong>{confirmingTeammate?.name ?? "this teammate"}</strong> to be your teammate?
           </p>
           <div className="select-confirm__actions">
             <button type="button" className="btn btn--ghost btn--block" onClick={() => setConfirmingId(null)}>
               No
             </button>
-            <button type="button" className="btn btn--danger btn--block" onClick={handleConfirmYes}>
+            <button type="button" className="btn btn--vivid btn--block" onClick={handleConfirmYes}>
               Yes
             </button>
           </div>

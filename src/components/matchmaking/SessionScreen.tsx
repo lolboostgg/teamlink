@@ -423,8 +423,12 @@ export function SessionScreen({ orderId }: Props) {
                   <span className="session-screen__reroll-note">Available for {formatClock(rerollSecondsLeft)}</span>
                 </>
               )}
-              <button type="button" className="session-screen__cancel-link" onClick={() => setCancelModalOpen(true)}>
-                Ask to cancel session
+              <button
+                type="button"
+                className="btn btn--ghost btn--block session-screen__cancel-btn"
+                onClick={() => setCancelModalOpen(true)}
+              >
+                <i className="fa-solid fa-circle-xmark" aria-hidden="true" /> Ask to cancel session
               </button>
             </div>
           </div>
@@ -458,15 +462,19 @@ export function SessionScreen({ orderId }: Props) {
               conversationPref={order.conversationPref}
               playStylePref={order.playStylePref}
             />
-            <button type="button" className="session-screen__help-link" onClick={() => setHelpModalOpen(true)}>
-              <i className="fa-solid fa-circle-question" aria-hidden="true" /> Need help?
-            </button>
           </div>
         </Reveal>
       </div>
 
+      <button type="button" className="session-screen__help-fab" onClick={() => setHelpModalOpen(true)}>
+        <i className="fa-solid fa-circle-question" aria-hidden="true" /> Need help?
+      </button>
+
       <Modal open={cancelModalOpen} onClose={() => setCancelModalOpen(false)} labelledBy="cancel-session-title">
         <div className="cancel-confirm">
+          <span className="modal-icon modal-icon--warning" aria-hidden="true">
+            <i className="fa-solid fa-triangle-exclamation" />
+          </span>
           <h2 id="cancel-session-title" className="cancel-confirm__title">
             Ask to cancel {order.gameName} · {order.option}
           </h2>
@@ -487,6 +495,9 @@ export function SessionScreen({ orderId }: Props) {
 
       <Modal open={helpModalOpen} onClose={() => setHelpModalOpen(false)} labelledBy="help-modal-title">
         <div className="help-modal">
+          <span className="modal-icon modal-icon--accent" aria-hidden="true">
+            <i className="fa-solid fa-shield-heart" />
+          </span>
           <h2 id="help-modal-title" className="help-modal__title">
             Money-back guarantee
           </h2>

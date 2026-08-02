@@ -327,6 +327,24 @@ ul {
   overflow: hidden;
 }
 
+/* Placeholder avatar (see AvatarIcon.tsx) — fills whatever box the parent
+   gives it, clipped to a circle regardless of the parent's own
+   overflow/border-radius setup. */
+.avatar-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatar-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* ── Buttons ────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -2227,26 +2245,6 @@ ul {
   margin: 0 auto 18px;
 }
 
-/* ── Teammate picker ────────────────────────────────────────── */
-/* Modal that opens from the booking sidebar's Teammate row (see
-   TeammateModal.tsx) — this used to be a permanent carousel section on
-   the page; moving it into a modal is most of why the booking panel is
-   shorter now. .modal-panel's default max-width/padding (see the
-   login/signup modal) is sized for a compact form, so both are
-   overridden just for this modal via :has(). Near-fullsize and anchored
-   to the bottom of the viewport (free space stays at the top instead of
-   the bottom) — matches the eloboost.gg booster-search modal reference. */
-.modal-overlay:has(.teammate-modal) {
-  align-items: flex-end;
-  padding: 32px 24px 24px;
-}
-
-.modal-panel:has(.teammate-modal) {
-  max-width: 1300px;
-  padding: 0;
-  overflow: hidden;
-}
-
 .teammate-modal {
   display: flex;
   align-items: stretch;
@@ -3043,6 +3041,20 @@ ul {
   max-width: 1040px;
 }
 
+.matching-screen--card {
+  padding: 48px 40px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-card);
+}
+
+@media (max-width: 560px) {
+  .matching-screen--card {
+    padding: 36px 22px;
+  }
+}
+
 .matching-screen__spinner {
   display: inline-flex;
   align-items: center;
@@ -3099,6 +3111,8 @@ ul {
 
 .matching-screen__vibe {
   margin: 4px 0 18px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
 }
 
 .matching-screen__vibe-label {
@@ -3217,49 +3231,64 @@ ul {
 
 .selected-anim__card {
   position: relative;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 3px solid var(--success);
-  box-shadow: 0 0 40px rgba(47, 191, 113, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 260px;
+  padding: 32px 24px 26px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--success);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 50px rgba(47, 191, 113, 0.3);
   animation: selectedPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.selected-anim__avatar {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.selected-anim__check {
+.selected-anim__badge {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 36px;
-  height: 36px;
+  top: -16px;
+  right: -16px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--success);
   color: #fff;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  font-size: 16px;
   border: 3px solid var(--bg);
+}
+
+.selected-anim__avatar {
+  display: block;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 6px;
 }
 
 .selected-anim__name {
   font-size: 18px;
   font-weight: 800;
-  margin-top: 10px;
+}
+
+.selected-anim__rating {
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+.selected-anim__rating i {
+  color: var(--hue-gold);
 }
 
 .selected-anim__label {
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--success);
+  margin-top: 18px;
 }
 
 @keyframes selectedPop {
@@ -3268,6 +3297,16 @@ ul {
 }
 
 /* ── Select-teammate confirm dialog ────────────────────────────── */
+.select-confirm__avatar {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-strong);
+  margin: 0 auto 16px;
+}
+
 .select-confirm__title {
   font-family: var(--font-heading);
   font-size: 22px;
@@ -3308,6 +3347,10 @@ ul {
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 20px;
+}
+
+.preferences-modal__sub--center {
+  text-align: center;
 }
 
 .preferences-modal__row {
@@ -3381,10 +3424,22 @@ ul {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 4px;
+  padding: 12px 10px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   color: var(--text);
   cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.preferences-modal__option:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.preferences-modal__option:has(input:checked) {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .preferences-modal__option input {
@@ -3796,15 +3851,13 @@ ul {
   margin-top: -6px;
 }
 
-.session-screen__cancel-link {
-  font-size: 12.5px;
+.session-screen__cancel-btn {
   color: var(--text-faint);
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
-.session-screen__cancel-link:hover {
-  color: var(--text-muted);
+.session-screen__cancel-btn:hover {
+  color: var(--danger);
+  border-color: rgba(229, 72, 77, 0.4);
 }
 
 .session-screen__chat-panel {
@@ -3859,20 +3912,41 @@ ul {
   color: var(--text);
 }
 
-.session-screen__help-link {
-  display: flex;
+.session-screen__help-fab {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 10px;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-faint);
-  flex: 0 0 auto;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.session-screen__help-link:hover {
-  color: var(--text-muted);
+.session-screen__help-fab i {
+  color: var(--accent);
+}
+
+.session-screen__help-fab:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+@media (max-width: 700px) {
+  .session-screen__help-fab {
+    left: 16px;
+    bottom: 16px;
+    padding: 10px 14px;
+    font-size: 12px;
+  }
 }
 
 .session-screen__buy-more {
@@ -4160,6 +4234,7 @@ ul {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.01em;
+  text-align: center;
   margin-bottom: 12px;
 }
 
@@ -4167,6 +4242,7 @@ ul {
   font-size: 13.5px;
   color: var(--text-muted);
   line-height: 1.6;
+  text-align: center;
   margin-bottom: 22px;
 }
 
@@ -4182,12 +4258,14 @@ ul {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.01em;
+  text-align: center;
   margin-bottom: 6px;
 }
 
 .help-modal__sub {
   font-size: 13px;
   color: var(--text-muted);
+  text-align: center;
   margin-bottom: 16px;
 }
 
@@ -4437,7 +4515,7 @@ ul {
   background: rgba(2, 3, 8, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: 48px 20px;
   overflow-y: auto;
@@ -4464,6 +4542,35 @@ ul {
 @keyframes modalPanelIn {
   from { opacity: 0; transform: translateY(12px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Shared icon badge used at the top of the smaller action/confirm modals
+   (select-confirm, cancel-confirm, help-modal, preferences-modal) so they
+   all read as one consistent family instead of each being a bare title. */
+.modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  margin: 0 auto 18px;
+  font-size: 20px;
+}
+
+.modal-icon--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.modal-icon--warning {
+  background: rgba(224, 168, 59, 0.14);
+  color: var(--hue-gold);
+}
+
+.modal-icon--danger {
+  background: rgba(229, 72, 77, 0.14);
+  color: var(--danger);
 }
 
 .modal-close {
