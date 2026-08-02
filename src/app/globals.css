@@ -3499,39 +3499,6 @@ ul {
   to { transform: scale(1); opacity: 1; }
 }
 
-/* ── Select-teammate confirm dialog ────────────────────────────── */
-.select-confirm__avatar {
-  display: block;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid var(--border-strong);
-  margin: 0 auto 16px;
-}
-
-.select-confirm__title {
-  font-family: var(--font-heading);
-  font-size: 22px;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-  text-align: center;
-  margin-bottom: 10px;
-}
-
-.select-confirm__sub {
-  font-size: 14px;
-  color: var(--text-muted);
-  text-align: center;
-  margin-bottom: 22px;
-}
-
-.select-confirm__actions {
-  display: flex;
-  gap: 10px;
-}
-
 /* ── Preferences modal (searching screen) ──────────────────────── */
 .preferences-modal__title {
   font-family: var(--font-heading);
@@ -3661,258 +3628,571 @@ ul {
   accent-color: var(--accent);
 }
 
-/* Center (first-to-accept, the auto-confirmed priority pick) + up to two
-   flanking slots each side — see arrangeCandidates() in MatchmakingScreen.
-   Whoever accepts first visually moves into the middle. */
-.candidate-stage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
+.btn--ghost.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
-.candidate-stage__side {
+/* ══════════════════════════════════════════════════════════════════
+   Select your teammate — full-width champion-select-style picker.
+   Built from the same accent tokens as the rest of the site
+   (--cta-vivid cyan + --hue-purple violet), not a new palette.
+   ══════════════════════════════════════════════════════════════════ */
+.matching-screen--full {
+  max-width: 1240px;
+}
+
+/* ── Countdown ring (blue -> violet, distinct from the plain cyan
+   ring on the searching screen) ──────────────────────────────────── */
+.selection-countdown {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 32px;
 }
 
-.candidate-stage__side .candidate-slot {
-  width: 190px;
-  opacity: 0.85;
-  transition: opacity 0.15s ease;
-}
-
-.candidate-stage__side .candidate-slot:hover,
-.candidate-stage__side .candidate-slot--accepted.is-selected {
-  opacity: 1;
-}
-
-.candidate-stage__center {
-  flex: 0 0 auto;
-  z-index: 1;
+.selection-countdown__ring {
+  --selection-progress: 0%;
   position: relative;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(var(--cta-vivid), var(--hue-purple) var(--selection-progress), var(--border) 0);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--hue-purple) 35%, transparent);
 }
 
-/* Soft glow behind the priority pick so it reads as "the" candidate, not
-   just a slightly bigger card in a row. */
-.candidate-stage__center::before {
+.selection-countdown__ring::before {
   content: "";
   position: absolute;
-  inset: -36px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--cta-vivid) 26%, transparent) 0%, transparent 70%);
-  z-index: -1;
-  animation: matchGlowPulse 2.4s ease-in-out infinite;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
 }
 
-@keyframes matchGlowPulse {
-  0%, 100% { opacity: 0.75; }
-  50% { opacity: 1; }
+.selection-countdown__time {
+  position: relative;
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--cta-vivid) 50%, transparent);
+}
+
+.selection-countdown__spark {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.selection-countdown__spark::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cta-vivid);
+  box-shadow: 0 0 8px 2px var(--cta-vivid);
+}
+
+.selection-countdown__spark--a {
+  animation: selectionOrbit 5s linear infinite;
+}
+
+.selection-countdown__spark--b {
+  animation: selectionOrbit 7s linear infinite reverse;
+  opacity: 0.7;
+}
+
+.selection-countdown__spark--b::before {
+  background: var(--hue-purple);
+  box-shadow: 0 0 8px 2px var(--hue-purple);
+}
+
+@keyframes selectionOrbit {
+  to { transform: rotate(360deg); }
+}
+
+.selection-countdown__caption {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .candidate-stage__center::before {
-    animation: none;
+  .selection-countdown__spark {
+    animation: none !important;
   }
 }
 
-@media (max-width: 760px) {
-  .candidate-stage {
-    flex-direction: column;
-  }
-
-  .candidate-stage__side {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .candidate-stage__side .candidate-slot {
-    width: 220px;
-    opacity: 1;
-  }
+/* ── The 5-slot row ──────────────────────────────────────────────── */
+.teammate-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 4px 4px 8px;
+  margin: 0 -4px;
 }
 
-.candidate-slot {
-  position: relative;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  text-align: left;
+.teammate-row__col {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-/* The center/priority slot — noticeably bigger, not just a subtle scale
-   bump, so "this is the one" reads instantly. */
-.candidate-slot--lg {
-  width: 300px;
-  padding: 26px 24px;
   gap: 10px;
-  border-color: color-mix(in srgb, var(--cta-vivid) 35%, var(--border-strong));
-  box-shadow: var(--shadow-card), 0 0 30px color-mix(in srgb, var(--cta-vivid) 20%, transparent);
+  flex: 0 0 auto;
+  width: 200px;
+  scroll-snap-align: center;
 }
 
-.candidate-slot--lg .candidate-slot__avatar {
-  width: 64px;
-  height: 64px;
-  font-size: 18px;
-  margin-bottom: 4px;
+.teammate-row__col--center {
+  width: 220px;
 }
 
-.candidate-slot--lg .candidate-slot__name {
-  font-size: 19px;
+@media (max-width: 900px) {
+  .teammate-row {
+    justify-content: flex-start;
+  }
 }
 
-.candidate-slot--lg .candidate-slot__rating {
-  font-size: 12.5px;
+@media (max-width: 560px) {
+  .teammate-row__col,
+  .teammate-row__col--center {
+    width: min(76vw, 250px);
+  }
 }
 
-.candidate-slot--lg .candidate-slot__tagline {
-  font-size: 13px;
+/* ── Teammate card ───────────────────────────────────────────────── */
+.teammate-card {
+  position: relative;
+  width: 100%;
+  height: 270px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--bg-elevated);
+  text-align: left;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.candidate-slot--lg .candidate-slot__status {
-  font-size: 13px;
+.teammate-card--center {
+  height: 300px;
+  border-color: color-mix(in srgb, var(--hue-purple) 35%, var(--border-strong));
+  box-shadow: 0 0 30px color-mix(in srgb, var(--hue-purple) 22%, transparent);
 }
 
-.candidate-slot--lg.candidate-slot--pending,
-.candidate-slot--lg.candidate-slot--out {
-  padding: 34px 24px;
+.teammate-card:hover,
+.teammate-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--cta-vivid);
 }
 
-.candidate-slot--pending,
-.candidate-slot--out {
-  align-items: center;
+.teammate-card:hover .teammate-card__art img,
+.teammate-card:focus-visible .teammate-card__art img {
+  transform: scale(1.06);
+}
+
+.teammate-card:focus-visible {
+  outline: 2px solid var(--cta-vivid);
+  outline-offset: 2px;
+}
+
+.teammate-card.is-selected {
+  border-color: var(--cta-vivid);
+  box-shadow: 0 0 0 2px var(--cta-vivid), 0 0 26px color-mix(in srgb, var(--cta-vivid) 45%, transparent);
+}
+
+.teammate-card__art {
+  position: absolute;
+  inset: 0;
+}
+
+.teammate-card__art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.teammate-card__art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 35%, rgba(6, 8, 15, 0.75) 75%, rgba(6, 8, 15, 0.95) 100%);
+}
+
+.teammate-card__auto-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
   text-align: center;
-  padding: 24px 16px;
-  color: var(--text-faint);
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
+  background: color-mix(in srgb, var(--hue-purple) 55%, var(--bg));
+  color: #fff;
+  white-space: nowrap;
 }
 
-.candidate-slot--out {
-  opacity: 0.5;
+.teammate-card__rating {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(6, 8, 15, 0.65);
+  backdrop-filter: blur(4px);
 }
 
-.candidate-slot__avatar {
-  width: 40px;
-  height: 40px;
+.teammate-card__rating i {
+  color: var(--hue-gold);
+}
+
+.teammate-card__check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--cta-vivid);
+  color: var(--cta-vivid-ink);
   display: grid;
   place-items: center;
-  font-weight: 800;
-  font-size: 13px;
+  font-size: 11px;
 }
 
-.candidate-slot__avatar--pending {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-faint);
+/* The auto-select label is a full-width banner across the very top of the
+   center card — push the rating/check badges below it there so they never
+   compete for the same horizontal space. */
+.teammate-card--center .teammate-card__rating,
+.teammate-card--center .teammate-card__check {
+  top: 32px;
 }
 
-.candidate-slot__name {
-  font-size: 13px;
-  font-weight: 700;
+.teammate-card__body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
 }
 
-.candidate-slot__status {
-  font-size: 11.5px;
-  color: var(--text-faint);
-}
-
-.candidate-slot--accepted {
-  cursor: default;
-  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.candidate-slot--accepted:not(.is-static):hover {
-  border-color: var(--border-strong);
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-card);
-  cursor: pointer;
-}
-
-.candidate-slot--accepted.is-selected {
-  border-color: var(--cta-vivid);
-  box-shadow: 0 0 0 2px var(--cta-vivid), 0 0 24px color-mix(in srgb, var(--cta-vivid) 45%, transparent);
-}
-
-.candidate-slot__badge {
-  align-self: flex-start;
+.teammate-card__hint {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--cta-vivid);
 }
 
-.candidate-slot__badge--selected {
-  background: var(--cta-vivid);
-  color: var(--cta-vivid-ink);
-}
-
-.candidate-slot__rating {
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
-.candidate-slot__rating i {
-  color: var(--hue-gold);
-}
-
-.candidate-slot__tagline {
-  font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.candidate-slot__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
-.candidate-slot__meta i {
-  color: var(--accent);
-}
-
-.candidate-slot__langs {
+.teammate-card__flags {
   display: flex;
   gap: 4px;
   font-size: 13px;
 }
 
-.candidate-slot__rank {
+.teammate-card__name {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.teammate-card__status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border);
-  font-size: 11.5px;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.teammate-card__status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px 1px var(--success);
+}
+
+.teammate-card__rank {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--text-muted);
 }
 
-.candidate-slot__rank-icon {
-  width: 22px;
-  height: 22px;
+.teammate-card__rank img {
+  width: 16px;
+  height: 16px;
   object-fit: contain;
 }
 
-.btn--ghost.is-active {
-  background: var(--accent-soft);
+.teammate-card__select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 7px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.teammate-card.is-selected .teammate-card__select-btn {
+  background: var(--cta-vivid);
+  color: var(--cta-vivid-ink);
+}
+
+/* ── Searching placeholder card ──────────────────────────────────── */
+.searching-card {
+  width: 100%;
+  height: 270px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+  background: rgba(255, 255, 255, 0.015);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  padding: 16px;
+  animation: searchingPulse 2.6s ease-in-out infinite;
+}
+
+.searching-card--center {
+  height: 300px;
+}
+
+.searching-card__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--cta-vivid);
+  animation: matchingSpin 0.9s linear infinite;
+}
+
+.searching-card__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.searching-card__sub {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+@keyframes searchingPulse {
+  0%, 100% { border-color: var(--border-strong); }
+  50% { border-color: color-mix(in srgb, var(--cta-vivid) 30%, var(--border-strong)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .searching-card {
+    animation: none;
+  }
+}
+
+/* ── Details panel under each card ───────────────────────────────── */
+.teammate-details {
+  min-height: 92px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.teammate-details__label {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.teammate-details__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.teammate-details__list li {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.teammate-details__tagline {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.teammate-details__meta {
+  display: block;
+  margin-top: 8px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.teammate-details__meta i {
   color: var(--accent);
+  margin-right: 4px;
+}
+
+.teammate-details--skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.teammate-details__skeleton-line {
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes skeletonShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teammate-details__skeleton-line {
+    animation: none;
+  }
+}
+
+/* ── Sticky bottom confirmation bar ──────────────────────────────── */
+.selection-bar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: rgba(13, 17, 32, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-card);
+}
+
+.selection-bar__picked {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.selection-bar__empty {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.selection-bar__avatars {
+  display: flex;
+}
+
+.selection-bar__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--bg-elevated);
+  margin-left: -10px;
+}
+
+.selection-bar__avatar:first-child {
+  margin-left: 0;
+}
+
+.selection-bar__names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.selection-bar__name {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.selection-bar__hint {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.selection-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .selection-bar {
+    bottom: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selection-bar__actions {
+    justify-content: stretch;
+  }
+
+  .selection-bar__actions .btn {
+    flex: 1;
+  }
 }
 
 /* ── Client session screen (dashboard) ─────────────────────────── */

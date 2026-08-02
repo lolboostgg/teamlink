@@ -9,13 +9,44 @@ import { getTeammateById } from "@/lib/teammates";
 import { getBookingOptionDescription } from "@/lib/bookingOptions";
 import { gameIcon } from "@/lib/gameArt";
 import { playNotificationSound } from "@/lib/notificationSound";
-import { CandidateSlot } from "@/components/matchmaking/CandidateSlot";
+import { SelectionCountdown } from "@/components/matchmaking/SelectionCountdown";
+import { TeammateCard } from "@/components/matchmaking/TeammateCard";
+import { SearchingCard } from "@/components/matchmaking/SearchingCard";
+import { TeammateDetailsPanel } from "@/components/matchmaking/TeammateDetailsPanel";
+import { SelectionConfirmationBar } from "@/components/matchmaking/SelectionConfirmationBar";
 import { SessionScreen } from "@/components/matchmaking/SessionScreen";
 import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
 import { Modal } from "@/components/ui/Modal";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { PriceTag } from "@/components/currency/PriceTag";
 import type { DispatchCandidate } from "@/lib/matchmaking/types";
+
+type SlotPosition = "farLeft" | "nearLeft" | "center" | "nearRight" | "farRight";
+interface Slot {
+  position: SlotPosition;
+  candidate: DispatchCandidate | null;
+}
+
+// Exactly 5 fixed visual slots, filled center-out: the winner (first
+// accepted, or the customer's own pick order otherwise) takes the middle,
+// then alternates near/far left and right. Anything that isn't an accepted
+// candidate — pending, declined, timed out, or simply not dispatched to —
+// renders as a "searching" placeholder rather than an empty gap or a
+// visibly-declined card.
+function buildSlots(candidates: DispatchCandidate[], winner: DispatchCandidate | undefined): Slot[] {
+  const accepted = [...candidates]
+    .filter((c) => c.status === "accepted")
+    .sort((a, b) => (a.respondedAt ?? 0) - (b.respondedAt ?? 0));
+  const ordered = winner ? [winner, ...accepted.filter((c) => c.teammateId !== winner.teammateId)] : accepted;
+  const [center, s2, s3, s4, s5] = ordered;
+  return [
+    { position: "farLeft", candidate: s4 ?? null },
+    { position: "nearLeft", candidate: s2 ?? null },
+    { position: "center", candidate: center ?? null },
+    { position: "nearRight", candidate: s3 ?? null },
+    { position: "farRight", candidate: s5 ?? null },
+  ];
+}
 
 interface Props {
   orderId: string;
@@ -62,20 +93,6 @@ function CancelRequestModal({ open, onClose, onConfirm }: { open: boolean; onClo
   );
 }
 
-// Center slot = whoever accepts first (the auto-confirmed priority pick if
-// the customer doesn't act) with the rest split up to two per side. Only
-// candidates who actually accepted are shown here at all — declined/timed
-// out candidates never make it into the picker.
-function arrangeCandidates(candidates: DispatchCandidate[], winner: DispatchCandidate | undefined) {
-  const accepted = candidates.filter((c) => c.status === "accepted");
-  const center = winner ?? accepted[0] ?? null;
-  const rest = accepted.filter((c) => c !== center);
-  const left: DispatchCandidate[] = [];
-  const right: DispatchCandidate[] = [];
-  rest.forEach((c, i) => (i % 2 === 0 ? left : right).push(c));
-  return { center, left, right };
-}
-
 // Drives the customer-facing live screen end to end — a pure "searching"
 // beat (with vibe/preferences you can set while it runs), then once
 // candidates have actually answered, a "pick your teammate" reveal (single
@@ -92,6 +109,7 @@ export function MatchmakingScreen({ orderId }: Props) {
     selectionSecondsLeft,
     searchElapsedSeconds,
     dispatchWindowMs,
+    selectionWindowMs,
     confirmSelection,
     confirmMultiSelection,
     cancelOrder,
@@ -99,7 +117,6 @@ export function MatchmakingScreen({ orderId }: Props) {
   } = useDispatchOrder(orderId);
 
   const [prefsModalOpen, setPrefsModalOpen] = useState(false);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [selectedAnimIds, setSelectedAnimIds] = useState<string[]>([]);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
@@ -351,33 +368,43 @@ export function MatchmakingScreen({ orderId }: Props) {
   }
 
   const winner = firstAcceptedCandidate(order.candidates);
-  const { center, left, right } = arrangeCandidates(order.candidates, winner);
-  const confirmingTeammate = confirmingId ? getTeammateById(confirmingId) : null;
+  const slots = buildSlots(order.candidates, winner);
   const multiPick = order.teammates > 1;
+  const maxPicks = multiPick ? order.teammates : 1;
 
   function handlePick(teammateId: string) {
-    if (!multiPick) {
-      setConfirmingId(teammateId);
-      return;
-    }
     setPickedIds((prev) => {
       if (prev.includes(teammateId)) return prev.filter((id) => id !== teammateId);
-      if (prev.length >= order!.teammates) return prev;
+      if (!multiPick) return [teammateId];
+      if (prev.length >= maxPicks) return prev;
       return [...prev, teammateId];
     });
   }
 
-  function handleConfirmYes() {
-    if (!confirmingId) return;
-    confirmSelection(confirmingId);
-    setSelectedAnimIds([confirmingId]);
-    setConfirmingId(null);
+  function handleConfirm() {
+    if (pickedIds.length === 0) return;
+    if (multiPick) {
+      confirmMultiSelection(pickedIds);
+    } else {
+      confirmSelection(pickedIds[0]);
+    }
+    setSelectedAnimIds(pickedIds);
+    setPickedIds([]);
   }
 
-  function handleConfirmTeam() {
-    if (pickedIds.length === 0) return;
-    confirmMultiSelection(pickedIds);
-    setSelectedAnimIds(pickedIds);
+  function handleUseAutoSelect() {
+    if (!winner) return;
+    const accepted = [...order!.candidates]
+      .filter((c) => c.status === "accepted")
+      .sort((a, b) => (a.respondedAt ?? 0) - (b.respondedAt ?? 0));
+    const ordered = [winner, ...accepted.filter((c) => c.teammateId !== winner.teammateId)];
+    const ids = ordered.slice(0, maxPicks).map((c) => c.teammateId);
+    if (multiPick) {
+      confirmMultiSelection(ids);
+    } else {
+      confirmSelection(ids[0]);
+    }
+    setSelectedAnimIds(ids);
     setPickedIds([]);
   }
 
@@ -387,84 +414,62 @@ export function MatchmakingScreen({ orderId }: Props) {
     return idx === -1 ? undefined : idx + 1;
   }
 
-  function isPicked(teammateId: string): boolean {
-    return multiPick ? pickedIds.includes(teammateId) : order!.selectedTeammateId === teammateId;
-  }
+  const selectionWindowSeconds = Math.max(1, Math.ceil(selectionWindowMs / 1000));
+  const selectionElapsed = selectionWindowSeconds - selectionSecondsLeft;
+  const selectionProgressPct = Math.min(100, Math.max(0, (selectionElapsed / selectionWindowSeconds) * 100));
+  const countdownCaption = multiPick
+    ? `Pick up to ${order.teammates} teammates — auto-selecting in ${selectionSecondsLeft}s`
+    : `Auto-selecting in ${selectionSecondsLeft}s`;
+  const pickedTeammates = pickedIds.map((id) => getTeammateById(id)).filter((t) => t !== undefined);
 
   return (
-    <div className="matching-screen matching-screen--wide matching-screen--arena">
+    <div className="matching-screen matching-screen--full matching-screen--arena">
       <div className="matching-screen__head">
-        <h1 className="matching-screen__title matching-screen__title--glow">Pick your teammate</h1>
-        <p className="matching-screen__sub">
-          {order.gameName} · {order.option} · <PriceTag amountEUR={order.priceEUR} />
-        </p>
-        {multiPick ? (
-          <p className="matching-screen__countdown">
-            <i className="fa-regular fa-clock" aria-hidden="true" /> Pick up to {order.teammates} teammates —{" "}
-            {selectionSecondsLeft}s left
-          </p>
-        ) : (
-          <p className="matching-screen__countdown">
-            <i className="fa-regular fa-clock" aria-hidden="true" /> Auto-confirming the first acceptor in{" "}
-            {selectionSecondsLeft}s
-          </p>
-        )}
+        <h1 className="matching-screen__title matching-screen__title--glow">Select your teammate</h1>
+        <p className="matching-screen__sub">These teammates want to play with you</p>
+        <SelectionCountdown
+          secondsLeft={selectionSecondsLeft}
+          progressPct={selectionProgressPct}
+          caption={countdownCaption}
+        />
       </div>
 
-      <div className="candidate-stage">
-        <div className="candidate-stage__side candidate-stage__side--left">
-          {left.map((c) => (
-            <CandidateSlot
-              key={c.teammateId}
-              candidate={c}
-              isFirstAccepted={false}
-              isSelected={isPicked(c.teammateId)}
-              pickRank={pickRankFor(c.teammateId)}
-              selectable
-              onSelect={() => handlePick(c.teammateId)}
-            />
-          ))}
-        </div>
-
-        {center && (
-          <div className="candidate-stage__center">
-            <CandidateSlot
-              candidate={center}
-              size="lg"
-              isFirstAccepted={winner?.teammateId === center.teammateId}
-              isSelected={isPicked(center.teammateId)}
-              pickRank={pickRankFor(center.teammateId)}
-              selectable
-              onSelect={() => handlePick(center.teammateId)}
-            />
-          </div>
-        )}
-
-        <div className="candidate-stage__side candidate-stage__side--right">
-          {right.map((c) => (
-            <CandidateSlot
-              key={c.teammateId}
-              candidate={c}
-              isFirstAccepted={false}
-              isSelected={isPicked(c.teammateId)}
-              pickRank={pickRankFor(c.teammateId)}
-              selectable
-              onSelect={() => handlePick(c.teammateId)}
-            />
-          ))}
-        </div>
+      <div className="teammate-row" role="list" aria-label="Candidate teammates">
+        {slots.map((slot) => {
+          const teammate = slot.candidate ? getTeammateById(slot.candidate.teammateId) : undefined;
+          const isCenter = slot.position === "center";
+          return (
+            <div
+              key={slot.position}
+              className={`teammate-row__col${isCenter ? " teammate-row__col--center" : ""}`}
+              role="listitem"
+            >
+              {slot.candidate && teammate ? (
+                <TeammateCard
+                  teammate={teammate}
+                  isCenter={isCenter}
+                  isFirstAccepted={winner?.teammateId === slot.candidate.teammateId}
+                  isSelected={pickedIds.includes(slot.candidate.teammateId)}
+                  pickRank={pickRankFor(slot.candidate.teammateId)}
+                  onSelect={() => handlePick(slot.candidate!.teammateId)}
+                />
+              ) : (
+                <SearchingCard isCenter={isCenter} />
+              )}
+              <TeammateDetailsPanel teammate={teammate ?? null} />
+            </div>
+          );
+        })}
       </div>
 
-      {multiPick && (
-        <button
-          type="button"
-          className="btn btn--vivid matching-screen__confirm-team"
-          onClick={handleConfirmTeam}
-          disabled={pickedIds.length === 0}
-        >
-          Confirm team ({pickedIds.length}/{order.teammates})
-        </button>
-      )}
+      <SelectionConfirmationBar
+        selected={pickedTeammates}
+        multiPick={multiPick}
+        teammatesNeeded={order.teammates}
+        hasWinner={!!winner}
+        onConfirm={handleConfirm}
+        onUseAutoSelect={handleUseAutoSelect}
+      />
 
       <button
         type="button"
@@ -479,30 +484,6 @@ export function MatchmakingScreen({ orderId }: Props) {
         onClose={() => setCancelConfirmOpen(false)}
         onConfirm={handleConfirmCancelRequest}
       />
-
-      <Modal open={!!confirmingId} onClose={() => setConfirmingId(null)} labelledBy="select-teammate-title">
-        <div className="select-confirm">
-          {confirmingId && (
-            <span className="select-confirm__avatar">
-              <AvatarIcon seed={confirmingId} />
-            </span>
-          )}
-          <h2 id="select-teammate-title" className="select-confirm__title">
-            Select teammate
-          </h2>
-          <p className="select-confirm__sub">
-            You want to select <strong>{confirmingTeammate?.name ?? "this teammate"}</strong> to be your teammate?
-          </p>
-          <div className="select-confirm__actions">
-            <button type="button" className="btn btn--ghost btn--block" onClick={() => setConfirmingId(null)}>
-              No
-            </button>
-            <button type="button" className="btn btn--vivid btn--block" onClick={handleConfirmYes}>
-              Yes
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

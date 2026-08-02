@@ -10,6 +10,7 @@ import {
   subscribeToDispatch,
   updatePreferences,
   DISPATCH_WINDOW_MS,
+  SELECTION_WINDOW_MS,
 } from "@/lib/matchmaking/store";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 
@@ -63,6 +64,7 @@ export function useDispatchOrder(orderId: string | null) {
     sessionElapsedSeconds,
     searchElapsedSeconds,
     dispatchWindowMs: DISPATCH_WINDOW_MS,
+    selectionWindowMs: SELECTION_WINDOW_MS,
     confirmSelection: (teammateId: string) => orderId && setOrder(confirmSelection(orderId, teammateId)),
     confirmMultiSelection: (teammateIds: string[]) => orderId && setOrder(confirmMultiSelection(orderId, teammateIds)),
     cancelOrder: () => orderId && setOrder(cancelOrder(orderId)),
