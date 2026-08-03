@@ -38,6 +38,17 @@
      the brief asked for (no lime/green/orange CTA). */
   --cta-vivid: var(--hue-cyan);
   --cta-vivid-ink: var(--hue-cyan-ink);
+  /* Dashboard surfaces. The marketing side is atmospheric — starfield,
+     ambient glow, glass. The dashboard is a workspace: flat, near-black,
+     generous radii, one accent, no blur. These tokens keep that split
+     explicit instead of every panel re-deciding it. */
+  --dash-bg: #0a0c14;
+  --dash-surface: #12151f;
+  --dash-surface-2: #171b27;
+  --dash-line: rgba(255, 255, 255, 0.06);
+  --dash-line-strong: rgba(255, 255, 255, 0.11);
+  --dash-radius: 16px;
+  --dash-radius-sm: 11px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -3058,32 +3069,27 @@ ul {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: radial-gradient(80% 140% at 0% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 160px),
-    rgba(13, 17, 32, 0.76);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
+  gap: 18px;
+  padding: 22px;
+  margin-bottom: 18px;
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface);
 }
 
 .account-header__name {
-  font-family: var(--font-heading);
-  font-weight: 400;
-  letter-spacing: 0.015em;
-  text-transform: uppercase;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .account-header__avatar img {
-  width: 84px;
-  height: 84px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--border-strong);
-  background: var(--bg-elevated-2);
+  border: 1px solid var(--dash-line-strong);
+  background: var(--dash-surface-2);
 }
 
 .account-header__name {
@@ -3144,8 +3150,8 @@ ul {
   gap: 7px;
   padding: 4px 11px 4px 4px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface-2);
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -3170,17 +3176,15 @@ ul {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)), rgba(13, 17, 32, 0.7);
-  backdrop-filter: blur(10px);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  padding: 16px 18px;
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface);
+  transition: border-color 0.16s ease;
 }
 
 .account-stat:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-strong);
+  border-color: var(--dash-line-strong);
 }
 
 .account-stat__icon {
@@ -3188,17 +3192,17 @@ ul {
   place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-soft);
-  color: color-mix(in srgb, var(--accent) 55%, #fff);
+  flex-shrink: 0;
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
+  color: color-mix(in srgb, var(--accent) 50%, #fff);
   font-size: 15px;
 }
 
 .account-stat__value {
-  font-family: var(--font-heading);
-  font-size: 23px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
@@ -3225,27 +3229,30 @@ ul {
   align-items: center;
   gap: 12px;
   padding: 13px 15px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)), rgba(13, 17, 32, 0.7);
-  backdrop-filter: blur(10px);
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface);
   color: var(--text-muted);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
 
 .account-section-card:hover {
-  border-color: var(--border-strong);
+  border-color: var(--dash-line-strong);
   color: var(--text);
 }
 
 .account-section-card.is-active {
-  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent),
-    rgba(13, 17, 32, 0.8);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--dash-surface-2);
   color: var(--text);
+}
+
+.account-section-card.is-active .account-section-card__icon {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, #fff);
 }
 
 .account-section-card__icon {
@@ -3254,9 +3261,10 @@ ul {
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-  color: color-mix(in srgb, var(--accent) 55%, #fff);
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
+  color: var(--text-faint);
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
 .account-section-card strong {
@@ -3291,8 +3299,10 @@ ul {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 11px 14px;
+  margin-bottom: 6px;
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
   font-size: 13px;
 }
 
@@ -3319,18 +3329,15 @@ ul {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 20px 22px;
-  margin-bottom: 24px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)), rgba(13, 17, 32, 0.72);
-  backdrop-filter: blur(12px);
+  padding: 18px 22px;
+  margin-bottom: 18px;
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface);
 }
 
 .online-toggle.is-online {
-  border-color: color-mix(in srgb, var(--success) 50%, transparent);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--success) 10%, transparent), transparent),
-    rgba(13, 17, 32, 0.72);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
 }
 
 .online-toggle__title {
@@ -3392,10 +3399,9 @@ ul {
   max-height: 90vh;
   overflow-y: auto;
   padding: 26px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-strong);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 180px),
-    var(--bg-elevated);
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line-strong);
+  background: var(--dash-surface);
   box-shadow: var(--shadow-lg);
   animation: dispatchPop 0.2s ease-out;
 }
@@ -3437,11 +3443,9 @@ ul {
 }
 
 .dispatch-modal__title {
-  font-family: var(--font-heading);
-  font-size: 26px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .dispatch-modal__lead {
@@ -3466,8 +3470,8 @@ ul {
   flex-shrink: 0;
   border-radius: 50%;
   background: conic-gradient(var(--accent) var(--ring-pct, 360deg), rgba(255, 255, 255, 0.08) 0);
-  font-family: var(--font-heading);
-  font-size: 20px;
+  font-size: 19px;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -3476,7 +3480,7 @@ ul {
   position: absolute;
   inset: 5px;
   border-radius: 50%;
-  background: var(--bg-elevated);
+  background: var(--dash-surface);
 }
 
 .dispatch-ring span {
@@ -3669,10 +3673,9 @@ ul {
 }
 
 .order-room__prefs li {
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  padding: 11px 13px;
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
   font-size: 13px;
   color: var(--text);
 }
@@ -3695,9 +3698,9 @@ ul {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 13px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  padding: 12px 14px;
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
   font-size: 13px;
   color: var(--text-faint);
 }
@@ -3722,10 +3725,10 @@ ul {
 }
 
 .kyc-doc {
-  padding: 14px;
-  border-radius: var(--radius-md);
-  border: 1px dashed var(--border-strong);
-  background: rgba(255, 255, 255, 0.02);
+  padding: 15px;
+  border-radius: var(--dash-radius);
+  border: 1px dashed var(--dash-line-strong);
+  background: var(--dash-surface-2);
 }
 
 .kyc-doc__head {
@@ -3859,9 +3862,9 @@ ul {
 
 /* One block per game the teammate is listed for — see lib/gameProfiles.ts. */
 .game-profile-block {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--dash-line);
+  border-radius: var(--dash-radius);
+  background: var(--dash-surface-2);
   padding: 16px 16px 6px;
 }
 
@@ -3957,9 +3960,9 @@ ul {
   list-style: none;
   margin: 0;
   padding: 6px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong);
-  background: var(--bg-elevated-2);
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line-strong);
+  background: var(--dash-surface-2);
   box-shadow: var(--shadow-lg);
 }
 
@@ -7542,34 +7545,22 @@ ul {
 /* ══════════════════════════════════════════════════════════════════
    Dashboard shell
    ══════════════════════════════════════════════════════════════════ */
+/* Opaque workspace background — the starfield and ambient glow stay on the
+   marketing side; behind data they only add noise. */
 .dashboard-shell {
   position: relative;
   display: flex;
   min-height: 100vh;
-}
-
-/* Same ambient wash the hero uses, so the dashboard sits in the same room
-   as the marketing side instead of on a flat panel-grey background. */
-.dashboard-shell::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(70% 50% at 18% 0%, color-mix(in srgb, var(--accent) 13%, transparent) 0%, transparent 70%),
-    radial-gradient(60% 45% at 100% 8%, color-mix(in srgb, var(--hue-cyan) 8%, transparent) 0%, transparent 65%);
+  background: var(--dash-bg);
 }
 
 .dashboard-sidebar {
-  flex: 0 0 246px;
+  flex: 0 0 244px;
   display: flex;
   flex-direction: column;
-  padding: 22px 14px;
-  border-right: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 240px),
-    rgba(13, 17, 32, 0.72);
-  backdrop-filter: blur(14px);
+  padding: 20px 12px;
+  border-right: 1px solid var(--dash-line);
+  background: var(--dash-surface);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -7588,38 +7579,27 @@ ul {
 }
 
 .dashboard-sidebar__nav-link {
-  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 13px;
-  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  border-radius: var(--dash-radius-sm);
   font-size: 13.5px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.14s ease, color 0.14s ease;
 }
 
 .dashboard-sidebar__nav-link:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
 }
 
-/* Accent bar on the active item — the same marker the marketing nav uses. */
+/* Filled pill for the current page — no bars, no gradient. */
 .dashboard-sidebar__nav-link.is-active {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent 85%);
+  background: var(--dash-surface-2);
   color: var(--text);
-}
-
-.dashboard-sidebar__nav-link.is-active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--accent);
+  font-weight: 600;
 }
 
 .dashboard-sidebar__nav-link.is-active i {
@@ -7681,10 +7661,9 @@ ul {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 28px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(6, 8, 15, 0.6);
-  backdrop-filter: blur(10px);
+  padding: 16px 26px;
+  border-bottom: 1px solid var(--dash-line);
+  background: var(--dash-bg);
   position: sticky;
   top: 0;
   z-index: 40;
@@ -7701,10 +7680,9 @@ ul {
 }
 
 .dashboard-topbar__title {
-  font-family: var(--font-heading);
-  font-size: 24px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .dashboard-topbar__actions {
@@ -8000,44 +7978,70 @@ ul {
   margin-bottom: 32px;
 }
 
+/* Icon left, figures right — reads as one line of information instead of a
+   stacked poster, which is what lets four of them sit calmly side by side. */
 .stat-card {
-  padding: 20px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  border-top: 2px solid color-mix(in srgb, var(--item-color, var(--accent)) 55%, transparent);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-card);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "icon value"
+    "icon label";
+  column-gap: 14px;
+  row-gap: 1px;
+  align-items: center;
+  padding: 18px;
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface);
+  transition: border-color 0.16s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-lg);
+  border-color: var(--dash-line-strong);
 }
 
 .stat-card__icon {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--item-color, var(--accent)) 16%, transparent);
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--dash-radius-sm);
+  background: color-mix(in srgb, var(--item-color, var(--accent)) 14%, transparent);
   color: var(--item-color, var(--accent));
   display: grid;
   place-items: center;
-  font-size: 14px;
-  margin-bottom: 14px;
+  font-size: 15px;
 }
 
 .stat-card__label {
-  font-size: 12px;
+  order: 2;
+  font-size: 12.5px;
   color: var(--text-faint);
-  margin-bottom: 4px;
 }
 
 .stat-card__value {
-  font-family: var(--font-heading);
-  font-size: 28px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
+  order: 1;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.stat-card__icon {
+  grid-area: icon;
+}
+
+.stat-card__value {
+  grid-area: value;
+  align-self: end;
+}
+
+.stat-card__label {
+  grid-area: label;
+  align-self: start;
+}
+
+.stat-card__delta {
+  grid-column: 2;
 }
 
 .stat-card__delta {
@@ -8070,29 +8074,16 @@ ul {
 }
 
 /* ── Dashboard panels/tables ─────────────────────────────────────── */
-/* Glass panel, matching the marketing cards: translucent dark base, a
-   top-light gradient and a hairline highlight along the top edge. */
+/* Flat card. One surface colour, one hairline, a generous radius — the
+   contrast comes from the content, not from the container. */
 .dashboard-panel {
   position: relative;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 140px),
-    rgba(13, 17, 32, 0.72);
-  backdrop-filter: blur(12px);
-  padding: 24px;
-  margin-bottom: 24px;
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface);
+  padding: 22px;
+  margin-bottom: 18px;
   scroll-margin-top: 90px;
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-
-.dashboard-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
-  pointer-events: none;
 }
 
 .dashboard-panel__head {
@@ -8100,22 +8091,21 @@ ul {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--dash-line);
 }
 
-/* Display face + uppercase, same as the topbar title and the landing
-   section headings — the dashboard was the only place using body type here. */
+/* Body face, not the display caps — a workspace reads better in sentence
+   case, and the caps fought every value below them for attention. */
 .dashboard-panel__title {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-family: var(--font-heading);
-  font-size: 19px;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text);
 }
 
 .dashboard-panel__sub {
@@ -8143,41 +8133,59 @@ ul {
   font-size: 13.5px;
 }
 
+/* Rows as separated cards rather than ruled lines — the same list shape the
+   rest of the dashboard uses, so a table doesn't read as a foreign object. */
 .dashboard-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 6px;
   font-size: 13px;
+}
+
+.dashboard-table tbody tr {
+  background: var(--dash-surface-2);
+}
+
+.dashboard-table tbody td {
+  border-top: 1px solid var(--dash-line);
+  border-bottom: 1px solid var(--dash-line);
+}
+
+.dashboard-table tbody td:first-child {
+  border-left: 1px solid var(--dash-line);
+  border-radius: var(--dash-radius-sm) 0 0 var(--dash-radius-sm);
+  padding-left: 14px;
+}
+
+.dashboard-table tbody td:last-child {
+  border-right: 1px solid var(--dash-line);
+  border-radius: 0 var(--dash-radius-sm) var(--dash-radius-sm) 0;
+  padding-right: 14px;
 }
 
 .dashboard-table th {
   text-align: left;
   font-size: 10.5px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--text-faint);
-  padding: 0 10px 12px;
-  border-bottom: 1px solid var(--border-strong);
+  padding: 0 10px 6px;
+}
+
+.dashboard-table th:first-child {
+  padding-left: 14px;
 }
 
 .dashboard-table td {
-  padding: 13px 10px;
-  border-bottom: 1px solid var(--border);
+  padding: 14px 10px;
   color: var(--text-muted);
   vertical-align: middle;
-}
-
-/* Row highlight makes long lists trackable across the full width. */
-.dashboard-table tbody tr {
   transition: background 0.12s ease;
 }
 
-.dashboard-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.dashboard-table tr:last-child td {
-  border-bottom: none;
+.dashboard-table tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 /* Action cells: keep buttons on one line, right-aligned, evenly spaced. */
