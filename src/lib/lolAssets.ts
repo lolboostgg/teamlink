@@ -1,7 +1,14 @@
-// Real lolboost.gg League of Legends icon art (public/lol/), curated subset
-// with clean filenames. Used by RankBadge/ChampionIconRow for teammate cards
-// and booking options.
-export type LolRankTier = "bronze" | "silver" | "gold" | "platinum" | "diamond" | "master" | "challenger";
+// Thin League-of-Legends view over the per-game registry in gameProfiles.ts,
+// kept because the matchmaking surfaces (teammate cards, details panel,
+// session screen) only ever show League art. Everything here is derived —
+// edit the League entry in gameProfiles.ts, not this file.
+import { GAME_PROFILES, championIconUrl, type ProfileOption } from "@/lib/gameProfiles";
+
+const LOL = GAME_PROFILES["league-of-legends"];
+
+export type LolRankTier = string;
+export type ChampionName = string;
+export type LolLane = string;
 
 export interface RankTierMeta {
   tier: LolRankTier;
@@ -9,15 +16,11 @@ export interface RankTierMeta {
   icon: string;
 }
 
-export const RANK_TIERS: RankTierMeta[] = [
-  { tier: "bronze", label: "Bronze", icon: "/lol/ranks/bronze-i.png" },
-  { tier: "silver", label: "Silver", icon: "/lol/ranks/silver-iii.png" },
-  { tier: "gold", label: "Gold", icon: "/lol/ranks/gold-ii.png" },
-  { tier: "platinum", label: "Platinum", icon: "/lol/ranks/platinum-iv.png" },
-  { tier: "diamond", label: "Diamond", icon: "/lol/ranks/diamond-i.png" },
-  { tier: "master", label: "Master", icon: "/lol/ranks/master.png" },
-  { tier: "challenger", label: "Challenger", icon: "/lol/ranks/challenger.png" },
-];
+export const RANK_TIERS: RankTierMeta[] = (LOL.ranks?.options ?? []).map((r: ProfileOption) => ({
+  tier: r.value,
+  label: r.label,
+  icon: r.icon ?? "",
+}));
 
 const RANK_BY_TIER = new Map(RANK_TIERS.map((r) => [r.tier, r]));
 
@@ -25,12 +28,10 @@ export function getRankMeta(tier: LolRankTier): RankTierMeta {
   return RANK_BY_TIER.get(tier) ?? RANK_TIERS[0];
 }
 
-export const CHAMPION_NAMES = ["Ahri", "Ashe", "Ezreal", "Garen", "Katarina", "Lux", "Teemo", "Vayne"] as const;
-export type ChampionName = (typeof CHAMPION_NAMES)[number];
+export const CHAMPION_NAMES: string[] = (LOL.pool?.options ?? []).map((c) => c.value);
 
 export function championIcon(name: ChampionName): string {
-  return `/lol/champions/${name}.png`;
+  return championIconUrl(name);
 }
 
-export const LOL_LANES = ["Top", "Jungle", "Mid", "ADC", "Support"] as const;
-export type LolLane = (typeof LOL_LANES)[number];
+export const LOL_LANES: string[] = (LOL.roles?.options ?? []).map((r) => r.label);

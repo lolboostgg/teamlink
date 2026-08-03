@@ -45,6 +45,12 @@ yarn-error.log*
 # kept on disk for future curation but never committed.
 /assets
 
+# Full copy of the live lolboost.gg PHP site, dropped in as reference for
+# porting its game/rank/champion logic (see lib/gameProfiles.ts). Curated
+# files get copied into public/ and src/lib/data/ — the dump itself never
+# gets committed.
+/live lolboost.gg/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

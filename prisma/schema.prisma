@@ -79,6 +79,11 @@ model Teammate {
   sessionsCount  Int      @default(0)
   gameSlugs      Json
   languages      Json
+  // Per-game profile map: { [gameSlug]: { rank, roles[], pool[] } } — see
+  // lib/gameProfiles.ts. The lol* columns below are the legacy League-only
+  // shape, still written (mirrored from gameProfiles) so the matchmaking
+  // cards and any older rows keep rendering.
+  gameProfiles   Json?
   lolRank        String?
   lolChampions   Json?
   lolLanes       Json?

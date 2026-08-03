@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { sanitizeTeammateProfileInput, type TeammateProfileInput } from "@/lib/teammateProfile";
+import { sanitizeTeammateProfileInput, type TeammateProfileClientInput } from "@/lib/teammateProfile";
 import { GAMES } from "@/lib/games";
 
 async function requireAdmin() {
@@ -17,7 +17,7 @@ const KNOWN_GAME_SLUGS = new Set(GAMES.map((g) => g.slug));
 
 export async function updateTeammateProfile(
   teammateId: string,
-  input: Partial<TeammateProfileInput> & { gameSlugs: string[]; name: string },
+  input: Partial<TeammateProfileClientInput> & { gameSlugs: string[]; name: string },
 ) {
   await requireAdmin();
   const name = input.name.trim();
@@ -35,6 +35,7 @@ export async function updateTeammateProfile(
       avatarUrl: clean.avatarUrl || null,
       languages: clean.languages,
       gameSlugs,
+      gameProfiles: clean.gameProfiles,
       lolRank: clean.lolRank,
       lolChampions: clean.lolChampions,
       lolLanes: clean.lolLanes,

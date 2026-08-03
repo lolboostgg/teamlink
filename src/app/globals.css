@@ -2844,6 +2844,7 @@ ul {
   background: rgba(255, 255, 255, 0.03);
   font-size: 12.5px;
   line-height: 1;
+  white-space: nowrap;
   color: var(--text-muted);
   cursor: pointer;
   user-select: none;
@@ -2994,6 +2995,206 @@ ul {
   padding-left: 40px;
 }
 
+/* Long option lists (League's champion roster) scroll instead of pushing
+   the rest of the form off screen. */
+.chip-check-group--scroll {
+  max-height: 210px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.chip-check-group__empty {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  padding: 6px 2px;
+}
+
+.form-row__count {
+  float: right;
+  color: var(--cta-vivid);
+  font-weight: 600;
+}
+
+.form-row__hint {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+.pill-search {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.pill-search i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.pill-search input {
+  width: 100%;
+  padding: 9px 12px 9px 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.pill-search input:focus {
+  outline: none;
+  border-color: var(--cta-vivid);
+}
+
+/* One block per game the teammate is listed for — see lib/gameProfiles.ts. */
+.game-profile-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 16px 16px 6px;
+  margin: 18px 0;
+}
+
+.game-profile-block__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.game-profile-block__legend img {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+/* Custom listbox — native selects can't show per-option art. */
+.icon-select {
+  position: relative;
+}
+
+.icon-select__trigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.icon-select__trigger:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.icon-select.is-open .icon-select__trigger {
+  border-color: var(--cta-vivid);
+}
+
+.icon-select__placeholder {
+  color: var(--text-faint);
+}
+
+.icon-select__chevron {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+  transition: transform 0.15s ease;
+}
+
+.icon-select.is-open .icon-select__chevron {
+  transform: rotate(180deg);
+}
+
+.icon-select__icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.icon-select__glyph {
+  width: 22px;
+  text-align: center;
+  color: var(--cta-vivid);
+}
+
+.icon-select__list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated-2);
+  box-shadow: var(--shadow-lg);
+}
+
+.icon-select__option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.icon-select__option.is-active {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+.icon-select__option.is-selected {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.icon-select__check {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--cta-vivid);
+}
+
 .avatar-upload {
   display: flex;
   align-items: center;
@@ -3073,7 +3274,7 @@ ul {
    dialogs — this form has far more content, so widen just this instance
    rather than the shared modal shell every other dialog also uses. */
 .modal-panel:has(.teammate-profile-modal) {
-  max-width: 640px;
+  max-width: 720px;
 }
 
 .client-profile-form__divider {

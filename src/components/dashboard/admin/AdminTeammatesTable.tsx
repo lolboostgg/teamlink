@@ -6,7 +6,7 @@ import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components
 import { GAMES } from "@/lib/games";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
 import type { LanguageCode } from "@/lib/i18n";
-import type { LolRankTier, ChampionName, LolLane } from "@/lib/lolAssets";
+import type { GameProfileMap } from "@/lib/gameProfiles";
 
 export interface AdminTeammateRow {
   id: string;
@@ -17,9 +17,7 @@ export interface AdminTeammateRow {
   avatarUrl: string | null;
   languages: string[];
   gameSlugs: string[];
-  lolRank: string | null;
-  lolChampions: string[];
-  lolLanes: string[];
+  gameProfiles: GameProfileMap;
   available: boolean;
 }
 
@@ -86,9 +84,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
                 avatarUrl: editing.avatarUrl ?? "",
                 languages: editing.languages as LanguageCode[],
                 gameSlugs: editing.gameSlugs,
-                lolRank: editing.lolRank as LolRankTier | null,
-                lolChampions: editing.lolChampions as ChampionName[],
-                lolLanes: editing.lolLanes as LolLane[],
+                gameProfiles: editing.gameProfiles,
               }}
               onCancel={() => setEditingId(null)}
               onSave={async (value: TeammateProfileFormValue) => {

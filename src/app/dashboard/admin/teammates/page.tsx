@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAllTeammates } from "@/lib/admin/teammates";
 import { AdminTeammatesTable, type AdminTeammateRow } from "@/components/dashboard/admin/AdminTeammatesTable";
+import { readGameProfiles } from "@/lib/teammateProfile";
 
 export const metadata: Metadata = { title: "Teammates" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
@@ -17,9 +18,7 @@ export default async function AdminTeammatesPage() {
     avatarUrl: t.avatarUrl,
     languages: (t.languages as string[] | null) ?? [],
     gameSlugs: (t.gameSlugs as string[] | null) ?? [],
-    lolRank: (t.lolRank as string | null) ?? null,
-    lolChampions: (t.lolChampions as string[] | null) ?? [],
-    lolLanes: (t.lolLanes as string[] | null) ?? [],
+    gameProfiles: readGameProfiles(t),
     available: t.available,
   }));
 

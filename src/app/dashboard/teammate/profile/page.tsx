@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { TeammateProfileEditor } from "@/components/dashboard/teammate/TeammateProfileEditor";
 import type { LanguageCode } from "@/lib/i18n";
-import type { LolRankTier, ChampionName, LolLane } from "@/lib/lolAssets";
+import { readGameProfiles } from "@/lib/teammateProfile";
 
 export const metadata: Metadata = { title: "My Game Profile" };
 // Direct top-level Prisma query in a Server Component — same build-time-
@@ -48,9 +48,7 @@ export default async function TeammateProfilePage() {
           avatarUrl: teammate.avatarUrl ?? "",
           languages: (teammate.languages as LanguageCode[] | null) ?? [],
           gameSlugs: (teammate.gameSlugs as string[] | null) ?? [],
-          lolRank: (teammate.lolRank as LolRankTier | null) ?? null,
-          lolChampions: (teammate.lolChampions as ChampionName[] | null) ?? [],
-          lolLanes: (teammate.lolLanes as LolLane[] | null) ?? [],
+          gameProfiles: readGameProfiles(teammate),
         }}
       />
     </div>

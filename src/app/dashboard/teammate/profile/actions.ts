@@ -3,13 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { sanitizeTeammateProfileInput, type TeammateProfileInput } from "@/lib/teammateProfile";
+import { sanitizeTeammateProfileInput, type TeammateProfileClientInput } from "@/lib/teammateProfile";
 
 // Teammates edit their own game profile — not the admin-only gameSlugs
 // (which games they're listed for) or name, which stays admin territory
 // per the request ("der admin kann dann die games festlegen für die
 // teammates").
-export async function updateOwnProfile(input: TeammateProfileInput) {
+export async function updateOwnProfile(input: TeammateProfileClientInput) {
   const session = await auth();
   if (session?.user?.role !== "TEAMMATE") {
     throw new Error("Forbidden — teammates only.");
@@ -29,6 +29,7 @@ export async function updateOwnProfile(input: TeammateProfileInput) {
         timezone: clean.timezone || null,
         avatarUrl: clean.avatarUrl || null,
         languages: clean.languages,
+        gameProfiles: clean.gameProfiles,
         lolRank: clean.lolRank,
         lolChampions: clean.lolChampions,
         lolLanes: clean.lolLanes,

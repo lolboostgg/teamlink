@@ -1,15 +1,24 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n";
 import { GAMES } from "@/lib/games";
-import { RANK_TIERS, CHAMPION_NAMES, LOL_LANES, championIcon, getRankMeta, type LolRankTier, type ChampionName, type LolLane } from "@/lib/lolAssets";
 import { gameIcon } from "@/lib/gameArt";
+import {
+  getGameProfileConfig,
+  EMPTY_GAME_PROFILE,
+  type GameProfileEntry,
+  type GameProfileMap,
+  type GameProfileSection,
+  type ProfileOption,
+} from "@/lib/gameProfiles";
 import { FlagIcon } from "@/components/ui/FlagIcon";
+import { IconSelect } from "@/components/ui/IconSelect";
 import { AvatarUpload } from "@/components/ui/AvatarUpload";
 import type { TeammateProfileInput } from "@/lib/teammateProfile";
 
-export interface TeammateProfileFormValue extends TeammateProfileInput {
+export interface TeammateProfileFormValue
+  extends Omit<TeammateProfileInput, "lolRank" | "lolChampions" | "lolLanes"> {
   name: string;
   gameSlugs: string[];
 }
@@ -25,18 +34,92 @@ interface Props {
   onCancel?: () => void;
 }
 
-// No lane art ships in public/lol — Font Awesome marks read well at chip size
-// and match the icon language used everywhere else in the dashboard.
-const LANE_ICONS: Record<LolLane, string> = {
-  Top: "fa-solid fa-chess-rook",
-  Jungle: "fa-solid fa-tree",
-  Mid: "fa-solid fa-wand-sparkles",
-  ADC: "fa-solid fa-crosshairs",
-  Support: "fa-solid fa-shield-halved",
-};
-
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+}
+
+// Above this many options a flat pill wall stops being scannable, so the
+// section gets a search box and a scroll container (League's ~170 champions).
+const SEARCHABLE_FROM = 24;
+
+function OptionPill({
+  option,
+  checked,
+  onToggle,
+  avatar,
+}: {
+  option: ProfileOption;
+  checked: boolean;
+  onToggle: () => void;
+  avatar?: boolean;
+}) {
+  return (
+    <label className={`chip-check${avatar ? " chip-check--avatar" : ""}`}>
+      <input type="checkbox" checked={checked} onChange={onToggle} />
+      {option.icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={option.icon} alt="" className="chip-check__icon" loading="lazy" />
+      ) : option.glyph ? (
+        <i className={`${option.glyph} chip-check__glyph`} aria-hidden="true" />
+      ) : null}
+      <span>{option.label}</span>
+    </label>
+  );
+}
+
+function PillSection({
+  section,
+  selected,
+  onChange,
+}: {
+  section: GameProfileSection;
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const searchable = section.options.length > SEARCHABLE_FROM;
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const matches = q ? section.options.filter((o) => o.label.toLowerCase().includes(q)) : section.options;
+    if (!searchable) return matches;
+    // Selected entries float to the top so a picked champion stays visible
+    // without scrolling back through the roster.
+    const chosen = new Set(selected);
+    return [...matches].sort((a, b) => Number(chosen.has(b.value)) - Number(chosen.has(a.value)));
+  }, [query, searchable, section.options, selected]);
+
+  return (
+    <div className="form-row">
+      <label>
+        {section.label}
+        {searchable && <span className="form-row__count">{selected.length} selected</span>}
+      </label>
+      {searchable && (
+        <div className="pill-search">
+          <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+          <input
+            type="search"
+            value={query}
+            placeholder={`Search ${section.label.toLowerCase()}…`}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      )}
+      <div className={`chip-check-group${searchable ? " chip-check-group--scroll" : ""}`}>
+        {visible.map((o) => (
+          <OptionPill
+            key={o.value}
+            option={o}
+            avatar={Boolean(o.icon)}
+            checked={selected.includes(o.value)}
+            onToggle={() => onChange(toggle(selected, o.value))}
+          />
+        ))}
+        {visible.length === 0 && <p className="chip-check-group__empty">No match for “{query}”.</p>}
+      </div>
+    </div>
+  );
 }
 
 export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel }: Props) {
@@ -46,18 +129,31 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
   const [avatarUrl, setAvatarUrl] = useState(initial.avatarUrl);
   const [languages, setLanguages] = useState<LanguageCode[]>(initial.languages);
   const [gameSlugs, setGameSlugs] = useState<string[]>(initial.gameSlugs);
-  const [lolRank, setLolRank] = useState<LolRankTier | null>(initial.lolRank);
-  const [lolChampions, setLolChampions] = useState<ChampionName[]>(initial.lolChampions);
-  const [lolLanes, setLolLanes] = useState<LolLane[]>(initial.lolLanes);
+  const [gameProfiles, setGameProfiles] = useState<GameProfileMap>(initial.gameProfiles);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // One editable block per game the teammate is actually listed for — each
+  // game brings its own ranks/roles/pool from the registry.
+  const sections = gameSlugs
+    .map((slug) => ({ game: GAMES.find((g) => g.slug === slug), config: getGameProfileConfig(slug) }))
+    .filter((s): s is { game: (typeof GAMES)[number]; config: NonNullable<ReturnType<typeof getGameProfileConfig>> } =>
+      Boolean(s.game && s.config),
+    );
+
+  function patch(slug: string, change: Partial<GameProfileEntry>) {
+    setGameProfiles((prev) => ({
+      ...prev,
+      [slug]: { ...EMPTY_GAME_PROFILE, ...prev[slug], ...change },
+    }));
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
       try {
-        await onSave({ name, tagline, timezone, avatarUrl, languages, gameSlugs, lolRank, lolChampions, lolLanes });
+        await onSave({ name, tagline, timezone, avatarUrl, languages, gameSlugs, gameProfiles });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Couldn't save — try again.");
       }
@@ -75,28 +171,9 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
 
       <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
 
-      <div className="form-row-grid">
-        <div className="form-row">
-          <label htmlFor="tp-timezone">Timezone</label>
-          <input id="tp-timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} placeholder="CET (UTC+1)" />
-        </div>
-        <div className="form-row">
-          <label htmlFor="tp-rank">League of Legends rank</label>
-          <div className="rank-select">
-            {lolRank && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={getRankMeta(lolRank).icon} alt="" className="rank-select__icon" />
-            )}
-            <select id="tp-rank" value={lolRank ?? ""} onChange={(e) => setLolRank((e.target.value || null) as LolRankTier | null)}>
-              <option value="">Not set</option>
-              {RANK_TIERS.map((r) => (
-                <option key={r.tier} value={r.tier}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <div className="form-row">
+        <label htmlFor="tp-timezone">Timezone</label>
+        <input id="tp-timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} placeholder="CET (UTC+1)" />
       </div>
 
       <div className="form-row">
@@ -121,41 +198,6 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
         </div>
       </div>
 
-      <div className="form-row">
-        <label>League of Legends champion pool</label>
-        <div className="chip-check-group">
-          {CHAMPION_NAMES.map((c) => (
-            <label key={c} className="chip-check chip-check--avatar">
-              <input
-                type="checkbox"
-                checked={lolChampions.includes(c)}
-                onChange={() => setLolChampions((prev) => toggle(prev, c))}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={championIcon(c)} alt="" className="chip-check__icon" />
-              <span>{c}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="form-row">
-        <label>League of Legends lanes</label>
-        <div className="chip-check-group">
-          {LOL_LANES.map((lane) => (
-            <label key={lane} className="chip-check">
-              <input
-                type="checkbox"
-                checked={lolLanes.includes(lane)}
-                onChange={() => setLolLanes((prev) => toggle(prev, lane))}
-              />
-              <i className={`${LANE_ICONS[lane]} chip-check__glyph`} aria-hidden="true" />
-              <span>{lane}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
       {showAdminFields && (
         <div className="form-row">
           <label>Games this teammate is listed for</label>
@@ -175,6 +217,53 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
           </div>
         </div>
       )}
+
+      {sections.length === 0 && (
+        <p className="form-row__hint">
+          No games assigned yet — an admin decides which games you&rsquo;re listed for.
+        </p>
+      )}
+
+      {sections.map(({ game, config }) => {
+        const entry = gameProfiles[game.slug] ?? EMPTY_GAME_PROFILE;
+        return (
+          <fieldset key={game.slug} className="game-profile-block">
+            <legend className="game-profile-block__legend">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={gameIcon(game.slug)} alt="" />
+              {game.name}
+            </legend>
+
+            {config.ranks && (
+              <div className="form-row">
+                <label>{config.ranks.label}</label>
+                <IconSelect
+                  label={`${game.name} ${config.ranks.label}`}
+                  value={entry.rank}
+                  options={config.ranks.options}
+                  onChange={(rank) => patch(game.slug, { rank })}
+                />
+              </div>
+            )}
+
+            {config.roles && (
+              <PillSection
+                section={config.roles}
+                selected={entry.roles}
+                onChange={(roles) => patch(game.slug, { roles })}
+              />
+            )}
+
+            {config.pool && (
+              <PillSection
+                section={config.pool}
+                selected={entry.pool}
+                onChange={(pool) => patch(game.slug, { pool })}
+              />
+            )}
+          </fieldset>
+        );
+      })}
 
       {error && (
         <p className="form-row__error">
