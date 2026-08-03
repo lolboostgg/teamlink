@@ -24,13 +24,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { games: { orderBy: { gameNumber: "asc" } } },
+    include: { games: { orderBy: { gameNumber: "asc" } }, candidates: true },
   });
   if (!order) return NextResponse.json({ error: "Unknown order." }, { status: 404 });
 
   return NextResponse.json(
     {
       id: order.id,
+      teammateId:
+        order.candidates.find((c) => c.selected && c.isPrimary)?.teammateId ??
+        order.candidates.find((c) => c.selected)?.teammateId ??
+        null,
       gameSlug: order.gameSlug,
       gameName: order.gameName,
       option: order.option,

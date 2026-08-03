@@ -354,7 +354,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </div>
           </div>
           <SessionChat
-            conversationKey={conversationKey(order.id, order.customerLabel)}
+            conversationKey={conversationKey(order.teammateId ?? order.id, order.customerLabel)}
             teammateName="you"
             vibe={order.vibe}
             conversationPref={order.conversationPref}

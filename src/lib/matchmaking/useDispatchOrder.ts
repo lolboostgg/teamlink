@@ -1,52 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  cancelOrder,
-  confirmMultiSelection,
-  confirmSelection,
-  getOrder,
-  requestCancelSession,
-  subscribeToDispatch,
-  updatePreferences,
-  DISPATCH_WINDOW_MS,
-  SELECTION_WINDOW_MS,
-} from "@/lib/matchmaking/store";
+import { useCallback, useEffect, useState } from "react";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 
-// Customer-side view of one order. Re-reads from localStorage on every
-// BroadcastChannel push (a teammate accepting/declining in another tab) and
-// on a 1s tick, since simulated candidates and deadlines need to advance
-// even with no cross-tab messages at all.
+// Customer-side view of one order, now served by /api/dispatch/orders/[id]
+// instead of localStorage. The API hands back the same DispatchOrder shape
+// the screens were written against, so this hook's contract is unchanged —
+// only where the data comes from moved. Polls once a second, which is also
+// what advances the server's clock-driven transitions (there's no scheduler,
+// so reconcile runs on read).
+export const DISPATCH_WINDOW_MS = 60_000;
+export const SELECTION_WINDOW_MS = 60_000;
+
 export function useDispatchOrder(orderId: string | null) {
-  // Hydration-safe: getOrder() reads localStorage, which doesn't exist
-  // server-side, so seeding this from it during the initial render would
-  // make the client's first paint diverge from the SSR markup. Start null
-  // (matches what the server rendered) and load the real value in the
-  // effect below instead — same pattern as AuthModalProvider's auth flag.
   const [order, setOrder] = useState<DispatchOrder | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  // Distinguishes "still loading from localStorage" from "genuinely no such
-  // order" — both render order===null, but only the latter should ever show
-  // a "not found" message instead of a loading state.
+  // Distinguishes "still loading" from "genuinely no such order" — both
+  // render order===null, but only the latter should show "not found".
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!orderId) return;
-    const id = orderId;
-    function refresh() {
-      setOrder(getOrder(id));
-      setNow(Date.now());
+    try {
+      const res = await fetch(`/api/dispatch/orders/${orderId}`, { cache: "no-store" });
+      const data = await res.json();
+      setOrder(res.ok ? data.order : null);
+    } catch {
+      // Keep the last good state; the next tick retries.
+    } finally {
       setLoaded(true);
+      setNow(Date.now());
     }
-    refresh();
-    const unsubscribe = subscribeToDispatch(refresh);
-    const interval = setInterval(refresh, 1000);
-    return () => {
-      unsubscribe();
-      clearInterval(interval);
-    };
   }, [orderId]);
+
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 1000);
+    return () => clearInterval(interval);
+  }, [load]);
+
+  const post = useCallback(
+    async (body: Record<string, unknown>) => {
+      if (!orderId) return;
+      const res = await fetch(`/api/dispatch/orders/${orderId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.order) setOrder(data.order);
+      else load();
+    },
+    [orderId, load],
+  );
 
   const dispatchSecondsLeft = order ? Math.max(0, Math.ceil((order.dispatchDeadline - now) / 1000)) : 0;
   const selectionSecondsLeft =
@@ -65,11 +71,11 @@ export function useDispatchOrder(orderId: string | null) {
     searchElapsedSeconds,
     dispatchWindowMs: DISPATCH_WINDOW_MS,
     selectionWindowMs: SELECTION_WINDOW_MS,
-    confirmSelection: (teammateId: string) => orderId && setOrder(confirmSelection(orderId, teammateId)),
-    confirmMultiSelection: (teammateIds: string[]) => orderId && setOrder(confirmMultiSelection(orderId, teammateIds)),
-    cancelOrder: () => orderId && setOrder(cancelOrder(orderId)),
-    requestCancelSession: () => orderId && setOrder(requestCancelSession(orderId)),
+    confirmSelection: (teammateId: string) => post({ action: "select", teammateId }),
+    confirmMultiSelection: (teammateIds: string[]) => post({ action: "select", teammateIds }),
+    cancelOrder: () => post({ action: "cancel" }),
+    requestCancelSession: () => post({ action: "request-cancel" }),
     updatePreferences: (prefs: { vibe?: string; conversationPref?: string; playStylePref?: string }) =>
-      orderId && setOrder(updatePreferences(orderId, prefs)),
+      post({ action: "preferences", ...prefs }),
   };
 }

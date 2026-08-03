@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
-import { firstAcceptedCandidate } from "@/lib/matchmaking/store";
+import { firstAcceptedCandidate } from "@/lib/matchmaking/types";
 import { getTeammateById } from "@/lib/teammates";
 import { getBookingOptionDescription } from "@/lib/bookingOptions";
 import { gameIcon } from "@/lib/gameArt";

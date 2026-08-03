@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { AvailabilityToggle } from "@/components/dashboard/teammate/AvailabilityToggle";
 import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
-import { PendingInvitesBanner } from "@/components/dashboard/teammate/PendingInvitesBanner";
 import { TeammateOverviewPanels } from "@/components/dashboard/teammate/TeammateOverviewPanels";
 
 export const metadata: Metadata = { title: "Teammate Dashboard" };
@@ -34,7 +33,6 @@ export default async function TeammateDashboardPage() {
       />
 
       <AvailabilityToggle initialOnline={teammate?.available ?? false} />
-      <PendingInvitesBanner />
       <TeammateOverviewPanels />
       <ActiveOrderCard />
     </>

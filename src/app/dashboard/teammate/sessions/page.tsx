@@ -1,7 +1,6 @@
 "use client";
 
 import { SessionsList } from "@/components/dashboard/teammate/SessionsList";
-import { IncomingDispatchList } from "@/components/dashboard/teammate/IncomingDispatchList";
 import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
 import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
 import { useCurrentTeammateId } from "@/lib/matchmaking/useCurrentTeammateId";
@@ -25,7 +24,6 @@ export default function TeammateSessionsPage() {
             </div>
           </div>
         </div>
-        <IncomingDispatchList />
       </div>
 
       <ActiveOrderCard />

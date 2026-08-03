@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
-import { useIncomingDispatches } from "@/lib/matchmaking/useIncomingDispatches";
+import { useDispatchState } from "@/lib/dispatch/useDispatchState";
+import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import type { BookingRequestNotification } from "@/lib/dashboard/notifications";
 
 interface NotificationContextValue {
@@ -22,7 +23,7 @@ export function useNotifications() {
 }
 
 // Bell dropdown, sourced from the same real dispatch data as
-// DispatchAlertPopup (see useIncomingDispatches/useCurrentTeammateId) —
+// the dispatch flow (see lib/dispatch/service.ts) —
 // this used to be a randomly-generated fake feed with working-looking
 // Accept/Decline buttons that didn't actually do anything, which was
 // actively misleading (indistinguishable from a real request). Empty for
@@ -30,7 +31,10 @@ export function useNotifications() {
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const isTeammate = session?.user?.role === "TEAMMATE";
-  const { pendingInvites, respond } = useIncomingDispatches();
+  const { phase, order, refresh } = useDispatchState();
+  // Only ever one open invite now — the server refuses to offer a second
+  // order to a teammate who already has one in flight.
+  const pendingInvites = phase === "DISPATCH_INCOMING" && order ? [order] : [];
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
 
   const notifications: BookingRequestNotification[] = useMemo(() => {
@@ -43,9 +47,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       gameName: order.gameName,
       option: order.option,
       priceEUR: order.priceEUR,
-      createdAt: order.createdAt,
+      createdAt: Date.now(),
     }));
-  }, [isTeammate, pendingInvites]);
+  }, [isTeammate, phase, order]);
 
   const unreadCount = notifications.filter((n) => !seenIds.has(n.id)).length;
 
@@ -54,10 +58,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       notifications,
       unreadCount,
       markAllSeen: () => setSeenIds(new Set(notifications.map((n) => n.id))),
-      accept: (id) => respond(id, true),
-      decline: (id) => respond(id, false),
+      accept: (id) => respondToDispatchAction(id, true).then(refresh),
+      decline: (id) => respondToDispatchAction(id, false).then(refresh),
     }),
-    [notifications, unreadCount, respond],
+    [notifications, unreadCount, refresh],
   );
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

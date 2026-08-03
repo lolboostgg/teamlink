@@ -64,3 +64,11 @@ export interface DispatchOrder {
   customerLabel: string;
   createdAt: number;
 }
+
+// Earliest acceptor — the auto-select candidate the customer sees in the
+// middle slot. Kept here now that the localStorage store is gone.
+export function firstAcceptedCandidate(candidates: DispatchCandidate[]): DispatchCandidate | undefined {
+  return candidates
+    .filter((c) => c.status === "accepted")
+    .sort((a, b) => (a.respondedAt ?? 0) - (b.respondedAt ?? 0))[0];
+}

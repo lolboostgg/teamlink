@@ -1,9 +1,20 @@
-import type { TeammatePhase } from "@/lib/matchmaking/teammateState";
+// The teammate's position in the dispatch flow. Accepting makes you a
+// candidate, not the assignee — see lib/dispatch/service.ts.
+export type TeammatePhase =
+  | "OFFLINE"
+  | "ONLINE_IDLE"
+  | "DISPATCH_INCOMING"
+  | "WAITING_FOR_CUSTOMER_SELECTION"
+  | "SELECTED"
+  | "ACTIVE_SESSION"
+  | "NOT_SELECTED";
 
 // Shapes crossing the API boundary. Deliberately narrow — the teammate view
 // carries no other candidate's identity, only counts (see spec §7).
 export interface DispatchOrderView {
   id: string;
+  /** The assigned teammate — what the chat thread is keyed on. */
+  teammateId: string | null;
   gameSlug: string;
   gameName: string;
   option: string;
@@ -52,15 +63,18 @@ type CandidateRow = {
     assignedAt: Date | null;
     dispatchDeadline: Date;
     selectionDeadline: Date | null;
-    candidates: { status: string }[];
+    candidates: { status: string; teammateId: string; selected: boolean; isPrimary: boolean }[];
     games: { gameNumber: number; result: string; note: string | null; proofPath: string | null }[];
   };
 };
 
 function toView(order: CandidateRow["order"]): DispatchOrderView {
   const price = Number(order.priceEUR);
+  const primary =
+    order.candidates.find((c) => c.selected && c.isPrimary) ?? order.candidates.find((c) => c.selected);
   return {
     id: order.id,
+    teammateId: primary?.teammateId ?? null,
     gameSlug: order.gameSlug,
     gameName: order.gameName,
     option: order.option,

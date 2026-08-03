@@ -1,11 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { getTeammateById } from "@/lib/teammates";
-import { cancelOrder, listActiveOrders, subscribeToDispatch } from "@/lib/matchmaking/store";
-import type { DispatchOrder, OrderStatus } from "@/lib/matchmaking/types";
+import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
+import type { OrderStatus } from "@/lib/matchmaking/types";
+
+const LIVE_STATUSES: OrderStatus[] = [
+  "searching",
+  "candidates_ready",
+  "selecting",
+  "assigned",
+  "in_progress",
+  "cancel_pending",
+];
+
+async function cancelOrder(orderId: string) {
+  await fetch(`/api/dispatch/orders/${orderId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "cancel" }),
+  });
+}
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   searching: "Searching",
@@ -35,20 +51,7 @@ const STATUS_PILL: Record<OrderStatus, string> = {
 // for the full history) — orders currently moving through the dispatch
 // flow started from this browser.
 export function LiveOrdersPanel() {
-  const [orders, setOrders] = useState<DispatchOrder[]>([]);
-
-  useEffect(() => {
-    function refresh() {
-      setOrders(listActiveOrders());
-    }
-    refresh();
-    const unsubscribe = subscribeToDispatch(refresh);
-    const interval = setInterval(refresh, 1000);
-    return () => {
-      unsubscribe();
-      clearInterval(interval);
-    };
-  }, []);
+  const orders = useAllOrders().filter((o) => LIVE_STATUSES.includes(o.status));
 
   if (orders.length === 0) return null;
 

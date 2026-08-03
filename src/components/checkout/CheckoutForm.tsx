@@ -9,7 +9,7 @@ import { CouponModal } from "@/components/checkout/CouponModal";
 import { TrustPoints } from "@/components/ui/TrustPoints";
 import { Reveal } from "@/components/ui/Reveal";
 import { calculateFee, getPaymentMethod, perMinuteRate, type PaymentMethodKey } from "@/lib/payments";
-import { createOrder } from "@/lib/matchmaking/store";
+import { placeOrder } from "@/lib/matchmaking/createOrderClient";
 import { markCouponUsed, type Coupon } from "@/lib/coupons";
 import { useCreditBalance } from "@/lib/useCreditBalance";
 import { spendCredits } from "@/app/actions/credits";
@@ -70,24 +70,23 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
       }
     }
 
-    setTimeout(() => {
-      // Who you actually get is decided by the live dispatch/pick flow
-      // after checkout, never chosen up front.
-      const order = createOrder({
-        gameSlug,
-        gameName,
-        option,
-        priceEUR: totalEUR,
-        teammates,
-        requestedTeammateId: null,
-        customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
-      });
-      // Only burns the coupon once the order is actually placed — applying
-      // it in the modal alone doesn't consume it, so abandoning checkout
-      // leaves it usable.
-      if (appliedCoupon) markCouponUsed(appliedCoupon.code);
-      router.push(order ? `/checkout/matching?order=${order.id}` : "/checkout/success");
-    }, 900);
+    // Who you actually get is decided by the live dispatch/pick flow after
+    // checkout, never chosen up front — and the fan-out to teammates is a
+    // server decision (see lib/dispatch/create.ts).
+    const order = await placeOrder({
+      gameSlug,
+      gameName,
+      option,
+      priceEUR: totalEUR,
+      teammates,
+      requestedTeammateId: null,
+      customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
+    });
+    // Only burns the coupon once the order is actually placed — applying
+    // it in the modal alone doesn't consume it, so abandoning checkout
+    // leaves it usable.
+    if (appliedCoupon) markCouponUsed(appliedCoupon.code);
+    router.push(order ? `/checkout/matching?order=${order.id}` : "/checkout/success");
   }
 
   function handleStartPayAsYouGo() {

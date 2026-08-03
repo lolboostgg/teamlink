@@ -1,26 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { listAllOrders, subscribeToDispatch } from "@/lib/matchmaking/store";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 
-// Full order history for the current browser (any status), newest first —
-// powers the client dashboard (overview stats, order history, chat/
-// favorites derived from real matched teammates) instead of static mock
-// data. Same poll + BroadcastChannel pattern as the rest of the matchmaking
-// hooks, just reading everything instead of only the active subset.
+// The signed-in customer's order history (any status), newest first —
+// powers the client dashboard's stats, order list and the chat/favorites
+// derived from real matched teammates. Server-backed now, so it follows the
+// account across devices instead of living in one browser's localStorage.
 export function useAllOrders(): DispatchOrder[] {
   const [orders, setOrders] = useState<DispatchOrder[]>([]);
 
   useEffect(() => {
-    function refresh() {
-      setOrders(listAllOrders());
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const res = await fetch("/api/dispatch/orders", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setOrders(data.orders ?? []);
+      } catch {
+        // Keep the last good list; the next tick retries.
+      }
     }
     refresh();
-    const unsubscribe = subscribeToDispatch(refresh);
-    const interval = setInterval(refresh, 2000);
+    const interval = setInterval(refresh, 3000);
     return () => {
-      unsubscribe();
+      cancelled = true;
       clearInterval(interval);
     };
   }, []);

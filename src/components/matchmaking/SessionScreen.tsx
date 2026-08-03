@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
-import { createOrder, createReplayOrder } from "@/lib/matchmaking/store";
+import { placeOrder, placeReplayOrder } from "@/lib/matchmaking/createOrderClient";
 import { getTeammateById } from "@/lib/teammates";
 import { setFavorite, useFavoriteIds } from "@/lib/favorites";
 import { addReview } from "@/lib/reviews";
@@ -152,11 +152,11 @@ export function SessionScreen({ orderId }: Props) {
     );
   }
 
-  function handleReroll() {
+  async function handleReroll() {
     setRerollModalOpen(false);
     setRerolling(true);
     cancelOrder();
-    const fresh = createOrder({
+    const fresh = await placeOrder({
       gameSlug: order!.gameSlug,
       gameName: order!.gameName,
       option: order!.option,
@@ -191,7 +191,7 @@ export function SessionScreen({ orderId }: Props) {
       showToast(result.error ?? "Couldn't charge credits for this replay.", "error");
       return;
     }
-    const replay = createReplayOrder(order!);
+    const replay = await placeReplayOrder(order!);
     if (replay) router.push(`/checkout/matching?order=${replay.id}`);
   }
 
@@ -208,7 +208,7 @@ export function SessionScreen({ orderId }: Props) {
       showToast(result.error ?? "Couldn't charge credits for this purchase.", "error");
       return;
     }
-    for (let i = 0; i < buyMoreQty; i++) createReplayOrder(order!);
+    for (let i = 0; i < buyMoreQty; i++) await placeReplayOrder(order!);
     setBuyingMore(false);
     setBuyMoreOpen(false);
     setBuyMoreQty(1);
