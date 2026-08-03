@@ -3312,6 +3312,349 @@ ul {
   justify-content: flex-end;
 }
 
+/* ---------------------------------------------------------------------
+   Teammate dispatch flow — incoming request, candidate waiting state and
+   the two outcomes. Deliberately quiet: one accent, no neon, no red on the
+   "someone else got it" notice.
+   --------------------------------------------------------------------- */
+.dispatch-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(3, 5, 12, 0.72);
+  backdrop-filter: blur(4px);
+  animation: dispatchFade 0.18s ease-out;
+}
+
+.dispatch-modal {
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 26px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 180px),
+    var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  animation: dispatchPop 0.2s ease-out;
+}
+
+@keyframes dispatchFade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dispatchPop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dispatch-modal__backdrop,
+  .dispatch-modal {
+    animation: none;
+  }
+}
+
+.dispatch-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.dispatch-modal__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dispatch-modal__title {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.dispatch-modal__lead {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.dispatch-modal__note {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 14px;
+}
+
+/* Countdown ring — conic sweep, turns amber in the last few seconds. */
+.dispatch-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--ring-pct, 360deg), rgba(255, 255, 255, 0.08) 0);
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text);
+}
+
+.dispatch-ring::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+}
+
+.dispatch-ring span {
+  position: relative;
+}
+
+.dispatch-ring.is-urgent {
+  background: conic-gradient(var(--warning) var(--ring-pct, 360deg), rgba(255, 255, 255, 0.08) 0);
+  color: var(--warning);
+}
+
+.dispatch-modal__game {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 16px;
+}
+
+.dispatch-modal__game img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.dispatch-modal__game strong {
+  display: block;
+  font-size: 14.5px;
+}
+
+.dispatch-modal__game span {
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+.dispatch-modal__payout {
+  margin-left: auto;
+  text-align: right;
+}
+
+.dispatch-modal__payout span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.dispatch-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2px 18px;
+}
+
+.dispatch-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+
+.dispatch-facts dt {
+  color: var(--text-faint);
+}
+
+.dispatch-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.dispatch-modal__accept {
+  min-width: 170px;
+}
+
+/* Candidate slots — how many of the five have accepted, and which is me. */
+.dispatch-slot-row {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 16px;
+}
+
+.dispatch-slot {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dispatch-slot.is-filled {
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.dispatch-slot.is-me {
+  background: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.dispatch-status {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dispatch-status strong {
+  display: block;
+  font-size: 13.5px;
+  margin-bottom: 3px;
+}
+
+.dispatch-status span {
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.dispatch-status--auto {
+  border-color: color-mix(in srgb, var(--success) 55%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+.dispatch-modal--selected,
+.dispatch-modal--neutral {
+  text-align: center;
+}
+
+.dispatch-modal__check {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  color: var(--success);
+  font-size: 22px;
+}
+
+.dispatch-modal--form .form-row:last-of-type {
+  margin-bottom: 0;
+}
+
+/* Order room ------------------------------------------------------------ */
+.order-room {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .order-room {
+    grid-template-columns: 1fr;
+  }
+}
+
+.order-room__game {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 14px;
+}
+
+.order-room__game img {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  object-fit: cover;
+}
+
+.order-room__game strong {
+  display: block;
+  font-size: 14px;
+}
+
+.order-room__game span {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.order-room__prefs {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.order-room__prefs li {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.order-room__prefs span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+
+.session-steps {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.session-steps li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.session-steps li.is-done {
+  border-color: color-mix(in srgb, var(--success) 45%, transparent);
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+  color: var(--text);
+}
+
+.session-steps li span {
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* Identity documents — teammate upload cards and the admin's review list. */
 .kyc-docs {
   display: grid;
