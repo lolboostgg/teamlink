@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { randomBytes } from "crypto";
 import { auth } from "@/auth";
-import { DISCORD_AUTHORIZE_URL, DISCORD_SCOPE, discordRedirectUri, isDiscordConfigured } from "@/lib/discord";
+import {
+  DISCORD_AUTHORIZE_URL,
+  DISCORD_SCOPE,
+  discordPublicOrigin,
+  discordRedirectUri,
+  isDiscordConfigured,
+} from "@/lib/discord";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +18,12 @@ export const dynamic = "force-dynamic";
  * return to rides along in the same cookie.
  */
 export async function GET(request: NextRequest) {
+  const publicOrigin = discordPublicOrigin(request.nextUrl.origin, request.headers);
   const session = await auth();
   // There is no /login route — sign-in is the modal in the root layout, so
   // send them home where they can open it.
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/?authError=AccessDenied", request.nextUrl.origin));
+    return NextResponse.redirect(new URL("/?authError=AccessDenied", publicOrigin));
   }
 
   // Only ever an in-app path, so this can't be turned into an open redirect.
@@ -24,11 +31,11 @@ export async function GET(request: NextRequest) {
   const returnTo = requested.startsWith("/") && !requested.startsWith("//") ? requested : "/dashboard/client/settings";
 
   if (!isDiscordConfigured()) {
-    return NextResponse.redirect(new URL(`${returnTo}?discord=not_configured`, request.nextUrl.origin));
+    return NextResponse.redirect(new URL(`${returnTo}?discord=not_configured`, publicOrigin));
   }
 
   const state = randomBytes(16).toString("hex");
-  const redirectUri = discordRedirectUri(request.nextUrl.origin);
+  const redirectUri = discordRedirectUri(publicOrigin);
 
   const authorizeUrl = new URL(DISCORD_AUTHORIZE_URL);
   authorizeUrl.searchParams.set("client_id", process.env.AUTH_DISCORD_ID ?? "");
@@ -44,7 +51,7 @@ export async function GET(request: NextRequest) {
   response.cookies.set("discord_link_state", `${state}|${returnTo}`, {
     httpOnly: true,
     sameSite: "lax",
-    secure: request.nextUrl.protocol === "https:",
+    secure: new URL(publicOrigin).protocol === "https:",
     path: "/",
     maxAge: 10 * 60,
   });

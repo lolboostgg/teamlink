@@ -1,12 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { discordDisplayName, discordRedirectUri, exchangeDiscordCode, fetchDiscordUser } from "@/lib/discord";
+import {
+  discordDisplayName,
+  discordPublicOrigin,
+  discordRedirectUri,
+  exchangeDiscordCode,
+  fetchDiscordUser,
+} from "@/lib/discord";
 
 export const dynamic = "force-dynamic";
 
 function back(request: NextRequest, returnTo: string, status: string) {
-  const url = new URL(returnTo, request.nextUrl.origin);
+  const url = new URL(returnTo, discordPublicOrigin(request.nextUrl.origin, request.headers));
   url.searchParams.set("discord", status);
   const response = NextResponse.redirect(url);
   response.cookies.delete("discord_link_state");
@@ -14,6 +20,7 @@ function back(request: NextRequest, returnTo: string, status: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const publicOrigin = discordPublicOrigin(request.nextUrl.origin, request.headers);
   const cookie = request.cookies.get("discord_link_state")?.value ?? "";
   const [expectedState, storedReturnTo] = cookie.split("|");
   const returnTo = storedReturnTo || "/dashboard/client/settings";
@@ -21,7 +28,7 @@ export async function GET(request: NextRequest) {
   const session = await auth();
   // Same as the link route: no /login page exists, sign-in is a modal.
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/?authError=AccessDenied", request.nextUrl.origin));
+    return NextResponse.redirect(new URL("/?authError=AccessDenied", publicOrigin));
   }
 
   // The user hit "Cancel" on Discord's consent screen.
@@ -35,7 +42,7 @@ export async function GET(request: NextRequest) {
     return back(request, returnTo, "invalid_state");
   }
 
-  const accessToken = await exchangeDiscordCode(code, discordRedirectUri(request.nextUrl.origin));
+  const accessToken = await exchangeDiscordCode(code, discordRedirectUri(publicOrigin));
   if (!accessToken) return back(request, returnTo, "error");
 
   const discordUser = await fetchDiscordUser(accessToken);

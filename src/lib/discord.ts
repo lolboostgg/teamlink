@@ -20,6 +20,33 @@ export function isDiscordConfigured(): boolean {
 }
 
 /**
+ * Resolve the browser-facing app origin. Hostinger terminates TLS in front of
+ * Next.js, so `request.nextUrl.origin` can contain its internal
+ * `https://0.0.0.0:3000` address and must not be sent to Discord.
+ */
+export function discordPublicOrigin(requestOrigin: string, headers: Headers): string {
+  const configured =
+    process.env.APP_URL ??
+    process.env.AUTH_URL ??
+    process.env.NEXTAUTH_URL ??
+    process.env.NEXT_PUBLIC_APP_URL;
+
+  if (configured) return configured.replace(/\/$/, "");
+
+  const forwardedHost = headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto = headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  if (forwardedHost && !/^(?:0\.0\.0\.0|localhost|127\.0\.0\.1)(?::|$)/i.test(forwardedHost)) {
+    return `${forwardedProto === "http" ? "http" : "https"}://${forwardedHost}`;
+  }
+
+  const parsed = new URL(requestOrigin);
+  if (process.env.NODE_ENV === "production" && /^(?:0\.0\.0\.0|localhost|127\.0\.0\.1)$/i.test(parsed.hostname)) {
+    return "https://gaming.lolboost.gg";
+  }
+  return parsed.origin;
+}
+
+/**
  * Callback URL Discord redirects back to. Must match one of the redirect URIs
  * registered in the Discord developer portal *exactly*, including the scheme
  * and any trailing path.
