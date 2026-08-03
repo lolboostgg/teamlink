@@ -334,7 +334,7 @@ function OverviewPanel({ account, teammate }: { account: AccountSummary; teammat
   );
 }
 
-function VerificationPanel({
+export function VerificationPanel({
   teammateId,
   verification,
   methods,
@@ -502,7 +502,7 @@ function VerificationPanel({
   );
 }
 
-function AccountPanel({ account, onSaved }: { account: AccountSummary; onSaved: () => void }) {
+export function AccountPanel({ account, onSaved }: { account: AccountSummary; onSaved: () => void }) {
   const [name, setName] = useState(account.name);
   const [email, setEmail] = useState(account.email);
   const [error, setError] = useState<string | null>(null);
@@ -555,7 +555,7 @@ function AccountPanel({ account, onSaved }: { account: AccountSummary; onSaved: 
   );
 }
 
-function SecurityPanel({ userId, onSaved }: { userId: string; onSaved: () => void }) {
+export function SecurityPanel({ userId, onSaved }: { userId: string; onSaved: () => void }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getAllTeammates } from "@/lib/admin/teammates";
 import { AdminTeammatesTable, type AdminTeammateRow } from "@/components/dashboard/admin/AdminTeammatesTable";
-import { readGameProfiles } from "@/lib/teammateProfile";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 
@@ -17,12 +16,7 @@ export default async function AdminTeammatesPage() {
     accountNo: t.user?.accountNo ?? null,
     name: t.name,
     email: t.user?.email ?? null,
-    tagline: t.tagline ?? "",
-    timezone: t.timezone ?? "",
-    avatarUrl: t.avatarUrl,
-    languages: (t.languages as string[] | null) ?? [],
     gameSlugs: (t.gameSlugs as string[] | null) ?? [],
-    gameProfiles: readGameProfiles(t),
     available: t.available,
   }));
 
