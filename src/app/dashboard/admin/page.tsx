@@ -24,6 +24,9 @@ export default async function AdminDashboardPage() {
     role: u.role,
     createdAt: u.createdAt.getTime(),
     teammateName: u.teammate?.name ?? null,
+    discordId: u.discordId,
+    discordUsername: u.discordUsername,
+    discordAvatar: u.discordAvatar,
   }));
 
   return (
