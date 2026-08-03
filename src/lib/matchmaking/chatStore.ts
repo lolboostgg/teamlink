@@ -52,19 +52,40 @@ function writeAll(messages: ChatMessage[]): void {
   getChannel()?.postMessage({ type: "chat-updated" });
 }
 
+function writeConversation(key: string, messages: ChatMessage[]): void {
+  const otherMessages = readAll().filter((message) => message.conversationKey !== key);
+  writeAll([...otherMessages, ...messages]);
+}
+
+async function persistMessage(message: ChatMessage): Promise<void> {
+  await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: message.id,
+      key: message.conversationKey,
+      from: message.from,
+      text: message.text,
+      createdAt: message.createdAt,
+    }),
+  }).catch(() => undefined);
+}
+
 export function sendChatMessage(key: string, from: "client" | "teammate", text: string): void {
   const trimmed = text.trim();
   if (!trimmed || typeof window === "undefined") return;
   const messages = readAll();
-  messages.push({
+  const message: ChatMessage = {
     id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     conversationKey: key,
     from,
     text: trimmed,
     createdAt: Date.now(),
     readBy: [from],
-  });
+  };
+  messages.push(message);
   writeAll(messages);
+  void persistMessage(message);
 }
 
 type ChatSide = "client" | "teammate";
@@ -131,9 +152,34 @@ export function useConversationMessages(key: string | undefined): { messages: Ch
   }, [key]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    refresh();
-    return subscribeToChat(refresh);
+    if (!key) return;
+    let cancelled = false;
+    let migrated = false;
+    const sync = async () => {
+      if (!migrated) {
+        migrated = true;
+        await Promise.all(getMessages(key).map(persistMessage));
+      }
+      try {
+        const response = await fetch(`/api/chat?key=${encodeURIComponent(key)}`, { cache: "no-store" });
+        if (!response.ok) return;
+        const data = (await response.json()) as { messages?: ChatMessage[] };
+        if (!cancelled && data.messages) {
+          writeConversation(key, data.messages);
+          setMessages(data.messages);
+        }
+      } catch {
+        // Keep the last local copy and retry on the next poll.
+      }
+    };
+    void sync();
+    const interval = window.setInterval(sync, 2000);
+    const unsubscribe = subscribeToChat(refresh);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      unsubscribe();
+    };
   }, [key, refresh]);
 
   return { messages, refresh };

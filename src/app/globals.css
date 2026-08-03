@@ -9057,6 +9057,71 @@ a.notification-panel__item:hover {
 .admin-orders-table td { vertical-align: middle; }
 .admin-orders-table td small { display: block; margin-top: 4px; color: var(--text-faint); font-size: 11px; }
 .admin-orders-table td a { display: block; color: var(--accent); font-weight: 700; }
+.admin-orders-table td:last-child a { color: var(--text); }
+.admin-orders-toolbar { flex-wrap: wrap; }
+.admin-orders-toolbar .orders-toolbar__search { width: min(420px, 100%); }
+.orders-pagination .is-disabled { opacity: 0.4; pointer-events: none; }
+
+.admin-order-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-order-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-order-facts > div {
+  padding: 14px;
+  border: 1px solid var(--dash-line);
+  border-radius: 10px;
+  background: var(--dash-surface-2);
+}
+
+.admin-order-facts dt { margin-bottom: 5px; color: var(--text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+.admin-order-facts dd { margin: 0; color: var(--text); font-size: 13px; font-weight: 600; }
+
+.admin-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  max-height: 560px;
+  padding: 4px 8px 4px 0;
+  overflow-y: auto;
+}
+
+.admin-chat-message {
+  width: min(72%, 720px);
+  padding: 11px 13px;
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  background: var(--dash-surface-2);
+}
+
+.admin-chat-message--teammate { align-self: flex-end; background: rgba(70, 104, 255, 0.1); border-color: rgba(70, 104, 255, 0.22); }
+.admin-chat-message > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-chat-message strong { color: var(--text); font-size: 11px; }
+.admin-chat-message time { color: var(--text-faint); font-size: 10px; }
+.admin-chat-message p { margin: 5px 0 0; color: var(--text-muted); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.admin-order-audit { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.admin-order-audit section { padding: 14px; border: 1px solid var(--dash-line); border-radius: 10px; background: var(--dash-surface-2); }
+.admin-order-audit h3 { margin: 0 0 10px; color: var(--text); font-size: 13px; }
+.admin-order-audit section > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--dash-line); color: var(--text-muted); font-size: 12px; }
+.admin-order-audit section > div strong { color: var(--text); font-size: 11px; }
+
+@media (max-width: 760px) {
+  .admin-order-facts { grid-template-columns: 1fr; }
+  .admin-order-audit { grid-template-columns: 1fr; }
+  .admin-chat-message { width: 92%; }
+}
 
 .dashboard-table tbody tr {
   background: var(--dash-surface-2);

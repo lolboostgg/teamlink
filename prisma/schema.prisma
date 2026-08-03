@@ -233,6 +233,17 @@ model Order {
   @@index([status])
 }
 
+model ConversationMessage {
+  id              String   @id @default(cuid())
+  conversationKey String
+  sender          String
+  text            String   @db.Text
+  readBy          Json?
+  createdAt       DateTime @default(now())
+
+  @@index([conversationKey, createdAt])
+}
+
 enum CandidateStatus {
   PENDING
   ACCEPTED
