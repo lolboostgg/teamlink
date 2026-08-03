@@ -9,6 +9,9 @@ export async function GET() {
   if (!session?.user?.id) {
     return NextResponse.json({ balanceCents: 0 });
   }
+  if (session.user.role !== "CLIENT") {
+    return NextResponse.json({ balanceCents: 0 }, { status: 403 });
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },

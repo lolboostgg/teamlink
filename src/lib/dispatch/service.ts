@@ -103,6 +103,10 @@ async function assignWinners(
   candidateIds: string[],
   now: Date,
 ) {
+  const winners = await tx.dispatchCandidate.findMany({
+    where: { id: { in: candidateIds } },
+    select: { teammateId: true },
+  });
   await tx.dispatchCandidate.updateMany({
     where: { id: { in: candidateIds } },
     data: { selected: true, selectedAt: now },
@@ -111,6 +115,10 @@ async function assignWinners(
   await tx.order.update({
     where: { id: orderId },
     data: { status: "ASSIGNED", assignedAt: now, sessionStatus: "WAITING_FOR_INVITE" },
+  });
+  await tx.teammate.updateMany({
+    where: { id: { in: winners.map((winner) => winner.teammateId) } },
+    data: { lastAssignedAt: now },
   });
 }
 
@@ -177,10 +185,18 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
           isAutoSelect: acceptedCount === 0,
         },
       });
+      const favorite = candidate.order.clientUserId
+        ? await tx.favoriteTeammate.findUnique({
+            where: { clientUserId_teammateId: { clientUserId: candidate.order.clientUserId, teammateId } },
+            select: { teammateId: true },
+          })
+        : null;
       // Replay requests are exclusive to the previous teammate. Their
       // acceptance is the selection, so the customer never sees a five-slot picker.
-      if (candidate.order.requestedTeammateId === teammateId) {
+      // A favorite gets the same atomic fast path on a single-slot order.
+      if (candidate.order.requestedTeammateId === teammateId || (favorite && candidate.order.teammatesRequested === 1)) {
         await assignWinners(tx, orderId, [candidate.id], now);
+        await notifySelected(tx, [teammateId], candidate.order.gameName, orderId);
       } else if (candidate.order.status !== "SELECTING") {
         await tx.order.update({
           where: { id: orderId },

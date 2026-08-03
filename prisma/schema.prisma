@@ -41,6 +41,7 @@ model User {
   reviewsWritten     Review[]            @relation("ReviewsWritten")
   creditTransactions CreditTransaction[]
   notifications      Notification[]
+  favoriteTeammates  FavoriteTeammate[]
 }
 
 // In-app notification feed. Every row targets one user; a platform event
@@ -122,12 +123,28 @@ model Teammate {
   lolLanes       Json?
   avatarUrl      String?  @db.Text
   available      Boolean  @default(true)
+  availableSince DateTime?
+  lastSeenAt     DateTime?
+  lastDispatchAt DateTime?
+  lastAssignedAt DateTime?
   createdAt      DateTime @default(now())
 
   candidacies       DispatchCandidate[]
   reviewsReceived   Review[]
   verification      TeammateVerification?
   payoutMethods     PayoutMethod[]
+  favoredBy         FavoriteTeammate[]
+}
+
+model FavoriteTeammate {
+  clientUserId String
+  teammateId   String
+  clientUser   User     @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  teammate     Teammate @relation(fields: [teammateId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@id([clientUserId, teammateId])
+  @@index([teammateId])
 }
 
 enum VerificationStatus {

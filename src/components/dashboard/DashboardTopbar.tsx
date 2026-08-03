@@ -7,17 +7,22 @@ import { SettingsTrigger } from "@/components/layout/SettingsTrigger";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { DASHBOARD_ROLES } from "@/lib/roles";
+import { profileHrefForRole } from "@/lib/roles";
+import { useSession } from "next-auth/react";
 
 export function DashboardTopbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuthModal();
+  const { data: session } = useSession();
   // This topbar only ever renders for admin/teammate now — client has its
   // own tab strip (see ClientDashboardNav.tsx) instead of this shell.
   const roleMeta =
     DASHBOARD_ROLES.find((r) => r.role !== "client" && pathname.startsWith(r.href)) ?? DASHBOARD_ROLES[1];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const profileHref = profileHrefForRole(session?.user?.role);
+  const initials = (session?.user?.name || roleMeta.label).split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   useEffect(() => {
     if (!open) return;
@@ -55,16 +60,25 @@ export function DashboardTopbar() {
         <div className="dropdown-switcher" ref={ref}>
           <button
             type="button"
-            className="dashboard-avatar"
+            className="dashboard-account-trigger"
             onClick={() => setOpen((v) => !v)}
             aria-haspopup="menu"
             aria-expanded={open}
           >
-            <span className="dashboard-avatar__initials">{roleMeta.label.slice(0, 2).toUpperCase()}</span>
+            <span className="dashboard-avatar"><span className="dashboard-avatar__initials">{initials}</span></span>
+            <span className="dashboard-account-trigger__meta"><strong>{session?.user?.name || roleMeta.label}</strong><small>{roleMeta.label}</small></span>
+            <i className="fa-solid fa-chevron-down" aria-hidden="true" />
           </button>
 
           {open && (
-            <div className="dropdown-switcher__menu dropdown-switcher__menu--right" role="menu">
+            <div className="dropdown-switcher__menu dropdown-switcher__menu--right account-dropdown" role="menu">
+              <div className="dashboard-account-menu__identity">
+                <strong>{session?.user?.name || roleMeta.label}</strong>
+                <span>{session?.user?.email}</span>
+                <small>{roleMeta.label} account</small>
+              </div>
+              {profileHref && <Link href={profileHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}><i className="fa-solid fa-id-card" aria-hidden="true" /> My profile</Link>}
+              <Link href={roleMeta.href} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}><i className="fa-solid fa-gauge" aria-hidden="true" /> Dashboard overview</Link>
               <Link
                 href="/"
                 className="dropdown-switcher__item"

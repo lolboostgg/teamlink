@@ -18,6 +18,19 @@ export async function GET() {
   const teammate = await prisma.teammate.findUnique({ where: { userId: session.user.id } });
   if (!teammate) return NextResponse.json({ phase: "OFFLINE", order: null });
 
+  const now = new Date();
+  // The live poll doubles as a throttled panel heartbeat. This distinguishes
+  // a genuinely open panel from an account whose online toggle was left on.
+  if (!teammate.lastSeenAt || now.getTime() - teammate.lastSeenAt.getTime() >= 15_000) {
+    await prisma.teammate.update({
+      where: { id: teammate.id },
+      data: {
+        lastSeenAt: now,
+        ...(teammate.available && !teammate.availableSince ? { availableSince: now } : {}),
+      },
+    });
+  }
+
   const rows = await getTeammateDispatchView(teammate.id);
   const view = deriveServerPhase(rows, teammate.available);
 

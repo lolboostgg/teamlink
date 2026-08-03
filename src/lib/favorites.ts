@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 const KEY = "teamlink:favorites";
 // Same-tab listeners — the native "storage" event only fires in *other*
@@ -39,6 +39,11 @@ export function setFavorite(teammateId: string, favorited: boolean): string[] {
   const next = favorited ? Array.from(new Set([...ids, teammateId])) : ids.filter((id) => id !== teammateId);
   window.localStorage.setItem(KEY, JSON.stringify(next));
   notify();
+  void fetch("/api/favorites", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ teammateId, favorited }),
+  }).catch(() => undefined);
   return next;
 }
 
@@ -62,6 +67,25 @@ function getServerSnapshot(): string {
 // array reference each call.
 export function useFavoriteIds(): string[] {
   const raw = useSyncExternalStore(subscribe, readRaw, getServerSnapshot);
+  useEffect(() => {
+    let cancelled = false;
+    async function sync() {
+      // One-time backwards-compatible migration of favorites that predate
+      // the server model. Upserts make this safe on every device.
+      await Promise.all(getFavoriteIds().map((teammateId) => fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teammateId, favorited: true }),
+      }).catch(() => undefined)));
+      const response = await fetch("/api/favorites", { cache: "no-store" }).catch(() => null);
+      if (!response?.ok || cancelled) return;
+      const data = (await response.json()) as { favoriteIds?: string[] };
+      window.localStorage.setItem(KEY, JSON.stringify(data.favoriteIds ?? []));
+      notify();
+    }
+    void sync();
+    return () => { cancelled = true; };
+  }, []);
   try {
     return JSON.parse(raw);
   } catch {

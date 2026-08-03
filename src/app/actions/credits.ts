@@ -12,6 +12,7 @@ import { getCreditPackage } from "@/lib/credits";
 export async function purchaseCredits(packageId: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("You need to be signed in to buy credits.");
+  if (session.user.role !== "CLIENT") throw new Error("Credits are only available to client accounts.");
 
   const pkg = getCreditPackage(packageId);
   if (!pkg) throw new Error("Unknown credit package.");
@@ -47,6 +48,7 @@ export async function purchaseCredits(packageId: string) {
 export async function spendCredits(amountEUR: number, note: string): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "You need to be signed in." };
+  if (session.user.role !== "CLIENT") return { ok: false, error: "Credits are only available to client accounts." };
 
   const amountCents = Math.round(amountEUR * 100);
   if (amountCents <= 0) return { ok: false, error: "Invalid amount." };

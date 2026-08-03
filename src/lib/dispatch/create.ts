@@ -28,10 +28,10 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
 
   const pool = input.requestedTeammateId
     ? await prisma.teammate.findMany({ where: { id: input.requestedTeammateId } })
-    : await eligibleTeammates(input.gameSlug);
+    : await eligibleTeammates(input.gameSlug, input.clientUserId);
 
-  return prisma.order.create({
-    data: {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.create({ data: {
       clientUserId: input.clientUserId,
       customerLabel: input.customerLabel,
       gameSlug: input.gameSlug,
@@ -52,13 +52,21 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       },
     },
     include: { candidates: true },
+    });
+    if (pool.length > 0) {
+      await tx.teammate.updateMany({
+        where: { id: { in: pool.slice(0, MAX_CANDIDATES).map((teammate) => teammate.id) } },
+        data: { lastDispatchAt: inviteAt },
+      });
+    }
+    return order;
   });
 }
 
-async function eligibleTeammates(gameSlug: string) {
+async function eligibleTeammates(gameSlug: string, clientUserId: string | null) {
+  const heartbeatCutoff = new Date(Date.now() - 45_000);
   const available = await prisma.teammate.findMany({
-    where: { available: true },
-    orderBy: { rating: "desc" },
+    where: { available: true, lastSeenAt: { gte: heartbeatCutoff } },
   });
 
   // gameSlugs is a Json array, so the "listed for this game" filter can't be
@@ -81,5 +89,25 @@ async function eligibleTeammates(gameSlug: string) {
     ).map((c) => c.teammateId),
   );
 
-  return listed.filter((t) => !busyIds.has(t.id));
+  const eligible = listed.filter((t) => !busyIds.has(t.id));
+  const favoriteIds = clientUserId
+    ? new Set((await prisma.favoriteTeammate.findMany({
+        where: { clientUserId, teammateId: { in: eligible.map((teammate) => teammate.id) } },
+        select: { teammateId: true },
+      })).map((favorite) => favorite.teammateId))
+    : new Set<string>();
+  const now = Date.now();
+
+  // Fairness is based on server timestamps, never on a browser timer. A
+  // favorite is guaranteed into the invite wave; otherwise teammates who
+  // have kept the live panel open longest without a dispatch rise first.
+  return eligible.sort((a, b) => {
+    const score = (teammate: typeof a) => {
+      const waitSince = teammate.lastDispatchAt ?? teammate.availableSince ?? teammate.lastSeenAt ?? teammate.createdAt;
+      const waitingMinutes = Math.max(0, (now - waitSince.getTime()) / 60_000);
+      const onlineMinutes = teammate.availableSince ? Math.max(0, (now - teammate.availableSince.getTime()) / 60_000) : 0;
+      return (favoriteIds.has(teammate.id) ? 1_000_000 : 0) + waitingMinutes * 100 + onlineMinutes + teammate.rating * 10;
+    };
+    return score(b) - score(a) || a.createdAt.getTime() - b.createdAt.getTime();
+  });
 }

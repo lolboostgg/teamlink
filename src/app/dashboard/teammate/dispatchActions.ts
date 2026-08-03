@@ -91,7 +91,15 @@ export async function completeOrderAction(orderId: string): Promise<Result> {
 export async function setOnlineAction(online: boolean): Promise<Result> {
   try {
     const teammate = await requireTeammate();
-    await prisma.teammate.update({ where: { id: teammate.id }, data: { available: online } });
+    const now = new Date();
+    await prisma.teammate.update({
+      where: { id: teammate.id },
+      data: {
+        available: online,
+        availableSince: online ? (teammate.availableSince ?? now) : null,
+        lastSeenAt: online ? now : teammate.lastSeenAt,
+      },
+    });
     revalidatePath("/dashboard/teammate");
     return { ok: true };
   } catch (err) {

@@ -25,6 +25,25 @@ export function DashboardTrigger() {
   const rootRef = useRef<HTMLDivElement>(null);
   const href = dashboardHrefForRole(session?.user?.role);
   const profileHref = profileHrefForRole(session?.user?.role);
+  const role = session?.user?.role ?? "CLIENT";
+  const roleLabel = role === "TEAMMATE" ? "Teammate" : role === "ADMIN" ? "Admin" : "Client";
+  const roleLinks = role === "ADMIN"
+    ? [
+        ["/dashboard/admin/orders", "fa-solid fa-receipt", "Orders & sessions"],
+        ["/dashboard/admin/users", "fa-solid fa-users", "Manage users"],
+        ["/dashboard/admin/teammates", "fa-solid fa-user-group", "Manage teammates"],
+      ]
+    : role === "TEAMMATE"
+      ? [
+          ["/dashboard/teammate/sessions", "fa-solid fa-gamepad", "My sessions"],
+          ["/dashboard/teammate/reviews", "fa-solid fa-star", "My reviews"],
+          ["/dashboard/teammate/connections", "fa-solid fa-link", "Connections"],
+        ]
+      : [
+          ["/dashboard/client/orders", "fa-solid fa-receipt", "My orders"],
+          ["/dashboard/client/favorites", "fa-solid fa-heart", "Favorites"],
+          ["/dashboard/client/wallet", "fa-solid fa-wallet", "Credits & wallet"],
+        ];
   // The client dashboard lives inside this same marketing shell now (see
   // (marketing)/dashboard/client/layout.tsx) — only admin/teammate still
   // swap into the separate dashboard shell, so only they get the transition.
@@ -72,21 +91,35 @@ export function DashboardTrigger() {
     >
       <button
         type="button"
-        className="profile-avatar-btn"
+        className="profile-account-trigger"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Account menu"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={session?.user?.image || DEFAULT_AVATAR} alt="" />
+        <span className="profile-account-trigger__avatar">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={session?.user?.image || DEFAULT_AVATAR} alt="" />
+        </span>
+        <span className="profile-account-trigger__meta">
+          <strong>{session?.user?.name || "Account"}</strong>
+          <small>{roleLabel}</small>
+        </span>
+        <i className="fa-solid fa-chevron-down profile-account-trigger__chevron" aria-hidden="true" />
       </button>
 
       {open && (
-        <div className="dropdown-switcher__menu dropdown-switcher__menu--right" role="menu">
+        <div className="dropdown-switcher__menu dropdown-switcher__menu--right account-dropdown" role="menu">
           <div className="dropdown-switcher__account">
-            <span className="dropdown-switcher__account-name">{session?.user?.name || "Account"}</span>
-            <span className="dropdown-switcher__account-email">{session?.user?.email}</span>
+            <span className="dropdown-switcher__account-avatar">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={session?.user?.image || DEFAULT_AVATAR} alt="" />
+            </span>
+            <span className="dropdown-switcher__account-copy">
+              <span className="dropdown-switcher__account-name">{session?.user?.name || "Account"}</span>
+              <span className={`dropdown-switcher__role dropdown-switcher__role--${role.toLowerCase()}`}>{roleLabel}</span>
+              <span className="dropdown-switcher__account-email">{session?.user?.email}</span>
+            </span>
           </div>
           {profileHref && (
             <Link href={profileHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}>
@@ -104,6 +137,14 @@ export function DashboardTrigger() {
             <i className="fa-solid fa-gauge" aria-hidden="true" />
             <span>Go to dashboard</span>
           </Link>
+          <div className="account-dropdown__section-label">Quick access</div>
+          {roleLinks.map(([linkHref, icon, label]) => (
+            <Link key={linkHref} href={linkHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}>
+              <i className={icon} aria-hidden="true" />
+              <span>{label}</span>
+            </Link>
+          ))}
+          <div className="account-dropdown__divider" />
           <button type="button" className="dropdown-switcher__item" role="menuitem" onClick={handleLogout}>
             <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
             <span>Log out</span>
