@@ -3060,13 +3060,60 @@ ul {
   border-color: var(--cta-vivid);
 }
 
+/* Tab strip: General + one tab per assigned game. Stacking all eight games
+   in one form ran several screens tall, so only one section shows at a time
+   (a single Save still submits the whole profile). */
+.profile-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.profile-tab img {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+.profile-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.profile-tab.is-active {
+  border-color: var(--cta-vivid);
+  background: color-mix(in srgb, var(--cta-vivid) 14%, transparent);
+  color: var(--text);
+}
+
 /* One block per game the teammate is listed for — see lib/gameProfiles.ts. */
 .game-profile-block {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.02);
   padding: 16px 16px 6px;
-  margin: 18px 0;
 }
 
 .game-profile-block__legend {
@@ -3081,6 +3128,7 @@ ul {
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--text);
+  margin-bottom: 14px;
 }
 
 .game-profile-block__legend img {

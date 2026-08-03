@@ -101,6 +101,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
   const [gameProfiles, setGameProfiles] = useState<GameProfileMap>(initial.gameProfiles);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<string>("general");
 
   // One editable block per game the teammate is actually listed for — each
   // game brings its own ranks/roles/pool from the registry.
@@ -129,115 +130,155 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
     });
   }
 
+  // Everything lives behind one tab strip — with eight games assigned, a
+  // single stacked form would run several screens tall.
+  // Falls back to General if the active game gets unassigned mid-edit.
+  const activeGame = sections.find((s) => s.game.slug === tab) ?? null;
+  const showGeneral = tab === "general" || !activeGame;
+
   return (
     <form className="teammate-profile-form" onSubmit={handleSubmit}>
-      {showAdminFields && (
-        <div className="form-row">
-          <label htmlFor="tp-name">Display name</label>
-          <input id="tp-name" value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-      )}
+      <nav className="profile-tabs" aria-label="Profile sections">
+        <button
+          type="button"
+          className={`profile-tab${showGeneral ? " is-active" : ""}`}
+          onClick={() => setTab("general")}
+        >
+          <i className="fa-solid fa-user" aria-hidden="true" />
+          General
+        </button>
+        {sections.map(({ game }) => (
+          <button
+            key={game.slug}
+            type="button"
+            className={`profile-tab${tab === game.slug ? " is-active" : ""}`}
+            onClick={() => setTab(game.slug)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={gameIcon(game.slug)} alt="" />
+            {game.shortName}
+          </button>
+        ))}
+      </nav>
 
-      <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
+      {showGeneral && (
+        <>
+          {showAdminFields && (
+            <div className="form-row">
+              <label htmlFor="tp-name">Display name</label>
+              <input id="tp-name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+          )}
 
-      <div className="form-row">
-        <label htmlFor="tp-timezone">Timezone</label>
-        <input id="tp-timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} placeholder="CET (UTC+1)" />
-      </div>
+          <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
 
-      <div className="form-row">
-        <label htmlFor="tp-tagline">Tagline</label>
-        <textarea id="tp-tagline" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={240} />
-      </div>
-
-      <div className="form-row">
-        <label>Languages</label>
-        <div className="chip-check-group">
-          {LANGUAGES.map((l) => (
-            <label key={l.code} className="chip-check">
-              <input
-                type="checkbox"
-                checked={languages.includes(l.code)}
-                onChange={() => setLanguages((prev) => toggle(prev, l.code))}
-              />
-              <FlagIcon iso={l.flagIso} />
-              <span>{l.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      {showAdminFields && (
-        <div className="form-row">
-          <label>Games this teammate is listed for</label>
-          <div className="chip-check-group">
-            {GAMES.map((g) => (
-              <label key={g.slug} className="chip-check chip-check--avatar">
-                <input
-                  type="checkbox"
-                  checked={gameSlugs.includes(g.slug)}
-                  onChange={() => setGameSlugs((prev) => toggle(prev, g.slug))}
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={gameIcon(g.slug)} alt="" className="chip-check__icon" />
-                <span>{g.name}</span>
-              </label>
-            ))}
+          <div className="form-row">
+            <label htmlFor="tp-timezone">Timezone</label>
+            <input
+              id="tp-timezone"
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              placeholder="CET (UTC+1)"
+            />
           </div>
-        </div>
+
+          <div className="form-row">
+            <label htmlFor="tp-tagline">Tagline</label>
+            <textarea id="tp-tagline" value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={240} />
+          </div>
+
+          <div className="form-row">
+            <label>Languages</label>
+            <div className="chip-check-group">
+              {LANGUAGES.map((l) => (
+                <label key={l.code} className="chip-check">
+                  <input
+                    type="checkbox"
+                    checked={languages.includes(l.code)}
+                    onChange={() => setLanguages((prev) => toggle(prev, l.code))}
+                  />
+                  <FlagIcon iso={l.flagIso} />
+                  <span>{l.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {showAdminFields && (
+            <div className="form-row">
+              <label>Games this teammate is listed for</label>
+              <div className="chip-check-group">
+                {GAMES.map((g) => (
+                  <label key={g.slug} className="chip-check chip-check--avatar">
+                    <input
+                      type="checkbox"
+                      checked={gameSlugs.includes(g.slug)}
+                      onChange={() => setGameSlugs((prev) => toggle(prev, g.slug))}
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={gameIcon(g.slug)} alt="" className="chip-check__icon" />
+                    <span>{g.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {sections.length === 0 && (
+            <p className="form-row__hint">
+              No games assigned yet — an admin decides which games you&rsquo;re listed for.
+            </p>
+          )}
+        </>
       )}
 
-      {sections.length === 0 && (
-        <p className="form-row__hint">
-          No games assigned yet — an admin decides which games you&rsquo;re listed for.
-        </p>
-      )}
-
-      {sections.map(({ game, config }) => {
-        const entry = gameProfiles[game.slug] ?? EMPTY_GAME_PROFILE;
-        return (
-          <fieldset key={game.slug} className="game-profile-block">
-            <legend className="game-profile-block__legend">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={gameIcon(game.slug)} alt="" />
-              {game.name}
-            </legend>
-
-            {config.ranks && (
-              <div className="form-row">
-                <label>{config.ranks.label}</label>
-                <IconSelect
-                  label={`${game.name} ${config.ranks.label}`}
-                  value={entry.rank}
-                  options={config.ranks.options}
-                  onChange={(rank) => patch(game.slug, { rank })}
-                />
+      {activeGame &&
+        (() => {
+          const { game, config } = activeGame;
+          const entry = gameProfiles[game.slug] ?? EMPTY_GAME_PROFILE;
+          return (
+            <div className="game-profile-block">
+              <div className="game-profile-block__legend">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={gameIcon(game.slug)} alt="" />
+                {game.name}
               </div>
-            )}
 
-            {config.roles && (
-              <PillSection
-                section={config.roles}
-                selected={entry.roles}
-                onChange={(roles) => patch(game.slug, { roles })}
-              />
-            )}
+              {config.ranks && (
+                <div className="form-row">
+                  <label>{config.ranks.label}</label>
+                  <IconSelect
+                    label={`${game.name} ${config.ranks.label}`}
+                    value={entry.rank}
+                    options={config.ranks.options}
+                    onChange={(rank) => patch(game.slug, { rank })}
+                  />
+                </div>
+              )}
 
-            {config.pool && (
-              <div className="form-row">
-                <label>{config.pool.label}</label>
-                <IconMultiSelect
-                  label={config.pool.label}
-                  value={entry.pool}
-                  options={config.pool.options}
-                  placeholder={`Add ${config.pool.label.replace(/ pool$/i, "").toLowerCase()}`}
-                  onChange={(pool) => patch(game.slug, { pool })}
+              {config.roles && (
+                <PillSection
+                  section={config.roles}
+                  selected={entry.roles}
+                  onChange={(roles) => patch(game.slug, { roles })}
                 />
-              </div>
-            )}
-          </fieldset>
-        );
-      })}
+              )}
+
+              {config.pool && (
+                <div className="form-row">
+                  <label>{config.pool.label}</label>
+                  <IconMultiSelect
+                    label={config.pool.label}
+                    value={entry.pool}
+                    options={config.pool.options}
+                    placeholder={`Add ${config.pool.label.replace(/ pool$/i, "").toLowerCase()}`}
+                    onChange={(pool) => patch(game.slug, { pool })}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
       {error && (
         <p className="form-row__error">
