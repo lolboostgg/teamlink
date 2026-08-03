@@ -4,9 +4,12 @@ import { prisma } from "@/lib/db";
  * Everything the admin account page shows for one user — the account row,
  * its teammate profile (if any) and the counters for the overview tiles.
  */
-export async function getAccountDetail(userId: string) {
+export async function getAccountDetail(idOrNumber: string) {
+  // Profile URLs use the human account number (#813); the cuid still works
+  // as a fallback so older links and internal redirects keep resolving.
+  const accountNo = Number(idOrNumber);
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: Number.isInteger(accountNo) && accountNo > 0 ? { accountNo } : { id: idOrNumber },
     include: { teammate: true },
   });
   if (!user) return null;

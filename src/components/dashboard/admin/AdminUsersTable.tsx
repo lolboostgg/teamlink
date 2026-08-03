@@ -7,6 +7,7 @@ import { promoteToTeammate, demoteToClient } from "@/app/dashboard/admin/users/a
 
 export interface AdminUserRow {
   id: string;
+  accountNo: number;
   email: string;
   name: string | null;
   role: string;
@@ -56,6 +57,7 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
     <table className="dashboard-table">
       <thead>
         <tr>
+          <th>ID</th>
           <th>Name</th>
           <th>Email</th>
           <th>Joined</th>
@@ -66,8 +68,9 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
       <tbody>
         {users.map((u) => (
           <tr key={u.id}>
+            <td className="dashboard-table__no">#{u.accountNo}</td>
             <td className="dashboard-table__primary">
-              <Link href={`/dashboard/admin/accounts/${u.id}`} className="dashboard-table__link">
+              <Link href={`/dashboard/admin/accounts/${u.accountNo}`} className="dashboard-table__link">
                 {u.teammateName ?? u.name ?? "—"}
               </Link>
             </td>
@@ -101,8 +104,8 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
                     Make teammate
                   </button>
                 ))}
-              <Link href={`/dashboard/admin/accounts/${u.id}`} className="btn btn--ghost btn--sm">
-                Open profile
+              <Link href={`/dashboard/admin/accounts/${u.accountNo}`} className="btn btn--ghost btn--sm">
+                <i className="fa-solid fa-eye" aria-hidden="true" /> View
               </Link>{" "}
               {u.role === "TEAMMATE" && (
                 <button type="button" className="btn btn--ghost btn--sm" disabled={pending} onClick={() => handleDemote(u.id)}>

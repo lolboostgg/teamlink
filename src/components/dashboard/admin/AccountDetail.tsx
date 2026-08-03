@@ -14,6 +14,7 @@ import type { LanguageCode } from "@/lib/i18n";
 
 export interface AccountSummary {
   id: string;
+  accountNo: number;
   name: string;
   email: string;
   role: string;
@@ -101,6 +102,10 @@ export function AccountDetail({ account, teammate }: { account: AccountSummary; 
           </h1>
 
           <div className="account-header__meta">
+            <span>
+              <i className="fa-solid fa-hashtag" aria-hidden="true" />
+              {account.accountNo}
+            </span>
             <span>
               <i className="fa-solid fa-envelope" aria-hidden="true" /> {account.email}
             </span>
@@ -231,6 +236,10 @@ function OverviewPanel({ account, teammate }: { account: AccountSummary; teammat
       <div>
         <div className="account-overview__title">Account</div>
         <dl className="account-facts">
+          <div>
+            <dt>Account</dt>
+            <dd>#{account.accountNo}</dd>
+          </div>
           <div>
             <dt>Role</dt>
             <dd>{account.role}</dd>

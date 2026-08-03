@@ -15,6 +15,10 @@ datasource db {
 // below let those keep working before every caller has a real User yet.
 model User {
   id                 String   @id @default(cuid())
+  // Human-facing account number (#813), handed out in registration order to
+  // clients and teammates alike — the id everything user-visible refers to,
+  // including the admin profile URL. The cuid stays the DB-internal key.
+  accountNo          Int      @unique @default(autoincrement())
   email              String   @unique
   name               String?
   avatarUrl          String?  @db.Text

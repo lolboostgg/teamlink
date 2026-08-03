@@ -10,6 +10,7 @@ export default async function AdminUsersPage() {
   const users = await getUsersWithTeammate();
   const rows: AdminUserRow[] = users.map((u) => ({
     id: u.id,
+    accountNo: u.accountNo,
     email: u.email,
     name: u.name,
     role: u.role,

@@ -3313,6 +3313,12 @@ ul {
   justify-content: flex-end;
 }
 
+.dashboard-table__no {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
 .dashboard-table__link {
   color: var(--text);
   text-decoration: none;

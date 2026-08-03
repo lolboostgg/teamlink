@@ -29,6 +29,7 @@ export default async function AdminAccountPage({ params }: Props) {
       <AccountDetail
         account={{
           id: user.id,
+          accountNo: user.accountNo,
           name: user.name ?? "",
           email: user.email,
           role: user.role,

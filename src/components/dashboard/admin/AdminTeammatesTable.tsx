@@ -12,7 +12,7 @@ import type { GameProfileMap } from "@/lib/gameProfiles";
 export interface AdminTeammateRow {
   id: string;
   /** Null for legacy roster rows that were never linked to a real account. */
-  userId: string | null;
+  accountNo: number | null;
   name: string;
   email: string | null;
   tagline: string;
@@ -44,6 +44,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
       <table className="dashboard-table">
         <thead>
           <tr>
+            <th>ID</th>
             <th>Name</th>
             <th>Account</th>
             <th>Games</th>
@@ -54,9 +55,10 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
         <tbody>
           {teammates.map((t) => (
             <tr key={t.id}>
+              <td className="dashboard-table__no">{t.accountNo ? `#${t.accountNo}` : "—"}</td>
               <td className="dashboard-table__primary">
-                {t.userId ? (
-                  <Link href={`/dashboard/admin/accounts/${t.userId}`} className="dashboard-table__link">
+                {t.accountNo ? (
+                  <Link href={`/dashboard/admin/accounts/${t.accountNo}`} className="dashboard-table__link">
                     {t.name}
                   </Link>
                 ) : (
@@ -71,9 +73,9 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
                 </span>
               </td>
               <td>
-                {t.userId ? (
-                  <Link href={`/dashboard/admin/accounts/${t.userId}`} className="btn btn--ghost btn--sm">
-                    Open profile
+                {t.accountNo ? (
+                  <Link href={`/dashboard/admin/accounts/${t.accountNo}`} className="btn btn--ghost btn--sm">
+                    <i className="fa-solid fa-eye" aria-hidden="true" /> View
                   </Link>
                 ) : (
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditingId(t.id)}>
