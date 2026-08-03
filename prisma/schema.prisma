@@ -26,6 +26,8 @@ model User {
   discordId          String?  @unique
   role               Role     @default(CLIENT)
   creditBalanceCents Int      @default(0)
+  // { [topic]: { email, discord, sms } } — see lib/notificationPrefs.ts.
+  notificationPrefs  Json?
   createdAt          DateTime @default(now())
 
   teammate           Teammate?           @relation("UserTeammate")

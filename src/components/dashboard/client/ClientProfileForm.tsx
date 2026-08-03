@@ -8,9 +8,11 @@ import { AvatarUpload } from "@/components/ui/AvatarUpload";
 
 interface Props {
   initial: { name: string; email: string; avatarUrl: string };
+  /** Settings splits these across two sections; "both" keeps the old page. */
+  section?: "both" | "profile" | "password";
 }
 
-export function ClientProfileForm({ initial }: Props) {
+export function ClientProfileForm({ initial, section = "both" }: Props) {
   const { showToast } = useToast();
   const { update: updateSession } = useSession();
   const [name, setName] = useState(initial.name);
@@ -61,6 +63,7 @@ export function ClientProfileForm({ initial }: Props) {
 
   return (
     <div className="client-profile-form">
+      {section !== "password" && (
       <form onSubmit={handleProfileSubmit}>
         <div className="form-row">
           <label htmlFor="cp-name">Display name</label>
@@ -82,9 +85,11 @@ export function ClientProfileForm({ initial }: Props) {
           </button>
         </div>
       </form>
+      )}
 
-      <hr className="client-profile-form__divider" />
+      {section === "both" && <hr className="client-profile-form__divider" />}
 
+      {section !== "profile" && (
       <form onSubmit={handlePasswordSubmit}>
         <div className="form-row-grid">
           <div className="form-row">
@@ -120,6 +125,7 @@ export function ClientProfileForm({ initial }: Props) {
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }
