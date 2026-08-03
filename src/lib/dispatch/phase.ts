@@ -144,15 +144,11 @@ export function deriveServerPhase(rows: CandidateRow[], available: boolean, now 
     };
   }
 
-  const passedOver = rows.find(
-    (r) => r.status === "ACCEPTED" && !r.selected && ["ASSIGNED", "IN_PROGRESS", "COMPLETED"].includes(r.order.status),
-  );
-  if (passedOver) {
-    return { ...empty, phase: "NOT_SELECTED", order: toView(passedOver.order) };
-  }
-
   if (!available) return { ...empty, phase: "OFFLINE" };
 
+  // A new actionable request must win over an older informational
+  // "not selected" result. Otherwise dismissing that result only hides its
+  // modal while the stale phase keeps masking every later invitation.
   const incoming = rows.find(
     (r) =>
       r.status === "PENDING" &&
@@ -169,6 +165,13 @@ export function deriveServerPhase(rows: CandidateRow[], available: boolean, now 
       msLeft: Math.max(0, deadline.getTime() - now),
       acceptedCount: acceptedIn(incoming),
     };
+  }
+
+  const passedOver = rows.find(
+    (r) => r.status === "ACCEPTED" && !r.selected && ["ASSIGNED", "IN_PROGRESS", "COMPLETED"].includes(r.order.status),
+  );
+  if (passedOver) {
+    return { ...empty, phase: "NOT_SELECTED", order: toView(passedOver.order) };
   }
 
   return empty;
