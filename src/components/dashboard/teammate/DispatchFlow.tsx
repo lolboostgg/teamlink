@@ -12,6 +12,24 @@ import { withdrawDispatchAction } from "@/app/dashboard/teammate/dispatchActions
 import { useToast } from "@/components/ui/ToastProvider";
 import type { DispatchOrderView } from "@/lib/dispatch/phase";
 
+const SELECTION_ACK_KEY = "teamlink:acknowledged-selections";
+
+function acknowledgedSelections(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(window.localStorage.getItem(SELECTION_ACK_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+function acknowledgeSelection(orderId: string) {
+  if (typeof window === "undefined") return;
+  const ids = new Set(acknowledgedSelections());
+  ids.add(orderId);
+  window.localStorage.setItem(SELECTION_ACK_KEY, JSON.stringify([...ids].slice(-30)));
+}
+
 function seconds(ms: number) {
   return Math.max(0, Math.ceil(ms / 1000));
 }
@@ -68,6 +86,7 @@ export function DispatchFlow() {
   const [pending, startTransition] = useTransition();
   const announced = useRef<string | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
+  const [dismissedSelection, setDismissedSelection] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.phase !== "DISPATCH_INCOMING" || !state.order) return;
@@ -218,11 +237,23 @@ export function DispatchFlow() {
     // DispatchFlow lives in the shared dashboard layout, so it remains
     // mounted after navigating to the order room. Do not cover the room
     // with the same selection modal once the teammate has opened it.
-    if (pathname === `/dashboard/teammate/session/${order.id}`) return null;
+    if (
+      pathname === `/dashboard/teammate/session/${order.id}` ||
+      dismissedSelection === order.id ||
+      acknowledgedSelections().includes(order.id)
+    ) return null;
+
+    function dismissSelection() {
+      acknowledgeSelection(order.id);
+      setDismissedSelection(order.id);
+    }
 
     return (
       <div className="dispatch-modal__backdrop" role="status">
         <div className="dispatch-modal dispatch-modal--selected">
+          <button type="button" className="dispatch-modal__close" aria-label="Close" onClick={dismissSelection}>
+            <i className="fa-solid fa-xmark" aria-hidden="true" />
+          </button>
           <span className="dispatch-modal__check">
             <i className="fa-solid fa-check" aria-hidden="true" />
           </span>
@@ -234,7 +265,10 @@ export function DispatchFlow() {
             <button
               type="button"
               className="btn btn--vivid"
-              onClick={() => router.push(`/dashboard/teammate/session/${order.id}`)}
+              onClick={() => {
+                dismissSelection();
+                router.push(`/dashboard/teammate/session/${order.id}`);
+              }}
             >
               Open the order room
             </button>

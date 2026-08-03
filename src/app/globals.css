@@ -3395,6 +3395,7 @@ ul {
 }
 
 .dispatch-modal {
+  position: relative;
   width: min(560px, 100%);
   max-height: 90vh;
   overflow-y: auto;
@@ -6659,6 +6660,27 @@ ul {
   border: 1px dashed var(--border);
   color: var(--text-faint);
   font-size: 12px;
+}
+
+.dispatch-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--text-muted);
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  transition: color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.dispatch-modal__close:hover {
+  color: #fff;
+  background: rgba(255,255,255,.09);
+  transform: scale(1.04);
 }
 
 .chat-message {
