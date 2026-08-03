@@ -73,6 +73,9 @@ enum Role {
 // off of besides "the one demo teammate", so it lives on the row now).
 model Teammate {
   id             String   @id
+  // Roster number shown in the admin list. Separate from User.accountNo
+  // because some legacy roster rows were never linked to an account.
+  teammateNo     Int      @unique @default(autoincrement())
   userId         String?  @unique
   user           User?    @relation("UserTeammate", fields: [userId], references: [id])
   name           String

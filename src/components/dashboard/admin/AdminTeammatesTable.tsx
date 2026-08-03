@@ -11,6 +11,7 @@ import type { GameProfileMap } from "@/lib/gameProfiles";
 
 export interface AdminTeammateRow {
   id: string;
+  teammateNo: number;
   /** Null for legacy roster rows that were never linked to a real account. */
   accountNo: number | null;
   name: string;
@@ -55,7 +56,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
         <tbody>
           {teammates.map((t) => (
             <tr key={t.id}>
-              <td className="dashboard-table__no">{t.accountNo ? `#${t.accountNo}` : "—"}</td>
+              <td className="dashboard-table__no">#{t.teammateNo}</td>
               <td className="dashboard-table__primary">
                 {t.accountNo ? (
                   <Link href={`/dashboard/admin/accounts/${t.accountNo}`} className="dashboard-table__link">

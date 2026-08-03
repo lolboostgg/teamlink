@@ -7612,12 +7612,17 @@ ul {
 
 /* ── Dashboard panels/tables ─────────────────────────────────────── */
 .dashboard-panel {
+  position: relative;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  /* Barely-there top-light so a panel reads as a raised surface rather than
+     a flat rectangle — same trick as the game cards. */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 120px),
+    var(--bg-elevated);
   padding: 22px;
   margin-bottom: 24px;
   scroll-margin-top: 90px;
+  box-shadow: var(--shadow-card);
 }
 
 .dashboard-panel__head {
@@ -7626,16 +7631,23 @@ ul {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .dashboard-panel__title {
-  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15.5px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .dashboard-panel__sub {
   font-size: 12px;
   color: var(--text-faint);
+  margin-top: 3px;
 }
 
 .dashboard-empty {
@@ -7675,13 +7687,35 @@ ul {
 }
 
 .dashboard-table td {
-  padding: 12px 10px;
+  padding: 13px 10px;
   border-bottom: 1px solid var(--border);
   color: var(--text-muted);
+  vertical-align: middle;
+}
+
+/* Row highlight makes long lists trackable across the full width. */
+.dashboard-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.dashboard-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .dashboard-table tr:last-child td {
   border-bottom: none;
+}
+
+/* Action cells: keep buttons on one line, right-aligned, evenly spaced. */
+.dashboard-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dashboard-table td:last-child .btn + .btn,
+.dashboard-table td:last-child .btn + a.btn,
+.dashboard-table td:last-child a.btn + .btn {
+  margin-left: 6px;
 }
 
 .dashboard-table td:first-child,
