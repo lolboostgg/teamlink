@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n";
 import { GAMES } from "@/lib/games";
 import { RANK_TIERS, CHAMPION_NAMES, LOL_LANES, championIcon, getRankMeta, type LolRankTier, type ChampionName, type LolLane } from "@/lib/lolAssets";
+import { gameIcon } from "@/lib/gameArt";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { AvatarUpload } from "@/components/ui/AvatarUpload";
 import type { TeammateProfileInput } from "@/lib/teammateProfile";
@@ -23,6 +24,16 @@ interface Props {
   onSave: (value: TeammateProfileFormValue) => Promise<void>;
   onCancel?: () => void;
 }
+
+// No lane art ships in public/lol — Font Awesome marks read well at chip size
+// and match the icon language used everywhere else in the dashboard.
+const LANE_ICONS: Record<LolLane, string> = {
+  Top: "fa-solid fa-chess-rook",
+  Jungle: "fa-solid fa-tree",
+  Mid: "fa-solid fa-wand-sparkles",
+  ADC: "fa-solid fa-crosshairs",
+  Support: "fa-solid fa-shield-halved",
+};
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -104,7 +115,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
                 onChange={() => setLanguages((prev) => toggle(prev, l.code))}
               />
               <FlagIcon iso={l.flagIso} />
-              {l.label}
+              <span>{l.label}</span>
             </label>
           ))}
         </div>
@@ -114,7 +125,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
         <label>League of Legends champion pool</label>
         <div className="chip-check-group">
           {CHAMPION_NAMES.map((c) => (
-            <label key={c} className="chip-check">
+            <label key={c} className="chip-check chip-check--avatar">
               <input
                 type="checkbox"
                 checked={lolChampions.includes(c)}
@@ -122,7 +133,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={championIcon(c)} alt="" className="chip-check__icon" />
-              {c}
+              <span>{c}</span>
             </label>
           ))}
         </div>
@@ -138,7 +149,8 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
                 checked={lolLanes.includes(lane)}
                 onChange={() => setLolLanes((prev) => toggle(prev, lane))}
               />
-              {lane}
+              <i className={`${LANE_ICONS[lane]} chip-check__glyph`} aria-hidden="true" />
+              <span>{lane}</span>
             </label>
           ))}
         </div>
@@ -149,13 +161,15 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
           <label>Games this teammate is listed for</label>
           <div className="chip-check-group">
             {GAMES.map((g) => (
-              <label key={g.slug} className="chip-check">
+              <label key={g.slug} className="chip-check chip-check--avatar">
                 <input
                   type="checkbox"
                   checked={gameSlugs.includes(g.slug)}
                   onChange={() => setGameSlugs((prev) => toggle(prev, g.slug))}
                 />
-                {g.name}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={gameIcon(g.slug)} alt="" className="chip-check__icon" />
+                <span>{g.name}</span>
               </label>
             ))}
           </div>
