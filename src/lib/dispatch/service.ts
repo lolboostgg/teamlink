@@ -42,17 +42,21 @@ export async function reconcileOrder(orderId: string) {
       .sort((a, b) => (a.respondedAt?.getTime() ?? 0) - (b.respondedAt?.getTime() ?? 0));
     const settled = candidates.every((c) => c.status !== "PENDING") || order.dispatchDeadline <= now;
 
-    if ((order.status === "SEARCHING" || order.status === "CANDIDATES_READY") && settled) {
-      if (accepted.length === 0) {
+    if (order.status === "SEARCHING" || order.status === "CANDIDATES_READY") {
+      // The first acceptance opens the picker immediately. Other pending
+      // invitees remain eligible and may continue filling the five slots.
+      if (accepted.length > 0) {
+        return tx.order.update({
+          where: { id: orderId },
+          data: { status: "SELECTING", selectionDeadline: new Date(now.getTime() + SELECTION_WINDOW_MS) },
+        });
+      }
+      if (settled) {
         return tx.order.update({
           where: { id: orderId },
           data: { status: order.isReplay ? "CANCELLED" : "NO_MATCH" },
         });
       }
-      return tx.order.update({
-        where: { id: orderId },
-        data: { status: "SELECTING", selectionDeadline: new Date(now.getTime() + SELECTION_WINDOW_MS) },
-      });
     }
 
     // Customer let the timer run out — the auto-select candidate gets it.
@@ -135,7 +139,7 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
         });
         throw new DispatchError("That request expired.");
       }
-      if (!["SEARCHING", "CANDIDATES_READY"].includes(candidate.order.status)) {
+      if (!["SEARCHING", "CANDIDATES_READY", "SELECTING"].includes(candidate.order.status)) {
         throw new DispatchError("This order is no longer taking candidates.");
       }
 
@@ -177,6 +181,11 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
       // acceptance is the selection, so the customer never sees a five-slot picker.
       if (candidate.order.requestedTeammateId === teammateId) {
         await assignWinners(tx, orderId, [candidate.id], now);
+      } else if (candidate.order.status !== "SELECTING") {
+        await tx.order.update({
+          where: { id: orderId },
+          data: { status: "SELECTING", selectionDeadline: new Date(now.getTime() + SELECTION_WINDOW_MS) },
+        });
       }
       return accepted;
     },
@@ -206,6 +215,12 @@ export async function withdrawDispatchAcceptance(orderId: string, teammateId: st
       where: { orderId, status: "ACCEPTED" },
       orderBy: { respondedAt: "asc" },
     });
+    if (remaining.length === 0 && candidate.order.status === "SELECTING") {
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "CANDIDATES_READY", selectionDeadline: null },
+      });
+    }
     for (let i = 0; i < remaining.length; i++) {
       await tx.dispatchCandidate.update({
         where: { id: remaining[i].id },

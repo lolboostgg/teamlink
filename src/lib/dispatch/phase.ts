@@ -45,6 +45,7 @@ export interface DispatchStateView {
 
 type CandidateRow = {
   status: string;
+  invitedAt: Date;
   selected: boolean;
   candidatePosition: number | null;
   isAutoSelect: boolean;
@@ -155,7 +156,8 @@ export function deriveServerPhase(rows: CandidateRow[], available: boolean, now 
   const incoming = rows.find(
     (r) =>
       r.status === "PENDING" &&
-      ["SEARCHING", "CANDIDATES_READY"].includes(r.order.status) &&
+      ["SEARCHING", "CANDIDATES_READY", "SELECTING"].includes(r.order.status) &&
+      r.invitedAt.getTime() <= now &&
       (!r.expiresAt || r.expiresAt.getTime() > now),
   );
   if (incoming) {

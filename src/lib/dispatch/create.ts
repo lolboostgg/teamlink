@@ -20,6 +20,10 @@ export interface CreateOrderInput {
  */
 export async function createOrderWithDispatch(input: CreateOrderInput) {
   const now = new Date();
+  // Give the customer a short setup window for preferences before any
+  // teammate sees an alert. A little variation keeps it feeling natural.
+  const alertDelayMs = input.isReplay ? 0 : 10_000 + Math.floor(Math.random() * 5_001);
+  const inviteAt = new Date(now.getTime() + alertDelayMs);
   const deadline = new Date(now.getTime() + DISPATCH_WINDOW_MS);
 
   const pool = input.requestedTeammateId
@@ -42,7 +46,7 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       candidates: {
         create: pool.slice(0, MAX_CANDIDATES).map((t) => ({
           teammateId: t.id,
-          invitedAt: now,
+          invitedAt: inviteAt,
           expiresAt: deadline,
         })),
       },
@@ -69,7 +73,7 @@ async function eligibleTeammates(gameSlug: string) {
           OR: [
             { selected: true, order: { status: { in: ["ASSIGNED", "IN_PROGRESS"] } } },
             { status: "ACCEPTED", order: { status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] } } },
-            { status: "PENDING", order: { status: { in: ["SEARCHING", "CANDIDATES_READY"] } } },
+            { status: "PENDING", order: { status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] } } },
           ],
         },
         select: { teammateId: true },
