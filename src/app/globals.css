@@ -6034,6 +6034,84 @@ ul {
   color: var(--cta-vivid-ink);
 }
 
+/* Refined candidate cards: profile-first instead of a dark full-bleed image. */
+.pick-card {
+  height: 258px;
+  border-radius: 20px;
+  border-color: rgba(255,255,255,.1);
+  background:
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--cta-vivid) 16%, transparent), transparent 42%),
+    linear-gradient(165deg, rgba(25,29,44,.98), rgba(11,14,25,.98));
+  box-shadow: 0 14px 38px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.04);
+}
+
+.pick-card--center {
+  height: 282px;
+  border-color: color-mix(in srgb, var(--hue-purple) 62%, var(--border));
+  box-shadow: 0 18px 46px rgba(0,0,0,.32), 0 0 36px color-mix(in srgb, var(--hue-purple) 20%, transparent);
+}
+
+.pick-card__art {
+  top: 35px;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  width: 104px;
+  height: 104px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,.13);
+  background: rgba(4,6,13,.75);
+  box-shadow: 0 12px 28px rgba(0,0,0,.4), 0 0 0 6px rgba(255,255,255,.025);
+}
+
+.pick-card--center .pick-card__art { top: 56px; }
+.pick-card__art img { object-fit: cover; transform: none; }
+.pick-card:hover .pick-card__art img,
+.pick-card:focus-visible .pick-card__art img { transform: scale(1.04); }
+.pick-card__art::after { background: linear-gradient(180deg, transparent 58%, rgba(4,6,13,.28)); }
+
+.pick-card__rating {
+  top: 12px;
+  left: 12px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(5,7,14,.78);
+  box-shadow: 0 6px 18px rgba(0,0,0,.2);
+}
+
+.pick-card--center .pick-card__rating { top: 35px; }
+.pick-card__body {
+  gap: 5px;
+  padding: 14px;
+  background: linear-gradient(180deg, transparent, rgba(7,9,17,.96) 20%);
+}
+.pick-card__flags { min-height: 17px; }
+.pick-card__name { font-size: 16px; letter-spacing: -.01em; }
+.pick-card__status { position: absolute; right: 14px; top: 48px; }
+.pick-card__rank { min-height: 18px; }
+.pick-card__select-btn {
+  margin-top: 7px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 11px;
+  background: rgba(255,255,255,.07);
+  transition: background .16s ease, border-color .16s ease, transform .16s ease;
+}
+.pick-card:hover .pick-card__select-btn { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.16); }
+.pick-card.is-selected .pick-card__select-btn { border-color: transparent; }
+
+.teammate-details {
+  border-radius: 15px;
+  border-color: rgba(255,255,255,.08);
+  background: linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.015));
+  box-shadow: inset 0 1px rgba(255,255,255,.025);
+}
+
+.searching-card { height: 258px; border-radius: 20px; }
+.searching-card--center { height: 282px; }
+
 /* ── Searching placeholder card ──────────────────────────────────── */
 .searching-card {
   width: 100%;

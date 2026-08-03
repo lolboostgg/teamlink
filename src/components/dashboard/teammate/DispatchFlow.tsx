@@ -87,23 +87,25 @@ export function DispatchFlow() {
   const announced = useRef<string | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [dismissedSelection, setDismissedSelection] = useState<string | null>(null);
+  const stateOrderId = state.order?.id;
+  const stateOrderGameName = state.order?.gameName;
+  const stateOrderOption = state.order?.option;
 
   useEffect(() => {
-    if (state.phase !== "DISPATCH_INCOMING" || !state.order) return;
-    if (announced.current === state.order.id) return;
-    announced.current = state.order.id;
+    if (state.phase !== "DISPATCH_INCOMING" || !stateOrderId) return;
+    if (announced.current === stateOrderId) return;
+    announced.current = stateOrderId;
     playNotificationSound();
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      new Notification("New order request", { body: `${state.order.gameName} · ${state.order.option}` });
+      new Notification("New order request", { body: `${stateOrderGameName} · ${stateOrderOption}` });
     }
-  }, [state.phase, state.order]);
+  }, [state.phase, stateOrderId, stateOrderGameName, stateOrderOption]);
 
   useEffect(() => {
-    if (state.phase !== "NOT_SELECTED" || !state.order) return;
-    const id = state.order.id;
-    const timer = setTimeout(() => setDismissed(id), 5000);
+    if (state.phase !== "NOT_SELECTED" || !stateOrderId) return;
+    const timer = setTimeout(() => setDismissed(stateOrderId), 5000);
     return () => clearTimeout(timer);
-  }, [state.phase, state.order]);
+  }, [state.phase, stateOrderId]);
 
   if (!isTeammate) return null;
 

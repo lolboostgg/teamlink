@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import {
   markConversationRead,
   sendChatMessage,
@@ -50,10 +50,24 @@ export function SessionChat({
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = messagesRef.current;
     if (!element) return;
-    element.scrollTop = element.scrollHeight;
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        element.scrollTop = element.scrollHeight;
+      });
+    });
+    const observer = new ResizeObserver(() => {
+      element.scrollTop = element.scrollHeight;
+    });
+    observer.observe(element);
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+      observer.disconnect();
+    };
   }, [messages.length, otherTyping]);
 
   useEffect(() => {

@@ -35,7 +35,7 @@ export function TeammateCard({ teammate, isCenter, isFirstAccepted, isSelected, 
 
       <span className="pick-card__art" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/avatars/default.webp" alt="" />
+        <img src={teammate.avatarUrl || "/avatars/default.webp"} alt="" />
       </span>
 
       <span className="pick-card__rating">
