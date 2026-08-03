@@ -2887,30 +2887,6 @@ ul {
   font-weight: 600;
 }
 
-/* Small check badge, only on selected chips. */
-.chip-check::after {
-  content: "\f00c";
-  font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro";
-  font-weight: 900;
-  font-size: 8px;
-  display: grid;
-  place-items: center;
-  width: 14px;
-  height: 14px;
-  margin-left: 1px;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.chip-check:has(input:checked)::after {
-  opacity: 1;
-  transform: scale(1);
-}
-
 .chip-check__icon {
   width: 16px;
   height: 16px;
@@ -3079,14 +3055,26 @@ ul {
 }
 
 .account-header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 20px;
-  padding: 22px;
+  padding: 24px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: radial-gradient(80% 140% at 0% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 160px),
+    rgba(13, 17, 32, 0.76);
+  backdrop-filter: blur(12px);
   box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.account-header__name {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
 }
 
 .account-header__avatar img {
@@ -3185,7 +3173,14 @@ ul {
   padding: 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)), rgba(13, 17, 32, 0.7);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.account-stat:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
 }
 
 .account-stat__icon {
@@ -3200,8 +3195,10 @@ ul {
 }
 
 .account-stat__value {
-  font-size: 20px;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
   color: var(--text);
 }
 
@@ -3230,7 +3227,8 @@ ul {
   padding: 13px 15px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)), rgba(13, 17, 32, 0.7);
+  backdrop-filter: blur(10px);
   color: var(--text-muted);
   font: inherit;
   text-align: left;
@@ -3245,7 +3243,8 @@ ul {
 
 .account-section-card.is-active {
   border-color: color-mix(in srgb, var(--accent) 70%, transparent);
-  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent),
+    rgba(13, 17, 32, 0.8);
   color: var(--text);
 }
 
@@ -7143,17 +7142,33 @@ ul {
    Dashboard shell
    ══════════════════════════════════════════════════════════════════ */
 .dashboard-shell {
+  position: relative;
   display: flex;
   min-height: 100vh;
 }
 
+/* Same ambient wash the hero uses, so the dashboard sits in the same room
+   as the marketing side instead of on a flat panel-grey background. */
+.dashboard-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 50% at 18% 0%, color-mix(in srgb, var(--accent) 13%, transparent) 0%, transparent 70%),
+    radial-gradient(60% 45% at 100% 8%, color-mix(in srgb, var(--hue-cyan) 8%, transparent) 0%, transparent 65%);
+}
+
 .dashboard-sidebar {
-  flex: 0 0 240px;
+  flex: 0 0 246px;
   display: flex;
   flex-direction: column;
-  padding: 22px 16px;
+  padding: 22px 14px;
   border-right: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 240px),
+    rgba(13, 17, 32, 0.72);
+  backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
   height: 100vh;
@@ -7172,10 +7187,11 @@ ul {
 }
 
 .dashboard-sidebar__nav-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 10px 13px;
   border-radius: var(--radius-sm);
   font-size: 13.5px;
   font-weight: 600;
@@ -7188,9 +7204,21 @@ ul {
   color: var(--text);
 }
 
+/* Accent bar on the active item — the same marker the marketing nav uses. */
 .dashboard-sidebar__nav-link.is-active {
-  background: var(--accent-soft);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent 85%);
   color: var(--text);
+}
+
+.dashboard-sidebar__nav-link.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 
 .dashboard-sidebar__nav-link.is-active i {
@@ -7641,18 +7669,29 @@ ul {
 }
 
 /* ── Dashboard panels/tables ─────────────────────────────────────── */
+/* Glass panel, matching the marketing cards: translucent dark base, a
+   top-light gradient and a hairline highlight along the top edge. */
 .dashboard-panel {
   position: relative;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  /* Barely-there top-light so a panel reads as a raised surface rather than
-     a flat rectangle — same trick as the game cards. */
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 120px),
-    var(--bg-elevated);
-  padding: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 140px),
+    rgba(13, 17, 32, 0.72);
+  backdrop-filter: blur(12px);
+  padding: 24px;
   margin-bottom: 24px;
   scroll-margin-top: 90px;
   box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.dashboard-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  pointer-events: none;
 }
 
 .dashboard-panel__head {
@@ -7665,13 +7704,17 @@ ul {
   border-bottom: 1px solid var(--border);
 }
 
+/* Display face + uppercase, same as the topbar title and the landing
+   section headings — the dashboard was the only place using body type here. */
 .dashboard-panel__title {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 15.5px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .dashboard-panel__sub {
@@ -7707,13 +7750,13 @@ ul {
 
 .dashboard-table th {
   text-align: left;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
   color: var(--text-faint);
-  padding: 0 10px 10px;
-  border-bottom: 1px solid var(--border);
+  padding: 0 10px 12px;
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .dashboard-table td {
