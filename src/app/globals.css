@@ -8862,6 +8862,12 @@ a.notification-panel__item:hover {
   font-size: 13px;
 }
 
+.admin-orders-table-wrap { overflow-x: auto; }
+.admin-orders-table { min-width: 1080px; }
+.admin-orders-table td { vertical-align: middle; }
+.admin-orders-table td small { display: block; margin-top: 4px; color: var(--text-faint); font-size: 11px; }
+.admin-orders-table td a { display: block; color: var(--accent); font-weight: 700; }
+
 .dashboard-table tbody tr {
   background: var(--dash-surface-2);
 }

@@ -11,6 +11,7 @@ export interface Teammate {
   timezone: string;
   rating: number;
   sessions: number;
+  reviewCount?: number;
   gameSlugs: string[];
   lolRank?: LolRankTier;
   lolChampions?: ChampionName[];

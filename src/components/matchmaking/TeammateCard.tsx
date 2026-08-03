@@ -39,7 +39,7 @@ export function TeammateCard({ teammate, isCenter, isFirstAccepted, isSelected, 
       </span>
 
       <span className="pick-card__rating">
-        <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} ({teammate.sessions})
+        <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} ({teammate.reviewCount ?? 0} reviews)
       </span>
 
       {isSelected && (

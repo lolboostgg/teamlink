@@ -17,6 +17,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const rows = await prisma.teammate.findMany({
     where: { available: true },
+    include: { _count: { select: { reviewsReceived: true } } },
     orderBy: { name: "asc" },
   });
 
@@ -30,6 +31,7 @@ export async function GET() {
     timezone: t.timezone ?? "",
     rating: t.rating,
     sessions: t.sessionsCount,
+    reviewCount: t._count.reviewsReceived,
     gameSlugs: (t.gameSlugs as GameSlugsJson | null) ?? [],
     lolRank: (t.lolRank as LolRankTier | null) ?? undefined,
     lolChampions: (t.lolChampions as ChampionName[] | null) ?? undefined,

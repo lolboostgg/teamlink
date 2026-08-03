@@ -1,16 +1,11 @@
-"use client";
-
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
-import { computeAdminStats } from "@/lib/dashboard/adminMetrics";
 
-// Real stats derived from every dispatch order that's ever hit this
-// browser's localStorage — see lib/dashboard/adminMetrics.ts. Scoped to
-// this browser, not a platform-wide figure, since there's no server.
-export function AdminOverviewPanels() {
-  const stats = computeAdminStats(useAllOrders());
+interface Props {
+  stats: { gmvEUR: number; activeBookings: number; totalOrders: number; completedSessions: number };
+}
 
+export function AdminOverviewPanels({ stats }: Props) {
   return (
     <StatGrid>
       <StatCard icon="fa-solid fa-sack-dollar" label="Gross merchandise value" value={stats.gmvEUR} currency color="var(--hue-green)" />

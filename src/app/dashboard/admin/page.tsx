@@ -5,6 +5,7 @@ import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { AdminOverviewPanels } from "@/components/dashboard/admin/AdminOverviewPanels";
 import { AdminUsersTable, type AdminUserRow } from "@/components/dashboard/admin/AdminUsersTable";
 import { getUsersWithTeammate } from "@/lib/admin/users";
+import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Admin Dashboard" };
 // This page queries the live DB — force dynamic rendering instead of
@@ -14,7 +15,19 @@ export const metadata: Metadata = { title: "Admin Dashboard" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const [session, users] = await Promise.all([auth(), getUsersWithTeammate()]);
+  const [session, users, orders] = await Promise.all([
+    auth(),
+    getUsersWithTeammate(),
+    prisma.order.findMany({ select: { priceEUR: true, status: true } }),
+  ]);
+  const failed = new Set(["CANCELLED", "NO_MATCH"]);
+  const terminal = new Set(["COMPLETED", "CANCELLED", "NO_MATCH"]);
+  const stats = {
+    gmvEUR: orders.filter((order) => !failed.has(order.status)).reduce((sum, order) => sum + Number(order.priceEUR), 0),
+    activeBookings: orders.filter((order) => !terminal.has(order.status)).length,
+    totalOrders: orders.length,
+    completedSessions: orders.filter((order) => order.status === "COMPLETED").length,
+  };
   const displayName = session?.user?.name || session?.user?.email?.split("@")[0] || "Admin";
   const recentRows: AdminUserRow[] = users.slice(0, 5).map((u) => ({
     id: u.id,
@@ -40,7 +53,7 @@ export default async function AdminDashboardPage() {
         ]}
       />
 
-      <AdminOverviewPanels />
+      <AdminOverviewPanels stats={stats} />
 
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">
