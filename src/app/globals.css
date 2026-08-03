@@ -3312,6 +3312,64 @@ ul {
   justify-content: flex-end;
 }
 
+/* Online switch — the one control that decides whether dispatches reach
+   this teammate at all, so it gets its own weight on the dashboard. */
+.online-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  margin-bottom: 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)), rgba(13, 17, 32, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+.online-toggle.is-online {
+  border-color: color-mix(in srgb, var(--success) 50%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--success) 10%, transparent), transparent),
+    rgba(13, 17, 32, 0.72);
+}
+
+.online-toggle__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.online-toggle__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.online-toggle.is-online .online-toggle__dot {
+  background: var(--success);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent);
+  animation: onlinePulse 2s ease-out infinite;
+}
+
+@keyframes onlinePulse {
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .online-toggle.is-online .online-toggle__dot {
+    animation: none;
+  }
+}
+
 /* ---------------------------------------------------------------------
    Teammate dispatch flow — incoming request, candidate waiting state and
    the two outcomes. Deliberately quiet: one accent, no neon, no red on the

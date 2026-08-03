@@ -15,7 +15,10 @@ export const dynamic = "force-dynamic";
 export default async function TeammateDashboardPage() {
   const session = await auth();
   const teammate = session?.user?.id
-    ? await prisma.teammate.findUnique({ where: { userId: session.user.id }, select: { name: true } })
+    ? await prisma.teammate.findUnique({
+        where: { userId: session.user.id },
+        select: { name: true, available: true },
+      })
     : null;
   const displayName = teammate?.name || session?.user?.name || "there";
 
@@ -30,9 +33,9 @@ export default async function TeammateDashboardPage() {
         ]}
       />
 
+      <AvailabilityToggle initialOnline={teammate?.available ?? false} />
       <PendingInvitesBanner />
       <TeammateOverviewPanels />
-      <AvailabilityToggle />
       <ActiveOrderCard />
     </>
   );

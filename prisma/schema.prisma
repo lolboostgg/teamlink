@@ -192,9 +192,14 @@ model Order {
   conversationPref    String?
   playStylePref       String?
   cancelApprovedAt    DateTime?
+  // What the teammate reports while playing — see lib/dispatch/types.ts.
+  // Distinct from `status`, which is the order's own lifecycle.
+  sessionStatus       String?
+  teammatePayoutEUR   Decimal?  @db.Decimal(10, 2)
   createdAt           DateTime  @default(now())
 
   candidates DispatchCandidate[]
+  games      SessionGame[]
   review     Review?
 
   @@index([clientUserId])
@@ -218,15 +223,40 @@ model DispatchCandidate {
   teammateId         String
   teammate           Teammate         @relation(fields: [teammateId], references: [id])
   status             CandidateStatus  @default(PENDING)
-  simulatedRespondAt DateTime
-  simulatedOutcome   CandidateStatus
+  // Only set for simulated candidates from the demo dispatcher; a real
+  // teammate's row leaves these null and answers for itself.
+  simulatedRespondAt DateTime?
+  simulatedOutcome   CandidateStatus?
+  invitedAt          DateTime         @default(now())
+  expiresAt          DateTime?
   respondedAt        DateTime?
+  /** 1-based order of acceptance — 1 is the auto-select. */
+  candidatePosition  Int?
+  isAutoSelect       Boolean          @default(false)
+  selectedAt         DateTime?
   manual             Boolean          @default(false)
   selected           Boolean          @default(false)
   isPrimary          Boolean          @default(false)
 
   @@unique([orderId, teammateId])
   @@index([teammateId, status])
+}
+
+// One played game inside an order. `proofPath` points at a private Storage
+// object (bucket "proofs"), served through signed URLs like the KYC docs.
+model SessionGame {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  gameNumber  Int
+  result      String
+  note        String?  @db.Text
+  proofPath   String?
+  proofName   String?
+  completedAt DateTime @default(now())
+
+  @@unique([orderId, gameNumber])
+  @@index([orderId])
 }
 
 // One rating per order, same rule as the old lib/reviews.ts (re-rating an

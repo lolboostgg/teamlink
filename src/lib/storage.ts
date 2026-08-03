@@ -5,7 +5,8 @@
 // The service-role key bypasses every row-level policy, so nothing in here
 // may ever be imported from a client component — server actions and route
 // handlers only.
-const BUCKET = "kyc";
+export type StorageBucket = "kyc" | "proofs";
+const BUCKET: StorageBucket = "kyc";
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -24,13 +25,13 @@ export function isStorageConfigured(): boolean {
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 const MAX_BYTES = 8 * 1024 * 1024;
 
-export async function uploadPrivateFile(path: string, file: File): Promise<string> {
+export async function uploadPrivateFile(path: string, file: File, bucket: StorageBucket = BUCKET): Promise<string> {
   const { base, key } = config();
 
   if (!ALLOWED_TYPES.has(file.type)) throw new Error("Only JPG, PNG, WEBP or PDF files are accepted.");
   if (file.size > MAX_BYTES) throw new Error("That file is larger than 8 MB.");
 
-  const res = await fetch(`${base}/object/${BUCKET}/${path}`, {
+  const res = await fetch(`${base}/object/${bucket}/${path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${key}`,
@@ -47,10 +48,10 @@ export async function uploadPrivateFile(path: string, file: File): Promise<strin
 }
 
 /** Short-lived read URL. Defaults to a minute — long enough to render, too short to share. */
-export async function createSignedUrl(path: string, expiresIn = 60): Promise<string> {
+export async function createSignedUrl(path: string, expiresIn = 60, bucket: StorageBucket = BUCKET): Promise<string> {
   const { base, key } = config();
 
-  const res = await fetch(`${base}/object/sign/${BUCKET}/${path}`, {
+  const res = await fetch(`${base}/object/sign/${bucket}/${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({ expiresIn }),

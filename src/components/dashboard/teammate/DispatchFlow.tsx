@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
 import { playNotificationSound } from "@/lib/notificationSound";
-import { useTeammateDispatchState } from "@/lib/matchmaking/useTeammateDispatchState";
-import { MAX_CANDIDATE_SLOTS } from "@/lib/matchmaking/teammateState";
-import type { DispatchOrder } from "@/lib/matchmaking/types";
+import { useDispatchState } from "@/lib/dispatch/useDispatchState";
+import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
+import { useToast } from "@/components/ui/ToastProvider";
+import type { DispatchOrderView } from "@/lib/dispatch/phase";
 
 function seconds(ms: number) {
   return Math.max(0, Math.ceil(ms / 1000));
 }
 
-/** Ring that empties as the countdown runs out. */
 function CountdownRing({ msLeft, totalMs }: { msLeft: number; totalMs: number }) {
   const pct = Math.max(0, Math.min(1, msLeft / totalMs));
   const urgent = msLeft < 6000;
@@ -24,18 +24,17 @@ function CountdownRing({ msLeft, totalMs }: { msLeft: number; totalMs: number })
       className={`dispatch-ring${urgent ? " is-urgent" : ""}`}
       style={{ ["--ring-pct" as string]: `${pct * 360}deg` }}
       role="timer"
-      aria-live="off"
     >
       <span>{seconds(msLeft)}</span>
     </div>
   );
 }
 
-function OrderFacts({ order }: { order: DispatchOrder }) {
+function OrderFacts({ order }: { order: DispatchOrderView }) {
   const facts: [string, string][] = [
     ["Service", order.option],
     ["Customer", order.customerLabel],
-    ["Team size", `${order.teammates} teammate${order.teammates === 1 ? "" : "s"}`],
+    ["Team size", `${order.teammatesRequested} teammate${order.teammatesRequested === 1 ? "" : "s"}`],
     ["Conversation", order.conversationPref ?? "No preference"],
     ["Play style", order.playStylePref ?? "No preference"],
     ["Vibe", order.vibe ?? "No preference"],
@@ -54,20 +53,20 @@ function OrderFacts({ order }: { order: DispatchOrder }) {
 }
 
 /**
- * Everything between a dispatch arriving and the order room opening:
- * the incoming request, the candidate waiting state, and the two outcomes.
- * Mounted once in the dashboard shell so it follows the teammate across
- * pages instead of only existing on the overview.
+ * The dispatch flow, now driven entirely by the server's phase (see
+ * lib/dispatch/service.ts). Accepting is a server action — the UI never
+ * decides who gets an order, it only reflects what the DB committed.
  */
 export function DispatchFlow() {
   const { data: session } = useSession();
   const isTeammate = session?.user?.role === "TEAMMATE";
   const router = useRouter();
-  const state = useTeammateDispatchState();
+  const { showToast } = useToast();
+  const state = useDispatchState();
+  const [pending, startTransition] = useTransition();
   const announced = useRef<string | null>(null);
-  const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<string | null>(null);
 
-  // One alert per arriving dispatch, not per render.
   useEffect(() => {
     if (state.phase !== "DISPATCH_INCOMING" || !state.order) return;
     if (announced.current === state.order.id) return;
@@ -78,15 +77,24 @@ export function DispatchFlow() {
     }
   }, [state.phase, state.order]);
 
-  // "Someone else got it" is a passing notice — it clears itself.
   useEffect(() => {
     if (state.phase !== "NOT_SELECTED" || !state.order) return;
     const id = state.order.id;
-    const timer = setTimeout(() => setDismissedNotice(id), 5000);
+    const timer = setTimeout(() => setDismissed(id), 5000);
     return () => clearTimeout(timer);
   }, [state.phase, state.order]);
 
   if (!isTeammate) return null;
+
+  function respond(accept: boolean) {
+    const orderId = state.order?.id;
+    if (!orderId) return;
+    startTransition(async () => {
+      const result = await respondToDispatchAction(orderId, accept);
+      if (!result.ok) showToast(result.error, "error");
+      state.refresh();
+    });
+  }
 
   if (state.phase === "DISPATCH_INCOMING" && state.order) {
     const order = state.order;
@@ -112,23 +120,28 @@ export function DispatchFlow() {
             </div>
             <div className="dispatch-modal__payout">
               <span>Your payout</span>
-              <PriceTag amountEUR={order.priceEUR} />
+              <PriceTag amountEUR={order.payoutEUR} />
             </div>
           </div>
 
           <OrderFacts order={order} />
 
           <p className="dispatch-modal__note">
-            Accepting puts you in the candidate pool — the customer still picks from up to {MAX_CANDIDATE_SLOTS}{" "}
+            Accepting puts you in the candidate pool — the customer still picks from up to {state.maxCandidates}{" "}
             teammates. Only accept if you can start right away.
           </p>
 
           <div className="dispatch-modal__actions">
-            <button type="button" className="btn btn--ghost" onClick={() => state.respond(false)}>
+            <button type="button" className="btn btn--ghost" disabled={pending} onClick={() => respond(false)}>
               Decline
             </button>
-            <button type="button" className="btn btn--vivid dispatch-modal__accept" onClick={() => state.respond(true)}>
-              Accept order
+            <button
+              type="button"
+              className="btn btn--vivid dispatch-modal__accept"
+              disabled={pending}
+              onClick={() => respond(true)}
+            >
+              {pending ? "Sending..." : "Accept order"}
             </button>
           </div>
         </div>
@@ -152,8 +165,8 @@ export function DispatchFlow() {
             The customer can see your profile now. They pick from everyone who accepted.
           </p>
 
-          <div className={`dispatch-slot-row${state.isAutoSelect ? " is-auto" : ""}`}>
-            {Array.from({ length: MAX_CANDIDATE_SLOTS }, (_, i) => (
+          <div className="dispatch-slot-row">
+            {Array.from({ length: state.maxCandidates }, (_, i) => (
               <span
                 key={i}
                 className={`dispatch-slot${i < state.acceptedCount ? " is-filled" : ""}${
@@ -171,15 +184,13 @@ export function DispatchFlow() {
           ) : (
             <div className="dispatch-status">
               <strong>
-                Candidate {state.candidatePosition ?? "—"} of {MAX_CANDIDATE_SLOTS}
+                Candidate {state.candidatePosition ?? "—"} of {state.maxCandidates}
               </strong>
               <span>The customer can still pick you until the timer runs out.</span>
             </div>
           )}
 
-          <p className="dispatch-modal__note">
-            You won&rsquo;t receive other requests while this is open.
-          </p>
+          <p className="dispatch-modal__note">You won&rsquo;t receive other requests while this is open.</p>
         </div>
       </div>
     );
@@ -211,7 +222,7 @@ export function DispatchFlow() {
     );
   }
 
-  if (state.phase === "NOT_SELECTED" && state.order && dismissedNotice !== state.order.id) {
+  if (state.phase === "NOT_SELECTED" && state.order && dismissed !== state.order.id) {
     return (
       <div className="dispatch-modal__backdrop" role="status">
         <div className="dispatch-modal dispatch-modal--neutral">
