@@ -8,6 +8,7 @@ import {
   setSessionStatus,
   recordGame,
   completeOrder,
+  withdrawDispatchAcceptance,
   DispatchError,
 } from "@/lib/dispatch/service";
 
@@ -17,6 +18,17 @@ async function requireTeammate() {
   const teammate = await prisma.teammate.findUnique({ where: { userId: session.user.id } });
   if (!teammate) throw new Error("No teammate profile linked to this account.");
   return teammate;
+}
+
+export async function withdrawDispatchAction(orderId: string): Promise<Result> {
+  try {
+    const teammate = await requireTeammate();
+    await withdrawDispatchAcceptance(orderId, teammate.id);
+    revalidatePath("/dashboard/teammate");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
 }
 
 // Server actions return a result object rather than throwing across the

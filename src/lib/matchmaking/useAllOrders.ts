@@ -8,7 +8,12 @@ import type { DispatchOrder } from "@/lib/matchmaking/types";
 // derived from real matched teammates. Server-backed now, so it follows the
 // account across devices instead of living in one browser's localStorage.
 export function useAllOrders(): DispatchOrder[] {
+  return useAllOrdersState().orders;
+}
+
+export function useAllOrdersState(): { orders: DispatchOrder[]; loading: boolean } {
   const [orders, setOrders] = useState<DispatchOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -17,7 +22,10 @@ export function useAllOrders(): DispatchOrder[] {
         const res = await fetch("/api/dispatch/orders", { cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled) setOrders(data.orders ?? []);
+        if (!cancelled) {
+          setOrders(data.orders ?? []);
+          setLoading(false);
+        }
       } catch {
         // Keep the last good list; the next tick retries.
       }
@@ -30,5 +38,5 @@ export function useAllOrders(): DispatchOrder[] {
     };
   }, []);
 
-  return orders;
+  return { orders, loading };
 }

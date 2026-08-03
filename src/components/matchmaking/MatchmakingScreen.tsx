@@ -184,11 +184,13 @@ export function MatchmakingScreen({ orderId }: Props) {
         ) : (
           <span className="matching-screen__spinner matching-screen__spinner--lg" aria-hidden="true" />
         )}
-        <h1 className="matching-screen__title matching-screen__title--glow">Searching for your perfect teammate&hellip;</h1>
+        <h1 className="matching-screen__title matching-screen__title--glow">
+          {order?.isReplay ? "Waiting for your teammate…" : "Searching for your perfect teammate…"}
+        </h1>
         {order && (
           <>
             <p className="matching-screen__elapsed-label">
-              Estimated under {formatMMSS(dispatchWindowSeconds)}
+              {order.isReplay ? `Exclusive request · cancels in ${formatMMSS(Math.max(0, dispatchWindowSeconds - searchElapsedSeconds))}` : `Estimated under ${formatMMSS(dispatchWindowSeconds)}`}
             </p>
 
             <div className="matching-screen__summary">

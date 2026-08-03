@@ -24,6 +24,7 @@ export interface DispatchOrderView {
   /** Original stored label used to keep existing chat thread keys stable. */
   customerKey?: string;
   teammatesRequested: number;
+  gamesBooked: number;
   vibe: string | null;
   conversationPref: string | null;
   playStylePref: string | null;
@@ -57,6 +58,7 @@ type CandidateRow = {
     teammatePayoutEUR: unknown;
     customerLabel: string;
     teammatesRequested: number;
+    gamesBooked: number;
     vibe: string | null;
     conversationPref: string | null;
     playStylePref: string | null;
@@ -86,6 +88,7 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
     payoutEUR: order.teammatePayoutEUR !== null ? Number(order.teammatePayoutEUR) : price,
     customerLabel: order.customerLabel,
     teammatesRequested: order.teammatesRequested,
+    gamesBooked: order.gamesBooked,
     vibe: order.vibe,
     conversationPref: order.conversationPref,
     playStylePref: order.playStylePref,

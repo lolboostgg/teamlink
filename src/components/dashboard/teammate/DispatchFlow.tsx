@@ -8,6 +8,7 @@ import { gameIcon } from "@/lib/gameArt";
 import { playNotificationSound } from "@/lib/notificationSound";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
+import { withdrawDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { DispatchOrderView } from "@/lib/dispatch/phase";
 
@@ -192,6 +193,20 @@ export function DispatchFlow() {
           )}
 
           <p className="dispatch-modal__note">You won&rsquo;t receive other requests while this is open.</p>
+          <div className="dispatch-modal__actions">
+            <button
+              type="button"
+              className="btn btn--ghost"
+              disabled={pending}
+              onClick={() => startTransition(async () => {
+                const result = await withdrawDispatchAction(state.order!.id);
+                if (!result.ok) showToast(result.error, "error");
+                state.refresh();
+              })}
+            >
+              Withdraw acceptance
+            </button>
+          </div>
         </div>
       </div>
     );

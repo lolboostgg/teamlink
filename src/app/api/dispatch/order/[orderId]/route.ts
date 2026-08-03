@@ -43,6 +43,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
       customerLabel: order.clientUser?.name || order.clientUser?.email || order.customerLabel,
       customerKey: order.customerLabel,
       teammatesRequested: order.teammatesRequested,
+      gamesBooked: order.gamesBooked,
       vibe: order.vibe,
       conversationPref: order.conversationPref,
       playStylePref: order.playStylePref,

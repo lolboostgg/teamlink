@@ -7,7 +7,7 @@ import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
 import { placeOrder, placeReplayOrder } from "@/lib/matchmaking/createOrderClient";
 import { getTeammateById } from "@/lib/teammates";
 import { setFavorite, useFavoriteIds } from "@/lib/favorites";
-import { addReview } from "@/lib/reviews";
+import { submitTeammateReview } from "@/app/actions/reviews";
 import { addTip, getTipForOrder } from "@/lib/tips";
 import { addCoupon } from "@/lib/coupons";
 import { conversationKey } from "@/lib/matchmaking/chatStore";
@@ -67,7 +67,6 @@ export function SessionScreen({ orderId }: Props) {
   const [sendingTip, setSendingTip] = useState(false);
   const [tipSent, setTipSent] = useState<number | null>(null);
   const [blocked, setBlocked] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [rerolling, setRerolling] = useState(false);
   const [rerollModalOpen, setRerollModalOpen] = useState(false);
   const [startingReplay, setStartingReplay] = useState(false);
@@ -140,6 +139,8 @@ export function SessionScreen({ orderId }: Props) {
 
   const teammate = order.selectedTeammateId ? getTeammateById(order.selectedTeammateId) : null;
   const favorited = teammate ? favoriteIds.includes(teammate.id) : false;
+  const savedRating = rating || order.reviewRating || 0;
+  const hasRated = rated || savedRating > 0;
   const liveStatuses: string[] = ["assigned", "in_progress", "completed"];
 
   if (!teammate || !liveStatuses.includes(order.status)) {
@@ -173,11 +174,6 @@ export function SessionScreen({ orderId }: Props) {
     setCancelModalOpen(false);
   }
 
-  function handleCopyCode() {
-    navigator.clipboard?.writeText(discountCodeFor(order!.id));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  }
 
   // Rebooking skips the full checkout form (it's the same game/option/
   // price as the order you just finished), so credits are the payment
@@ -208,7 +204,17 @@ export function SessionScreen({ orderId }: Props) {
       showToast(result.error ?? "Couldn't charge credits for this purchase.", "error");
       return;
     }
-    for (let i = 0; i < buyMoreQty; i++) await placeReplayOrder(order!);
+    const response = await fetch(`/api/dispatch/orders/${order!.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add-games", quantity: buyMoreQty }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      setBuyingMore(false);
+      showToast(data.error ?? "Couldn't add more games.", "error");
+      return;
+    }
     setBuyingMore(false);
     setBuyMoreOpen(false);
     setBuyMoreQty(1);
@@ -228,7 +234,6 @@ export function SessionScreen({ orderId }: Props) {
   }
 
   if (order.status === "completed") {
-    const code = discountCodeFor(order.id);
     return (
       <div className="session-complete">
         <Reveal>
@@ -243,6 +248,7 @@ export function SessionScreen({ orderId }: Props) {
         <div className="session-complete__grid">
           <Reveal delay={60}>
             <div className="dashboard-panel session-complete__rate">
+              <div className="session-complete__review-label">Review your teammate</div>
               <div className="session-complete__teammate-hero">
                 <span className="session-complete__hero-avatar">
                   <AvatarIcon seed={teammate.id} />
@@ -266,23 +272,25 @@ export function SessionScreen({ orderId }: Props) {
                       onClick={() => {
                         setRating(n);
                         setRated(true);
-                        addReview(teammate.id, order.id, n);
+                        void submitTeammateReview(order.id, teammate.id, n).then((result) => {
+                          if (!result.ok) showToast(result.error, "error");
+                        });
                       }}
                     >
                       <i
-                        className={(hoverRating || rating) >= n ? "fa-solid fa-star" : "fa-regular fa-star"}
+                        className={(hoverRating || savedRating) >= n ? "fa-solid fa-star" : "fa-regular fa-star"}
                         aria-hidden="true"
                       />
                     </button>
                   ))}
                 </div>
                 <p className="session-complete__stars-note">
-                  {rated ? (
+                  {hasRated ? (
                     <>
                       <i className="fa-solid fa-circle-check" aria-hidden="true" /> Thanks — your rating was saved.
                     </>
                   ) : (
-                    "All ratings are anonymous and don't show up on their profile."
+                    "Your rating is saved to this completed session."
                   )}
                 </p>
               </div>
@@ -328,19 +336,21 @@ export function SessionScreen({ orderId }: Props) {
           </Reveal>
 
           <Reveal delay={100}>
-            <div className="dashboard-panel session-complete__discount">
-              <span className="session-complete__discount-icon">
-                <i className="fa-solid fa-ticket" aria-hidden="true" />
+            <div className="dashboard-panel session-complete__trustpilot">
+              <span className="session-complete__trustpilot-mark">
+                <i className="fa-solid fa-star" aria-hidden="true" />
               </span>
-              <div className="session-complete__discount-title">Your next session is 10% off</div>
-              <p className="session-complete__discount-sub">A one-time code, just for you.</p>
-              <div className="session-complete__discount-code">
-                <code>{code}</code>
-                <button type="button" className="btn btn--ghost btn--sm" onClick={handleCopyCode}>
-                  {copied ? "Copied!" : "Copy"}
-                </button>
+              <div className="session-complete__review-label">Review us on Trustpilot</div>
+              <div className="session-complete__trustpilot-title">How was your TeamLink experience?</div>
+              <p className="session-complete__discount-sub">Your feedback helps players find teammates they can trust.</p>
+              <div className="session-complete__stars session-complete__stars--trustpilot">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <a key={n} href="https://www.trustpilot.com/evaluate/lolboost.gg" target="_blank" rel="noreferrer" aria-label={`Review TeamLink with ${n} stars`}>
+                    <i className="fa-solid fa-star" aria-hidden="true" />
+                  </a>
+                ))}
               </div>
-              <p className="session-complete__discount-note">Valid for one purchase only. Not cumulative.</p>
+              <a href="https://www.trustpilot.com/evaluate/lolboost.gg" target="_blank" rel="noreferrer" className="btn btn--ghost btn--sm">Open Trustpilot</a>
             </div>
           </Reveal>
         </div>

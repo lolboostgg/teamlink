@@ -205,6 +205,7 @@ model Order {
   option              String
   priceEUR            Decimal   @db.Decimal(10, 2)
   teammatesRequested  Int       @default(1)
+  gamesBooked         Int       @default(1)
   requestedTeammateId String?
   status              OrderStatus @default(SEARCHING)
   dispatchDeadline    DateTime

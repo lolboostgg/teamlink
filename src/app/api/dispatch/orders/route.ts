@@ -19,7 +19,7 @@ export async function GET() {
 
   const rows = await prisma.order.findMany({
     where: { clientUserId: session.user.id },
-    include: { candidates: true },
+    include: { candidates: true, review: true },
     orderBy: { createdAt: "desc" },
     take: 40,
   });
@@ -30,7 +30,7 @@ export async function GET() {
 
   const fresh = await prisma.order.findMany({
     where: { id: { in: rows.map((r) => r.id) } },
-    include: { candidates: true },
+    include: { candidates: true, review: true },
     orderBy: { createdAt: "desc" },
   });
 

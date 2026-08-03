@@ -30,6 +30,8 @@ type Row = {
   option: string;
   priceEUR: unknown;
   teammatesRequested: number;
+  gamesBooked: number;
+  sessionStatus: string | null;
   requestedTeammateId: string | null;
   status: string;
   dispatchDeadline: Date;
@@ -53,6 +55,7 @@ type Row = {
     selected: boolean;
     isPrimary: boolean;
   }[];
+  review?: { rating: number } | null;
 };
 
 export function toCustomerOrder(row: Row): DispatchOrder {
@@ -66,6 +69,9 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     option: row.option,
     priceEUR: Number(row.priceEUR),
     teammates: row.teammatesRequested,
+    gamesBooked: row.gamesBooked,
+    sessionStatus: row.sessionStatus,
+    reviewRating: row.review?.rating ?? null,
     requestedTeammateId: row.requestedTeammateId,
     candidates: row.candidates.map((c) => ({
       teammateId: c.teammateId,

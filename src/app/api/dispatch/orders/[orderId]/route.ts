@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/auth";
 import { reconcileOrder, selectTeammates, DispatchError } from "@/lib/dispatch/service";
 import { toCustomerOrder } from "@/lib/dispatch/customerView";
 
 export const dynamic = "force-dynamic";
 
-const include = { candidates: true } as const;
+const include = { candidates: true, review: true } as const;
 
 /** Customer-side read of one order, in the shape the matchmaking screens expect. */
 export async function GET(_request: Request, { params }: { params: Promise<{ orderId: string }> }) {
@@ -57,6 +58,39 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
           where: { id: orderId },
           data: { status: "CANCEL_PENDING", sessionStatus: "CANCEL_REQUESTED" },
         });
+        break;
+      }
+      case "add-games": {
+        const session = await auth();
+        const quantity = Math.max(1, Math.min(9, Number(body.quantity) || 1));
+        const current = await prisma.order.findFirst({
+          where: { id: orderId, clientUserId: session?.user?.id, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
+          include: { candidates: { where: { selected: true }, include: { teammate: true } } },
+        });
+        if (!current) return NextResponse.json({ error: "This session cannot be extended." }, { status: 403 });
+        const unitPrice = Number(current.priceEUR) / Math.max(1, current.gamesBooked);
+        await prisma.order.update({
+          where: { id: orderId },
+          data: {
+            gamesBooked: { increment: quantity },
+            priceEUR: { increment: unitPrice * quantity },
+            teammatePayoutEUR: current.teammatePayoutEUR === null
+              ? undefined
+              : { increment: unitPrice * quantity },
+          },
+        });
+        const userIds = current.candidates.map((candidate) => candidate.teammate.userId).filter(Boolean) as string[];
+        if (userIds.length > 0) {
+          await prisma.notification.createMany({
+            data: userIds.map((userId) => ({
+              userId,
+              type: "order.games_added",
+              title: `${current.customerLabel} booked ${quantity === 1 ? "one more game" : `${quantity} more games`}`,
+              body: `${current.gameName} · ${current.gamesBooked + quantity} games total`,
+              href: `/dashboard/teammate/session/${current.id}`,
+            })),
+          });
+        }
         break;
       }
       default:

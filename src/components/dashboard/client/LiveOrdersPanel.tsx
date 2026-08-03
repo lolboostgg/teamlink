@@ -77,6 +77,7 @@ export function LiveOrdersPanel() {
                   <PriceTag amountEUR={order.priceEUR} />
                   {teammate ? ` · ${teammate.name}` : ""} ·{" "}
                   <span className={`dashboard-pill ${STATUS_PILL[order.status]}`}>{STATUS_LABEL[order.status]}</span>
+                  {order.sessionStatus ? ` · ${order.sessionStatus.toLowerCase().replaceAll("_", " ")}` : ""}
                 </div>
               </div>
               <div className="notification-panel__actions">

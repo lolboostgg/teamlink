@@ -1,9 +1,29 @@
 import type { Metadata } from "next";
-import { TeammateReviewsPanel } from "@/components/dashboard/teammate/TeammateReviewsPanel";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { ReviewsList } from "@/components/dashboard/teammate/ReviewsList";
 
 export const metadata: Metadata = { title: "Reviews" };
 
-export default function TeammateReviewsPage() {
+export default async function TeammateReviewsPage() {
+  const session = await auth();
+  const teammate = session?.user?.id
+    ? await prisma.teammate.findUnique({ where: { userId: session.user.id } })
+    : null;
+  const reviews = teammate
+    ? await prisma.review.findMany({
+        where: { teammateId: teammate.id },
+        include: { order: true, clientUser: true },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+  const display = reviews.map((review) => ({
+    id: review.id,
+    client: review.clientUser?.name || review.order.customerLabel || "Anonymous",
+    gameName: review.order.gameName,
+    rating: review.rating,
+    date: new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(review.createdAt),
+  }));
   return (
     <div className="dashboard-panel">
       <div className="dashboard-panel__head">
@@ -12,7 +32,14 @@ export default function TeammateReviewsPage() {
           <div className="dashboard-panel__sub">What clients are saying</div>
         </div>
       </div>
-      <TeammateReviewsPanel />
+      {display.length > 0 ? (
+        <ReviewsList reviews={display} />
+      ) : (
+        <div className="dashboard-empty">
+          <i className="fa-solid fa-star-half-stroke" aria-hidden="true" />
+          <p>No reviews yet.</p>
+        </div>
+      )}
     </div>
   );
 }

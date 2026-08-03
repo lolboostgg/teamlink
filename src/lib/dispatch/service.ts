@@ -44,7 +44,10 @@ export async function reconcileOrder(orderId: string) {
 
     if ((order.status === "SEARCHING" || order.status === "CANDIDATES_READY") && settled) {
       if (accepted.length === 0) {
-        return tx.order.update({ where: { id: orderId }, data: { status: "NO_MATCH" } });
+        return tx.order.update({
+          where: { id: orderId },
+          data: { status: order.isReplay ? "CANCELLED" : "NO_MATCH" },
+        });
       }
       return tx.order.update({
         where: { id: orderId },
@@ -160,7 +163,7 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
       const acceptedCount = await tx.dispatchCandidate.count({ where: { orderId, status: "ACCEPTED" } });
       if (acceptedCount >= MAX_CANDIDATES) throw new DispatchError("The candidate slots are already full.");
 
-      return tx.dispatchCandidate.update({
+      const accepted = await tx.dispatchCandidate.update({
         where: { id: candidate.id },
         data: {
           status: "ACCEPTED",
@@ -170,9 +173,46 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
           isAutoSelect: acceptedCount === 0,
         },
       });
+      // Replay requests are exclusive to the previous teammate. Their
+      // acceptance is the selection, so the customer never sees a five-slot picker.
+      if (candidate.order.requestedTeammateId === teammateId) {
+        await assignWinners(tx, orderId, [candidate.id], now);
+      }
+      return accepted;
     },
     { isolationLevel: "Serializable" },
   );
+}
+
+/** Releases an accepted candidate slot while the customer is still choosing. */
+export async function withdrawDispatchAcceptance(orderId: string, teammateId: string) {
+  const now = new Date();
+  return prisma.$transaction(async (tx) => {
+    const candidate = await tx.dispatchCandidate.findUnique({
+      where: { orderId_teammateId: { orderId, teammateId } },
+      include: { order: true },
+    });
+    if (!candidate || candidate.status !== "ACCEPTED" || candidate.selected) {
+      throw new DispatchError("This acceptance can no longer be withdrawn.");
+    }
+    if (!["SEARCHING", "CANDIDATES_READY", "SELECTING"].includes(candidate.order.status)) {
+      throw new DispatchError("The customer has already finished choosing.");
+    }
+    await tx.dispatchCandidate.update({
+      where: { id: candidate.id },
+      data: { status: "DECLINED", respondedAt: now, candidatePosition: null, isAutoSelect: false },
+    });
+    const remaining = await tx.dispatchCandidate.findMany({
+      where: { orderId, status: "ACCEPTED" },
+      orderBy: { respondedAt: "asc" },
+    });
+    for (let i = 0; i < remaining.length; i++) {
+      await tx.dispatchCandidate.update({
+        where: { id: remaining[i].id },
+        data: { candidatePosition: i + 1, isAutoSelect: i === 0 },
+      });
+    }
+  });
 }
 
 /** The customer picking. Only accepted candidates of a SELECTING order qualify. */
@@ -266,7 +306,9 @@ export async function completeOrder(orderId: string, teammateId: string) {
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { games: true } });
   if (!order) throw new DispatchError("Unknown order.");
   if (order.status === "COMPLETED") throw new DispatchError("This order is already closed.");
-  if (order.games.length === 0) throw new DispatchError("Submit at least one game result first.");
+  if (order.games.length < order.gamesBooked) {
+    throw new DispatchError(`Submit all ${order.gamesBooked} booked game results first.`);
+  }
 
   const completed = await prisma.order.update({
     where: { id: orderId },

@@ -29,6 +29,9 @@ export interface DispatchOrder {
   option: string;
   priceEUR: number;
   teammates: number;
+  gamesBooked: number;
+  sessionStatus: string | null;
+  reviewRating: number | null;
   requestedTeammateId: string | null;
   candidates: DispatchCandidate[];
   status: OrderStatus;

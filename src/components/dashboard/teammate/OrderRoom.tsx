@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
@@ -68,8 +68,11 @@ function GameCompletionModal({
 
   return (
     <div className="dispatch-modal__backdrop" role="dialog" aria-modal="true">
-      <div className="dispatch-modal dispatch-modal--form">
-        <h2 className="dispatch-modal__title">Finish game {gameNumber}</h2>
+      <div className="dispatch-modal dispatch-modal--form session-finish-modal">
+        <div className="session-modal__hero">
+          <span><i className="fa-solid fa-flag-checkered" aria-hidden="true" /></span>
+          <div><div className="dispatch-modal__eyebrow">Game {gameNumber}</div><h2 className="dispatch-modal__title">Finish session</h2></div>
+        </div>
 
         <div className="form-row">
           <label>Result</label>
@@ -151,6 +154,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   const [finishing, setFinishing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const previousGamesBooked = useRef<number | null>(null);
   const [, startTransition] = useTransition();
 
   const load = useCallback(async () => {
@@ -161,8 +165,13 @@ export function OrderRoom({ orderId }: { orderId: string }) {
       return;
     }
     setDenied(null);
+    if (previousGamesBooked.current !== null && data.gamesBooked > previousGamesBooked.current) {
+      const added = data.gamesBooked - previousGamesBooked.current;
+      showToast(`${data.customerLabel} booked ${added === 1 ? "one more game" : `${added} more games`}.`, "success");
+    }
+    previousGamesBooked.current = data.gamesBooked;
     setOrder(data);
-  }, [orderId]);
+  }, [orderId, showToast]);
 
   useEffect(() => {
     load();
@@ -189,7 +198,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   }
 
   const played = order.games.length;
-  const booked = Math.max(1, order.teammatesRequested);
+  const booked = Math.max(1, order.gamesBooked);
   const isClosed = order.status === "COMPLETED";
   const status = (order.sessionStatus ?? "WAITING_FOR_INVITE") as SessionStatus;
 
@@ -270,7 +279,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </div>
             {!isClosed && (
               <button type="button" className="btn btn--vivid btn--sm" onClick={() => setFinishing(true)}>
-                Finish game {played + 1}
+              Finish session
               </button>
             )}
           </div>
@@ -369,8 +378,12 @@ export function OrderRoom({ orderId }: { orderId: string }) {
 
       {confirming && (
         <div className="dispatch-modal__backdrop" role="dialog" aria-modal="true">
-          <div className="dispatch-modal dispatch-modal--form">
-            <h2 className="dispatch-modal__title">Complete this order?</h2>
+          <div className="dispatch-modal dispatch-modal--form session-complete-modal">
+            <div className="session-modal__hero session-modal__hero--success">
+              <span><i className="fa-solid fa-circle-check" aria-hidden="true" /></span>
+              <div><div className="dispatch-modal__eyebrow">Final confirmation</div><h2 className="dispatch-modal__title">Complete this order?</h2></div>
+            </div>
+            <p className="dispatch-modal__lead">Review the session summary before releasing it for payout.</p>
             <dl className="account-facts">
               <div>
                 <dt>Games booked</dt>
@@ -392,7 +405,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               </div>
             </dl>
 
-            <label className="chip-check">
+            <label className="session-confirm-check">
               <input type="checkbox" checked={confirmed} onChange={() => setConfirmed((v) => !v)} />
               <span>I confirm the booked games were played in full.</span>
             </label>
