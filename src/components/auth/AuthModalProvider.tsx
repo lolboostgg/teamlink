@@ -17,7 +17,7 @@ interface AuthModalContextValue {
   // page load flashes the wrong one for a frame (see HeaderAuthButtons,
   // DashboardAuthGate).
   isLoading: boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -75,9 +75,17 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     setFormError(null);
   }, []);
 
-  const logout = useCallback(() => {
-    signOut({ redirect: false });
-    showToast("Logged out", "info");
+  const logout = useCallback(async () => {
+    // Await the POST to /api/auth/signout: that response carries the expired
+    // HttpOnly auth cookies. Only after the browser has applied it do we
+    // replace the page, clearing every server/client session snapshot.
+    try {
+      await withTimeout(signOut({ redirect: false, redirectTo: "/" }), 10_000);
+      showToast("Logged out", "info");
+      window.location.replace("/");
+    } catch {
+      showToast("Logout failed. Please try again.", "error");
+    }
   }, [showToast]);
 
   // OAuth leaves the site entirely, so there's no result to await here — the
@@ -118,9 +126,20 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const result = await withTimeout(
+      const login = () => withTimeout(
         signIn("credentials", { email, password, remember: String(remember), redirect: false }),
       );
+      let result;
+      try {
+        result = await login();
+      } catch (firstError) {
+        // NextAuth performs provider + CSRF + callback requests. A transient
+        // proxy/Cloudflare response can break one leg even while auth itself
+        // is healthy, so retry transport failures once before surfacing them.
+        if (firstError instanceof Error && firstError.message === "AUTH_TIMEOUT") throw firstError;
+        await new Promise((resolve) => window.setTimeout(resolve, 450));
+        result = await login();
+      }
       if (result?.error) {
         setFormError("Incorrect email or password.");
         return;
