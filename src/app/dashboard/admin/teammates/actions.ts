@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { sanitizeTeammateProfileInput, type TeammateProfileClientInput } from "@/lib/teammateProfile";
 import { GAMES } from "@/lib/games";
 
@@ -35,7 +36,10 @@ export async function updateTeammateProfile(
       avatarUrl: clean.avatarUrl || null,
       languages: clean.languages,
       gameSlugs,
-      gameProfiles: clean.gameProfiles,
+      // Prisma's Json input type doesn't accept a Record<string, …> of
+      // interfaces (no index signature), so the shape is asserted here —
+      // sanitizeTeammateProfileInput already guarantees it's plain JSON.
+      gameProfiles: clean.gameProfiles as unknown as Prisma.InputJsonObject,
       lolRank: clean.lolRank,
       lolChampions: clean.lolChampions,
       lolLanes: clean.lolLanes,

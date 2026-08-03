@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import { sanitizeTeammateProfileInput, type TeammateProfileClientInput } from "@/lib/teammateProfile";
 
 // Teammates edit their own game profile — not the admin-only gameSlugs
@@ -29,7 +30,9 @@ export async function updateOwnProfile(input: TeammateProfileClientInput) {
         timezone: clean.timezone || null,
         avatarUrl: clean.avatarUrl || null,
         languages: clean.languages,
-        gameProfiles: clean.gameProfiles,
+        // See the note in the admin action — Prisma's Json input type needs
+        // the assertion for a Record of interfaces.
+        gameProfiles: clean.gameProfiles as unknown as Prisma.InputJsonObject,
         lolRank: clean.lolRank,
         lolChampions: clean.lolChampions,
         lolLanes: clean.lolLanes,
