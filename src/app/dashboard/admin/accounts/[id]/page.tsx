@@ -5,6 +5,7 @@ import { getAccountDetail } from "@/lib/admin/accounts";
 import { readGameProfiles } from "@/lib/teammateProfile";
 import { AccountDetail } from "@/components/dashboard/admin/AccountDetail";
 import type { LanguageCode } from "@/lib/i18n";
+import type { PayoutMethodType } from "@/lib/payoutMethods";
 
 export const metadata: Metadata = { title: "Account" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
@@ -56,6 +57,26 @@ export default async function AdminAccountPage({ params }: Props) {
                 languages: (teammate.languages as LanguageCode[] | null) ?? [],
                 gameSlugs: (teammate.gameSlugs as string[] | null) ?? [],
                 gameProfiles: readGameProfiles(teammate),
+                verification: teammate.verification
+                  ? {
+                      status: teammate.verification.status,
+                      fullName: teammate.verification.fullName ?? "",
+                      dateOfBirth: teammate.verification.dateOfBirth ?? "",
+                      address: teammate.verification.address ?? "",
+                      country: teammate.verification.country ?? "",
+                      idFrontPath: teammate.verification.idFrontPath,
+                      idBackPath: teammate.verification.idBackPath,
+                      selfiePath: teammate.verification.selfiePath,
+                      reviewNote: teammate.verification.reviewNote,
+                      submittedAt: teammate.verification.submittedAt?.getTime() ?? null,
+                    }
+                  : null,
+                payoutMethods: teammate.payoutMethods.map((m) => ({
+                  id: m.id,
+                  type: m.type as PayoutMethodType,
+                  details: (m.details as Record<string, string> | null) ?? {},
+                  isDefault: m.isDefault,
+                })),
               }
             : null
         }

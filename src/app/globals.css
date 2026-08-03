@@ -3313,6 +3313,55 @@ ul {
   justify-content: flex-end;
 }
 
+/* Identity documents — teammate upload cards and the admin's review list. */
+.kyc-docs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 6px 0 18px;
+}
+
+.kyc-doc {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-strong);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.kyc-doc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.kyc-doc__state {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.kyc-doc__state--ok {
+  color: var(--success);
+}
+
+.kyc-doc__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kyc-doc label.btn {
+  cursor: pointer;
+}
+
+.btn.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .dashboard-table__no {
   font-variant-numeric: tabular-nums;
   color: var(--text-faint);

@@ -26,6 +26,22 @@ export async function setUserPassword(userId: string, password: string) {
   revalidatePath(`/dashboard/admin/accounts/${userId}`);
 }
 
+export async function reviewVerification(teammateId: string, approve: boolean, note: string) {
+  await requireAdmin();
+  if (!approve && !note.trim()) throw new Error("A rejection needs a reason — the teammate sees it.");
+
+  await prisma.teammateVerification.update({
+    where: { teammateId },
+    data: {
+      status: approve ? "APPROVED" : "REJECTED",
+      reviewNote: approve ? null : note.trim().slice(0, 500),
+      reviewedAt: new Date(),
+    },
+  });
+
+  revalidatePath("/dashboard/admin/users");
+}
+
 export async function updateAccountDetails(userId: string, input: { name: string; email: string }) {
   await requireAdmin();
   const email = input.email.trim().toLowerCase();

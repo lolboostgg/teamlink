@@ -7,7 +7,8 @@ import { LANGUAGES } from "@/lib/i18n";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
-import { setUserPassword, updateAccountDetails } from "@/app/dashboard/admin/accounts/actions";
+import { setUserPassword, updateAccountDetails, reviewVerification } from "@/app/dashboard/admin/accounts/actions";
+import { PAYOUT_LABELS, describePayoutMethod, PAYOUT_FIELDS, type PayoutMethodType } from "@/lib/payoutMethods";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { GameProfileMap } from "@/lib/gameProfiles";
 import type { LanguageCode } from "@/lib/i18n";
@@ -40,9 +41,38 @@ export interface TeammateSummary {
   languages: LanguageCode[];
   gameSlugs: string[];
   gameProfiles: GameProfileMap;
+  verification: VerificationView | null;
+  payoutMethods: PayoutMethodView[];
 }
 
-type Section = "overview" | "account" | "games" | "security";
+export interface VerificationView {
+  status: string;
+  fullName: string;
+  dateOfBirth: string;
+  address: string;
+  country: string;
+  idFrontPath: string | null;
+  idBackPath: string | null;
+  selfiePath: string | null;
+  reviewNote: string | null;
+  submittedAt: number | null;
+}
+
+export interface PayoutMethodView {
+  id: string;
+  type: PayoutMethodType;
+  details: Record<string, string>;
+  isDefault: boolean;
+}
+
+type Section = "overview" | "account" | "games" | "verification" | "security";
+
+const STATUS_PILL: Record<string, string> = {
+  UNSUBMITTED: "dashboard-pill--muted",
+  PENDING: "dashboard-pill--warning",
+  APPROVED: "dashboard-pill--success",
+  REJECTED: "dashboard-pill--warning",
+};
 
 const EUR = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
 const DATE = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
@@ -76,6 +106,12 @@ export function AccountDetail({ account, teammate }: { account: AccountSummary; 
             label: "Game Profiles",
             sub: "Ranks, roles and pools",
             icon: "fa-solid fa-gamepad",
+          },
+          {
+            key: "verification" as const,
+            label: "Verification & Payouts",
+            sub: "ID check and payout details",
+            icon: "fa-solid fa-id-badge",
           },
         ]
       : []),
@@ -222,6 +258,15 @@ export function AccountDetail({ account, teammate }: { account: AccountSummary; 
           </>
         )}
 
+        {section === "verification" && teammate && (
+          <VerificationPanel
+            teammateId={teammate.id}
+            verification={teammate.verification}
+            methods={teammate.payoutMethods}
+            onReviewed={(approved) => showToast(approved ? "Verification approved." : "Verification rejected.", "success")}
+          />
+        )}
+
         {section === "security" && (
           <SecurityPanel userId={account.id} onSaved={() => showToast("Password changed.", "success")} />
         )}
@@ -286,6 +331,174 @@ function OverviewPanel({ account, teammate }: { account: AccountSummary; teammat
         </div>
       )}
     </div>
+  );
+}
+
+function VerificationPanel({
+  teammateId,
+  verification,
+  methods,
+  onReviewed,
+}: {
+  teammateId: string;
+  verification: VerificationView | null;
+  methods: PayoutMethodView[];
+  onReviewed: (approved: boolean) => void;
+}) {
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const documents = verification
+    ? [
+        { label: "ID front", path: verification.idFrontPath },
+        { label: "ID back", path: verification.idBackPath },
+        { label: "Selfie", path: verification.selfiePath },
+      ]
+    : [];
+
+  function review(approve: boolean) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await reviewVerification(teammateId, approve, note);
+        setNote("");
+        onReviewed(approve);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Couldn't save — try again.");
+      }
+    });
+  }
+
+  return (
+    <>
+      <div className="dashboard-panel__head">
+        <div>
+          <div className="dashboard-panel__title">
+            Identity verification{" "}
+            <span className={`dashboard-pill ${STATUS_PILL[verification?.status ?? "UNSUBMITTED"]}`}>
+              {(verification?.status ?? "UNSUBMITTED").toLowerCase()}
+            </span>
+          </div>
+          <div className="dashboard-panel__sub">
+            {verification?.submittedAt
+              ? `Submitted ${DATE.format(verification.submittedAt)}`
+              : "Nothing submitted yet"}
+          </div>
+        </div>
+      </div>
+
+      {verification ? (
+        <>
+          <dl className="account-facts">
+            <div>
+              <dt>Full name</dt>
+              <dd>{verification.fullName || "—"}</dd>
+            </div>
+            <div>
+              <dt>Date of birth</dt>
+              <dd>{verification.dateOfBirth || "—"}</dd>
+            </div>
+            <div>
+              <dt>Address</dt>
+              <dd>{verification.address || "—"}</dd>
+            </div>
+            <div>
+              <dt>Country</dt>
+              <dd>{verification.country || "—"}</dd>
+            </div>
+          </dl>
+
+          <div className="kyc-docs">
+            {documents.map((doc) => (
+              <div key={doc.label} className="kyc-doc">
+                <div className="kyc-doc__head">
+                  <span>{doc.label}</span>
+                  {!doc.path && <span className="kyc-doc__state">missing</span>}
+                </div>
+                {doc.path && (
+                  <a
+                    className="btn btn--ghost btn--sm"
+                    href={`/api/kyc/view?path=${encodeURIComponent(doc.path)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <i className="fa-solid fa-eye" aria-hidden="true" /> Open document
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="form-row">
+            <label htmlFor="kyc-note">Rejection reason</label>
+            <textarea
+              id="kyc-note"
+              value={note}
+              placeholder="Only needed when rejecting — the teammate sees this."
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+
+          {error && (
+            <p className="form-row__error">
+              <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {error}
+            </p>
+          )}
+
+          <div className="teammate-profile-form__actions">
+            <button type="button" className="btn btn--ghost" disabled={pending} onClick={() => review(false)}>
+              Reject
+            </button>
+            <button type="button" className="btn btn--vivid" disabled={pending} onClick={() => review(true)}>
+              Approve
+            </button>
+          </div>
+        </>
+      ) : (
+        <p className="form-row__hint">This teammate hasn&rsquo;t started verification yet.</p>
+      )}
+
+      <hr className="client-profile-form__divider" />
+
+      <div className="dashboard-panel__head">
+        <div>
+          <div className="dashboard-panel__title">Payout methods</div>
+          <div className="dashboard-panel__sub">Read-only — only the teammate can change these</div>
+        </div>
+      </div>
+
+      {methods.length === 0 ? (
+        <p className="form-row__hint">No payout method saved yet.</p>
+      ) : (
+        <table className="dashboard-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Details</th>
+              <th>Default</th>
+            </tr>
+          </thead>
+          <tbody>
+            {methods.map((m) => (
+              <tr key={m.id}>
+                <td className="dashboard-table__primary">{PAYOUT_LABELS[m.type]}</td>
+                <td>
+                  {describePayoutMethod(m.type, m.details)}
+                  <div className="account-stat__sub">
+                    {PAYOUT_FIELDS[m.type]
+                      .filter((f) => m.details[f.key])
+                      .map((f) => `${f.label}: ${m.details[f.key]}`)
+                      .join(" · ")}
+                  </div>
+                </td>
+                <td>{m.isDefault && <span className="dashboard-pill dashboard-pill--success">default</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
   );
 }
 

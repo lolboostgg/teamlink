@@ -10,7 +10,11 @@ export async function getAccountDetail(idOrNumber: string) {
   const accountNo = Number(idOrNumber);
   const user = await prisma.user.findUnique({
     where: Number.isInteger(accountNo) && accountNo > 0 ? { accountNo } : { id: idOrNumber },
-    include: { teammate: true },
+    include: {
+      teammate: {
+        include: { verification: true, payoutMethods: { orderBy: { createdAt: "asc" } } },
+      },
+    },
   });
   if (!user) return null;
 

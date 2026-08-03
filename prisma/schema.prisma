@@ -97,6 +97,57 @@ model Teammate {
 
   candidacies       DispatchCandidate[]
   reviewsReceived   Review[]
+  verification      TeammateVerification?
+  payoutMethods     PayoutMethod[]
+}
+
+enum VerificationStatus {
+  UNSUBMITTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Identity check a teammate has to pass before payouts are released. The
+// document columns hold private Storage object paths (bucket "kyc"), never
+// public URLs — they're only ever served through short-lived signed links,
+// see lib/storage.ts.
+model TeammateVerification {
+  id           String             @id @default(cuid())
+  teammateId   String             @unique
+  teammate     Teammate           @relation(fields: [teammateId], references: [id], onDelete: Cascade)
+  fullName     String?
+  dateOfBirth  String?
+  address      String?
+  country      String?
+  idFrontPath  String?
+  idBackPath   String?
+  selfiePath   String?
+  status       VerificationStatus @default(UNSUBMITTED)
+  reviewNote   String?            @db.Text
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  updatedAt    DateTime           @updatedAt
+}
+
+enum PayoutMethodType {
+  BANK
+  CRYPTO
+}
+
+// Where a teammate's payouts go. `details` is a type-specific bag (IBAN /
+// SWIFT / beneficiary for BANK, coin / network / wallet for CRYPTO) so a new
+// payout rail doesn't need a migration — see lib/payoutMethods.ts.
+model PayoutMethod {
+  id         String           @id @default(cuid())
+  teammateId String
+  teammate   Teammate         @relation(fields: [teammateId], references: [id], onDelete: Cascade)
+  type       PayoutMethodType
+  details    Json
+  isDefault  Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  @@index([teammateId])
 }
 
 enum OrderStatus {
