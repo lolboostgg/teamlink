@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n";
 import { GAMES } from "@/lib/games";
 import { gameIcon } from "@/lib/gameArt";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/gameProfiles";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { IconSelect } from "@/components/ui/IconSelect";
+import { IconMultiSelect } from "@/components/ui/IconMultiSelect";
 import { AvatarUpload } from "@/components/ui/AvatarUpload";
 import type { TeammateProfileInput } from "@/lib/teammateProfile";
 
@@ -37,10 +38,6 @@ interface Props {
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
-
-// Above this many options a flat pill wall stops being scannable, so the
-// section gets a search box and a scroll container (League's ~170 champions).
-const SEARCHABLE_FROM = 24;
 
 function OptionPill({
   option,
@@ -76,38 +73,11 @@ function PillSection({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
-  const [query, setQuery] = useState("");
-  const searchable = section.options.length > SEARCHABLE_FROM;
-
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const matches = q ? section.options.filter((o) => o.label.toLowerCase().includes(q)) : section.options;
-    if (!searchable) return matches;
-    // Selected entries float to the top so a picked champion stays visible
-    // without scrolling back through the roster.
-    const chosen = new Set(selected);
-    return [...matches].sort((a, b) => Number(chosen.has(b.value)) - Number(chosen.has(a.value)));
-  }, [query, searchable, section.options, selected]);
-
   return (
     <div className="form-row">
-      <label>
-        {section.label}
-        {searchable && <span className="form-row__count">{selected.length} selected</span>}
-      </label>
-      {searchable && (
-        <div className="pill-search">
-          <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            placeholder={`Search ${section.label.toLowerCase()}…`}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </div>
-      )}
-      <div className={`chip-check-group${searchable ? " chip-check-group--scroll" : ""}`}>
-        {visible.map((o) => (
+      <label>{section.label}</label>
+      <div className="chip-check-group">
+        {section.options.map((o) => (
           <OptionPill
             key={o.value}
             option={o}
@@ -116,7 +86,6 @@ function PillSection({
             onToggle={() => onChange(toggle(selected, o.value))}
           />
         ))}
-        {visible.length === 0 && <p className="chip-check-group__empty">No match for “{query}”.</p>}
       </div>
     </div>
   );
@@ -255,11 +224,16 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
             )}
 
             {config.pool && (
-              <PillSection
-                section={config.pool}
-                selected={entry.pool}
-                onChange={(pool) => patch(game.slug, { pool })}
-              />
+              <div className="form-row">
+                <label>{config.pool.label}</label>
+                <IconMultiSelect
+                  label={config.pool.label}
+                  value={entry.pool}
+                  options={config.pool.options}
+                  placeholder={`Add ${config.pool.label.replace(/ pool$/i, "").toLowerCase()}`}
+                  onChange={(pool) => patch(game.slug, { pool })}
+                />
+              </div>
             )}
           </fieldset>
         );
