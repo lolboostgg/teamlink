@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
@@ -61,6 +61,7 @@ export function DispatchFlow() {
   const { data: session } = useSession();
   const isTeammate = session?.user?.role === "TEAMMATE";
   const router = useRouter();
+  const pathname = usePathname();
   const { showToast } = useToast();
   const state = useDispatchState();
   const [pending, startTransition] = useTransition();
@@ -198,6 +199,12 @@ export function DispatchFlow() {
 
   if (state.phase === "SELECTED" && state.order) {
     const order = state.order;
+
+    // DispatchFlow lives in the shared dashboard layout, so it remains
+    // mounted after navigating to the order room. Do not cover the room
+    // with the same selection modal once the teammate has opened it.
+    if (pathname === `/dashboard/teammate/session/${order.id}`) return null;
+
     return (
       <div className="dispatch-modal__backdrop" role="status">
         <div className="dispatch-modal dispatch-modal--selected">
