@@ -18,6 +18,7 @@ export default async function AdminDashboardPage() {
   const displayName = session?.user?.name || session?.user?.email?.split("@")[0] || "Admin";
   const recentRows: AdminUserRow[] = users.slice(0, 5).map((u) => ({
     id: u.id,
+    accountNo: u.accountNo,
     email: u.email,
     name: u.name,
     role: u.role,
