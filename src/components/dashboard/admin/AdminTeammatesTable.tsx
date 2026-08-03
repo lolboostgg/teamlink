@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GAMES } from "@/lib/games";
+import { GameMark } from "@/components/dashboard/GameMark";
 
 export interface AdminTeammateRow {
   id: string;
@@ -11,8 +11,6 @@ export interface AdminTeammateRow {
   gameSlugs: string[];
   available: boolean;
 }
-
-const GAME_NAME_BY_SLUG = new Map(GAMES.map((g) => [g.slug, g.shortName]));
 
 // Editing moved out of a modal and onto the teammate profile page
 // (/dashboard/admin/teammates/[no]), so this is a plain server-rendered list.
@@ -48,7 +46,17 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
               </Link>
             </td>
             <td>{t.email ?? "—"}</td>
-            <td>{t.gameSlugs.length ? t.gameSlugs.map((s) => GAME_NAME_BY_SLUG.get(s) ?? s).join(", ") : "—"}</td>
+            <td>
+              {t.gameSlugs.length ? (
+                <span className="game-mark-stack">
+                  {t.gameSlugs.map((slug) => (
+                    <GameMark key={slug} slug={slug} size={26} />
+                  ))}
+                </span>
+              ) : (
+                "—"
+              )}
+            </td>
             <td>
               <span className={`dashboard-pill ${t.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>
                 {t.available ? "available" : "unavailable"}

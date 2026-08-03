@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { PriceTag } from "@/components/currency/PriceTag";
+import { GameMark } from "@/components/dashboard/GameMark";
 import { getTeammateById } from "@/lib/teammates";
 import { useAllOrders } from "@/lib/matchmaking/useAllOrders";
 import type { OrderStatus } from "@/lib/matchmaking/types";
@@ -69,10 +70,9 @@ export function LiveOrdersPanel() {
           const cancellable = order.status === "candidates_ready" || order.status === "selecting";
           return (
             <div className="dashboard-list-item" key={order.id}>
+              <GameMark slug={order.gameSlug} />
               <div className="dashboard-list-item__meta">
-                <div className="dashboard-list-item__title">
-                  {order.gameName} · {order.option}
-                </div>
+                <div className="dashboard-list-item__title">{order.option}</div>
                 <div className="dashboard-list-item__sub">
                   <PriceTag amountEUR={order.priceEUR} />
                   {teammate ? ` · ${teammate.name}` : ""} ·{" "}

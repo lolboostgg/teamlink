@@ -3716,6 +3716,106 @@ ul {
   font-weight: 600;
 }
 
+/* Shared drag-and-drop field (components/ui/FileDrop.tsx). */
+.file-drop {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+  border-radius: var(--dash-radius-sm);
+  border: 1px dashed var(--dash-line-strong);
+  background: var(--dash-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.file-drop:hover,
+.file-drop:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  outline: none;
+}
+
+.file-drop.is-over {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--dash-surface));
+}
+
+.file-drop.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.file-drop__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
+  color: var(--text-faint);
+  font-size: 15px;
+}
+
+.file-drop__preview {
+  width: 54px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--dash-radius-sm);
+  object-fit: cover;
+}
+
+.file-drop__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.file-drop__text strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.file-drop__text span {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+/* Game identity in a list row: the icon leads, the title doesn't repeat. */
+.game-mark {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--dash-surface-2);
+}
+
+.game-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.game-mark-stack {
+  display: inline-flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.game-mark-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dashboard-list-item {
+  align-items: center;
+}
+
 /* Identity documents — teammate upload cards and the admin's review list. */
 .kyc-docs {
   display: grid;

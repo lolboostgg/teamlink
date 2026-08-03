@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { getGameBySlug } from "@/lib/games";
-import { GameCover } from "@/components/home/GameCover";
+import { GameMark } from "@/components/dashboard/GameMark";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { displayStatus, formatOrderDate } from "@/lib/dashboard/orderDisplay";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
@@ -28,19 +27,11 @@ export function BookingsTable({ orders }: { orders: DispatchOrder[] }) {
       </thead>
       <tbody>
         {orders.map((order) => {
-          const game = getGameBySlug(order.gameSlug);
           const status = displayStatus(order.status);
           return (
             <tr key={order.id}>
               <td>
-                <div className="dashboard-row-game">
-                  {game && (
-                    <div className="dashboard-row-game__cover">
-                      <GameCover game={game} compact />
-                    </div>
-                  )}
-                  <span className="dashboard-table__primary">{order.gameName}</span>
-                </div>
+                <GameMark slug={order.gameSlug} />
               </td>
               <td>
                 {order.option} · {order.teammates} teammate{order.teammates > 1 ? "s" : ""}

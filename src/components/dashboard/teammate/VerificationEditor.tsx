@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/ToastProvider";
+import { FileDrop } from "@/components/ui/FileDrop";
 import {
   PAYOUT_FIELDS,
   PAYOUT_LABELS,
@@ -96,32 +97,27 @@ function DocumentUpload({
         )}
       </div>
 
-      <div className="kyc-doc__actions">
-        <label className={`btn btn--ghost btn--sm${busy || disabled ? " is-disabled" : ""}`}>
-          {busy ? "Uploading..." : path ? "Replace" : "Upload"}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            hidden
-            disabled={busy || disabled}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) upload(file);
-              e.target.value = "";
-            }}
-          />
-        </label>
-        {path && (
+      <FileDrop
+        accept="image/jpeg,image/png,image/webp,application/pdf"
+        label={path ? "Drop a new file to replace" : "Drag & drop the document"}
+        hint="JPG, PNG, WEBP or PDF · max 8 MB"
+        busy={busy}
+        disabled={disabled}
+        onFile={upload}
+      />
+
+      {path && (
+        <div className="kyc-doc__actions">
           <a
             className="btn btn--ghost btn--sm"
             href={`/api/kyc/view?path=${encodeURIComponent(path)}`}
             target="_blank"
             rel="noreferrer"
           >
-            <i className="fa-solid fa-eye" aria-hidden="true" /> View
+            <i className="fa-solid fa-eye" aria-hidden="true" /> View document
           </a>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

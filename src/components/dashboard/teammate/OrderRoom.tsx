@@ -7,6 +7,7 @@ import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { conversationKey } from "@/lib/matchmaking/chatStore";
 import { gameIcon } from "@/lib/gameArt";
 import { useToast } from "@/components/ui/ToastProvider";
+import { FileDrop } from "@/components/ui/FileDrop";
 import {
   setSessionStatusAction,
   recordGameAction,
@@ -88,25 +89,14 @@ function GameCompletionModal({
 
         <div className="form-row">
           <label>Result screenshot{needsProof ? " *" : " (optional)"}</label>
-          <label className="avatar-upload" style={{ cursor: "pointer" }}>
-            {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="" style={{ maxHeight: 90, borderRadius: 8 }} />
-            ) : (
-              <span className="avatar-upload__hint">
-                <strong>{uploading ? "Uploading…" : "Drag & drop"}</strong> a screenshot, or click to browse
-              </span>
-            )}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              hidden
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) upload(file);
-              }}
-            />
-          </label>
+          <FileDrop
+            accept="image/jpeg,image/png,image/webp"
+            label="Drag & drop the result screenshot"
+            hint="JPG, PNG or WEBP"
+            preview={preview}
+            busy={uploading}
+            onFile={upload}
+          />
           {proof && <div className="dashboard-panel__sub">{proof.name}</div>}
         </div>
 

@@ -1,5 +1,4 @@
-import { getGameBySlug } from "@/lib/games";
-import { GameCover } from "@/components/home/GameCover";
+import { GameMark } from "@/components/dashboard/GameMark";
 import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 
@@ -16,18 +15,11 @@ export function SessionsList({ orders }: { orders: DispatchOrder[] }) {
   return (
     <div className="dashboard-list">
       {orders.map((order) => {
-        const game = getGameBySlug(order.gameSlug);
         return (
           <div className="dashboard-list-item" key={order.id}>
-            {game && (
-              <div className="dashboard-row-game__cover">
-                <GameCover game={game} compact />
-              </div>
-            )}
+            <GameMark slug={order.gameSlug} />
             <div className="dashboard-list-item__meta">
-              <div className="dashboard-list-item__title">
-                {order.gameName} with {order.customerLabel}
-              </div>
+              <div className="dashboard-list-item__title">{order.customerLabel}</div>
               <div className="dashboard-list-item__sub">
                 {formatOrderDate(order.createdAt)} · {STATUS_LABEL[order.status] ?? order.status}
               </div>
