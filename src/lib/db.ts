@@ -18,7 +18,17 @@ function createPrismaClient(): PrismaClient {
   // Supabase's transaction pooler (port 6543 in DATABASE_URL) — built for
   // exactly this "many short-lived connections from a Next.js app" shape,
   // unlike the Hostinger MySQL hourly connection cap this replaced.
-  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+    // A sleeping/unreachable pooler must fail quickly. Without these pg can
+    // leave an auth request pending for a long time and the login UI appears
+    // frozen on "Please wait…".
+    connectionTimeoutMillis: 5_000,
+    idleTimeoutMillis: 30_000,
+    query_timeout: 8_000,
+    statement_timeout: 8_000,
+    max: 5,
+  });
   return new PrismaClient({ adapter });
 }
 

@@ -21,6 +21,23 @@ interface AuthModalContextValue {
 }
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
+const AUTH_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = AUTH_TIMEOUT_MS): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error("AUTH_TIMEOUT")), timeoutMs);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 export function useAuthModal() {
   const ctx = useContext(AuthModalContext);
@@ -87,30 +104,40 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     setFormError(null);
     setSubmitting(true);
 
-    if (mode === "signup") {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name: username }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        setFormError(body?.error ?? "Something went wrong, try again.");
-        setSubmitting(false);
+    try {
+      if (mode === "signup") {
+        const res = await withTimeout(fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, name: username }),
+        }));
+        if (!res.ok) {
+          const body = await res.json().catch(() => null);
+          setFormError(body?.error ?? "Something went wrong, try again.");
+          return;
+        }
+      }
+
+      const result = await withTimeout(
+        signIn("credentials", { email, password, remember: String(remember), redirect: false }),
+      );
+      if (result?.error) {
+        setFormError("Incorrect email or password.");
         return;
       }
-    }
 
-    const result = await signIn("credentials", { email, password, remember: String(remember), redirect: false });
-    setSubmitting(false);
-    if (result?.error) {
-      setFormError("Incorrect email or password.");
-      return;
+      showToast(mode === "signup" ? "Account created" : "Logged in successfully", "success");
+      onSuccessRef.current?.();
+      close();
+    } catch (error) {
+      setFormError(
+        error instanceof Error && error.message === "AUTH_TIMEOUT"
+          ? "Login took too long. Please try again — the server may be waking up."
+          : "We couldn't reach the login server. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
     }
-
-    showToast(mode === "signup" ? "Account created" : "Logged in successfully", "success");
-    onSuccessRef.current?.();
-    close();
   }
 
   const value = useMemo(
