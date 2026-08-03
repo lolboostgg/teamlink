@@ -8,6 +8,12 @@ import { displayStatus } from "@/lib/dashboard/orderDisplay";
 
 const ORDERS_PER_PAGE = 20;
 type StatusFilter = "all" | "upcoming" | "completed" | "cancelled";
+const STATUS_FILTERS: { value: StatusFilter; label: string; icon: string }[] = [
+  { value: "all", label: "All", icon: "fa-solid fa-layer-group" },
+  { value: "upcoming", label: "Upcoming", icon: "fa-regular fa-clock" },
+  { value: "completed", label: "Completed", icon: "fa-solid fa-check" },
+  { value: "cancelled", label: "Cancelled", icon: "fa-solid fa-xmark" },
+];
 
 // Full order history for this browser — every real order created via
 // checkout, not a static mock list. See useAllOrders().
@@ -67,16 +73,26 @@ export function OrdersHistoryPanel() {
             onChange={(event) => { setQuery(event.target.value); setPage(1); }}
             placeholder="Search orders…"
           />
+          {query && (
+            <button type="button" className="orders-toolbar__search-clear" aria-label="Clear search" onClick={() => { setQuery(""); setPage(1); }}>
+              <i className="fa-solid fa-xmark" aria-hidden="true" />
+            </button>
+          )}
         </label>
-        <label className="orders-toolbar__filter">
-          <span>Status</span>
-          <select value={status} onChange={(event) => { setStatus(event.target.value as StatusFilter); setPage(1); }}>
-            <option value="all">All orders</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </label>
+        <div className="orders-status-pills" role="group" aria-label="Filter orders by status">
+          {STATUS_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              className={`orders-status-pill orders-status-pill--${filter.value}${status === filter.value ? " is-active" : ""}`}
+              aria-pressed={status === filter.value}
+              onClick={() => { setStatus(filter.value); setPage(1); }}
+            >
+              <i className={filter.icon} aria-hidden="true" />
+              {filter.label}
+            </button>
+          ))}
+        </div>
         <span className="orders-toolbar__count">
           {filteredOrders.length} {filteredOrders.length === 1 ? "order" : "orders"}
         </span>
