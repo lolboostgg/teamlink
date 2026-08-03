@@ -3,6 +3,7 @@ import { getAllTeammates } from "@/lib/admin/teammates";
 import { AdminTeammatesTable, type AdminTeammateRow } from "@/components/dashboard/admin/AdminTeammatesTable";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 
 export const metadata: Metadata = { title: "Teammates" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
@@ -24,6 +25,8 @@ export default async function AdminTeammatesPage() {
 
   return (
     <>
+    {/* Availability flips server-side; keep the list in step with it. */}
+    <LiveRefresh />
     <StatGrid>
       <StatCard icon="fa-solid fa-headset" label="Teammates" value={teammates.length} color="var(--accent)" />
       <StatCard

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getTeammateDetail } from "@/lib/admin/teammateDetail";
 import { readGameProfiles } from "@/lib/teammateProfile";
 import { TeammateDetail } from "@/components/dashboard/admin/TeammateDetail";
+import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import type { LanguageCode } from "@/lib/i18n";
 import type { PayoutMethodType } from "@/lib/payoutMethods";
 
@@ -29,6 +30,7 @@ export default async function AdminTeammatePage({ params }: Props) {
 
   return (
     <>
+      <LiveRefresh />
       <Link href="/dashboard/admin/teammates" className="account-back">
         <i className="fa-solid fa-arrow-left" aria-hidden="true" /> Back to teammates
       </Link>

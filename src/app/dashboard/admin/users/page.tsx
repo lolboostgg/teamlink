@@ -3,6 +3,7 @@ import { getUsersWithTeammate } from "@/lib/admin/users";
 import { AdminUsersTable, type AdminUserRow } from "@/components/dashboard/admin/AdminUsersTable";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 
 export const metadata: Metadata = { title: "Users" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
@@ -34,6 +35,7 @@ export default async function AdminUsersPage() {
 
   return (
     <>
+    <LiveRefresh />
     <StatGrid>
       <StatCard icon="fa-solid fa-users" label="Total accounts" value={stats.total} color="var(--accent)" />
       <StatCard icon="fa-solid fa-user" label="Clients" value={stats.clients} color="var(--hue-cyan)" />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getAccountDetail } from "@/lib/admin/accounts";
 import { readGameProfiles } from "@/lib/teammateProfile";
 import { AccountDetail } from "@/components/dashboard/admin/AccountDetail";
+import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import type { LanguageCode } from "@/lib/i18n";
 import type { PayoutMethodType } from "@/lib/payoutMethods";
 
@@ -24,6 +25,7 @@ export default async function AdminAccountPage({ params }: Props) {
 
   return (
     <>
+      <LiveRefresh />
       <Link href="/dashboard/admin/users" className="account-back">
         <i className="fa-solid fa-arrow-left" aria-hidden="true" /> Back to users
       </Link>
