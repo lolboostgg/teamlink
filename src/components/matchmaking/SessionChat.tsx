@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useConversationMessages, sendChatMessage } from "@/lib/matchmaking/chatStore";
+import {
+  markConversationRead,
+  sendChatMessage,
+  setChatTyping,
+  useChatTyping,
+  useConversationMessages,
+} from "@/lib/matchmaking/chatStore";
+import { AvatarIcon } from "@/components/ui/AvatarIcon";
 
 interface SystemLine {
   id: string;
@@ -11,6 +18,8 @@ interface SystemLine {
 interface Props {
   conversationKey: string;
   teammateName: string;
+  customerName?: string;
+  viewer?: "client" | "teammate";
   vibe?: string | null;
   conversationPref?: string | null;
   playStylePref?: string | null;
@@ -24,10 +33,27 @@ const QUICK_REPLIES = ["Hello", "Okay", "Waiting for invite", "Thank you", "GG",
 // notices stay client-only decoration (system lines, not real messages)
 // since they're generated from this order's own settings, not something
 // either side actually typed.
-export function SessionChat({ conversationKey, teammateName, vibe, conversationPref, playStylePref }: Props) {
+export function SessionChat({
+  conversationKey,
+  teammateName,
+  customerName = "Customer",
+  viewer = "client",
+  vibe,
+  conversationPref,
+  playStylePref,
+}: Props) {
   const { messages, refresh } = useConversationMessages(conversationKey);
   const [draft, setDraft] = useState("");
   const seededRef = useRef(false);
+  const otherSide = viewer === "client" ? "teammate" : "client";
+  const otherTyping = useChatTyping(conversationKey, otherSide);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    markConversationRead(conversationKey, viewer);
+  }, [conversationKey, messages, viewer]);
+
+  useEffect(() => () => setChatTyping(conversationKey, viewer, false), [conversationKey, viewer]);
 
   // Seeds the teammate's opening line into the real store once per
   // conversation (not on every mount) so it's part of the same persisted
@@ -52,7 +78,8 @@ export function SessionChat({ conversationKey, teammateName, vibe, conversationP
   }
 
   function sendText(text: string) {
-    sendChatMessage(conversationKey, "client", text);
+    sendChatMessage(conversationKey, viewer, text);
+    setChatTyping(conversationKey, viewer, false);
     refresh();
   }
 
@@ -81,11 +108,25 @@ export function SessionChat({ conversationKey, teammateName, vibe, conversationP
           </div>
         ))}
         {messages.map((m) => (
-          <div key={m.id} className={`chat-bubble chat-bubble--${m.from === "client" ? "me" : "them"}`}>
-            <p>{m.text}</p>
-            <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          <div key={m.id} className={`chat-message chat-message--${m.from === viewer ? "me" : "them"}`}>
+            <AvatarIcon seed={`${conversationKey}-${m.from}`} />
+            <div className={`chat-bubble chat-bubble--${m.from === viewer ? "me" : "them"}`}>
+              <strong className="chat-bubble__sender">{m.from === "client" ? customerName : teammateName}</strong>
+              <p>{m.text}</p>
+              <span>
+                {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {m.from === viewer && (m.readBy?.includes(otherSide) ? " · Read" : " · Sent")}
+              </span>
+            </div>
           </div>
         ))}
+        {otherTyping && (
+          <div className="chat-typing" role="status">
+            <AvatarIcon seed={`${conversationKey}-${otherSide}`} />
+            <span><i /><i /><i /></span>
+            {otherSide === "client" ? customerName : teammateName} is typing…
+          </div>
+        )}
       </div>
 
       <div className="session-chat__quick-replies">
@@ -97,7 +138,17 @@ export function SessionChat({ conversationKey, teammateName, vibe, conversationP
       </div>
 
       <form className="chat-thread__input" onSubmit={send}>
-        <input type="text" placeholder="Enter message" value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <input
+          type="text"
+          placeholder="Enter message"
+          value={draft}
+          onChange={(e) => {
+            setDraft(e.target.value);
+            setChatTyping(conversationKey, viewer, e.target.value.trim().length > 0);
+            if (typingTimer.current) clearTimeout(typingTimer.current);
+            typingTimer.current = setTimeout(() => setChatTyping(conversationKey, viewer, false), 1600);
+          }}
+        />
         <button type="submit" aria-label="Send">
           <i className="fa-solid fa-paper-plane" aria-hidden="true" />
         </button>

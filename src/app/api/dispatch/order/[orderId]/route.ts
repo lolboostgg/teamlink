@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { games: { orderBy: { gameNumber: "asc" } }, candidates: true },
+    include: { games: { orderBy: { gameNumber: "asc" } }, candidates: true, clientUser: true },
   });
   if (!order) return NextResponse.json({ error: "Unknown order." }, { status: 404 });
 
@@ -40,7 +40,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
       option: order.option,
       priceEUR: Number(order.priceEUR),
       payoutEUR: order.teammatePayoutEUR !== null ? Number(order.teammatePayoutEUR) : Number(order.priceEUR),
-      customerLabel: order.customerLabel,
+      customerLabel: order.clientUser?.name || order.clientUser?.email || order.customerLabel,
+      customerKey: order.customerLabel,
       teammatesRequested: order.teammatesRequested,
       vibe: order.vibe,
       conversationPref: order.conversationPref,

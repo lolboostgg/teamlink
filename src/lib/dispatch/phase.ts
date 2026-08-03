@@ -21,6 +21,8 @@ export interface DispatchOrderView {
   priceEUR: number;
   payoutEUR: number;
   customerLabel: string;
+  /** Original stored label used to keep existing chat thread keys stable. */
+  customerKey?: string;
   teammatesRequested: number;
   vibe: string | null;
   conversationPref: string | null;

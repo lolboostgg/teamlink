@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     priceEUR,
     teammates: Number(body.teammates) || 1,
     requestedTeammateId: body.requestedTeammateId ?? null,
-    customerLabel: String(body.customerLabel ?? "Customer").slice(0, 120),
+    customerLabel: String(session?.user?.name || session?.user?.email || body.customerLabel || "Customer").slice(0, 120),
     clientUserId: session?.user?.id ?? null,
     isReplay: !!body.isReplay,
   });

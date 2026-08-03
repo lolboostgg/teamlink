@@ -343,8 +343,10 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </div>
           </div>
           <SessionChat
-            conversationKey={conversationKey(order.teammateId ?? order.id, order.customerLabel)}
-            teammateName="you"
+            conversationKey={conversationKey(order.teammateId ?? order.id, order.customerKey ?? order.customerLabel)}
+            teammateName="You"
+            customerName={order.customerLabel}
+            viewer="teammate"
             vibe={order.vibe}
             conversationPref={order.conversationPref}
             playStylePref={order.playStylePref}

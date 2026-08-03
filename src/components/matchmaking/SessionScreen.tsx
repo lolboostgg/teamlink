@@ -607,6 +607,7 @@ export function SessionScreen({ orderId }: Props) {
             <SessionChat
               conversationKey={conversationKey(teammate.id, order.customerLabel)}
               teammateName={teammate.name}
+              customerName={order.customerLabel}
               vibe={order.vibe}
               conversationPref={order.conversationPref}
               playStylePref={order.playStylePref}

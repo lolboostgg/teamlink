@@ -16,10 +16,12 @@ export interface ChatMessage {
   from: "client" | "teammate";
   text: string;
   createdAt: number;
+  readBy?: ("client" | "teammate")[];
 }
 
 const KEY = "teamlink:chat-messages";
 const CHANNEL_NAME = "teamlink-chat";
+const PRESENCE_KEY = "teamlink:chat-presence";
 let channel: BroadcastChannel | null = null;
 
 function getChannel(): BroadcastChannel | null {
@@ -60,8 +62,44 @@ export function sendChatMessage(key: string, from: "client" | "teammate", text: 
     from,
     text: trimmed,
     createdAt: Date.now(),
+    readBy: [from],
   });
   writeAll(messages);
+}
+
+type ChatSide = "client" | "teammate";
+type Presence = Record<string, Partial<Record<ChatSide, number>>>;
+
+function readPresence(): Presence {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(PRESENCE_KEY) ?? "{}");
+  } catch {
+    return {};
+  }
+}
+
+export function setChatTyping(key: string, side: ChatSide, typing: boolean): void {
+  if (typeof window === "undefined") return;
+  const presence = readPresence();
+  presence[key] = { ...presence[key], [side]: typing ? Date.now() + 1800 : 0 };
+  window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
+  getChannel()?.postMessage({ type: "chat-presence" });
+}
+
+export function isChatTyping(key: string, side: ChatSide): boolean {
+  return (readPresence()[key]?.[side] ?? 0) > Date.now();
+}
+
+export function markConversationRead(key: string, side: ChatSide): void {
+  const messages = readAll();
+  let changed = false;
+  const next = messages.map((message) => {
+    if (message.conversationKey !== key || message.from === side || message.readBy?.includes(side)) return message;
+    changed = true;
+    return { ...message, readBy: [...(message.readBy ?? [message.from]), side] };
+  });
+  if (changed) writeAll(next);
 }
 
 export function getMessages(key: string): ChatMessage[] {
@@ -99,4 +137,21 @@ export function useConversationMessages(key: string | undefined): { messages: Ch
   }, [key, refresh]);
 
   return { messages, refresh };
+}
+
+export function useChatTyping(key: string, otherSide: ChatSide): boolean {
+  const [typing, setTyping] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => setTyping(isChatTyping(key, otherSide));
+    refresh();
+    const interval = setInterval(refresh, 500);
+    const unsubscribe = subscribeToChat(refresh);
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
+  }, [key, otherSide]);
+
+  return typing;
 }
