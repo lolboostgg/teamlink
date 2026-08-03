@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GameMark } from "@/components/dashboard/GameMark";
+import { DiscordTag } from "@/components/dashboard/DiscordTag";
 
 export interface AdminTeammateRow {
   id: string;
@@ -10,6 +11,9 @@ export interface AdminTeammateRow {
   email: string | null;
   gameSlugs: string[];
   available: boolean;
+  discordId: string | null;
+  discordUsername: string | null;
+  discordAvatar: string | null;
 }
 
 // Editing moved out of a modal and onto the teammate profile page
@@ -31,6 +35,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
           <th>ID</th>
           <th>Name</th>
           <th>Account</th>
+          <th>Discord</th>
           <th>Games</th>
           <th>Status</th>
           <th />
@@ -46,6 +51,9 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
               </Link>
             </td>
             <td>{t.email ?? "—"}</td>
+            <td>
+              <DiscordTag discordId={t.discordId} discordUsername={t.discordUsername} discordAvatar={t.discordAvatar} />
+            </td>
             <td>
               {t.gameSlugs.length ? (
                 <span className="game-mark-stack">

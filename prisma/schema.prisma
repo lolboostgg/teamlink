@@ -23,7 +23,13 @@ model User {
   name               String?
   avatarUrl          String?  @db.Text
   passwordHash       String?
+  // Discord link. discordId is the immutable snowflake we'd address a DM to;
+  // the username/avatar are only a display cache, so a rename on Discord's
+  // side shows up the next time the account is re-linked.
   discordId          String?  @unique
+  discordUsername    String?
+  discordAvatar      String?
+  discordLinkedAt    DateTime?
   role               Role     @default(CLIENT)
   creditBalanceCents Int      @default(0)
   // { [topic]: { email, discord, sms } } — see lib/notificationPrefs.ts.

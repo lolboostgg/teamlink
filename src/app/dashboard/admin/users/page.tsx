@@ -19,6 +19,9 @@ export default async function AdminUsersPage() {
     role: u.role,
     createdAt: u.createdAt.getTime(),
     teammateName: u.teammate?.name ?? null,
+    discordId: u.discordId,
+    discordUsername: u.discordUsername,
+    discordAvatar: u.discordAvatar,
   }));
 
   // Real counts straight off the roster — the overview's other tiles come

@@ -22,6 +22,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
     { href: "/dashboard/teammate/reviews", label: "Reviews", icon: "fa-solid fa-star" },
     { href: "/dashboard/teammate/profile", label: "Game profile", icon: "fa-solid fa-id-card" },
     { href: "/dashboard/teammate/verification", label: "Verification & payouts", icon: "fa-solid fa-shield-halved" },
+    { href: "/dashboard/teammate/connections", label: "Connections", icon: "fa-solid fa-link" },
   ],
 };
 

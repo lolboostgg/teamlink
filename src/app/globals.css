@@ -3915,6 +3915,48 @@ ul {
   color: #fff;
 }
 
+/* Discord's own avatar stands in for the generic brand tile once linked. */
+.settings-row__avatar {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(88, 101, 242, 0.45);
+}
+
+.settings-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Handle + avatar in the admin tables. */
+.discord-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.discord-tag img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.discord-tag i {
+  color: #7c88f5;
+  font-size: 14px;
+}
+
+.discord-tag--empty {
+  color: var(--text-faint);
+}
+
 .settings-row__channels {
   display: flex;
   gap: 12px;

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
 import { promoteToTeammate, demoteToClient } from "@/app/dashboard/admin/users/actions";
+import { DiscordTag } from "@/components/dashboard/DiscordTag";
 
 export interface AdminUserRow {
   id: string;
@@ -13,6 +14,9 @@ export interface AdminUserRow {
   role: string;
   createdAt: number;
   teammateName: string | null;
+  discordId: string | null;
+  discordUsername: string | null;
+  discordAvatar: string | null;
 }
 
 const ROLE_PILL: Record<string, string> = {
@@ -60,6 +64,7 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
           <th>ID</th>
           <th>Name</th>
           <th>Email</th>
+          <th>Discord</th>
           <th>Joined</th>
           <th>Role</th>
           <th />
@@ -75,6 +80,9 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
               </Link>
             </td>
             <td>{u.email}</td>
+            <td>
+              <DiscordTag discordId={u.discordId} discordUsername={u.discordUsername} discordAvatar={u.discordAvatar} />
+            </td>
             <td>{formatOrderDate(u.createdAt)}</td>
             <td>
               <span className={`dashboard-pill ${ROLE_PILL[u.role] ?? "dashboard-pill--muted"}`}>

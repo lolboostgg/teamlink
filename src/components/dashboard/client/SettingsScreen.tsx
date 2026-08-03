@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ClientProfileForm } from "@/components/dashboard/client/ClientProfileForm";
+import { DiscordConnection } from "@/components/dashboard/DiscordConnection";
 import { saveNotificationPrefs } from "@/app/(marketing)/dashboard/client/settings/actions";
 import { useToast } from "@/components/ui/ToastProvider";
 import {
@@ -27,11 +28,17 @@ export interface SettingsProps {
   email: string;
   avatarUrl: string;
   discordId: string | null;
+  discordUsername: string | null;
+  discordAvatar: string | null;
+  /** `?discord=` outcome from the OAuth callback, if we just came back. */
+  discordStatus?: string;
   prefs: NotificationPrefs;
 }
 
 export function SettingsScreen({ account }: { account: SettingsProps }) {
-  const [section, setSection] = useState<Section>("profile");
+  // Land straight on Connected accounts when we're returning from Discord,
+  // otherwise the result toast fires on a section the user isn't looking at.
+  const [section, setSection] = useState<Section>(account.discordStatus ? "connections" : "profile");
 
   return (
     <div className="settings-screen">
@@ -53,7 +60,7 @@ export function SettingsScreen({ account }: { account: SettingsProps }) {
       <div className="settings-screen__body">
         {section === "profile" && <ProfileSection account={account} />}
         {section === "notifications" && <NotificationsSection initial={account.prefs} discordId={account.discordId} />}
-        {section === "connections" && <ConnectionsSection discordId={account.discordId} />}
+        {section === "connections" && <ConnectionsSection account={account} />}
         {section === "security" && <SecuritySection />}
       </div>
     </div>
@@ -171,7 +178,7 @@ function NotificationsSection({
   );
 }
 
-function ConnectionsSection({ discordId }: { discordId: string | null }) {
+function ConnectionsSection({ account }: { account: SettingsProps }) {
   return (
     <>
       <header className="settings-head">
@@ -179,24 +186,13 @@ function ConnectionsSection({ discordId }: { discordId: string | null }) {
       </header>
 
       <div className="settings-rows">
-        <div className="settings-row">
-          <div className="settings-row__brand">
-            <span className="settings-row__logo settings-row__logo--discord">
-              <i className="fa-brands fa-discord" aria-hidden="true" />
-            </span>
-            <div>
-              <strong>Discord</strong>
-              <span>{discordId ? `Linked · ${discordId}` : "Not connected"}</span>
-            </div>
-          </div>
-          {discordId ? (
-            <span className="dashboard-pill dashboard-pill--success">connected</span>
-          ) : (
-            <a className="btn btn--ghost btn--sm" href="/api/auth/signin/discord">
-              Connect Discord
-            </a>
-          )}
-        </div>
+        <DiscordConnection
+          discordId={account.discordId}
+          discordUsername={account.discordUsername}
+          discordAvatar={account.discordAvatar}
+          returnTo="/dashboard/client/settings"
+          status={account.discordStatus}
+        />
 
         <div className="settings-row">
           <div className="settings-row__brand">

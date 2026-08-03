@@ -5,6 +5,7 @@ import { GAMES } from "@/lib/games";
 import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
 import { FlagIcon } from "@/components/ui/FlagIcon";
+import { DiscordTag } from "@/components/dashboard/DiscordTag";
 import { useToast } from "@/components/ui/ToastProvider";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
@@ -201,7 +202,13 @@ export function TeammateDetail({
                   </div>
                   <div>
                     <dt>Discord</dt>
-                    <dd>{account?.discordId ?? "—"}</dd>
+                    <dd>
+                      <DiscordTag
+                        discordId={account?.discordId ?? null}
+                        discordUsername={account?.discordUsername ?? null}
+                        discordAvatar={account?.discordAvatar ?? null}
+                      />
+                    </dd>
                   </div>
                   <div>
                     <dt>Joined</dt>

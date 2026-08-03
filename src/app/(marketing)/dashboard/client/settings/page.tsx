@@ -9,7 +9,12 @@ export const metadata: Metadata = { title: "Settings" };
 // probe hazard as the other dashboard pages, see lib/db.ts.
 export const dynamic = "force-dynamic";
 
-export default async function ClientSettingsPage() {
+export default async function ClientSettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ discord?: string }>;
+}) {
+  const { discord } = await searchParams;
   const session = await auth();
   const user = session?.user?.id
     ? await prisma.user.findUnique({
@@ -20,6 +25,8 @@ export default async function ClientSettingsPage() {
           email: true,
           avatarUrl: true,
           discordId: true,
+          discordUsername: true,
+          discordAvatar: true,
           notificationPrefs: true,
         },
       })
@@ -46,6 +53,9 @@ export default async function ClientSettingsPage() {
         email: user.email,
         avatarUrl: user.avatarUrl ?? "",
         discordId: user.discordId,
+        discordUsername: user.discordUsername,
+        discordAvatar: user.discordAvatar,
+        discordStatus: discord,
         prefs: sanitizeNotificationPrefs(user.notificationPrefs),
       }}
     />

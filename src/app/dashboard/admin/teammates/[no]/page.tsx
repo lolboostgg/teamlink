@@ -82,6 +82,8 @@ export default async function AdminTeammatePage({ params }: Props) {
                 role: user.role,
                 avatarUrl: user.avatarUrl,
                 discordId: user.discordId,
+                discordUsername: user.discordUsername,
+                discordAvatar: user.discordAvatar,
                 creditBalanceCents: user.creditBalanceCents,
                 createdAt: user.createdAt.getTime(),
                 orderCount: 0,

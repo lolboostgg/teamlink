@@ -19,6 +19,9 @@ export default async function AdminTeammatesPage() {
     email: t.user?.email ?? null,
     gameSlugs: (t.gameSlugs as string[] | null) ?? [],
     available: t.available,
+    discordId: t.user?.discordId ?? null,
+    discordUsername: t.user?.discordUsername ?? null,
+    discordAvatar: t.user?.discordAvatar ?? null,
   }));
 
   const linked = teammates.filter((t) => t.userId).length;

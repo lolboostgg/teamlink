@@ -4,6 +4,7 @@ import Discord from "next-auth/providers/discord";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { discordDisplayName } from "@/lib/discord";
 
 // Credentials provider requires JWT sessions (NextAuth can't use database
 // sessions with it) — that also means no Account/Session/VerificationToken
@@ -61,7 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, trigger }) {
+    async jwt({ token, user, account, profile, trigger }) {
       // Fired by the client calling useSession().update() with no payload
       // (see ClientProfileForm/TeammateProfileEditor after a successful
       // save) — re-reads the DB instead of trusting a client-supplied
@@ -98,6 +99,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const dbUser =
         (await prisma.user.findUnique({ where: { email } })) ??
         (await prisma.user.create({ data: { email, name: user.name ?? null } }));
+
+      // Signing in through Discord also counts as linking it, so the handle
+      // shows up in the admin lists and can be notified later. Skipped when
+      // that Discord account already belongs to someone else — discordId is
+      // unique, and silently stealing it would break the other account.
+      const discordProfile = profile as
+        | { id?: string; username?: string; global_name?: string | null; discriminator?: string | null; avatar?: string | null }
+        | undefined;
+
+      if (account?.provider === "discord" && discordProfile?.id) {
+        const discordId = String(discordProfile.id);
+        const owner = await prisma.user.findUnique({ where: { discordId }, select: { id: true } });
+        if (!owner || owner.id === dbUser.id) {
+          const displayName = discordDisplayName({
+            id: discordId,
+            username: discordProfile.username ?? "",
+            global_name: discordProfile.global_name,
+            discriminator: discordProfile.discriminator,
+          });
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              discordId,
+              discordUsername: displayName || discordId,
+              discordAvatar: discordProfile.avatar ?? null,
+              discordLinkedAt: new Date(),
+            },
+          });
+        }
+      }
+
       token.id = dbUser.id;
       token.role = dbUser.role;
       return token;

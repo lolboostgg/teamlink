@@ -6,6 +6,7 @@ import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { PrivateImage } from "@/components/ui/PrivateImage";
+import { DiscordTag } from "@/components/dashboard/DiscordTag";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
 import { setUserPassword, updateAccountDetails, reviewVerification } from "@/app/dashboard/admin/accounts/actions";
@@ -22,6 +23,8 @@ export interface AccountSummary {
   role: string;
   avatarUrl: string | null;
   discordId: string | null;
+  discordUsername: string | null;
+  discordAvatar: string | null;
   creditBalanceCents: number;
   createdAt: number;
   orderCount: number;
@@ -148,7 +151,8 @@ export function AccountDetail({ account, teammate }: { account: AccountSummary; 
             </span>
             {account.discordId && (
               <span>
-                <i className="fa-brands fa-discord" aria-hidden="true" /> {account.discordId}
+                <i className="fa-brands fa-discord" aria-hidden="true" />{" "}
+                {account.discordUsername ?? account.discordId}
               </span>
             )}
             <span>
@@ -296,7 +300,13 @@ function OverviewPanel({ account, teammate }: { account: AccountSummary; teammat
           </div>
           <div>
             <dt>Discord</dt>
-            <dd>{account.discordId ?? "—"}</dd>
+            <dd>
+              <DiscordTag
+                discordId={account.discordId}
+                discordUsername={account.discordUsername}
+                discordAvatar={account.discordAvatar}
+              />
+            </dd>
           </div>
           <div>
             <dt>Joined</dt>
