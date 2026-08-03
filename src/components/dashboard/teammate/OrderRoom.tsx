@@ -344,7 +344,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           )}
         </div>
 
-        <div className="dashboard-panel">
+        <div className="dashboard-panel order-room__chat-panel">
           <div className="dashboard-panel__head">
             <div>
               <div className="dashboard-panel__title">Chat</div>

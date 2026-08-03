@@ -6630,6 +6630,29 @@ ul {
   flex: 1;
 }
 
+.order-room__chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: min(620px, calc(100vh - 150px));
+  min-height: 420px;
+  overflow: hidden;
+}
+
+.order-room__chat-panel .dashboard-panel__head {
+  flex: 0 0 auto;
+}
+
+.order-room__chat-panel .session-chat {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .order-room__chat-panel {
+    height: 520px;
+    min-height: 0;
+  }
+}
+
 .session-chat__quick-replies {
   display: flex;
   flex-wrap: wrap;

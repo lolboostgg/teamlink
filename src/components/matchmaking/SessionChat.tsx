@@ -48,6 +48,13 @@ export function SessionChat({
   const otherSide = viewer === "client" ? "teammate" : "client";
   const otherTyping = useChatTyping(conversationKey, otherSide);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const element = messagesRef.current;
+    if (!element) return;
+    element.scrollTop = element.scrollHeight;
+  }, [messages.length, otherTyping]);
 
   useEffect(() => {
     markConversationRead(conversationKey, viewer);
@@ -93,7 +100,7 @@ export function SessionChat({
 
   return (
     <div className="session-chat">
-      <div className="chat-thread__messages session-chat__messages">
+      <div ref={messagesRef} className="chat-thread__messages session-chat__messages">
         <div className="chat-bubble chat-bubble--system">
           <p>
             You&rsquo;ll receive a message from {teammateName} now, so please don&rsquo;t close this chat. Let them know how
