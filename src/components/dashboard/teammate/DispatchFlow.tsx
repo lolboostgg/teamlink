@@ -13,21 +13,22 @@ import { useToast } from "@/components/ui/ToastProvider";
 import type { DispatchOrderView } from "@/lib/dispatch/phase";
 
 const SELECTION_ACK_KEY = "teamlink:acknowledged-selections";
+const NOT_SELECTED_ACK_KEY = "teamlink:acknowledged-not-selected";
 
-function acknowledgedSelections(): string[] {
+function acknowledgedItems(key: string): string[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(window.localStorage.getItem(SELECTION_ACK_KEY) ?? "[]");
+    return JSON.parse(window.localStorage.getItem(key) ?? "[]");
   } catch {
     return [];
   }
 }
 
-function acknowledgeSelection(orderId: string) {
+function acknowledgeItem(key: string, orderId: string) {
   if (typeof window === "undefined") return;
-  const ids = new Set(acknowledgedSelections());
+  const ids = new Set(acknowledgedItems(key));
   ids.add(orderId);
-  window.localStorage.setItem(SELECTION_ACK_KEY, JSON.stringify([...ids].slice(-30)));
+  window.localStorage.setItem(key, JSON.stringify([...ids].slice(-30)));
 }
 
 function seconds(ms: number) {
@@ -103,8 +104,19 @@ export function DispatchFlow() {
 
   useEffect(() => {
     if (state.phase !== "NOT_SELECTED" || !stateOrderId) return;
-    const timer = setTimeout(() => setDismissed(stateOrderId), 5000);
-    return () => clearTimeout(timer);
+    const dismiss = () => {
+      acknowledgeItem(NOT_SELECTED_ACK_KEY, stateOrderId);
+      setDismissed(stateOrderId);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismiss();
+    };
+    const timer = window.setTimeout(dismiss, 5000);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, [state.phase, stateOrderId]);
 
   if (!isTeammate) return null;
@@ -242,11 +254,11 @@ export function DispatchFlow() {
     if (
       pathname === `/dashboard/teammate/session/${order.id}` ||
       dismissedSelection === order.id ||
-      acknowledgedSelections().includes(order.id)
+      acknowledgedItems(SELECTION_ACK_KEY).includes(order.id)
     ) return null;
 
     function dismissSelection() {
-      acknowledgeSelection(order.id);
+      acknowledgeItem(SELECTION_ACK_KEY, order.id);
       setDismissedSelection(order.id);
     }
 
@@ -280,11 +292,33 @@ export function DispatchFlow() {
     );
   }
 
-  if (state.phase === "NOT_SELECTED" && state.order && dismissed !== state.order.id) {
+  if (
+    state.phase === "NOT_SELECTED" &&
+    state.order &&
+    dismissed !== state.order.id &&
+    !acknowledgedItems(NOT_SELECTED_ACK_KEY).includes(state.order.id)
+  ) {
+    const orderId = state.order.id;
+    function dismissNotSelected() {
+      acknowledgeItem(NOT_SELECTED_ACK_KEY, orderId);
+      setDismissed(orderId);
+    }
+
     return (
-      <div className="dispatch-modal__backdrop" role="status">
+      <div
+        className="dispatch-modal__backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="not-selected-title"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) dismissNotSelected();
+        }}
+      >
         <div className="dispatch-modal dispatch-modal--neutral">
-          <h2 className="dispatch-modal__title">Not this time</h2>
+          <button type="button" className="dispatch-modal__close" aria-label="Close" onClick={dismissNotSelected}>
+            <i className="fa-solid fa-xmark" aria-hidden="true" />
+          </button>
+          <h2 className="dispatch-modal__title" id="not-selected-title">Not this time</h2>
           <p className="dispatch-modal__lead">The customer picked another teammate.</p>
           <p className="dispatch-modal__note">You&rsquo;re still online and can take new orders right away.</p>
         </div>
