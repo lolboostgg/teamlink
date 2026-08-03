@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
 import { promoteToTeammate, demoteToClient } from "@/app/dashboard/admin/users/actions";
 
@@ -65,7 +66,11 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
       <tbody>
         {users.map((u) => (
           <tr key={u.id}>
-            <td className="dashboard-table__primary">{u.teammateName ?? u.name ?? "—"}</td>
+            <td className="dashboard-table__primary">
+              <Link href={`/dashboard/admin/accounts/${u.id}`} className="dashboard-table__link">
+                {u.teammateName ?? u.name ?? "—"}
+              </Link>
+            </td>
             <td>{u.email}</td>
             <td>{formatOrderDate(u.createdAt)}</td>
             <td>
@@ -96,6 +101,9 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
                     Make teammate
                   </button>
                 ))}
+              <Link href={`/dashboard/admin/accounts/${u.id}`} className="btn btn--ghost btn--sm">
+                Open profile
+              </Link>{" "}
               {u.role === "TEAMMATE" && (
                 <button type="button" className="btn btn--ghost btn--sm" disabled={pending} onClick={() => handleDemote(u.id)}>
                   Make client

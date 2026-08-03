@@ -11,6 +11,7 @@ export default async function AdminTeammatesPage() {
   const teammates = await getAllTeammates();
   const rows: AdminTeammateRow[] = teammates.map((t) => ({
     id: t.id,
+    userId: t.userId,
     name: t.name,
     email: t.user?.email ?? null,
     tagline: t.tagline ?? "",

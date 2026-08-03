@@ -2878,11 +2878,11 @@ ul {
   outline-offset: 2px;
 }
 
+/* Selected state uses the calm indigo accent, not the loud CTA cyan —
+   cyan stays reserved for the one primary action per screen. */
 .chip-check:has(input:checked) {
-  border-color: var(--cta-vivid);
-  background: color-mix(in srgb, var(--cta-vivid) 14%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--cta-vivid) 35%, transparent) inset,
-    0 4px 14px -6px var(--cta-vivid);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--text);
   font-weight: 600;
 }
@@ -2899,8 +2899,8 @@ ul {
   height: 14px;
   margin-left: 1px;
   border-radius: 50%;
-  background: var(--cta-vivid);
-  color: var(--cta-vivid-ink);
+  background: var(--accent);
+  color: #fff;
   opacity: 0;
   transform: scale(0.6);
   transition: opacity 0.15s ease, transform 0.15s ease;
@@ -2927,7 +2927,7 @@ ul {
 }
 
 .chip-check:has(input:checked) .chip-check__glyph {
-  color: var(--cta-vivid);
+  color: color-mix(in srgb, var(--accent) 65%, #fff);
 }
 
 /* Champion/game chips carry real art — a round, slightly larger mark that
@@ -2945,7 +2945,7 @@ ul {
 }
 
 .chip-check--avatar:has(input:checked) .chip-check__icon {
-  border-color: color-mix(in srgb, var(--cta-vivid) 60%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 
 .chip-check .flag-icon {
@@ -3060,6 +3060,270 @@ ul {
   border-color: var(--cta-vivid);
 }
 
+/* ---------------------------------------------------------------------
+   Admin account detail page (/dashboard/admin/accounts/[id]) — profile
+   header, stat tiles and the section switcher below them.
+   --------------------------------------------------------------------- */
+.account-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.account-back:hover {
+  color: var(--text);
+}
+
+.account-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-card);
+}
+
+.account-header__avatar img {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-strong);
+  background: var(--bg-elevated-2);
+}
+
+.account-header__name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.account-role {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.account-role--admin {
+  border-color: color-mix(in srgb, var(--warning) 60%, transparent);
+  color: var(--warning);
+}
+
+.account-role--teammate {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  color: color-mix(in srgb, var(--accent) 55%, #fff);
+}
+
+.account-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.account-header__meta i {
+  margin-right: 6px;
+  color: var(--text-faint);
+}
+
+.account-header__games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.game-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 11px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.game-tag img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.account-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.account-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.account-stat__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: color-mix(in srgb, var(--accent) 55%, #fff);
+  font-size: 15px;
+}
+
+.account-stat__value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.account-stat__label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.account-stat__sub {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.account-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.account-section-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.account-section-card:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.account-section-card.is-active {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+  color: var(--text);
+}
+
+.account-section-card__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  color: color-mix(in srgb, var(--accent) 55%, #fff);
+}
+
+.account-section-card strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+.account-section-card em {
+  display: block;
+  font-size: 11.5px;
+  font-style: normal;
+  color: var(--text-faint);
+}
+
+.account-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.account-overview__title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+.account-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.account-facts dt {
+  color: var(--text-faint);
+}
+
+.account-facts dd {
+  color: var(--text);
+  text-align: right;
+  word-break: break-word;
+}
+
+.account-facts__langs {
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.dashboard-table__link {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.dashboard-table__link:hover {
+  color: color-mix(in srgb, var(--accent) 45%, #fff);
+  border-bottom-color: currentColor;
+}
+
 /* Tab strip: General + one tab per assigned game. Stacking all eight games
    in one form ran several screens tall, so only one section shows at a time
    (a single Save still submits the whole profile). */
@@ -3103,8 +3367,8 @@ ul {
 }
 
 .profile-tab.is-active {
-  border-color: var(--cta-vivid);
-  background: color-mix(in srgb, var(--cta-vivid) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--text);
 }
 
@@ -3252,11 +3516,17 @@ ul {
   position: relative;
 }
 
+/* A full champion pool is ~170 chips — cap the height and scroll instead of
+   pushing the trigger (and the rest of the form) off screen. */
 .icon-multi__selected {
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 7px;
   margin-bottom: 9px;
+  max-height: 164px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .icon-multi__tag {
@@ -3265,8 +3535,8 @@ ul {
   gap: 7px;
   padding: 5px 11px 5px 5px;
   border-radius: 999px;
-  border: 1px solid var(--cta-vivid);
-  background: color-mix(in srgb, var(--cta-vivid) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--text);
   font: inherit;
   font-size: 12.5px;
@@ -3280,7 +3550,7 @@ ul {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--cta-vivid) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 70%, transparent);
   background: rgba(0, 0, 0, 0.35);
   object-fit: cover;
 }

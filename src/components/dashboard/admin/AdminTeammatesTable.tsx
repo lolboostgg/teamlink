@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Modal } from "@/components/ui/Modal";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { GAMES } from "@/lib/games";
@@ -10,6 +11,8 @@ import type { GameProfileMap } from "@/lib/gameProfiles";
 
 export interface AdminTeammateRow {
   id: string;
+  /** Null for legacy roster rows that were never linked to a real account. */
+  userId: string | null;
   name: string;
   email: string | null;
   tagline: string;
@@ -51,7 +54,15 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
         <tbody>
           {teammates.map((t) => (
             <tr key={t.id}>
-              <td className="dashboard-table__primary">{t.name}</td>
+              <td className="dashboard-table__primary">
+                {t.userId ? (
+                  <Link href={`/dashboard/admin/accounts/${t.userId}`} className="dashboard-table__link">
+                    {t.name}
+                  </Link>
+                ) : (
+                  t.name
+                )}
+              </td>
               <td>{t.email ?? "—"}</td>
               <td>{t.gameSlugs.length ? t.gameSlugs.map((s) => GAME_NAME_BY_SLUG.get(s) ?? s).join(", ") : "—"}</td>
               <td>
@@ -60,9 +71,15 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
                 </span>
               </td>
               <td>
-                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditingId(t.id)}>
-                  Edit profile
-                </button>
+                {t.userId ? (
+                  <Link href={`/dashboard/admin/accounts/${t.userId}`} className="btn btn--ghost btn--sm">
+                    Open profile
+                  </Link>
+                ) : (
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setEditingId(t.id)}>
+                    Edit profile
+                  </button>
+                )}
               </td>
             </tr>
           ))}
