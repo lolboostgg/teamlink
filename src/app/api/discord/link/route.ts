@@ -13,8 +13,10 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   const session = await auth();
+  // There is no /login route — sign-in is the modal in the root layout, so
+  // send them home where they can open it.
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
+    return NextResponse.redirect(new URL("/?authError=AccessDenied", request.nextUrl.origin));
   }
 
   // Only ever an in-app path, so this can't be turned into an open redirect.

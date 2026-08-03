@@ -15,6 +15,23 @@ import { discordDisplayName } from "@/lib/discord";
 const REMEMBERED_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const NOT_REMEMBERED_MAX_AGE_SECONDS = 24 * 60 * 60; // 1 day
 
+// The union of the Discord and Google profile fields we actually read.
+// NextAuth's own Profile type is deliberately loose, so this keeps the two
+// providers' shapes in one place instead of casting at every use.
+interface OAuthProfile {
+  id?: string;
+  email?: string | null;
+  name?: string | null;
+  /** Google */
+  email_verified?: boolean;
+  /** Discord */
+  verified?: boolean;
+  username?: string;
+  global_name?: string | null;
+  discriminator?: string | null;
+  avatar?: string | null;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt", maxAge: REMEMBERED_MAX_AGE_SECONDS },
   trustHost: true,
@@ -55,13 +72,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Discord({
       clientId: process.env.AUTH_DISCORD_ID,
       clientSecret: process.env.AUTH_DISCORD_SECRET,
+      // `email` on top of the default `identify` — we key accounts by email,
+      // so a sign-in without one can't be matched to anything.
+      authorization: { params: { scope: "identify email" } },
     }),
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      authorization: {
+        params: {
+          // Always land on the account chooser instead of silently reusing
+          // whichever Google account the browser happens to be signed into.
+          prompt: "select_account",
+        },
+      },
     }),
   ],
+  // OAuth failures land back on the homepage with ?authError=… instead of
+  // NextAuth's bare /api/auth/error page — AuthErrorToast turns that into a
+  // readable message.
+  pages: { signIn: "/", error: "/" },
   callbacks: {
+    // Runs before jwt(). Everything that should *stop* an OAuth sign-in
+    // belongs here: returning a string redirects with a reason attached,
+    // whereas bailing out inside jwt() would hand out a session with no
+    // user id — signed in on paper, broken everywhere else.
+    async signIn({ account, profile }) {
+      if (!account || account.provider === "credentials") return true;
+
+      const oauth = profile as OAuthProfile | undefined;
+      const email = oauth?.email?.trim().toLowerCase();
+      if (!email) return "/?authError=no_email";
+
+      // We merge OAuth logins into an existing account by email, so an
+      // unverified address would let anyone who can claim it take over that
+      // account. Google sends email_verified, Discord sends verified; both
+      // omit the field on some account types, so only an explicit `false`
+      // rejects.
+      const verified = oauth?.email_verified ?? oauth?.verified;
+      if (verified === false) return "/?authError=unverified_email";
+
+      return true;
+    },
+
     async jwt({ token, user, account, profile, trigger }) {
       // Fired by the client calling useSession().update() with no payload
       // (see ClientProfileForm/TeammateProfileEditor after a successful
@@ -94,36 +147,52 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // OAuth sign-in (Discord/Google) — no adapter, so find-or-create the
       // matching User row by email ourselves instead of an Account table.
-      const email = user.email;
+      // signIn() above already guaranteed there is a verified email.
+      const oauth = profile as OAuthProfile | undefined;
+      const email = (oauth?.email ?? user.email ?? "").trim().toLowerCase();
       if (!email) return token;
-      const dbUser =
-        (await prisma.user.findUnique({ where: { email } })) ??
-        (await prisma.user.create({ data: { email, name: user.name ?? null } }));
+
+      let dbUser = await prisma.user.findUnique({ where: { email } });
+
+      if (!dbUser) {
+        // First sign-in through a provider *is* the signup — take the name
+        // and picture along so the header isn't blank on the first page.
+        dbUser = await prisma.user.create({
+          data: {
+            email,
+            name: user.name ?? oauth?.name ?? null,
+            avatarUrl: user.image ?? null,
+          },
+        });
+      } else if (!dbUser.avatarUrl && user.image) {
+        // Existing password account signing in via OAuth for the first time:
+        // fill the gaps, never overwrite something the user set themselves.
+        dbUser = await prisma.user.update({
+          where: { id: dbUser.id },
+          data: { avatarUrl: user.image, name: dbUser.name ?? user.name ?? null },
+        });
+      }
 
       // Signing in through Discord also counts as linking it, so the handle
       // shows up in the admin lists and can be notified later. Skipped when
       // that Discord account already belongs to someone else — discordId is
       // unique, and silently stealing it would break the other account.
-      const discordProfile = profile as
-        | { id?: string; username?: string; global_name?: string | null; discriminator?: string | null; avatar?: string | null }
-        | undefined;
-
-      if (account?.provider === "discord" && discordProfile?.id) {
-        const discordId = String(discordProfile.id);
+      if (account?.provider === "discord" && oauth?.id) {
+        const discordId = String(oauth.id);
         const owner = await prisma.user.findUnique({ where: { discordId }, select: { id: true } });
         if (!owner || owner.id === dbUser.id) {
           const displayName = discordDisplayName({
             id: discordId,
-            username: discordProfile.username ?? "",
-            global_name: discordProfile.global_name,
-            discriminator: discordProfile.discriminator,
+            username: oauth.username ?? "",
+            global_name: oauth.global_name,
+            discriminator: oauth.discriminator,
           });
           await prisma.user.update({
             where: { id: dbUser.id },
             data: {
               discordId,
               discordUsername: displayName || discordId,
-              discordAvatar: discordProfile.avatar ?? null,
+              discordAvatar: oauth.avatar ?? null,
               discordLinkedAt: new Date(),
             },
           });
@@ -132,6 +201,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       token.id = dbUser.id;
       token.role = dbUser.role;
+      token.name = dbUser.name;
+      token.picture = dbUser.avatarUrl;
       return token;
     },
     async session({ session, token }) {

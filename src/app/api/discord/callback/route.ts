@@ -19,8 +19,9 @@ export async function GET(request: NextRequest) {
   const returnTo = storedReturnTo || "/dashboard/client/settings";
 
   const session = await auth();
+  // Same as the link route: no /login page exists, sign-in is a modal.
   if (!session?.user?.id) {
-    return NextResponse.redirect(new URL("/login", request.nextUrl.origin));
+    return NextResponse.redirect(new URL("/?authError=AccessDenied", request.nextUrl.origin));
   }
 
   // The user hit "Cancel" on Discord's consent screen.

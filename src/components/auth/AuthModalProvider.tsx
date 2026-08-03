@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Modal } from "@/components/ui/Modal";
+import { AuthErrorToast } from "@/components/auth/AuthErrorToast";
 import { useToast } from "@/components/ui/ToastProvider";
 
 type Mode = "login" | "signup" | null;
@@ -62,6 +63,15 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     showToast("Logged out", "info");
   }, [showToast]);
 
+  // OAuth leaves the site entirely, so there's no result to await here — the
+  // full-page redirect comes back to whatever page the modal was opened from.
+  // Success/failure is reported by AuthErrorToast on that return trip.
+  function startOAuth(provider: "discord" | "google") {
+    setFormError(null);
+    setSubmitting(true);
+    signIn(provider, { callbackUrl: window.location.href });
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
@@ -112,6 +122,8 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     <AuthModalContext.Provider value={value}>
       {children}
 
+      <AuthErrorToast />
+
       <Modal open={mode !== null} onClose={close} labelledBy="auth-modal-title">
         <div className="auth-modal">
           <h2 id="auth-modal-title" className="auth-modal__title">
@@ -127,12 +139,18 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="btn btn--outline btn--block auth-modal__discord"
-              onClick={() => signIn("discord")}
+              disabled={submitting}
+              onClick={() => startOAuth("discord")}
             >
               <i className="fa-brands fa-discord" aria-hidden="true" />
               Continue with Discord
             </button>
-            <button type="button" className="btn btn--outline btn--block" onClick={() => signIn("google")}>
+            <button
+              type="button"
+              className="btn btn--outline btn--block"
+              disabled={submitting}
+              onClick={() => startOAuth("google")}
+            >
               <i className="fa-brands fa-google" aria-hidden="true" />
               Continue with Google
             </button>
