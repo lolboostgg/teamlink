@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { notifyUser } from "@/lib/notifications/service";
 
 async function requireAdmin() {
   const session = await auth();
@@ -38,6 +39,16 @@ export async function reviewVerification(teammateId: string, approve: boolean, n
       reviewedAt: new Date(),
     },
   });
+
+  const teammate = await prisma.teammate.findUnique({ where: { id: teammateId }, select: { userId: true } });
+  if (teammate?.userId) {
+    await notifyUser(teammate.userId, {
+      type: approve ? "verification.approved" : "verification.rejected",
+      title: approve ? "Your identity was verified" : "Your verification needs another look",
+      body: approve ? "Payouts are unlocked." : note.trim(),
+      href: "/dashboard/teammate/verification",
+    });
+  }
 
   revalidatePath("/dashboard/admin/users");
 }

@@ -8276,6 +8276,98 @@ ul {
   border-bottom: none;
 }
 
+a.notification-panel__item {
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.14s ease;
+}
+
+a.notification-panel__item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Unread gets a dot in the gutter, not a different background — the list
+   stays calm when everything is new. */
+.notification-panel__item.is-unread {
+  position: relative;
+}
+
+.notification-panel__item.is-unread::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 22px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Private document/screenshot previews. */
+.private-image {
+  position: relative;
+  display: block;
+  margin-bottom: 10px;
+  border-radius: var(--dash-radius-sm);
+  overflow: hidden;
+  background: var(--dash-surface-2);
+}
+
+.private-image img {
+  display: block;
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+}
+
+.private-image__zoom {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.private-image:hover .private-image__zoom {
+  opacity: 1;
+}
+
+.private-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 14px;
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  text-decoration: none;
+}
+
+.private-file i {
+  font-size: 17px;
+  color: var(--text-faint);
+}
+
+/* In the session step list the proof sits inline, so it stays small. */
+.session-steps .private-image {
+  width: 54px;
+  margin-bottom: 0;
+}
+
+.session-steps .private-image img {
+  height: 34px;
+}
+
 .notification-panel__icon {
   width: 34px;
   height: 34px;

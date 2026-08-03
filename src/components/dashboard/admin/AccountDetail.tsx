@@ -5,6 +5,7 @@ import { GAMES } from "@/lib/games";
 import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
 import { FlagIcon } from "@/components/ui/FlagIcon";
+import { PrivateImage } from "@/components/ui/PrivateImage";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
 import { setUserPassword, updateAccountDetails, reviewVerification } from "@/app/dashboard/admin/accounts/actions";
@@ -417,14 +418,11 @@ export function VerificationPanel({
                   {!doc.path && <span className="kyc-doc__state">missing</span>}
                 </div>
                 {doc.path && (
-                  <a
-                    className="btn btn--ghost btn--sm"
-                    href={`/api/kyc/view?path=${encodeURIComponent(doc.path)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <i className="fa-solid fa-eye" aria-hidden="true" /> Open document
-                  </a>
+                  <PrivateImage
+                    src={`/api/kyc/view?path=${encodeURIComponent(doc.path)}`}
+                    name={doc.path}
+                    alt={doc.label}
+                  />
                 )}
               </div>
             ))}

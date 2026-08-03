@@ -34,6 +34,24 @@ model User {
   ordersAsClient     Order[]             @relation("ClientOrders")
   reviewsWritten     Review[]            @relation("ReviewsWritten")
   creditTransactions CreditTransaction[]
+  notifications      Notification[]
+}
+
+// In-app notification feed. Every row targets one user; a platform event
+// that concerns the admins fans out to one row per admin, so read state is
+// per person rather than shared.
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?  @db.Text
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt])
 }
 
 enum CreditTxType {

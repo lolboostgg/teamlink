@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { sanitizePayoutDetails, type PayoutMethodType } from "@/lib/payoutMethods";
+import { notifyAdmins } from "@/lib/notifications/service";
 
 async function requireOwnTeammate() {
   const session = await auth();
@@ -60,6 +61,13 @@ export async function submitForReview() {
   await prisma.teammateVerification.update({
     where: { teammateId: teammate.id },
     data: { status: "PENDING", submittedAt: new Date(), reviewNote: null },
+  });
+
+  await notifyAdmins({
+    type: "verification.submitted",
+    title: `${teammate.name} submitted an identity verification`,
+    body: "Documents are ready for review.",
+    href: `/dashboard/admin/teammates/${teammate.teammateNo}`,
   });
 
   revalidatePath("/dashboard/teammate/verification");

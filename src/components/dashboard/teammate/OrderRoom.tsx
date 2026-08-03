@@ -8,6 +8,7 @@ import { conversationKey } from "@/lib/matchmaking/chatStore";
 import { gameIcon } from "@/lib/gameArt";
 import { useToast } from "@/components/ui/ToastProvider";
 import { FileDrop } from "@/components/ui/FileDrop";
+import { PrivateImage } from "@/components/ui/PrivateImage";
 import {
   setSessionStatusAction,
   recordGameAction,
@@ -304,13 +305,11 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                     <span style={{ display: "flex", gap: 10 }}>
                       {GAME_RESULT_LABELS[game.result as GameResult] ?? game.result}
                       {game.proofPath && (
-                        <a
-                          href={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          proof
-                        </a>
+                        <PrivateImage
+                          src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`}
+                          name={game.proofPath}
+                          alt={`Game ${i + 1} result`}
+                        />
                       )}
                     </span>
                   ) : (

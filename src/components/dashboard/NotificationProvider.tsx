@@ -1,13 +1,25 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
-import type { BookingRequestNotification } from "@/lib/dashboard/notifications";
+import { playNotificationSound } from "@/lib/notificationSound";
+
+export interface FeedNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  href: string | null;
+  read: boolean;
+  createdAt: number;
+  /** A live dispatch invite the bell can answer inline. */
+  actionable?: boolean;
+}
 
 interface NotificationContextValue {
-  notifications: BookingRequestNotification[];
+  notifications: FeedNotification[];
   unreadCount: number;
   markAllSeen: () => void;
   accept: (id: string) => void;
@@ -22,46 +34,79 @@ export function useNotifications() {
   return ctx;
 }
 
-// Bell dropdown, sourced from the same real dispatch data as
-// the dispatch flow (see lib/dispatch/service.ts) —
-// this used to be a randomly-generated fake feed with working-looking
-// Accept/Decline buttons that didn't actually do anything, which was
-// actively misleading (indistinguishable from a real request). Empty for
-// non-teammate accounts, same as before.
+/**
+ * The bell feed: stored notifications from the server (verification
+ * submitted/decided, order assigned, order completed) merged with the one
+ * live dispatch invite, which stays actionable inline. Polled — the same
+ * trade-off as the dispatch state, and honest about its latency.
+ */
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
-  const isTeammate = session?.user?.role === "TEAMMATE";
+  const signedIn = Boolean(session?.user?.id);
   const { phase, order, refresh } = useDispatchState();
-  // Only ever one open invite now — the server refuses to offer a second
-  // order to a teammate who already has one in flight.
-  const pendingInvites = phase === "DISPATCH_INCOMING" && order ? [order] : [];
+  const [stored, setStored] = useState<FeedNotification[]>([]);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [announced, setAnnounced] = useState<string | null>(null);
 
-  const notifications: BookingRequestNotification[] = useMemo(() => {
-    if (!isTeammate) return [];
-    return pendingInvites.map((order) => ({
-      id: order.id,
-      type: "booking-request" as const,
-      status: "pending" as const,
-      clientName: order.customerLabel,
-      gameName: order.gameName,
-      option: order.option,
-      priceEUR: order.priceEUR,
-      createdAt: Date.now(),
-    }));
-  }, [isTeammate, phase, order]);
+  const load = useCallback(async () => {
+    if (!signedIn) return;
+    try {
+      const res = await fetch("/api/notifications", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setStored(data.notifications ?? []);
+    } catch {
+      // A dropped poll is not worth surfacing; the next tick retries.
+    }
+  }, [signedIn]);
 
-  const unreadCount = notifications.filter((n) => !seenIds.has(n.id)).length;
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 8000);
+    return () => clearInterval(interval);
+  }, [load]);
+
+  // A newly arrived unread notification gets one sound, not one per poll.
+  useEffect(() => {
+    const newest = stored.find((n) => !n.read);
+    if (!newest || announced === newest.id) return;
+    if (announced !== null) playNotificationSound();
+    setAnnounced(newest.id);
+  }, [stored, announced]);
+
+  const notifications: FeedNotification[] = useMemo(() => {
+    const invite: FeedNotification[] =
+      phase === "DISPATCH_INCOMING" && order
+        ? [
+            {
+              id: order.id,
+              type: "dispatch.incoming",
+              title: `New request · ${order.gameName}`,
+              body: `${order.customerLabel} · ${order.option}`,
+              href: null,
+              read: false,
+              createdAt: Date.now(),
+              actionable: true,
+            },
+          ]
+        : [];
+    return [...invite, ...stored];
+  }, [phase, order, stored]);
+
+  const unreadCount = notifications.filter((n) => !n.read && !seenIds.has(n.id)).length;
 
   const value = useMemo<NotificationContextValue>(
     () => ({
       notifications,
       unreadCount,
-      markAllSeen: () => setSeenIds(new Set(notifications.map((n) => n.id))),
+      markAllSeen: () => {
+        setSeenIds(new Set(notifications.map((n) => n.id)));
+        fetch("/api/notifications", { method: "POST" }).then(load);
+      },
       accept: (id) => respondToDispatchAction(id, true).then(refresh),
       decline: (id) => respondToDispatchAction(id, false).then(refresh),
     }),
-    [notifications, unreadCount, refresh],
+    [notifications, refresh, load],
   );
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

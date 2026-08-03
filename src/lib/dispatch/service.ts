@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
+import { notifyUser, notifyAdmins } from "@/lib/notifications/service";
 
 /**
  * Server-authoritative dispatch rules. Every transition that decides who
@@ -62,6 +63,30 @@ export async function reconcileOrder(orderId: string) {
     }
 
     return order;
+  });
+}
+
+/** Tells the picked teammates the order is theirs. */
+async function notifySelected(
+  tx: Prisma.TransactionClient,
+  teammateIds: string[],
+  gameName: string,
+  orderId: string,
+) {
+  const teammates = await tx.teammate.findMany({
+    where: { id: { in: teammateIds }, userId: { not: null } },
+    select: { userId: true },
+  });
+  if (teammates.length === 0) return;
+
+  await tx.notification.createMany({
+    data: teammates.map((t) => ({
+      userId: t.userId as string,
+      type: "order.assigned",
+      title: "You've been selected",
+      body: `The customer picked you for ${gameName}.`,
+      href: `/dashboard/teammate/session/${orderId}`,
+    })),
   });
 }
 
@@ -164,7 +189,9 @@ export async function selectTeammates(orderId: string, teammateIds: string[]) {
       if (eligible.length === 0) throw new DispatchError("That teammate isn't available for this order.");
 
       await assignWinners(tx, orderId, eligible.slice(0, Math.max(1, order.teammatesRequested)).map((c) => c.id), now);
-      return tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
+      const assigned = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
+      await notifySelected(tx, eligible.map((c) => c.teammateId), order.gameName, orderId);
+      return assigned;
     },
     { isolationLevel: "Serializable" },
   );
@@ -241,10 +268,27 @@ export async function completeOrder(orderId: string, teammateId: string) {
   if (order.status === "COMPLETED") throw new DispatchError("This order is already closed.");
   if (order.games.length === 0) throw new DispatchError("Submit at least one game result first.");
 
-  return prisma.order.update({
+  const completed = await prisma.order.update({
     where: { id: orderId },
     data: { status: "COMPLETED", sessionStatus: "ORDER_COMPLETED", sessionCompleteAt: new Date() },
   });
+
+  if (completed.clientUserId) {
+    await notifyUser(completed.clientUserId, {
+      type: "order.completed",
+      title: "Your session is complete",
+      body: `${completed.gameName} · ${completed.option}`,
+      href: `/checkout/matching?order=${orderId}`,
+    });
+  }
+  await notifyAdmins({
+    type: "order.completed",
+    title: `Order completed · ${completed.gameName}`,
+    body: `${completed.option} — payout is pending review.`,
+    href: "/dashboard/admin/payouts",
+  });
+
+  return completed;
 }
 
 /** Everything the teammate dashboard needs in one read. */

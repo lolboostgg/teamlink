@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/ToastProvider";
 import { FileDrop } from "@/components/ui/FileDrop";
+import { PrivateImage } from "@/components/ui/PrivateImage";
 import {
   PAYOUT_FIELDS,
   PAYOUT_LABELS,
@@ -97,6 +98,8 @@ function DocumentUpload({
         )}
       </div>
 
+      {path && <PrivateImage src={`/api/kyc/view?path=${encodeURIComponent(path)}`} name={path} alt={label} />}
+
       <FileDrop
         accept="image/jpeg,image/png,image/webp,application/pdf"
         label={path ? "Drop a new file to replace" : "Drag & drop the document"}
@@ -105,19 +108,6 @@ function DocumentUpload({
         disabled={disabled}
         onFile={upload}
       />
-
-      {path && (
-        <div className="kyc-doc__actions">
-          <a
-            className="btn btn--ghost btn--sm"
-            href={`/api/kyc/view?path=${encodeURIComponent(path)}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <i className="fa-solid fa-eye" aria-hidden="true" /> View document
-          </a>
-        </div>
-      )}
     </div>
   );
 }
