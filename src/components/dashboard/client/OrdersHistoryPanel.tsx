@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useAllOrdersState } from "@/lib/matchmaking/useAllOrders";
 import { BookingsTable } from "@/components/dashboard/client/BookingsTable";
 import { displayStatus } from "@/lib/dashboard/orderDisplay";
+import { OrdersStatusSelect } from "@/components/dashboard/OrdersStatusSelect";
 
 const ORDERS_PER_PAGE = 20;
 type StatusFilter = "all" | "upcoming" | "completed" | "cancelled";
@@ -79,20 +80,11 @@ export function OrdersHistoryPanel() {
             </button>
           )}
         </label>
-        <div className="orders-status-pills" role="group" aria-label="Filter orders by status">
-          {STATUS_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              className={`orders-status-pill orders-status-pill--${filter.value}${status === filter.value ? " is-active" : ""}`}
-              aria-pressed={status === filter.value}
-              onClick={() => { setStatus(filter.value); setPage(1); }}
-            >
-              <i className={filter.icon} aria-hidden="true" />
-              {filter.label}
-            </button>
-          ))}
-        </div>
+        <OrdersStatusSelect
+          value={status}
+          options={STATUS_FILTERS}
+          onChange={(value) => { setStatus(value as StatusFilter); setPage(1); }}
+        />
         <span className="orders-toolbar__count">
           {filteredOrders.length} {filteredOrders.length === 1 ? "order" : "orders"}
         </span>
