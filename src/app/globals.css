@@ -9772,6 +9772,10 @@ a.notification-panel__item:hover {
 .admin-role-picker { display: flex; align-items: center; gap: 7px; }
 .admin-role-picker select { min-width: 105px; height: 34px; padding: 0 28px 0 10px; border: 1px solid var(--dash-line); border-radius: 8px; background: var(--dash-surface-2); color: var(--text); font-size: 11px; font-weight: 650; }
 .admin-role-picker .btn { min-height: 34px; }
+.admin-role-modal { width: min(440px, 100%); }
+.admin-role-modal__change { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; padding: 16px; border: 1px solid var(--dash-line); border-radius: 10px; background: var(--dash-surface-2); color: var(--text-muted); font-size: 13px; font-weight: 700; text-align: center; text-transform: capitalize; }
+.admin-role-modal__change i { color: var(--text-faint); }
+.admin-role-modal__change strong { color: var(--accent); }
 .admin-user-balance { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-size: 12px; font-weight: 750; white-space: nowrap; }
 .admin-user-balance > i { color: var(--hue-green); font-size: 11px; }
 .admin-user-balance > small { margin: 0 0 0 2px; color: var(--text-faint); font-size: 9px; font-weight: 550; }

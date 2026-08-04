@@ -16,6 +16,7 @@ export interface AdminTeammateRow {
   discordId: string | null;
   discordUsername: string | null;
   discordAvatar: string | null;
+  balanceEUR: number;
 }
 
 // Editing moved out of a modal and onto the teammate profile page
@@ -39,6 +40,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
           <th>Account</th>
           <th>Discord</th>
           <th>Games</th>
+          <th>Balance</th>
           <th>Status</th>
           <th />
         </tr>
@@ -67,6 +69,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
                 "—"
               )}
             </td>
+            <td><span className="admin-user-balance"><i className="fa-solid fa-coins" />€{t.balanceEUR.toFixed(2)}<small>earned</small></span></td>
             <td>
               <span className={`dashboard-pill ${t.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>
                 {t.available ? "available" : "unavailable"}

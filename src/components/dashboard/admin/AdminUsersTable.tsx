@@ -25,7 +25,10 @@ export interface AdminUserRow {
 
 export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
   const [pending, startTransition] = useTransition();
-  const [roleDrafts, setRoleDrafts] = useState<Record<string, "ADMIN" | "TEAMMATE" | "CLIENT">>({});
+  const [roleChange, setRoleChange] = useState<{
+    user: AdminUserRow;
+    role: "ADMIN" | "TEAMMATE" | "CLIENT";
+  } | null>(null);
 
   if (users.length === 0) {
     return (
@@ -37,6 +40,7 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
   }
 
   return (
+    <>
     <table className="dashboard-table">
       <thead>
         <tr>
@@ -65,7 +69,7 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
             </td>
             <td>{formatOrderDate(u.createdAt)}</td>
             <td>
-              <div className="admin-role-picker"><select value={roleDrafts[u.id] ?? u.role} onChange={(event) => setRoleDrafts((current) => ({ ...current, [u.id]: event.target.value as "ADMIN" | "TEAMMATE" | "CLIENT" }))}><option value="ADMIN">Admin</option><option value="TEAMMATE">Teammate</option><option value="CLIENT">Client</option></select><button type="button" className="btn btn--ghost btn--sm" disabled={pending || !roleDrafts[u.id] || roleDrafts[u.id] === u.role} onClick={() => startTransition(async () => { const nextRole = roleDrafts[u.id]; if (!nextRole) return; await setUserRole(u.id, nextRole); setRoleDrafts((current) => { const next = { ...current }; delete next[u.id]; return next; }); })}>Confirm</button></div>
+              <div className="admin-role-picker"><select value={u.role} disabled={pending} onChange={(event) => { const role = event.target.value as "ADMIN" | "TEAMMATE" | "CLIENT"; if (role !== u.role) setRoleChange({ user: u, role }); }}><option value="ADMIN">Admin</option><option value="TEAMMATE">Teammate</option><option value="CLIENT">Client</option></select></div>
             </td>
             <td><span className="admin-user-balance"><i className={`fa-solid ${u.role === "TEAMMATE" ? "fa-coins" : "fa-wallet"}`} />€{((u.role === "TEAMMATE" ? u.teammateBalanceEUR ?? 0 : (u.storeCreditCents ?? 0) / 100)).toFixed(2)}<small>{u.role === "TEAMMATE" ? "earned" : "store credit"}</small></span></td>
             <td>
@@ -77,5 +81,26 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
         ))}
       </tbody>
     </table>
+    {roleChange ? (
+      <div className="dispatch-modal__backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !pending) setRoleChange(null); }}>
+        <section className="dispatch-modal admin-role-modal" role="dialog" aria-modal="true" aria-labelledby="admin-role-modal-title">
+          <div className="dispatch-modal__head">
+            <div>
+              <div className="dispatch-modal__eyebrow">Account permissions</div>
+              <h2 className="dispatch-modal__title" id="admin-role-modal-title">Change user role?</h2>
+            </div>
+            <button type="button" className="dispatch-modal__close" aria-label="Close" disabled={pending} onClick={() => setRoleChange(null)}><i className="fa-solid fa-xmark" /></button>
+          </div>
+          <p className="dispatch-modal__lead">Confirm the new access level for <strong>{roleChange.user.teammateName ?? roleChange.user.name ?? roleChange.user.email}</strong>.</p>
+          <div className="admin-role-modal__change"><span>{roleChange.user.role.toLowerCase()}</span><i className="fa-solid fa-arrow-right" aria-hidden="true" /><strong>{roleChange.role.toLowerCase()}</strong></div>
+          <p className="dispatch-modal__note">Changing the role immediately updates which dashboard and permissions this account can use.</p>
+          <div className="dispatch-modal__actions">
+            <button type="button" className="btn btn--ghost" disabled={pending} onClick={() => setRoleChange(null)}>Cancel</button>
+            <button type="button" className="btn btn--primary" disabled={pending} onClick={() => startTransition(async () => { await setUserRole(roleChange.user.id, roleChange.role); setRoleChange(null); })}>{pending ? "Updating..." : "Confirm role"}</button>
+          </div>
+        </section>
+      </div>
+    ) : null}
+    </>
   );
 }

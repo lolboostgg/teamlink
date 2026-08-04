@@ -4,13 +4,22 @@ import { AdminTeammatesTable, type AdminTeammateRow } from "@/components/dashboa
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
+import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Teammates" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
 export const dynamic = "force-dynamic";
 
 export default async function AdminTeammatesPage() {
-  const teammates = await getAllTeammates();
+  const [teammates, completedOrders] = await Promise.all([
+    getAllTeammates(),
+    prisma.order.findMany({ where: { status: "COMPLETED", candidates: { some: { selected: true } } }, select: { priceEUR: true, teammatePayoutEUR: true, candidates: { where: { selected: true }, select: { teammateId: true } } } }),
+  ]);
+  const teammateBalances = new Map<string, number>();
+  for (const order of completedOrders) {
+    const share = Number(order.teammatePayoutEUR ?? order.priceEUR) / Math.max(1, order.candidates.length);
+    for (const candidate of order.candidates) teammateBalances.set(candidate.teammateId, (teammateBalances.get(candidate.teammateId) ?? 0) + share);
+  }
   const rows: AdminTeammateRow[] = teammates.map((t) => ({
     id: t.id,
     teammateNo: t.teammateNo,
@@ -23,6 +32,7 @@ export default async function AdminTeammatesPage() {
     discordId: t.user?.discordId ?? null,
     discordUsername: t.user?.discordUsername ?? null,
     discordAvatar: t.user?.discordAvatar ?? null,
+    balanceEUR: teammateBalances.get(t.id) ?? 0,
   }));
 
   const linked = teammates.filter((t) => t.userId).length;
