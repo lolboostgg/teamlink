@@ -30,6 +30,7 @@ export function DashboardTrigger() {
   const roleLinks = role === "ADMIN"
     ? [
         ["/dashboard/admin/orders", "fa-solid fa-receipt", "Orders & sessions"],
+        ["/dashboard/admin/chat", "fa-solid fa-comments", "Chat overview"],
         ["/dashboard/admin/users", "fa-solid fa-users", "Manage users"],
         ["/dashboard/admin/teammates", "fa-solid fa-user-group", "Manage teammates"],
       ]

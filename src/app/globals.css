@@ -9442,10 +9442,15 @@ a.notification-panel__item:hover {
 }
 
 .chat-list__name {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13.5px;
   font-weight: 700;
 }
+
+.chat-list__name > i { color: var(--text-faint); font-size: 8px; }
+.chat-status-badge { display: inline-flex; align-items: center; min-height: 18px; padding: 0 7px; border-radius: 999px; background: rgba(47, 191, 113, .12); color: var(--hue-green); font-size: 9px; font-weight: 800; line-height: 1; }
 
 .chat-list__last {
   display: block;
@@ -9485,9 +9490,14 @@ a.notification-panel__item:hover {
 }
 
 .chat-thread__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 700;
 }
+.chat-thread__identity { min-width: 0; }
+.chat-thread__name > i { color: var(--text-faint); font-size: 9px; }
 
 .chat-thread__game {
   font-size: 11.5px;
@@ -9594,6 +9604,18 @@ a.notification-panel__item:hover {
   place-items: center;
   flex: 0 0 auto;
 }
+
+.chat-thread__locked { min-height: 68px; display: flex; align-items: center; justify-content: center; gap: 11px; padding: 13px 18px; border-top: 1px solid var(--border); background: rgba(255, 255, 255, .018); color: var(--text-faint); font-size: 11px; }
+.chat-thread__locked > i { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .05); }
+.chat-thread__locked span { display: flex; flex-direction: column; gap: 2px; }
+.chat-thread__locked strong { color: var(--text-muted); font-size: 12px; }
+.admin-chat-overview { grid-template-columns: minmax(330px, 38%) 1fr; height: calc(100vh - var(--header-h) - 205px); }
+.admin-chat-overview .chat-list__item { align-items: flex-start; }
+.admin-chat-overview .chat-status-badge { margin-left: auto; }
+.admin-chat-search { display: flex; align-items: center; gap: 9px; margin: 10px; padding: 0 12px; height: 38px; border: 1px solid var(--border); border-radius: 10px; color: var(--text-faint); background: rgba(255, 255, 255, .025); }
+.admin-chat-search:focus-within { border-color: var(--accent); }
+.admin-chat-search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 12px; }
+.admin-chat-sender { display: block; margin-bottom: 4px; color: var(--text-muted); font-size: 10px; }
 
 @media (max-width: 700px) {
   .chat-layout {

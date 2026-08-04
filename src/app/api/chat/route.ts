@@ -4,24 +4,34 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-async function canAccessConversation(userId: string, role: string, key: string) {
-  if (role === "ADMIN") return true;
-  const teammateId = key.split("::", 1)[0];
-  if (!teammateId) return false;
-  if (role === "TEAMMATE") {
-    return Boolean(await prisma.teammate.findFirst({ where: { id: teammateId, userId }, select: { id: true } }));
-  }
-  return Boolean(await prisma.order.findFirst({
-    where: { clientUserId: userId, candidates: { some: { teammateId, selected: true } } },
-    select: { id: true },
-  }));
+async function conversationAccess(userId: string, role: string, key: string) {
+  if (role === "ADMIN") return { allowed: true, locked: false };
+  const separator = key.indexOf("::");
+  const teammateId = separator > 0 ? key.slice(0, separator) : "";
+  const customerLabel = separator > 0 ? key.slice(separator + 2) : "";
+  if (!teammateId || !customerLabel) return { allowed: false, locked: false };
+  const order = await prisma.order.findFirst({
+    where: {
+      customerLabel,
+      ...(role === "TEAMMATE"
+        ? { candidates: { some: { teammateId, selected: true, teammate: { userId } } } }
+        : { clientUserId: userId, candidates: { some: { teammateId, selected: true } } }),
+    },
+    orderBy: { createdAt: "desc" },
+    select: { status: true, sessionCompleteAt: true, createdAt: true },
+  });
+  const lockedAt = order?.status === "COMPLETED"
+    ? (order.sessionCompleteAt ?? order.createdAt).getTime() + 60 * 60 * 1000
+    : null;
+  return { allowed: Boolean(order), locked: Boolean(lockedAt && lockedAt <= Date.now()) };
 }
 
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const key = request.nextUrl.searchParams.get("key")?.slice(0, 300) ?? "";
-  if (!key || !(await canAccessConversation(session.user.id, session.user.role, key))) {
+  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : { allowed: false };
+  if (!key || !access.allowed) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const messages = await prisma.conversationMessage.findMany({
@@ -48,9 +58,12 @@ export async function POST(request: NextRequest) {
   const key = body?.key?.slice(0, 300) ?? "";
   const text = body?.text?.trim().slice(0, 4000) ?? "";
   const sender = body?.from === "teammate" ? "teammate" : "client";
-  if (!key || !text || !(await canAccessConversation(session.user.id, session.user.role, key))) {
+  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : { allowed: false, locked: false };
+  const correctSender = (session.user.role === "CLIENT" && sender === "client") || (session.user.role === "TEAMMATE" && sender === "teammate");
+  if (!key || !text || !access.allowed || !correctSender) {
     return NextResponse.json({ error: "Invalid message" }, { status: 400 });
   }
+  if (access.locked) return NextResponse.json({ error: "This conversation is read only." }, { status: 423 });
   const suppliedId = body?.id && /^msg-[a-zA-Z0-9-]{6,100}$/.test(body.id) ? body.id : undefined;
   const data = {
     conversationKey: key,

@@ -16,12 +16,17 @@ export function TeammateChatContent() {
   const teammateId = useCurrentTeammateId();
 
   const conversations: ChatConversation[] = useMemo(() => {
-    const byClient = new Map<string, { gameName: string; createdAt: number }>();
+    const byClient = new Map<string, { gameName: string; createdAt: number; status: "active" | "completed"; lockedAt: number | null }>();
     orders.forEach((order) => {
       if (!teammateId || !order.selectedTeammateIds.includes(teammateId)) return;
       const existing = byClient.get(order.customerLabel);
       if (!existing || order.createdAt > existing.createdAt) {
-        byClient.set(order.customerLabel, { gameName: order.gameName, createdAt: order.createdAt });
+        byClient.set(order.customerLabel, {
+          gameName: order.gameName,
+          createdAt: order.createdAt,
+          status: order.status === "completed" ? "completed" : "active",
+          lockedAt: order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
+        });
       }
     });
 
@@ -32,6 +37,8 @@ export function TeammateChatContent() {
         withName: client,
         gameName: info.gameName,
         conversationKey: teammateId ? conversationKey(teammateId, client) : "",
+        status: info.status,
+        lockedAt: info.lockedAt,
       }));
   }, [orders, teammateId]);
 

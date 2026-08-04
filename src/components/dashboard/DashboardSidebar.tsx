@@ -14,6 +14,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
     { href: "/dashboard/admin/users", label: "Users", icon: "fa-solid fa-users" },
     { href: "/dashboard/admin/teammates", label: "Teammates", icon: "fa-solid fa-user-gear" },
     { href: "/dashboard/admin/orders", label: "Orders & sessions", icon: "fa-solid fa-receipt" },
+    { href: "/dashboard/admin/chat", label: "Chats", icon: "fa-solid fa-comments" },
     { href: "/dashboard/admin/payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
   ],
   teammate: [

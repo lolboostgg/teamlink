@@ -15,7 +15,7 @@ export function ClientChatContent() {
   const orders = useAllOrders();
 
   const conversations: ChatConversation[] = useMemo(() => {
-    const byTeammate = new Map<string, { gameName: string; createdAt: number; customerLabel: string }>();
+    const byTeammate = new Map<string, { gameName: string; createdAt: number; customerLabel: string; status: "active" | "completed"; lockedAt: number | null }>();
     orders.forEach((order) => {
       if (!order.selectedTeammateId) return;
       const existing = byTeammate.get(order.selectedTeammateId);
@@ -24,6 +24,8 @@ export function ClientChatContent() {
           gameName: order.gameName,
           createdAt: order.createdAt,
           customerLabel: order.customerLabel,
+          status: order.status === "completed" ? "completed" : "active",
+          lockedAt: order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
         });
       }
     });
@@ -37,6 +39,8 @@ export function ClientChatContent() {
           withName: name,
           gameName: info.gameName,
           conversationKey: conversationKey(teammateId, info.customerLabel),
+          status: info.status,
+          lockedAt: info.lockedAt,
         };
       });
   }, [orders]);

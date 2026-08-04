@@ -7,4 +7,6 @@ export interface ChatConversation {
   // from real matched orders (ClientChatContent.tsx / TeammateChatContent.tsx),
   // not a static mock list.
   conversationKey: string;
+  status?: "active" | "completed";
+  lockedAt?: number | null;
 }

@@ -18,11 +18,12 @@ export function DashboardChat({ conversations, from }: Props) {
 
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
   const { messages, refresh } = useConversationMessages(active?.conversationKey);
+  const readOnly = Boolean(active?.lockedAt && active.lockedAt <= Date.now());
 
   function sendMessage(e: React.FormEvent) {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || !active) return;
+    if (!text || !active || readOnly) return;
     sendChatMessage(active.conversationKey, from, text);
     refresh();
     setDraft("");
@@ -48,7 +49,7 @@ export function DashboardChat({ conversations, from }: Props) {
                 <AvatarIcon seed={c.id + c.withName} />
               </span>
               <span className="chat-list__meta">
-                <span className="chat-list__name">{c.withName}</span>
+                <span className="chat-list__name">{c.withName}{c.status === "completed" && <span className="chat-status-badge">Completed</span>}</span>
                 <span className="chat-list__last">{preview ? preview.text : `Matched for ${c.gameName}`}</span>
               </span>
             </button>
@@ -61,8 +62,8 @@ export function DashboardChat({ conversations, from }: Props) {
           <span className="chat-list__avatar">
             <AvatarIcon seed={active.id + active.withName} />
           </span>
-          <div>
-            <div className="chat-thread__name">{active.withName}</div>
+          <div className="chat-thread__identity">
+            <div className="chat-thread__name">{active.withName}{active.status === "completed" && <span className="chat-status-badge">Completed</span>}</div>
             <div className="chat-thread__game">{active.gameName}</div>
           </div>
         </div>
@@ -79,7 +80,12 @@ export function DashboardChat({ conversations, from }: Props) {
           ))}
         </div>
 
-        <form className="chat-thread__input" onSubmit={sendMessage}>
+        {readOnly ? (
+          <div className="chat-thread__locked">
+            <i className="fa-solid fa-lock" aria-hidden="true" />
+            <span><strong>Conversation completed</strong>This chat is read only one hour after the session ended.</span>
+          </div>
+        ) : <form className="chat-thread__input" onSubmit={sendMessage}>
           <input
             type="text"
             placeholder="Type a message..."
@@ -89,7 +95,7 @@ export function DashboardChat({ conversations, from }: Props) {
           <button type="submit" aria-label="Send">
             <i className="fa-solid fa-paper-plane" aria-hidden="true" />
           </button>
-        </form>
+        </form>}
       </div>
     </div>
   );
