@@ -55,7 +55,10 @@ export function SessionChat({
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const senderAvatar = (sender: "client" | "teammate") => {
+  const senderAvatar = (sender: "client" | "teammate" | "admin") => {
+    if (sender === "admin") {
+      return <span className="session-chat__admin-icon"><i className="fa-solid fa-shield-halved" /></span>;
+    }
     const avatarUrl = sender === "teammate" ? teammateAvatarUrl : customerAvatarUrl;
     return avatarUrl ? <span className="avatar-icon"><SafeAvatarImage src={avatarUrl} /></span> : <AvatarIcon seed={`${conversationKey}-${sender}`} />;
   };
