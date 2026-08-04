@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
-import { conversationKey } from "@/lib/matchmaking/chatStore";
+import { conversationKey, sendChatMessage } from "@/lib/matchmaking/chatStore";
 import { gameIcon } from "@/lib/gameArt";
 import { useToast } from "@/components/ui/ToastProvider";
 import { FileDrop } from "@/components/ui/FileDrop";
@@ -278,7 +278,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
       </aside>
 
       <div className="order-room__main">
-        <div className="dashboard-panel">
+        <div className="dashboard-panel order-room__session-panel">
           <div className="dashboard-panel__head">
             <div>
               <div className="dashboard-panel__title">Session</div>
@@ -362,6 +362,8 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             conversationKey={conversationKey(order.teammateId ?? order.id, order.customerKey ?? order.customerLabel)}
             teammateName="You"
             customerName={order.customerLabel}
+            teammateAvatarUrl={order.teammateAvatarUrl}
+            customerAvatarUrl={order.customerAvatarUrl}
             viewer="teammate"
             vibe={order.vibe}
             conversationPref={order.conversationPref}
@@ -434,6 +436,11 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                 disabled={!confirmed}
                 onClick={() =>
                   startTransition(async () => {
+                    sendChatMessage(
+                      conversationKey(order.teammateId ?? order.id, order.customerKey ?? order.customerLabel),
+                      "teammate",
+                      farewell,
+                    );
                     const res = await completeOrderAction(orderId, farewell);
                     if (!res.ok) {
                       showToast(res.error, "error");

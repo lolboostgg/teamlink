@@ -459,6 +459,7 @@ export function MatchmakingScreen({ orderId }: Props) {
               {slot.candidate && teammate ? (
                 <TeammateCard
                   teammate={teammate}
+                  gameSlug={order.gameSlug}
                   isCenter={isCenter}
                   isFirstAccepted={winner?.teammateId === slot.candidate.teammateId}
                   isSelected={pickedIds.includes(slot.candidate.teammateId)}

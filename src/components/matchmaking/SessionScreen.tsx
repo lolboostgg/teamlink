@@ -10,7 +10,7 @@ import { setFavorite, useFavoriteIds } from "@/lib/favorites";
 import { submitTeammateReview } from "@/app/actions/reviews";
 import { addTip, getTipForOrder } from "@/lib/tips";
 import { addCoupon } from "@/lib/coupons";
-import { conversationKey } from "@/lib/matchmaking/chatStore";
+import { conversationKey, useConversationMessages } from "@/lib/matchmaking/chatStore";
 import { spendCredits } from "@/app/actions/credits";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
@@ -58,6 +58,10 @@ export function SessionScreen({ orderId }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const { order, now, sessionElapsedSeconds, cancelOrder, requestCancelSession } = useDispatchOrder(orderId);
+  const completionConversationKey = order?.selectedTeammateId
+    ? conversationKey(order.selectedTeammateId, order.customerLabel)
+    : undefined;
+  const { messages: completionMessages } = useConversationMessages(completionConversationKey);
   const favoriteIds = useFavoriteIds();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -234,6 +238,7 @@ export function SessionScreen({ orderId }: Props) {
   }
 
   if (order.status === "completed") {
+    const farewellMessage = [...completionMessages].reverse().find((message) => message.from === "teammate");
     return (
       <div className="session-complete">
         <Reveal>
@@ -244,6 +249,15 @@ export function SessionScreen({ orderId }: Props) {
             </p>
           </div>
         </Reveal>
+
+        {farewellMessage && (
+          <Reveal delay={40}>
+            <div className="session-complete__farewell">
+              <span className="session-complete__farewell-avatar"><AvatarIcon seed={teammate.id} /></span>
+              <span><small>{teammate.name}</small><strong>{farewellMessage.text}</strong></span>
+            </div>
+          </Reveal>
+        )}
 
         <div className="session-complete__grid">
           <Reveal delay={60} className="session-complete__card-wrap">

@@ -3635,11 +3635,28 @@ ul {
   grid-template-columns: minmax(280px, 340px) 1fr;
   gap: 20px;
   align-items: start;
+  height: calc(100vh - 145px);
+  min-height: 600px;
 }
+
+.order-room__side { display: grid; gap: 14px; }
+.order-room__side > .dashboard-panel { padding: 16px 18px; }
+.order-room__side .dashboard-panel__head { margin-bottom: 12px; padding-bottom: 12px; }
+.order-room__side .account-facts { gap: 0; }
+.order-room__side .account-facts > div { min-height: 38px; padding: 8px 12px; }
+.order-room__main { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; height: 100%; min-height: 0; }
+.order-room__session-panel { padding: 16px 20px; }
+.order-room__session-panel .dashboard-panel__head { margin-bottom: 10px; padding-bottom: 10px; }
+.order-room__session-panel .profile-tabs { min-height: 38px; }
+.order-room__session-panel .profile-tab { padding-block: 8px; }
+.order-room__session-panel .session-steps { margin-top: 10px; }
+.order-room__session-panel .session-steps li { padding: 9px 12px; }
 
 @media (max-width: 1100px) {
   .order-room {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
   }
 }
 
@@ -3670,11 +3687,11 @@ ul {
 .order-room__prefs {
   list-style: none;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .order-room__prefs li {
-  padding: 11px 13px;
+  padding: 8px 11px;
   border-radius: var(--dash-radius-sm);
   background: var(--dash-surface-2);
   font-size: 13px;
@@ -6104,6 +6121,19 @@ ul {
 .pick-card__flags { min-height: 17px; }
 .pick-card__name { font-size: 16px; letter-spacing: -.01em; }
 .pick-card__status { position: absolute; right: 14px; top: 48px; }
+.pick-card__lanes {
+  position: absolute;
+  right: 14px;
+  top: 44px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  background: rgba(5,7,14,.72);
+}
+.pick-card__lanes img { width: 17px; height: 17px; object-fit: contain; }
 .pick-card__rank { min-height: 18px; }
 .pick-card__select-btn {
   margin-top: 7px;
@@ -6728,8 +6758,8 @@ ul {
 .order-room__chat-panel {
   display: flex;
   flex-direction: column;
-  height: min(620px, calc(100vh - 150px));
-  min-height: 420px;
+  height: auto;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -6742,6 +6772,7 @@ ul {
 }
 
 @media (max-width: 760px) {
+  .order-room { height: auto; min-height: 0; }
   .order-room__chat-panel {
     height: 520px;
     min-height: 0;
@@ -6864,7 +6895,26 @@ ul {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   align-items: stretch;
+  margin-bottom: 24px;
 }
+
+.session-complete__farewell {
+  width: fit-content;
+  max-width: min(100%, 420px);
+  margin: -6px auto 18px;
+  padding: 10px 14px 10px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--dash-surface-2);
+  box-shadow: 0 10px 26px rgba(0,0,0,.2);
+}
+.session-complete__farewell-avatar .avatar-icon { width: 34px; height: 34px; }
+.session-complete__farewell > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.session-complete__farewell small { color: var(--text-faint); font-size: 10px; font-weight: 700; }
+.session-complete__farewell strong { font-size: 13px; }
 
 .session-complete__card-wrap,
 .session-complete__card-wrap > .dashboard-panel { height: 100%; }

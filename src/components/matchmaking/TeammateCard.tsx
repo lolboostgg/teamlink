@@ -2,9 +2,11 @@ import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import type { Teammate } from "@/lib/teammates";
+import { GAME_PROFILES } from "@/lib/gameProfiles";
 
 interface Props {
   teammate: Teammate;
+  gameSlug: string;
   isCenter: boolean;
   isFirstAccepted: boolean;
   isSelected: boolean;
@@ -16,8 +18,11 @@ interface Props {
 // reused site placeholder avatar (/avatars/default.webp) stretched full-
 // bleed as "portrait art" instead of a small circle, same asset already
 // used everywhere else for teammate photos, just styled as cover art here.
-export function TeammateCard({ teammate, isCenter, isFirstAccepted, isSelected, pickRank, onSelect }: Props) {
+export function TeammateCard({ teammate, gameSlug, isCenter, isFirstAccepted, isSelected, pickRank, onSelect }: Props) {
   const rank = teammate.lolRank ? getRankMeta(teammate.lolRank) : null;
+  const laneOptions = gameSlug === "league-of-legends"
+    ? (GAME_PROFILES[gameSlug]?.roles?.options ?? []).filter((lane) => teammate.lolLanes?.includes(lane.value))
+    : [];
 
   return (
     <button
@@ -56,9 +61,15 @@ export function TeammateCard({ teammate, isCenter, isFirstAccepted, isSelected, 
           ))}
         </span>
         <span className="pick-card__name">{teammate.name}</span>
-        <span className="pick-card__status">
-          <span className="pick-card__status-dot" aria-hidden="true" /> Available
-        </span>
+        {laneOptions.length ? (
+          <span className="pick-card__lanes" aria-label={`Lanes: ${laneOptions.map((lane) => lane.label).join(", ")}`}>
+            {laneOptions.map((lane) => lane.icon && <img key={lane.value} src={lane.icon} alt={lane.label} title={lane.label} />)}
+          </span>
+        ) : (
+          <span className="pick-card__status">
+            <span className="pick-card__status-dot" aria-hidden="true" /> Available
+          </span>
+        )}
         {rank && (
           <span className="pick-card__rank">
             {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -9,6 +9,7 @@ import {
   useConversationMessages,
 } from "@/lib/matchmaking/chatStore";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
 interface SystemLine {
   id: string;
@@ -19,6 +20,8 @@ interface Props {
   conversationKey: string;
   teammateName: string;
   customerName?: string;
+  teammateAvatarUrl?: string | null;
+  customerAvatarUrl?: string | null;
   viewer?: "client" | "teammate";
   vibe?: string | null;
   conversationPref?: string | null;
@@ -37,6 +40,8 @@ export function SessionChat({
   conversationKey,
   teammateName,
   customerName = "Customer",
+  teammateAvatarUrl,
+  customerAvatarUrl,
   viewer = "client",
   vibe,
   conversationPref,
@@ -50,6 +55,10 @@ export function SessionChat({
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const senderAvatar = (sender: "client" | "teammate") => {
+    const avatarUrl = sender === "teammate" ? teammateAvatarUrl : customerAvatarUrl;
+    return avatarUrl ? <span className="avatar-icon"><SafeAvatarImage src={avatarUrl} /></span> : <AvatarIcon seed={`${conversationKey}-${sender}`} />;
+  };
 
   useLayoutEffect(() => {
     const element = messagesRef.current;
@@ -138,7 +147,7 @@ export function SessionChat({
           const isAdmin = m.from === "admin";
           const mine = m.from === viewer;
           return <div key={m.id} className={`chat-message chat-message--${isAdmin ? "admin" : mine ? "me" : "them"}`}>
-            {isAdmin ? <span className="session-chat__admin-icon"><i className="fa-solid fa-shield-halved" /></span> : <AvatarIcon seed={`${conversationKey}-${m.from}`} />}
+            {isAdmin ? <span className="session-chat__admin-icon"><i className="fa-solid fa-shield-halved" /></span> : senderAvatar(m.from)}
             <div className={`chat-bubble chat-bubble--${mine ? "me" : "them"}`}>
               <strong className="chat-bubble__sender">{isAdmin ? "Admin" : m.from === "client" ? customerName : teammateName}</strong>
               <p>{m.text}</p>
@@ -151,7 +160,7 @@ export function SessionChat({
         })}
         {otherTyping && (
           <div className="chat-typing" role="status">
-            <AvatarIcon seed={`${conversationKey}-${otherSide}`} />
+            {senderAvatar(otherSide)}
             <span><i /><i /><i /></span>
             {otherSide === "client" ? customerName : teammateName} is typing…
           </div>
