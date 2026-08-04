@@ -21,6 +21,8 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/ToastProvider";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
+import { PrivateImage } from "@/components/ui/PrivateImage";
+import { SESSION_STATUS_LABELS, GAME_RESULT_LABELS, type SessionStatus, type GameResult } from "@/lib/dispatch/sessionTypes";
 
 interface Props {
   orderId: string;
@@ -463,6 +465,10 @@ export function SessionScreen({ orderId }: Props) {
   const rerollSecondsLeft = order.rerollDeadline != null ? Math.max(0, Math.ceil((order.rerollDeadline - now) / 1000)) : 0;
   const canReroll = rerollSecondsLeft > 0;
   const buyMoreTotal = order.priceEUR * buyMoreQty;
+  const games = order.games ?? [];
+  const gamesBooked = Math.max(1, order.gamesBooked);
+  const sessionStatus = (order.sessionStatus ?? "WAITING_FOR_INVITE") as SessionStatus;
+  const sessionStatusLabel = SESSION_STATUS_LABELS[sessionStatus] ?? "Waiting for invite";
 
   return (
     <div className="session-screen">
@@ -613,7 +619,52 @@ export function SessionScreen({ orderId }: Props) {
           </div>
         </Reveal>
 
-        <Reveal delay={100}>
+        <Reveal delay={80} className="session-screen__progress-wrap">
+          {/* The teammate's side of the session, read-only: what they're
+              currently doing and the result screenshots they submitted. */}
+          <div className="dashboard-panel session-screen__progress">
+            <div className="session-screen__progress-head">
+              <div>
+                <div className="dashboard-panel__title">Session</div>
+                <div className="dashboard-panel__sub">{sessionStatusLabel}</div>
+              </div>
+              <span className="session-screen__progress-count">
+                {games.length}/{gamesBooked} games
+              </span>
+            </div>
+
+            {games.length > 0 ? (
+              <div className="session-screen__proofs">
+                {games.map((game) => (
+                  <div className="session-screen__proof" key={game.gameNumber}>
+                    {game.proofPath ? (
+                      <PrivateImage
+                        src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`}
+                        name={game.proofName ?? `Game ${game.gameNumber}`}
+                        alt={`Game ${game.gameNumber} result`}
+                      />
+                    ) : (
+                      <span className="session-screen__proof-placeholder">
+                        <i className="fa-solid fa-image" aria-hidden="true" />
+                      </span>
+                    )}
+                    <span>
+                      <strong>Game {game.gameNumber}</strong>
+                      <small>{GAME_RESULT_LABELS[game.result as GameResult] ?? game.result}</small>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="session-screen__progress-empty">
+                <i className="fa-solid fa-camera" aria-hidden="true" /> {teammate.name} posts a result screenshot here after
+                each game.
+              </p>
+            )}
+          </div>
+        </Reveal>
+
+        <Reveal delay={100} className="session-screen__chat-wrap">
           <div className="dashboard-panel session-screen__chat-panel">
             <div className="session-screen__chat-head">
               <span className="session-screen__chat-head-name">{teammate.name}<small>Order #{order.orderNo}</small></span>

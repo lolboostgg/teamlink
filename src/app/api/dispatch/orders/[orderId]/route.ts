@@ -8,7 +8,7 @@ import { publish } from "@/lib/events/bus";
 
 export const dynamic = "force-dynamic";
 
-const include = { candidates: true, review: true } as const;
+const include = { candidates: true, review: true, games: true } as const;
 
 /** Customer-side read of one order, in the shape the matchmaking screens expect. */
 export async function GET(_request: Request, { params }: { params: Promise<{ orderId: string }> }) {

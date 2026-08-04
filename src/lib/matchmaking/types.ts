@@ -22,6 +22,15 @@ export type OrderStatus =
   | "cancel_pending"
   | "no_match";
 
+export interface DispatchGame {
+  gameNumber: number;
+  result: string;
+  note: string | null;
+  proofPath: string | null;
+  proofName: string | null;
+  completedAt: number | null;
+}
+
 export interface DispatchOrder {
   id: string;
   orderNo: number;
@@ -32,6 +41,9 @@ export interface DispatchOrder {
   teammates: number;
   gamesBooked: number;
   sessionStatus: string | null;
+  // Games the teammate has already submitted, with their result screenshots
+  // — the customer sees the same proofs the teammate uploaded.
+  games: DispatchGame[];
   reviewRating: number | null;
   requestedTeammateId: string | null;
   candidates: DispatchCandidate[];

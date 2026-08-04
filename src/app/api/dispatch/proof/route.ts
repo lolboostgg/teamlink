@@ -36,7 +36,8 @@ export async function POST(request: Request) {
   }
 }
 
-/** Signed read for a stored proof — the assigned teammate or an admin. */
+/** Signed read for a stored proof — the assigned teammate, the customer who
+ * booked the order, or an admin. */
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
@@ -48,12 +49,19 @@ export async function GET(request: Request) {
   if (!game) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
   if (session.user.role !== "ADMIN") {
-    const teammate = await prisma.teammate.findUnique({ where: { userId: session.user.id } });
-    if (!teammate) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-    try {
-      await assertAssignedTeammate(game.orderId, teammate.id);
-    } catch {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    const order = await prisma.order.findUnique({
+      where: { id: game.orderId },
+      select: { clientUserId: true },
+    });
+    const isCustomer = Boolean(order?.clientUserId) && order!.clientUserId === session.user.id;
+    if (!isCustomer) {
+      const teammate = await prisma.teammate.findUnique({ where: { userId: session.user.id } });
+      if (!teammate) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+      try {
+        await assertAssignedTeammate(game.orderId, teammate.id);
+      } catch {
+        return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+      }
     }
   }
 

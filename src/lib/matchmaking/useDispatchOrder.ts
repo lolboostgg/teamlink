@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 
@@ -35,6 +35,29 @@ export function useDispatchOrder(orderId: string | null) {
   }, [orderId]);
 
   useLiveSync("orders", load, 1000, { enabled: Boolean(orderId), key: orderId ?? undefined });
+
+  // Every countdown on these screens (search elapsed, selection window,
+  // reroll deadline, session clock) is derived from `now`, so it has to
+  // advance on its own. Since the SSE stream slows the fallback poll to once
+  // a minute while it's up, tying `now` to the fetch would freeze the timers
+  // between server events.
+  useEffect(() => {
+    if (!orderId) return;
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(tick);
+  }, [orderId]);
+
+  // The clock-driven transitions (searching → candidates ready → selecting →
+  // in progress) run inside reconcile() on read, and nothing publishes an
+  // event for them — so while the order is still live it needs a real
+  // once-a-second read, not the slowed-down fallback poll.
+  const settled =
+    order !== null && ["completed", "cancelled", "no_match"].includes(order.status);
+  useEffect(() => {
+    if (!orderId || settled) return;
+    const tick = setInterval(() => void load(), 1000);
+    return () => clearInterval(tick);
+  }, [orderId, settled, load]);
 
   const post = useCallback(
     async (body: Record<string, unknown>) => {

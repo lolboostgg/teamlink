@@ -1,4 +1,4 @@
-import type { DispatchOrder, CandidateStatus, OrderStatus } from "@/lib/matchmaking/types";
+import type { DispatchOrder, DispatchGame, CandidateStatus, OrderStatus } from "@/lib/matchmaking/types";
 
 // The customer screens were written against the old localStorage record, so
 // the API hands back that exact shape — lowercase statuses, epoch millis —
@@ -58,6 +58,16 @@ type Row = {
     isPrimary: boolean;
   }[];
   review?: { rating: number } | null;
+  // Optional: only the reads that include the relation carry it, and a
+  // missing relation just means "no games to show yet".
+  games?: {
+    gameNumber: number;
+    result: string;
+    note: string | null;
+    proofPath: string | null;
+    proofName: string | null;
+    completedAt: Date | null;
+  }[];
 };
 
 export function toCustomerOrder(row: Row): DispatchOrder {
@@ -74,6 +84,16 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     teammates: row.teammatesRequested,
     gamesBooked: row.gamesBooked,
     sessionStatus: row.sessionStatus,
+    games: (row.games ?? [])
+      .map<DispatchGame>((game) => ({
+        gameNumber: game.gameNumber,
+        result: game.result,
+        note: game.note,
+        proofPath: game.proofPath,
+        proofName: game.proofName,
+        completedAt: game.completedAt?.getTime() ?? null,
+      }))
+      .sort((a, b) => a.gameNumber - b.gameNumber),
     reviewRating: row.review?.rating ?? null,
     requestedTeammateId: row.requestedTeammateId,
     candidates: row.candidates.map((c) => ({
