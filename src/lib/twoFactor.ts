@@ -3,6 +3,7 @@ import { createCipheriv, createDecipheriv, createHmac, createHash, randomBytes, 
 const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
 export type TwoFactorRecord = { enabled: true; secret: string };
+export type LoginActivityRecord = { ip: string; device: string; location: string; at: string };
 
 function encryptionKey() {
   return createHash("sha256").update(process.env.AUTH_SECRET ?? "teamlink-development-secret").digest();
@@ -69,4 +70,13 @@ export function readTwoFactor(raw: unknown): TwoFactorRecord | null {
   return value.twoFactorEnabled === true && typeof value.twoFactorSecret === "string"
     ? { enabled: true, secret: value.twoFactorSecret }
     : null;
+}
+
+export function readLoginActivity(raw: unknown): LoginActivityRecord[] {
+  if (!raw || typeof raw !== "object") return [];
+  const security = (raw as Record<string, unknown>)._security;
+  if (!security || typeof security !== "object") return [];
+  const activity = (security as Record<string, unknown>).loginActivity;
+  if (!Array.isArray(activity)) return [];
+  return activity.filter((entry): entry is LoginActivityRecord => Boolean(entry && typeof entry === "object" && typeof entry.ip === "string" && typeof entry.device === "string" && typeof entry.location === "string" && typeof entry.at === "string")).slice(0, 8);
 }

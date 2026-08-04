@@ -295,7 +295,7 @@ export function TeammateDetail({
 
       {tab === "security" && account && (
         <div className="dashboard-panel">
-          <SecurityPanel userId={account.id} onSaved={() => showToast("Password changed.", "success")} />
+          <SecurityPanel userId={account.id} twoFactorEnabled={account.twoFactorEnabled} loginActivity={account.loginActivity} onSaved={() => showToast("Password changed.", "success")} />
         </div>
       )}
     </>

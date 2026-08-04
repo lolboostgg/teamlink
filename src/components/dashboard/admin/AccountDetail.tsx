@@ -11,7 +11,7 @@ import { PrivateImage } from "@/components/ui/PrivateImage";
 import { DiscordTag } from "@/components/dashboard/DiscordTag";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
-import { setUserPassword, updateAccountDetails, reviewVerification } from "@/app/dashboard/admin/accounts/actions";
+import { removeUserTwoFactor, setUserPassword, updateAccountDetails, reviewVerification } from "@/app/dashboard/admin/accounts/actions";
 import { PAYOUT_LABELS, describePayoutMethod, PAYOUT_FIELDS, type PayoutMethodType } from "@/lib/payoutMethods";
 import { useToast } from "@/components/ui/ToastProvider";
 import type { GameProfileMap } from "@/lib/gameProfiles";
@@ -33,6 +33,8 @@ export interface AccountSummary {
   completedCount: number;
   reviewCount: number;
   reviewAverage: number | null;
+  twoFactorEnabled: boolean;
+  loginActivity: { ip: string; device: string; location: string; at: string }[];
 }
 
 export interface TeammateSummary {
@@ -269,7 +271,7 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
         )}
 
         {section === "security" && (
-          <SecurityPanel userId={account.id} onSaved={() => showToast("Password changed.", "success")} />
+          <SecurityPanel userId={account.id} twoFactorEnabled={account.twoFactorEnabled} loginActivity={account.loginActivity} onSaved={() => showToast("Password changed.", "success")} />
         )}
       </div>
     </>
@@ -560,16 +562,30 @@ export function AccountPanel({ account, onSaved }: { account: AccountSummary; on
   );
 }
 
-export function SecurityPanel({ userId, onSaved }: { userId: string; onSaved: () => void }) {
+export function SecurityPanel({ userId, twoFactorEnabled, loginActivity, onSaved }: { userId: string; twoFactorEnabled: boolean; loginActivity: AccountSummary["loginActivity"]; onSaved: () => void }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [confirmTwoFactorReset, setConfirmTwoFactorReset] = useState(false);
+  const [hasTwoFactor, setHasTwoFactor] = useState(twoFactorEnabled);
 
   return (
+    <div className="admin-security-stack">
+    <section className="dashboard-panel admin-security-card">
+      <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Two-factor authentication</div><div className="dashboard-panel__sub">See whether this account requires an authenticator code and revoke it if the owner loses access.</div></div><span className={`dashboard-pill ${hasTwoFactor ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>{hasTwoFactor ? "Enabled" : "Not enabled"}</span></div>
+      {hasTwoFactor && !confirmTwoFactorReset && <button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirmTwoFactorReset(true)}>Remove 2FA</button>}
+      {confirmTwoFactorReset && <div className="admin-security-confirm"><span><strong>Remove two-factor authentication?</strong><small>The user can sign in with only their password afterward.</small></span><button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirmTwoFactorReset(false)}>Cancel</button><button type="button" className="btn btn--vivid btn--sm" disabled={pending} onClick={() => startTransition(async () => { try { await removeUserTwoFactor(userId); setHasTwoFactor(false); setConfirmTwoFactorReset(false); } catch (err) { setError(err instanceof Error ? err.message : "Could not remove 2FA."); } })}>Confirm removal</button></div>}
+    </section>
+    <section className="dashboard-panel admin-security-card">
+      <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Login activity</div><div className="dashboard-panel__sub">Recent devices, IP addresses and locations used for password sign-ins.</div></div></div>
+      <div className="admin-login-activity">
+        {loginActivity.length ? loginActivity.map((login) => <div key={`${login.ip}-${login.at}`}><i className="fa-solid fa-desktop" aria-hidden="true" /><span><strong>{login.device}</strong><small>{login.location}</small></span><span><strong>{login.ip}</strong><small>{new Date(login.at).toLocaleString()}</small></span></div>) : <p>No password login has been recorded yet.</p>}
+      </div>
+    </section>
     <form
-      className="teammate-profile-form"
+      className="teammate-profile-form dashboard-panel admin-security-card"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -641,5 +657,6 @@ export function SecurityPanel({ userId, onSaved }: { userId: string; onSaved: ()
         </button>
       </div>
     </form>
+    </div>
   );
 }

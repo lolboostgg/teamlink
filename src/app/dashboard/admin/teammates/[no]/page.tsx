@@ -7,6 +7,7 @@ import { TeammateDetail } from "@/components/dashboard/admin/TeammateDetail";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import type { LanguageCode } from "@/lib/i18n";
 import type { PayoutMethodType } from "@/lib/payoutMethods";
+import { readLoginActivity, readTwoFactor } from "@/lib/twoFactor";
 
 export const metadata: Metadata = { title: "Teammate" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
@@ -90,6 +91,8 @@ export default async function AdminTeammatePage({ params }: Props) {
                 completedCount: 0,
                 reviewCount: detail.reviewCount,
                 reviewAverage: detail.reviewAverage,
+                twoFactorEnabled: Boolean(readTwoFactor(user.notificationPrefs)),
+                loginActivity: readLoginActivity(user.notificationPrefs),
               }
             : null
         }

@@ -7,6 +7,7 @@ import { AccountDetail } from "@/components/dashboard/admin/AccountDetail";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import type { LanguageCode } from "@/lib/i18n";
 import type { PayoutMethodType } from "@/lib/payoutMethods";
+import { readLoginActivity, readTwoFactor } from "@/lib/twoFactor";
 
 export const metadata: Metadata = { title: "Account" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
@@ -47,6 +48,8 @@ export default async function AdminAccountPage({ params }: Props) {
           completedCount: detail.completedCount,
           reviewCount: detail.reviewCount,
           reviewAverage: detail.reviewAverage,
+          twoFactorEnabled: Boolean(readTwoFactor(user.notificationPrefs)),
+          loginActivity: readLoginActivity(user.notificationPrefs),
         }}
         teammate={
           teammate

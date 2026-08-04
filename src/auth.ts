@@ -5,7 +5,8 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { discordDisplayName } from "@/lib/discord";
-import { decryptTwoFactorSecret, readTwoFactor, verifyTwoFactorCode } from "@/lib/twoFactor";
+import { decryptTwoFactorSecret, readLoginActivity, readTwoFactor, verifyTwoFactorCode } from "@/lib/twoFactor";
+import { Prisma } from "@/generated/prisma/client";
 
 // Credentials provider requires JWT sessions (NextAuth can't use database
 // sessions with it) — that also means no Account/Session/VerificationToken
@@ -54,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         remember: {},
         otp: {},
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const email = String(credentials?.email ?? "").trim().toLowerCase();
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
@@ -72,6 +73,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             const otp = String(credentials?.otp ?? "");
             if (!secret || !verifyTwoFactorCode(secret, otp)) return null;
           }
+
+          const forwarded = request.headers.get("x-forwarded-for") ?? request.headers.get("cf-connecting-ip") ?? "Unknown IP";
+          const ip = forwarded.split(",")[0].trim();
+          const userAgent = request.headers.get("user-agent") ?? "Unknown device";
+          const device = /mobile|android|iphone/i.test(userAgent) ? "Mobile device" : /macintosh|mac os/i.test(userAgent) ? "Mac" : /windows/i.test(userAgent) ? "Windows PC" : "Desktop device";
+          const browser = /edg\//i.test(userAgent) ? "Edge" : /chrome\//i.test(userAgent) ? "Chrome" : /firefox\//i.test(userAgent) ? "Firefox" : /safari\//i.test(userAgent) ? "Safari" : "Web browser";
+          const rawCity = request.headers.get("x-vercel-ip-city") ?? request.headers.get("cf-ipcity");
+          const country = request.headers.get("x-vercel-ip-country") ?? request.headers.get("cf-ipcountry");
+          let city = rawCity;
+          try { city = rawCity ? decodeURIComponent(rawCity) : null; } catch {}
+          const entry = { ip, device: `${browser} on ${device}`, location: [city, country].filter(Boolean).join(", ") || "Location unavailable", at: new Date().toISOString() };
+          const prefs = user.notificationPrefs && typeof user.notificationPrefs === "object" ? user.notificationPrefs as Record<string, unknown> : {};
+          const security = prefs._security && typeof prefs._security === "object" ? prefs._security as Record<string, unknown> : {};
+          const previous = readLoginActivity(prefs).filter((login) => login.ip !== ip || login.device !== entry.device);
+          await prisma.user.update({ where: { id: user.id }, data: { notificationPrefs: { ...prefs, _security: { ...security, loginActivity: [entry, ...previous].slice(0, 8) } } as Prisma.InputJsonObject } });
 
           // Stashed on the returned user object so the jwt() callback below
           // can read it on initial sign-in (only `authorize` sees the raw

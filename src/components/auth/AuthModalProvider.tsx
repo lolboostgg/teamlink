@@ -60,6 +60,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [twoFactorStep, setTwoFactorStep] = useState<{ email: string; password: string; remember: boolean } | null>(null);
   const onSuccessRef = useRef<(() => void) | undefined>(undefined);
   const isAuthenticated = status === "authenticated";
   const isLoading = status === "loading";
@@ -67,12 +68,14 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   const open = useCallback((next: Exclude<Mode, null>, onSuccess?: () => void) => {
     setMode(next);
     setFormError(null);
+    setTwoFactorStep(null);
     onSuccessRef.current = onSuccess;
   }, []);
 
   const close = useCallback(() => {
     setMode(null);
     setFormError(null);
+    setTwoFactorStep(null);
   }, []);
 
   const logout = useCallback(async () => {
@@ -100,12 +103,12 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    const email = String(data.get("auth-email") ?? "").trim();
-    const password = String(data.get("auth-password") ?? "");
+    const email = twoFactorStep?.email ?? String(data.get("auth-email") ?? "").trim();
+    const password = twoFactorStep?.password ?? String(data.get("auth-password") ?? "");
     const username = String(data.get("auth-username") ?? "").trim();
-    const remember = data.get("auth-remember") === "on";
+    const remember = twoFactorStep?.remember ?? data.get("auth-remember") === "on";
     const otp = String(data.get("auth-otp") ?? "").trim();
-    const missing = !email || !password || (mode === "signup" && !username);
+    const missing = !email || !password || (mode === "signup" && !username) || Boolean(twoFactorStep && otp.length !== 6);
     if (missing) {
       setFormError("Fill in every field to continue.");
       return;
@@ -123,6 +126,23 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           setFormError(body?.error ?? "Something went wrong, try again.");
+          return;
+        }
+      }
+
+      if (mode === "login" && !twoFactorStep) {
+        const check = await withTimeout(fetch("/api/auth/credentials/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }));
+        if (!check.ok) {
+          setFormError("Incorrect email or password.");
+          return;
+        }
+        const access = await check.json() as { requiresTwoFactor?: boolean };
+        if (access.requiresTwoFactor) {
+          setTwoFactorStep({ email, password, remember });
           return;
         }
       }
@@ -174,15 +194,15 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
       <Modal open={mode !== null} onClose={close} labelledBy="auth-modal-title">
         <div className="auth-modal">
           <h2 id="auth-modal-title" className="auth-modal__title">
-            {mode === "login" ? "Log in to TeamLink" : "Create your account"}
+            {twoFactorStep ? "Verify it’s you" : mode === "login" ? "Log in to TeamLink" : "Create your account"}
           </h2>
           <p className="auth-modal__sub">
-            {mode === "login"
+            {twoFactorStep ? "Enter the six-digit code from your authenticator app." : mode === "login"
               ? "Welcome back, pick up right where you left off."
               : "Takes less than 30 seconds. No credit card required."}
           </p>
 
-          <div className="auth-modal__oauth">
+          {!twoFactorStep && <div className="auth-modal__oauth">
             <button
               type="button"
               className="btn btn--outline btn--block auth-modal__discord"
@@ -201,24 +221,24 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
               <i className="fa-brands fa-google" aria-hidden="true" />
               Continue with Google
             </button>
-          </div>
+          </div>}
 
-          <div className="auth-modal__divider">
+          {!twoFactorStep && <div className="auth-modal__divider">
             <span>or</span>
-          </div>
+          </div>}
 
           <form onSubmit={handleSubmit} noValidate>
-            {mode === "signup" && (
+            {!twoFactorStep && mode === "signup" && (
               <div className="form-row">
                 <label htmlFor="auth-username">Username</label>
                 <input id="auth-username" name="auth-username" type="text" placeholder="Your in-game name" />
               </div>
             )}
-            <div className="form-row">
+            {!twoFactorStep && <div className="form-row">
               <label htmlFor="auth-email">Email</label>
               <input id="auth-email" name="auth-email" type="email" placeholder="you@example.com" />
-            </div>
-            <div className="form-row">
+            </div>}
+            {!twoFactorStep && <div className="form-row">
               <label htmlFor="auth-password">Password</label>
               <div className="auth-modal__password-field">
                 <input
@@ -237,19 +257,20 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
                   <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
                 </button>
               </div>
-            </div>
+            </div>}
 
-            {mode === "login" && (
+            {twoFactorStep && (
               <div className="form-row">
-                <label htmlFor="auth-otp">Authenticator code <span className="form-label-optional">if enabled</span></label>
+                <label htmlFor="auth-otp">Authenticator code</label>
                 <input id="auth-otp" name="auth-otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" />
               </div>
             )}
 
-            {mode === "login" && (
+            {!twoFactorStep && mode === "login" && (
               <label className="auth-modal__remember">
                 <input type="checkbox" id="auth-remember" name="auth-remember" defaultChecked />
-                Remember me
+                <span className="auth-modal__remember-box"><i className="fa-solid fa-check" aria-hidden="true" /></span>
+                <span>Remember me</span>
               </label>
             )}
 
@@ -260,11 +281,12 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
             )}
 
             <button type="submit" className="btn btn--primary btn--block" disabled={submitting}>
-              {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
+              {submitting ? "Please wait…" : twoFactorStep ? "Verify & continue" : mode === "login" ? "Log in" : "Create account"}
             </button>
+            {twoFactorStep && <button type="button" className="auth-modal__back" onClick={() => { setTwoFactorStep(null); setFormError(null); }}>Back to login</button>}
           </form>
 
-          <p className="auth-modal__switch">
+          {!twoFactorStep && <p className="auth-modal__switch">
             {mode === "login" ? (
               <>
                 New here? <button type="button" onClick={() => open("signup")}>Create an account</button>
@@ -274,7 +296,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
                 Already have an account? <button type="button" onClick={() => open("login")}>Log in</button>
               </>
             )}
-          </p>
+          </p>}
         </div>
       </Modal>
     </AuthModalContext.Provider>

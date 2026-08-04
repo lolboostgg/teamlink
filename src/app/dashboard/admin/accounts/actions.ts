@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications/service";
+import { Prisma } from "@/generated/prisma/client";
 
 async function requireAdmin() {
   const session = await auth();
@@ -24,6 +25,18 @@ export async function setUserPassword(userId: string, password: string) {
     data: { passwordHash: await bcrypt.hash(password, 12) },
   });
 
+  revalidatePath(`/dashboard/admin/accounts/${userId}`);
+}
+
+export async function removeUserTwoFactor(userId: string) {
+  await requireAdmin();
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { notificationPrefs: true } });
+  if (!user) throw new Error("User not found.");
+  const prefs = user.notificationPrefs && typeof user.notificationPrefs === "object" ? user.notificationPrefs as Record<string, unknown> : {};
+  const security = prefs._security && typeof prefs._security === "object" ? prefs._security as Record<string, unknown> : {};
+  const { twoFactorEnabled: _enabled, twoFactorSecret: _secret, ...remainingSecurity } = security;
+  const next = { ...prefs, _security: remainingSecurity };
+  await prisma.user.update({ where: { id: userId }, data: { notificationPrefs: next as Prisma.InputJsonObject } });
   revalidatePath(`/dashboard/admin/accounts/${userId}`);
 }
 
