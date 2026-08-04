@@ -68,14 +68,14 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         initialQuery={q}
         placeholder="Search order, client, game or teammate…"
         searchLabel="Search orders"
-        filter={{
+        filters={[{
           param: "status",
           value: status ?? "",
           options: [
             { value: "", label: "All statuses", icon: "fa-solid fa-layer-group" },
             ...Object.values(OrderStatus).map((value) => ({ value, label: value.toLowerCase().replaceAll("_", " ") })),
           ],
-        }}
+        }]}
       />
 
       {orders.length === 0 ? (

@@ -10906,9 +10906,6 @@ a.notification-panel__item:hover {
   background: var(--dash-surface-2);
 }
 
-.payout-request--admin { grid-template-columns: minmax(160px, auto) minmax(0, 1fr) auto auto; }
-.payout-request.is-alert { border-color: rgba(224, 82, 82, 0.32); background: rgba(224, 82, 82, 0.04); }
-
 .payout-request__main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .payout-request__title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .payout-request__title strong { color: var(--text); font-size: 13px; }
@@ -11002,3 +10999,97 @@ a.notification-panel__item:hover {
 .payout-summary__total { background: rgba(47, 191, 113, 0.08) !important; }
 .payout-summary__total dt { color: var(--text); font-weight: 700; }
 .payout-summary__total dd { color: var(--hue-green); font-size: 14px; }
+
+/* ── Admin payout table ──────────────────────────────────────────────── */
+
+.payout-table td { vertical-align: middle; }
+.payout-table tr.is-alert td { background: rgba(224, 82, 82, 0.05); }
+.payout-table__id { color: var(--text-faint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+
+.payout-table__user { display: flex; flex-direction: column; gap: 2px; }
+.payout-table__user strong { color: var(--text); font-size: 12.5px; }
+.payout-table__user small { color: var(--text-faint); font-size: 10px; }
+.payout-table__user:hover strong { color: var(--accent); }
+
+.payout-table__method {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.payout-table__method > i { color: var(--accent); font-size: 11px; }
+.payout-table__method > span { color: var(--text-faint); font-size: 10px; font-weight: 500; text-decoration: underline dotted; }
+.payout-table__method:hover > span { color: var(--accent); }
+
+.payout-table__amounts { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.payout-table__amounts > strong { color: var(--text); font-size: 13.5px; font-weight: 800; }
+
+.payout-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.payout-chip--fee { border: 1px solid rgba(224, 82, 82, 0.32); background: rgba(224, 82, 82, 0.1); color: #ff9a9a; }
+.payout-chip--gross { border: 1px solid rgba(47, 191, 113, 0.3); background: rgba(47, 191, 113, 0.09); color: #6fdba0; }
+.payout-chip--alert { border: 1px solid rgba(224, 82, 82, 0.5); background: rgba(224, 82, 82, 0.16); color: #ff8080; }
+
+.payout-table__dot { font-size: 5px; vertical-align: middle; }
+.payout-table__adminnote { display: block; margin-top: 4px; color: var(--text-faint); font-size: 10px; }
+.payout-table__date { color: var(--text-muted); font-size: 11px; white-space: nowrap; }
+
+.payout-table__actions { display: flex; gap: 7px; justify-content: flex-end; }
+.payout-table__complete {
+  border: 1px solid rgba(47, 191, 113, 0.4);
+  background: rgba(47, 191, 113, 0.16);
+  color: #6fdba0;
+}
+.payout-table__complete:hover { background: rgba(47, 191, 113, 0.26); }
+
+/* Method + confirm dialogs */
+.modal-panel:has(.payout-details-modal) { max-width: 560px; padding: 0; overflow: visible; }
+.payout-details-modal {
+  display: grid;
+  gap: 15px;
+  max-height: min(760px, calc(100vh - 80px));
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.payout-details-modal .payout-method-editor__head { padding-right: 38px; }
+.payout-details-modal .payout-method-editor__head strong { font-size: 17px; }
+
+.payout-details__method { color: var(--text); font-size: 13px; }
+
+.payout-details {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.payout-details > div { display: flex; flex-direction: column; gap: 3px; }
+.payout-details dt { color: var(--text-faint); font-size: 10.5px; }
+/* Account numbers get copied by hand, so they stay selectable and legible. */
+.payout-details dd { margin: 0; color: var(--text); font-size: 13px; font-weight: 700; overflow-wrap: anywhere; user-select: text; }
+
+.payout-details__note { margin: 0; color: var(--text-muted); font-size: 12px; }

@@ -106,7 +106,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           initialQuery={q}
           placeholder="Search name, email, Discord or account no…"
           searchLabel="Search users"
-          filter={{
+          filters={[{
             param: "role",
             value: role ?? "",
             options: [
@@ -115,7 +115,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
               { value: Role.TEAMMATE, label: "Teammates", icon: "fa-solid fa-headset" },
               { value: Role.ADMIN, label: "Admins", icon: "fa-solid fa-user-shield" },
             ],
-          }}
+          }]}
         />
 
         {rows.length === 0 ? (

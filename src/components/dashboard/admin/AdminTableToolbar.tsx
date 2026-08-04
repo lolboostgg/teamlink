@@ -14,9 +14,12 @@ interface Filter {
 
 interface Props {
   initialQuery: string;
-  placeholder: string;
-  searchLabel: string;
-  filter?: Filter;
+  placeholder?: string;
+  searchLabel?: string;
+  /** Rendered left to right; each writes its own query-string key. */
+  filters?: Filter[];
+  /** Some tables filter but have nothing worth searching by. */
+  searchable?: boolean;
 }
 
 /**
@@ -26,19 +29,31 @@ interface Props {
  * Navigation always drops the `page` param: after narrowing the result set,
  * page 7 is usually out of range and lands on an empty table.
  */
-export function AdminTableToolbar({ initialQuery, placeholder, searchLabel, filter }: Props) {
+export function AdminTableToolbar({
+  initialQuery,
+  placeholder = "Search…",
+  searchLabel = "Search",
+  filters = [],
+  searchable = true,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState(initialQuery);
-  const [filterValue, setFilterValue] = useState(filter?.value ?? "");
-  const filterRef = useRef(filter?.value ?? "");
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(filters.map((entry) => [entry.param, entry.value])),
+  );
+  // Mirrors `values` for the debounced search callback, which would otherwise
+  // close over a stale copy.
+  const valuesRef = useRef(values);
   const firstRender = useRef(true);
 
-  function navigate(nextQuery: string, nextFilter: string) {
+  function navigate(nextQuery: string, nextValues: Record<string, string>) {
     const params = new URLSearchParams();
     const cleanQuery = nextQuery.trim();
     if (cleanQuery) params.set("q", cleanQuery);
-    if (filter && nextFilter) params.set(filter.param, nextFilter);
+    for (const [param, value] of Object.entries(nextValues)) {
+      if (value) params.set(param, value);
+    }
     const search = params.toString();
     router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
   }
@@ -48,20 +63,23 @@ export function AdminTableToolbar({ initialQuery, placeholder, searchLabel, filt
       firstRender.current = false;
       return;
     }
-    const timer = window.setTimeout(() => navigate(query, filterRef.current), 300);
+    const timer = window.setTimeout(() => navigate(query, valuesRef.current), 300);
     return () => window.clearTimeout(timer);
-    // The dropdown navigates immediately in its own handler; only typing is
+    // The dropdowns navigate immediately in their own handler; only typing is
     // debounced, so re-running this on a filter change would double-navigate.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   const clearSearch = () => {
     setQuery("");
-    navigate("", filterValue);
+    navigate("", valuesRef.current);
   };
+
+  const anyFilterSet = Object.values(values).some(Boolean);
 
   return (
     <div className="orders-toolbar admin-orders-toolbar">
+      {searchable && (
       <label className="orders-toolbar__search">
         <span className="orders-toolbar__search-icon" aria-hidden="true">
           <i className="fa-solid fa-magnifying-glass" />
@@ -79,27 +97,31 @@ export function AdminTableToolbar({ initialQuery, placeholder, searchLabel, filt
           </button>
         )}
       </label>
-
-      {filter && (
-        <OrdersStatusSelect
-          value={filterValue}
-          options={filter.options}
-          onChange={(next) => {
-            filterRef.current = next;
-            setFilterValue(next);
-            navigate(query, next);
-          }}
-        />
       )}
 
-      {(query || filterValue) && (
+      {filters.map((entry) => (
+        <OrdersStatusSelect
+          key={entry.param}
+          value={values[entry.param] ?? ""}
+          options={entry.options}
+          onChange={(next) => {
+            const updated = { ...valuesRef.current, [entry.param]: next };
+            valuesRef.current = updated;
+            setValues(updated);
+            navigate(query, updated);
+          }}
+        />
+      ))}
+
+      {(query || anyFilterSet) && (
         <Link
           className="orders-toolbar__reset"
           href={pathname}
           onClick={() => {
-            filterRef.current = "";
+            const cleared = Object.fromEntries(filters.map((entry) => [entry.param, ""]));
+            valuesRef.current = cleared;
             setQuery("");
-            setFilterValue("");
+            setValues(cleared);
           }}
         >
           Reset

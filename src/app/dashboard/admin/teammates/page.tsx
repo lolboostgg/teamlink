@@ -102,7 +102,7 @@ export default async function AdminTeammatesPage({ searchParams }: Props) {
           initialQuery={q}
           placeholder="Search name, email, Discord or roster no…"
           searchLabel="Search teammates"
-          filter={{
+          filters={[{
             param: "availability",
             value: availability ?? "",
             options: [
@@ -110,7 +110,7 @@ export default async function AdminTeammatesPage({ searchParams }: Props) {
               { value: "online", label: "Available", icon: "fa-solid fa-circle-check" },
               { value: "offline", label: "Offline", icon: "fa-regular fa-circle" },
             ],
-          }}
+          }]}
         />
 
         {rows.length === 0 ? (

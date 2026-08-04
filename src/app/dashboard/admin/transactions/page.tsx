@@ -105,7 +105,7 @@ export default async function AdminTransactionsPage({ searchParams }: Props) {
           initialQuery={q}
           placeholder="Search client, email, account no or note…"
           searchLabel="Search transactions"
-          filter={{
+          filters={[{
             param: "type",
             value: type ?? "",
             options: [
@@ -116,7 +116,7 @@ export default async function AdminTransactionsPage({ searchParams }: Props) {
               { value: CreditTxType.REFUND, label: "Refunds", icon: "fa-solid fa-rotate-left" },
               { value: CreditTxType.ADMIN_ADJUST, label: "Adjustments", icon: "fa-solid fa-sliders" },
             ],
-          }}
+          }]}
         />
 
         {rows.length === 0 ? (
