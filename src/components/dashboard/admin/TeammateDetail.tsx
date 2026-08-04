@@ -8,6 +8,7 @@ import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { DiscordTag } from "@/components/dashboard/DiscordTag";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import { useToast } from "@/components/ui/ToastProvider";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
@@ -91,8 +92,7 @@ export function TeammateDetail({
     <>
       <header className="account-header">
         <span className="account-header__avatar">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={teammate.avatarUrl || account?.avatarUrl || "/avatars/default.webp"} alt="" />
+          <SafeAvatarImage src={teammate.avatarUrl || account?.avatarUrl} alt={teammate.name} />
         </span>
 
         <div className="account-header__main">
@@ -163,67 +163,24 @@ export function TeammateDetail({
 
       {tab === "general" && (
         <>
-          <div className="dashboard-panel">
-            <div className="dashboard-panel__head">
-              <div>
-                <div className="dashboard-panel__title">Overview</div>
-                <div className="dashboard-panel__sub">Roster entry #{teammate.teammateNo}</div>
+          <section className="teammate-admin-summary">
+            <div className="teammate-admin-summary__stats">
+              <article><span className="teammate-admin-summary__icon teammate-admin-summary__icon--rating"><i className="fa-solid fa-star" /></span><div><strong>{teammate.rating.toFixed(1)}</strong><small>{teammate.reviewCount} review{teammate.reviewCount === 1 ? "" : "s"}</small></div></article>
+              <article><span className="teammate-admin-summary__icon teammate-admin-summary__icon--sessions"><i className="fa-solid fa-gamepad" /></span><div><strong>{teammate.sessionsCount}</strong><small>Sessions played</small></div></article>
+              <article><span className="teammate-admin-summary__icon teammate-admin-summary__icon--orders"><i className="fa-solid fa-receipt" /></span><div><strong>{orders.length}</strong><small>Orders received</small></div></article>
+              <article><span className={`teammate-admin-summary__icon ${teammate.available ? "teammate-admin-summary__icon--online" : ""}`}><i className="fa-solid fa-signal" /></span><div><strong>{teammate.available ? "Online" : "Offline"}</strong><small>Dispatch status</small></div></article>
+            </div>
+            <div className="teammate-admin-summary__details">
+              <div className="teammate-admin-summary__block">
+                <div className="teammate-admin-summary__heading"><span><i className="fa-solid fa-headset" /> Profile details</span><small>Roster #{teammate.teammateNo}</small></div>
+                <dl><div><dt>Timezone</dt><dd>{teammate.timezone || "—"}</dd></div><div><dt>Languages</dt><dd className="account-facts__langs">{teammate.languages.length ? teammate.languages.map((code) => { const lang = LANGUAGES.find((l) => l.code === code); return lang ? <FlagIcon key={code} iso={lang.flagIso} label={lang.label} /> : null; }) : "—"}</dd></div><div className="is-wide"><dt>Tagline</dt><dd>{teammate.tagline || "No tagline added"}</dd></div></dl>
+              </div>
+              <div className="teammate-admin-summary__block">
+                <div className="teammate-admin-summary__heading"><span><i className="fa-solid fa-link" /> Linked account</span><small>{account ? "Connected" : "Not linked"}</small></div>
+                <dl><div><dt>Account ID</dt><dd>{account ? `#${account.accountNo}` : "—"}</dd></div><div><dt>Joined</dt><dd>{account ? DATE.format(account.createdAt) : "—"}</dd></div><div className="is-wide"><dt>Email</dt><dd>{account?.email ?? "—"}</dd></div><div className="is-wide"><dt>Discord</dt><dd><DiscordTag discordId={account?.discordId ?? null} discordUsername={account?.discordUsername ?? null} discordAvatar={account?.discordAvatar ?? null} /></dd></div></dl>
               </div>
             </div>
-            <div className="account-overview">
-              <div>
-                <div className="account-overview__title">Teammate</div>
-                <dl className="account-facts">
-                  <div>
-                    <dt>Rating</dt>
-                    <dd>
-                      {teammate.rating.toFixed(1)} ({teammate.reviewCount} review
-                      {teammate.reviewCount === 1 ? "" : "s"})
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Sessions</dt>
-                    <dd>{teammate.sessionsCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Timezone</dt>
-                    <dd>{teammate.timezone || "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Tagline</dt>
-                    <dd>{teammate.tagline || "—"}</dd>
-                  </div>
-                </dl>
-              </div>
-              <div>
-                <div className="account-overview__title">Account</div>
-                <dl className="account-facts">
-                  <div>
-                    <dt>Account</dt>
-                    <dd>{account ? `#${account.accountNo}` : "not linked"}</dd>
-                  </div>
-                  <div>
-                    <dt>Email</dt>
-                    <dd>{account?.email ?? "—"}</dd>
-                  </div>
-                  <div>
-                    <dt>Discord</dt>
-                    <dd>
-                      <DiscordTag
-                        discordId={account?.discordId ?? null}
-                        discordUsername={account?.discordUsername ?? null}
-                        discordAvatar={account?.discordAvatar ?? null}
-                      />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Joined</dt>
-                    <dd>{account ? DATE.format(account.createdAt) : "—"}</dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-          </div>
+          </section>
 
           {account ? (
             <div className="dashboard-panel">
@@ -271,7 +228,7 @@ export function TeammateDetail({
                     <td><span className="client-order-game"><GameMark slug={o.gameSlug} /><strong>{o.gameName}</strong></span></td>
                     <td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${o.orderId}`}>#{o.orderNo}</Link></td>
                     <td><span className="client-order-option"><strong>{o.option}</strong></span></td>
-                    <td><span className="client-order-teammate"><span className="client-order-teammate__avatar">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={o.clientAvatarUrl || "/avatars/default.webp"} alt="" /></span><strong>{o.clientName}</strong></span></td>
+                    <td><span className="client-order-teammate"><span className="client-order-teammate__avatar"><SafeAvatarImage src={o.clientAvatarUrl} alt={o.clientName} /></span><strong>{o.clientName}</strong></span></td>
                     <td>
                       {o.selected ? (
                         <span className="dashboard-pill dashboard-pill--success">played</span>
