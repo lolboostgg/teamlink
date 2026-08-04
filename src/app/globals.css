@@ -9137,6 +9137,12 @@ a.notification-panel__item:hover {
   scroll-margin-top: 90px;
 }
 
+/* The live-session chat is an edge-to-edge workspace inside its card. */
+.dashboard-panel.session-screen__chat-panel {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .dashboard-panel__head {
   display: flex;
   align-items: center;
@@ -9691,6 +9697,17 @@ a.notification-panel__item:hover {
   font-size: 13.5px;
   font-weight: 700;
 }
+
+.favorite-teammate__avatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  overflow: hidden;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--dash-surface-2);
+}
+.favorite-teammate__avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
 
 .chat-list__name > i { color: var(--text-faint); font-size: 8px; }
 .chat-status-badge { display: inline-flex; align-items: center; min-height: 18px; padding: 0 7px; border-radius: 999px; background: rgba(47, 191, 113, .12); color: var(--hue-green); font-size: 9px; font-weight: 800; line-height: 1; }
