@@ -18,6 +18,8 @@ export async function placeOrder(input: {
   ign?: string | null;
   ignRegion?: string | null;
   ignRoles?: string[];
+  ignRank?: string | null;
+  ignDivision?: string | null;
 }): Promise<DispatchOrder | null> {
   try {
     const res = await fetch("/api/dispatch/orders", {

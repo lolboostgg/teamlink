@@ -11346,3 +11346,24 @@ a.notification-panel__item:hover {
 }
 
 .ingame-step__guest > i { color: var(--accent); font-size: 12px; }
+
+/* Division picker under the rank select. Only rendered for tiers that have
+   sub-divisions — Master upward is a single bracket. */
+.ingame-divisions { display: flex; gap: 6px; margin-top: 9px; }
+
+.ingame-division {
+  flex: 1;
+  padding: 9px 0;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+}
+
+.ingame-division:hover { border-color: var(--border-strong); color: var(--text); }
+.ingame-division.is-active { border-color: var(--accent); background: var(--accent); color: #fff; }

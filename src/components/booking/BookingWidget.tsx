@@ -69,6 +69,8 @@ export function BookingWidget({ game }: Props) {
       params.set("ign", ingame.ign);
       params.set("region", ingame.region);
       if (ingame.roles.length > 0) params.set("roles", ingame.roles.join(","));
+      if (ingame.rank) params.set("rank", ingame.rank);
+      if (ingame.division) params.set("division", ingame.division);
     }
     router.push(`/checkout?${params.toString()}`);
   }

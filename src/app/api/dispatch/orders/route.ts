@@ -75,6 +75,8 @@ export async function POST(request: Request) {
     ignRoles: Array.isArray(body.ignRoles)
       ? body.ignRoles.filter((role: unknown): role is string => typeof role === "string").slice(0, 6)
       : [],
+    ignRank: typeof body.ignRank === "string" ? body.ignRank.slice(0, 30) : null,
+    ignDivision: typeof body.ignDivision === "string" ? body.ignDivision.slice(0, 5) : null,
   });
 
   return NextResponse.json({ order: toCustomerOrder(order) });

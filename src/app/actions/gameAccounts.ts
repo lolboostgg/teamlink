@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { GAMES } from "@/lib/games";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
 import { regionsForGame } from "@/lib/gameRegions";
+import { DIVISIONS, ranksForGame, rankHasDivisions } from "@/lib/gameRanks";
 import { Prisma } from "@/generated/prisma/client";
 
 export interface GameAccountView {
@@ -14,6 +15,8 @@ export interface GameAccountView {
   ign: string;
   region: string;
   roles: string[];
+  rank: string | null;
+  division: string | null;
   isDefault: boolean;
 }
 
@@ -23,6 +26,8 @@ export interface SaveGameAccountInput {
   ign: string;
   region: string;
   roles: string[];
+  rank?: string | null;
+  division?: string | null;
 }
 
 /**
@@ -44,7 +49,15 @@ function clean(input: SaveGameAccountInput) {
   const allowed = new Set((getGameProfileConfig(input.gameSlug)?.roles?.options ?? []).map((option) => option.value));
   const roles = [...new Set(input.roles.filter((role) => allowed.has(role)))];
 
-  return { gameSlug: game.slug, ign, region, roles };
+  const rank = ranksForGame(input.gameSlug).find((option) => option.value === input.rank)?.value ?? null;
+  // A division on Master or Unranked is meaningless; drop it rather than
+  // storing something the UI would then have to ignore.
+  const division =
+    rank && rankHasDivisions(rank) && DIVISIONS.includes(input.division as (typeof DIVISIONS)[number])
+      ? (input.division as string)
+      : null;
+
+  return { gameSlug: game.slug, ign, region, roles, rank, division };
 }
 
 export async function listGameAccounts(gameSlug?: string): Promise<GameAccountView[]> {
@@ -62,6 +75,8 @@ export async function listGameAccounts(gameSlug?: string): Promise<GameAccountVi
     ign: row.ign,
     region: row.region,
     roles: Array.isArray(row.roles) ? (row.roles as string[]) : [],
+    rank: row.rank,
+    division: row.division,
     isDefault: row.isDefault,
   }));
 }
@@ -79,7 +94,13 @@ export async function saveGameAccount(input: SaveGameAccountInput): Promise<Game
     ? await prisma.gameAccount.update({
         // Scoped by userId so an id from another account can't be steered here.
         where: { id: input.id, userId },
-        data: { ign: data.ign, region: data.region, roles: data.roles as Prisma.InputJsonValue },
+        data: {
+          ign: data.ign,
+          region: data.region,
+          roles: data.roles as Prisma.InputJsonValue,
+          rank: data.rank,
+          division: data.division,
+        },
       })
     : await prisma.gameAccount.create({
         data: {
@@ -88,6 +109,8 @@ export async function saveGameAccount(input: SaveGameAccountInput): Promise<Game
           ign: data.ign,
           region: data.region,
           roles: data.roles as Prisma.InputJsonValue,
+          rank: data.rank,
+          division: data.division,
           // First account for a game becomes the one checkout pre-selects.
           isDefault: existingCount === 0,
         },
@@ -101,6 +124,8 @@ export async function saveGameAccount(input: SaveGameAccountInput): Promise<Game
     ign: row.ign,
     region: row.region,
     roles: Array.isArray(row.roles) ? (row.roles as string[]) : [],
+    rank: row.rank,
+    division: row.division,
     isDefault: row.isDefault,
   };
 }

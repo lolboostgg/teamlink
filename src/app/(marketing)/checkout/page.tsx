@@ -16,6 +16,8 @@ interface Props {
     ign?: string;
     region?: string;
     roles?: string;
+    rank?: string;
+    division?: string;
   }>;
 }
 
@@ -50,6 +52,8 @@ export default async function CheckoutPage({ searchParams }: Props) {
                   ign: params.ign,
                   region: params.region,
                   roles: params.roles ? params.roles.split(",").filter(Boolean) : [],
+                  rank: params.rank ?? null,
+                  division: params.division ?? null,
                 }
               : null
           }

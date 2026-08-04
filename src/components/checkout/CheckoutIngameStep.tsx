@@ -3,12 +3,16 @@
 import { useEffect, useState, useTransition } from "react";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
 import { regionsForGame, ignPlaceholder, ignHint } from "@/lib/gameRegions";
+import { DIVISIONS, ranksForGame, rankHasDivisions, formatRank } from "@/lib/gameRanks";
+import { IconSelect } from "@/components/ui/IconSelect";
 import { listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
 
 export interface IngameIdentity {
   ign: string;
   region: string;
   roles: string[];
+  rank: string | null;
+  division: string | null;
 }
 
 interface Props {
@@ -42,6 +46,7 @@ export function CheckoutIngameStep({
 }: Props) {
   const roleOptions = getGameProfileConfig(gameSlug)?.roles;
   const regions = regionsForGame(gameSlug);
+  const rankOptions = ranksForGame(gameSlug);
 
   const [saved, setSaved] = useState<GameAccountView[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -49,6 +54,8 @@ export function CheckoutIngameStep({
   const [ign, setIgn] = useState("");
   const [region, setRegion] = useState(regions[0]?.value ?? "");
   const [roles, setRoles] = useState<string[]>([]);
+  const [rank, setRank] = useState<string | null>(null);
+  const [division, setDivision] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -79,7 +86,13 @@ export function CheckoutIngameStep({
       setError("Pick an account or add a new one.");
       return;
     }
-    onContinue({ ign: account.ign, region: account.region, roles: account.roles });
+    onContinue({
+      ign: account.ign,
+      region: account.region,
+      roles: account.roles,
+      rank: account.rank,
+      division: account.division,
+    });
   }
 
   function continueWithForm() {
@@ -93,7 +106,14 @@ export function CheckoutIngameStep({
       return;
     }
 
-    const identity: IngameIdentity = { ign: ign.trim(), region, roles };
+    const identity: IngameIdentity = {
+      ign: ign.trim(),
+      region,
+      roles,
+      rank,
+      // Apex tiers and Unranked have no sub-division to send.
+      division: rankHasDivisions(rank) ? division : null,
+    };
 
     // Guests have nowhere to save it — the order still carries it.
     if (!canSave) {
@@ -136,6 +156,8 @@ export function CheckoutIngameStep({
                   <strong>{account.ign}</strong>
                   <small>
                     {account.region}
+                    {formatRank(gameSlug, account.rank, account.division) &&
+                      ` · ${formatRank(gameSlug, account.rank, account.division)}`}
                     {account.roles.length > 0 && ` · ${account.roles.map(labelForRole(gameSlug)).join(", ")}`}
                   </small>
                 </span>
@@ -173,6 +195,37 @@ export function CheckoutIngameStep({
               ))}
             </select>
           </div>
+
+          {rankOptions.length > 0 && (
+            <div className="form-row">
+              <label>Current rank</label>
+              <IconSelect
+                label="Current rank"
+                value={rank}
+                options={rankOptions}
+                searchable={rankOptions.length > 12}
+                placeholder="Select your rank"
+                onChange={(next) => {
+                  setRank(next);
+                  if (!rankHasDivisions(next)) setDivision(null);
+                }}
+              />
+              {rankHasDivisions(rank) && (
+                <div className="ingame-divisions" role="group" aria-label="Division">
+                  {DIVISIONS.map((entry) => (
+                    <button
+                      key={entry}
+                      type="button"
+                      className={`ingame-division${division === entry ? " is-active" : ""}`}
+                      onClick={() => setDivision(entry)}
+                    >
+                      {entry}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {roleOptions && (
             <div className="form-row">

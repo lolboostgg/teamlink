@@ -23,7 +23,7 @@ interface Props {
   teammates: number;
   baseTotalEUR: number;
   /** Already answered on the booking page, if the customer came that way. */
-  initialIngame?: { ign: string; region: string; roles: string[] } | null;
+  initialIngame?: IngameIdentity | null;
 }
 
 type Step = "identity" | "ingame" | "payment";
@@ -104,6 +104,8 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
       ign: ingame?.ign ?? null,
       ignRegion: ingame?.region ?? null,
       ignRoles: ingame?.roles ?? [],
+      ignRank: ingame?.rank ?? null,
+      ignDivision: ingame?.division ?? null,
     });
     // Only burns the coupon once the order is actually placed — applying
     // it in the modal alone doesn't consume it, so abandoning checkout

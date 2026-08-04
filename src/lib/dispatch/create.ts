@@ -18,6 +18,8 @@ export interface CreateOrderInput {
   ign?: string | null;
   ignRegion?: string | null;
   ignRoles?: string[];
+  ignRank?: string | null;
+  ignDivision?: string | null;
 }
 
 /**
@@ -56,6 +58,8 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       ign: input.ign ?? null,
       ignRegion: input.ignRegion ?? null,
       ignRoles: (input.ignRoles ?? []) as Prisma.InputJsonValue,
+      ignRank: input.ignRank ?? null,
+      ignDivision: input.ignDivision ?? null,
       candidates: {
         create: pool.slice(0, MAX_CANDIDATES).map((t) => ({
           teammateId: t.id,

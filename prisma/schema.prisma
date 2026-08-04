@@ -134,6 +134,10 @@ model GameAccount {
   ign       String
   region    String
   roles     Json
+  /** Current rank on the ladder from lib/gameProfiles, e.g. "emerald". */
+  rank      String?
+  /** IV–I, only for tiers that have sub-divisions. */
+  division  String?
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -457,9 +461,11 @@ model Order {
   earnings   TeammateEarning[]
   charges    Charge[]
   /** Snapshot of the in-game identity this order was booked with. */
-  ign        String?
-  ignRegion  String?
-  ignRoles   Json?
+  ign         String?
+  ignRegion   String?
+  ignRoles    Json?
+  ignRank     String?
+  ignDivision String?
 
   @@index([clientUserId])
   @@index([status])
