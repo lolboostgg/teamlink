@@ -334,7 +334,6 @@ export function SessionScreen({ orderId }: Props) {
                   </span>
                   <span>
                     <strong>Send a tip</strong>
-                    <small>100% goes to {teammate.name}</small>
                   </span>
                 </div>
                 {tipSent !== null ? (
