@@ -45,15 +45,17 @@ export function WalletScreen({
   const currentPage = Math.min(page, pageCount);
   const visibleTransactions = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  // Buying credit is a real payment now, so this leaves for Stripe's hosted
+  // page. The balance appears when the webhook confirms it — landing back
+  // here is not, by itself, proof that anything was paid.
   function buy(packageId: string) {
     startTransition(async () => {
-      try {
-        await purchaseCredits(packageId);
-        setTopUpOpen(false);
-        showToast("Balance added.", "success");
-      } catch (err) {
-        showToast(err instanceof Error ? err.message : "Couldn't add balance.", "error");
+      const result = await purchaseCredits(packageId);
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return;
       }
+      window.location.assign(result.redirect);
     });
   }
 

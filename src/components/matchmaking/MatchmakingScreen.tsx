@@ -287,6 +287,21 @@ export function MatchmakingScreen({ orderId }: Props) {
     );
   }
 
+  // Back from the hosted checkout, before Stripe's webhook has landed — or
+  // after cancelling on that page, in which case the webhook eventually
+  // cancels this order and the branch below takes over.
+  if (order.status === "awaiting_payment") {
+    return (
+      <div className="matching-screen">
+        <span className="matching-screen__spinner" aria-hidden="true" />
+        <h1 className="matching-screen__title">Confirming your payment...</h1>
+        <p className="matching-screen__sub">
+          We start looking for a teammate the moment it clears. You can leave this page open.
+        </p>
+      </div>
+    );
+  }
+
   if (order.status === "cancel_pending") {
     return (
       <div className="matching-screen">

@@ -10,13 +10,15 @@ export interface PaymentMethodMeta {
   /** Flat fee in EUR, illustrative only. */
   feeFixedEUR: number;
   note: string;
-  /** Supports "connect once, keep playing, get billed continuously" instead of a single upfront charge. */
-  payAsYouGo?: boolean;
+  /** Shown, but refused by checkout — no processor behind it. */
+  unavailable?: boolean;
 }
 
-// Mock payment placeholders — no live Stripe/PayPal SDK or crypto wallet
-// integration (this project has no backend to hold API keys). Fees are
-// illustrative, not real processor rates.
+// The methods checkout offers. Card and PayPal are both taken through
+// Stripe (see lib/stripeCheckout.ts), credits come off the Postgres balance,
+// and crypto has no processor behind it yet — it is offered as unavailable
+// rather than quietly faked. The fees below are what the customer is shown
+// and what the server charges: calculateFee() is used on both sides.
 export const PAYMENT_METHODS: PaymentMethodMeta[] = [
   {
     key: "card",
@@ -35,7 +37,6 @@ export const PAYMENT_METHODS: PaymentMethodMeta[] = [
     feePercent: 2.9,
     feeFixedEUR: 0.35,
     note: "PayPal processing fee applies.",
-    payAsYouGo: true,
   },
   {
     key: "crypto",
@@ -44,7 +45,8 @@ export const PAYMENT_METHODS: PaymentMethodMeta[] = [
     icon: "fa-brands fa-bitcoin",
     feePercent: 1.5,
     feeFixedEUR: 0,
-    note: "Network fee applies.",
+    note: "Not connected yet.",
+    unavailable: true,
   },
   {
     key: "credits",

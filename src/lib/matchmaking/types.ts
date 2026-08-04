@@ -12,6 +12,7 @@ export interface DispatchCandidate {
 }
 
 export type OrderStatus =
+  | "awaiting_payment"
   | "searching"
   | "candidates_ready"
   | "selecting"

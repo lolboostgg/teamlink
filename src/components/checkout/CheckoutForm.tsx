@@ -9,11 +9,10 @@ import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary
 import { CouponModal } from "@/components/checkout/CouponModal";
 import { TrustPoints } from "@/components/ui/TrustPoints";
 import { Reveal } from "@/components/ui/Reveal";
-import { calculateFee, getPaymentMethod, perMinuteRate, type PaymentMethodKey } from "@/lib/payments";
-import { placeOrder } from "@/lib/matchmaking/createOrderClient";
-import { markCouponUsed, type Coupon } from "@/lib/coupons";
+import { calculateFee, getPaymentMethod, type PaymentMethodKey } from "@/lib/payments";
+import { placeCheckoutOrder } from "@/app/actions/checkout";
+import { type Coupon } from "@/lib/coupons";
 import { useCreditBalance } from "@/lib/useCreditBalance";
-import { spendCredits } from "@/app/actions/credits";
 import { useToast } from "@/components/ui/ToastProvider";
 
 interface Props {
@@ -76,29 +75,17 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
   async function handlePaymentSubmit() {
     setSubmitting(true);
 
-    // The one real payment path here — deducts from the actual Postgres
-    // balance before the order is created, instead of simulating success
-    // like card/paypal/crypto do.
-    if (method === "credits") {
-      const result = await spendCredits(totalEUR, `${gameName} · ${option}`);
-      if (!result.ok) {
-        setSubmitting(false);
-        showToast(result.error ?? "Couldn't pay with credits.", "error");
-        return;
-      }
-    }
-
-    // Who you actually get is decided by the live dispatch/pick flow after
-    // checkout, never chosen up front — and the fan-out to teammates is a
-    // server decision (see lib/dispatch/create.ts).
-    const order = await placeOrder({
+    // Everything that decides what this costs — the catalogue price, the
+    // method fee, the coupon — is recomputed on the server. The totals in
+    // this component are what the customer sees, never what they are
+    // charged, because a URL and a React state are both theirs to edit.
+    const result = await placeCheckoutOrder({
       gameSlug,
-      gameName,
       option,
-      priceEUR: totalEUR,
       teammates,
-      requestedTeammateId: null,
-      customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
+      method,
+      couponCode: appliedCoupon?.code ?? null,
+      guestEmail: identity?.mode === "guest" ? identity.email : null,
       // Frozen onto the order: editing the saved account later must not
       // rewrite who a past order was played on.
       ign: ingame?.ign ?? null,
@@ -107,23 +94,17 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
       ignRank: ingame?.rank ?? null,
       ignDivision: ingame?.division ?? null,
     });
-    // Only burns the coupon once the order is actually placed — applying
-    // it in the modal alone doesn't consume it, so abandoning checkout
-    // leaves it usable.
-    if (appliedCoupon) markCouponUsed(appliedCoupon.code);
-    router.push(order ? `/checkout/matching?order=${order.id}` : "/checkout/success");
-  }
 
-  function handleStartPayAsYouGo() {
-    setSubmitting(true);
-    const params = new URLSearchParams({
-      game: gameName,
-      option,
-      rate: perMinuteRate(baseTotalEUR).toFixed(2),
-    });
-    setTimeout(() => {
-      router.push(`/checkout/session?${params.toString()}`);
-    }, 700);
+    if (!result.ok) {
+      setSubmitting(false);
+      showToast(result.error, "error");
+      return;
+    }
+
+    // Either our own matching screen (paid from credits) or Stripe's hosted
+    // page; the teammates are only invited once the payment lands.
+    if (result.redirect.startsWith("http")) window.location.assign(result.redirect);
+    else router.push(result.redirect);
   }
 
   return (
@@ -205,7 +186,6 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
                 totalEUR={totalEUR}
                 submitting={submitting}
                 onSubmit={handlePaymentSubmit}
-                onStartPayAsYouGo={handleStartPayAsYouGo}
                 creditsEnabled={identity?.mode === "account"}
                 creditBalanceCents={creditBalanceCents}
               />

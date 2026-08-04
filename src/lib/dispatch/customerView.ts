@@ -5,6 +5,7 @@ import type { DispatchOrder, DispatchGame, CandidateStatus, OrderStatus } from "
 // rather than forcing a rewrite of MatchmakingScreen and SessionScreen.
 
 const ORDER_STATUS: Record<string, OrderStatus> = {
+  AWAITING_PAYMENT: "awaiting_payment",
   SEARCHING: "searching",
   CANDIDATES_READY: "candidates_ready",
   SELECTING: "selecting",

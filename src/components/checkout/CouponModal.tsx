@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
-import { useCoupons, findCoupon, type Coupon } from "@/lib/coupons";
+import { useCoupons, type Coupon } from "@/lib/coupons";
+import { checkCoupon } from "@/app/actions/coupons";
 
 interface Props {
   open: boolean;
@@ -10,32 +11,30 @@ interface Props {
   onApply: (coupon: Coupon) => void;
 }
 
-// Coupons are generated for real (see SessionScreen's "10% off" code,
-// stored via addCoupon) but nothing previously let you redeem one — this
-// is that missing redemption step: pick from your own available codes, or
-// type any code in directly. Same-browser-only, like the rest of the
-// matchmaking/order simulation this coupon store rides alongside.
+// Pick from the codes on your account, or type one in. The check is a
+// server call: which codes exist, who owns them and whether they are still
+// open is not something the browser gets to decide. It is only a preview —
+// checkout validates and burns the code again when it places the order.
 export function CouponModal({ open, onClose, onApply }: Props) {
   const coupons = useCoupons();
   const [manualCode, setManualCode] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
 
   function handleApply(coupon: Coupon) {
     onApply(coupon);
     onClose();
   }
 
-  function handleApplyManual() {
+  async function handleApplyManual() {
     setError(null);
     const code = manualCode.trim();
     if (!code) return;
-    const found = findCoupon(code);
+    setChecking(true);
+    const found = await checkCoupon(code);
+    setChecking(false);
     if (!found) {
-      setError("That code doesn't exist or isn't valid in this browser.");
-      return;
-    }
-    if (found.usedAt) {
-      setError("That code has already been used.");
+      setError("That code isn't valid, has already been used, or has expired.");
       return;
     }
     handleApply(found);
@@ -76,12 +75,12 @@ export function CouponModal({ open, onClose, onApply }: Props) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  handleApplyManual();
+                  void handleApplyManual();
                 }
               }}
             />
-            <button type="button" className="btn btn--ghost btn--sm" onClick={handleApplyManual}>
-              Apply
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => void handleApplyManual()} disabled={checking}>
+              {checking ? "Checking..." : "Apply"}
             </button>
           </div>
           {error && (

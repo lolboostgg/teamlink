@@ -52,15 +52,14 @@ export function CreditsWidget() {
     if (!confirming) return;
     const pkg = confirming;
     startTransition(async () => {
-      try {
-        await purchaseCredits(pkg.id);
-        setBalanceCents((prev) => (prev ?? 0) + Math.round((pkg.payEUR + pkg.bonusEUR) * 100));
-        showToast(`Added €${pkg.payEUR + pkg.bonusEUR} in credits`, "success");
-        setConfirming(null);
-        setOpen(false);
-      } catch (err) {
-        showToast(err instanceof Error ? err.message : "Couldn't complete purchase", "error");
+      const result = await purchaseCredits(pkg.id);
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return;
       }
+      // Off to Stripe. The balance is only bumped once the webhook has the
+      // money, so nothing is added optimistically here.
+      window.location.assign(result.redirect);
     });
   }
 

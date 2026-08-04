@@ -20,27 +20,28 @@ export interface CreateOrderInput {
   ignRoles?: string[];
   ignRank?: string | null;
   ignDivision?: string | null;
+  /**
+   * Hold the order at AWAITING_PAYMENT instead of inviting anyone.
+   *
+   * Nobody should be pulled out of a queue for an order that hasn't been
+   * paid for, so a card checkout parks the order here and Stripe's webhook
+   * releases it (see activateOrderAfterPayment). Credit payments are settled
+   * before the order is written at all and skip this.
+   */
+  awaitPayment?: boolean;
 }
 
 /**
- * Places an order and fans it out to at most five eligible teammates.
- * Eligibility is decided here, server-side: listed for the game, marked
- * available, and not already tied up in another order.
+ * Places an order.
+ *
+ * Unless it is waiting for a payment, it is fanned out to at most five
+ * eligible teammates right away. Eligibility is decided here, server-side:
+ * listed for the game, marked available, and not already tied up in another
+ * order.
  */
 export async function createOrderWithDispatch(input: CreateOrderInput) {
-  const now = new Date();
-  // Give the customer a short setup window for preferences before any
-  // teammate sees an alert. A little variation keeps it feeling natural.
-  const alertDelayMs = input.isReplay ? 0 : 10_000 + Math.floor(Math.random() * 5_001);
-  const inviteAt = new Date(now.getTime() + alertDelayMs);
-  const deadline = new Date(now.getTime() + DISPATCH_WINDOW_MS);
-
-  const pool = input.requestedTeammateId
-    ? await prisma.teammate.findMany({ where: { id: input.requestedTeammateId } })
-    : await eligibleTeammates(input.gameSlug, input.clientUserId);
-
-  const created = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.create({ data: {
+  const order = await prisma.order.create({
+    data: {
       clientUserId: input.clientUserId,
       customerLabel: input.customerLabel,
       gameSlug: input.gameSlug,
@@ -52,40 +53,86 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       teammatePayoutEUR: teammateCut(input.priceEUR),
       teammatesRequested: Math.max(1, input.teammates),
       requestedTeammateId: input.requestedTeammateId,
-      status: pool.length > 0 ? "CANDIDATES_READY" : "NO_MATCH",
-      dispatchDeadline: deadline,
+      status: "AWAITING_PAYMENT",
+      // Replaced by the real window the moment the order is dispatched; a
+      // non-null column needs *something* until then.
+      dispatchDeadline: new Date(Date.now() + DISPATCH_WINDOW_MS),
       isReplay: !!input.isReplay,
       ign: input.ign ?? null,
       ignRegion: input.ignRegion ?? null,
       ignRoles: (input.ignRoles ?? []) as Prisma.InputJsonValue,
       ignRank: input.ignRank ?? null,
       ignDivision: input.ignDivision ?? null,
-      candidates: {
-        create: pool.slice(0, MAX_CANDIDATES).map((t) => ({
-          teammateId: t.id,
-          invitedAt: inviteAt,
-          expiresAt: deadline,
-        })),
-      },
     },
     include: { candidates: true },
+  });
+
+  if (input.awaitPayment) return order;
+  return dispatchOrder(order.id);
+}
+
+/**
+ * Releases a paid order into the dispatcher.
+ *
+ * Called from the Stripe webhook, so it has to survive a redelivery: an
+ * order that already left AWAITING_PAYMENT is returned untouched rather
+ * than invited a second time.
+ */
+export async function activateOrderAfterPayment(orderId: string) {
+  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
+  if (!order) return null;
+  if (order.status !== "AWAITING_PAYMENT") return order;
+  return dispatchOrder(orderId);
+}
+
+/** Picks the invite wave and opens the dispatch window. */
+async function dispatchOrder(orderId: string) {
+  const order = await prisma.order.findUniqueOrThrow({ where: { id: orderId } });
+  const now = new Date();
+  // Give the customer a short setup window for preferences before any
+  // teammate sees an alert. A little variation keeps it feeling natural.
+  const alertDelayMs = order.isReplay ? 0 : 10_000 + Math.floor(Math.random() * 5_001);
+  const inviteAt = new Date(now.getTime() + alertDelayMs);
+  const deadline = new Date(now.getTime() + DISPATCH_WINDOW_MS);
+
+  const pool = order.requestedTeammateId
+    ? await prisma.teammate.findMany({ where: { id: order.requestedTeammateId } })
+    : await eligibleTeammates(order.gameSlug, order.clientUserId);
+  const invitees = pool.slice(0, MAX_CANDIDATES);
+
+  const dispatched = await prisma.$transaction(async (tx) => {
+    const updated = await tx.order.update({
+      where: { id: orderId },
+      data: {
+        status: invitees.length > 0 ? "CANDIDATES_READY" : "NO_MATCH",
+        dispatchDeadline: deadline,
+        candidates: {
+          create: invitees.map((teammate) => ({
+            teammateId: teammate.id,
+            invitedAt: inviteAt,
+            expiresAt: deadline,
+          })),
+        },
+      },
+      include: { candidates: true },
     });
-    if (pool.length > 0) {
+    if (invitees.length > 0) {
       await tx.teammate.updateMany({
-        where: { id: { in: pool.slice(0, MAX_CANDIDATES).map((teammate) => teammate.id) } },
+        where: { id: { in: invitees.map((teammate) => teammate.id) } },
         data: { lastDispatchAt: inviteAt },
       });
     }
-    return order;
+    return updated;
   });
 
   // Wakes the invited teammates' panels straight away — this is the one event
   // where a poll interval is the difference between taking the order and
   // losing it to someone faster.
-  const invited = pool.slice(0, MAX_CANDIDATES).map((teammate) => teammate.userId).filter((id): id is string => Boolean(id));
-  await publish({ topic: "dispatch", key: created.id, userIds: invited });
+  const invited = invitees.map((teammate) => teammate.userId).filter((id): id is string => Boolean(id));
+  await publish({ topic: "dispatch", key: dispatched.id, userIds: invited });
+  await publish({ topic: "orders", key: dispatched.id, userIds: order.clientUserId ? [order.clientUserId] : [] });
 
-  return created;
+  return dispatched;
 }
 
 async function eligibleTeammates(gameSlug: string, clientUserId: string | null) {

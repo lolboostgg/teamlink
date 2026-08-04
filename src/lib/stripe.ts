@@ -112,13 +112,24 @@ export async function createCheckoutSession(input: {
   customerId?: string;
   customerEmail?: string;
   saveCard: boolean;
+  /**
+   * Which methods the hosted page offers. PayPal runs through Stripe too, so
+   * it is a real payment here rather than a second integration — but it
+   * cannot be charged off-session later, so it never asks to save anything.
+   */
+  methods?: ("card" | "paypal")[];
   metadata: Record<string, string>;
   idempotencyKey?: string;
 }) {
+  // Saving a payment method for later only works for cards; asking Stripe to
+  // store a PayPal agreement here would fail the whole session.
+  const methods = input.methods?.length ? input.methods : ["card"];
+  const saveCard = input.saveCard && methods.length === 1 && methods[0] === "card";
   return call<StripeCheckoutSession>(
     "/checkout/sessions",
     {
       mode: "payment",
+      payment_method_types: methods,
       success_url: input.successUrl,
       cancel_url: input.cancelUrl,
       ...(input.customerId ? { customer: input.customerId } : {}),
@@ -136,7 +147,7 @@ export async function createCheckoutSession(input: {
           },
         },
       ],
-      ...(input.saveCard ? { payment_intent_data: { setup_future_usage: "off_session" } } : {}),
+      ...(saveCard ? { payment_intent_data: { setup_future_usage: "off_session" } } : {}),
       metadata: input.metadata,
     },
     input.idempotencyKey,
@@ -150,6 +161,10 @@ export async function getCheckoutSession(sessionId: string) {
 export interface StripePaymentMethod {
   id: string;
   card?: { brand: string; last4: string; exp_month: number; exp_year: number };
+}
+
+export async function getPaymentIntent(paymentIntentId: string) {
+  return call<StripePaymentIntent & { payment_method: string | null }>(`/payment_intents/${paymentIntentId}`);
 }
 
 export async function getPaymentMethod(paymentMethodId: string) {

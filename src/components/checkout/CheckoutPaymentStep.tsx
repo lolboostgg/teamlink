@@ -1,14 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { PAYMENT_METHODS, type PaymentMethodKey } from "@/lib/payments";
 import { PriceTag } from "@/components/currency/PriceTag";
-
-const CRYPTO_OPTIONS = [
-  { key: "btc", label: "BTC", icon: "fa-brands fa-bitcoin" },
-  { key: "eth", label: "ETH", icon: "fa-brands fa-ethereum" },
-  { key: "usdt", label: "USDT", icon: "fa-solid fa-dollar-sign" },
-];
 
 interface Props {
   method: PaymentMethodKey;
@@ -16,32 +9,26 @@ interface Props {
   totalEUR: number;
   submitting: boolean;
   onSubmit: () => void;
-  onStartPayAsYouGo?: () => void;
   // Credits only make sense for a signed-in account (guests have no
   // balance) — hidden entirely rather than shown disabled-and-confusing.
   creditsEnabled?: boolean;
   creditBalanceCents?: number | null;
 }
 
-// Mock payment placeholders only — Card is branded as Stripe (no live SDK,
-// this project has no backend to hold API keys), PayPal/Crypto surface a
-// visible processing fee that flows into the order summary via
-// lib/payments.ts's calculateFee. Submitting just simulates success, same
-// pattern as the rest of this mock-data-first project. Credits is the one
-// real path here — it actually deducts from a real Postgres balance (see
-// spendCredits in app/actions/credits.ts) instead of simulating success.
+// Picking how to pay. Card and PayPal both run through Stripe's hosted
+// checkout, so no card details are ever typed into this page — submitting
+// leaves for Stripe and the order is only dispatched once its webhook
+// confirms the money. Credits are settled here against the Postgres balance.
+// Crypto has no processor behind it and says so rather than pretending.
 export function CheckoutPaymentStep({
   method,
   onMethodChange,
   totalEUR,
   submitting,
   onSubmit,
-  onStartPayAsYouGo,
   creditsEnabled,
   creditBalanceCents,
 }: Props) {
-  const [crypto, setCrypto] = useState("btc");
-  const [paypalMode, setPaypalMode] = useState<"once" | "payg">("once");
   const active = PAYMENT_METHODS.find((m) => m.key === method) ?? PAYMENT_METHODS[0];
   const visibleMethods = PAYMENT_METHODS.filter((pm) => pm.key !== "credits" || creditsEnabled);
   const balanceEUR = creditBalanceCents != null ? creditBalanceCents / 100 : null;
@@ -49,11 +36,7 @@ export function CheckoutPaymentStep({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (method === "paypal" && paypalMode === "payg" && onStartPayAsYouGo) {
-      onStartPayAsYouGo();
-      return;
-    }
-    if (insufficientCredits) return;
+    if (insufficientCredits || method === "crypto") return;
     onSubmit();
   }
 
@@ -80,29 +63,13 @@ export function CheckoutPaymentStep({
         <div className="checkout-card">
           <div className="checkout-card__title">
             <i className="fa-brands fa-cc-stripe" aria-hidden="true" style={{ marginRight: 8 }} />
-            Card details
+            Card
           </div>
-          <div className="form-row">
-            <label htmlFor="cc-number">Card number</label>
-            <input id="cc-number" type="text" placeholder="1234 1234 1234 1234" required />
-          </div>
-          <div className="form-row-grid">
-            <div className="form-row">
-              <label htmlFor="cc-expiry">Expiry</label>
-              <input id="cc-expiry" type="text" placeholder="MM/YY" required />
-            </div>
-            <div className="form-row">
-              <label htmlFor="cc-cvc">CVC</label>
-              <input id="cc-cvc" type="text" placeholder="123" required />
-            </div>
-          </div>
-          <div className="form-row">
-            <label htmlFor="cc-name">Name on card</label>
-            <input id="cc-name" type="text" placeholder="Jane Doe" required />
-          </div>
-          <p style={{ fontSize: 12, color: "var(--text-faint)" }}>
-            Processed securely via Stripe. {active.note}
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            You&rsquo;ll be taken to Stripe&rsquo;s secure page to enter your card. We never see or store the number —
+            only the last four digits come back, so paying again later is one click.
           </p>
+          <p style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 8 }}>{active.note}</p>
         </div>
       )}
 
@@ -112,39 +79,10 @@ export function CheckoutPaymentStep({
             <i className="fa-brands fa-paypal" aria-hidden="true" style={{ marginRight: 8 }} />
             PayPal
           </div>
-
-          <div className="payg-toggle">
-            <button
-              type="button"
-              className={`payg-toggle__option${paypalMode === "once" ? " is-active" : ""}`}
-              onClick={() => setPaypalMode("once")}
-            >
-              <span className="payg-toggle__title">Pay once</span>
-              <span className="payg-toggle__desc">Charge the full total now.</span>
-            </button>
-            <button
-              type="button"
-              className={`payg-toggle__option${paypalMode === "payg" ? " is-active" : ""}`}
-              onClick={() => setPaypalMode("payg")}
-            >
-              <span className="payg-toggle__title">
-                <i className="fa-solid fa-infinity" aria-hidden="true" /> Pay as you play
-              </span>
-              <span className="payg-toggle__desc">Connect PayPal once, keep playing, billed as you go.</span>
-            </button>
-          </div>
-
-          {paypalMode === "once" ? (
-            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "14px 0 0" }}>
-              You&rsquo;ll be redirected to PayPal to complete payment after clicking below.
-            </p>
-          ) : (
-            <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "14px 0 0" }}>
-              You&rsquo;ll connect PayPal, then the session starts immediately. No upfront charge, you&rsquo;re just
-              billed for the time you actually play.
-            </p>
-          )}
-
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            You&rsquo;ll be redirected to PayPal to approve the payment. It runs through Stripe, so it lands on the
+            same order as a card payment would.
+          </p>
           <p style={{ fontSize: 12, color: "var(--warning)", marginTop: 8 }}>
             <i className="fa-solid fa-circle-info" aria-hidden="true" /> {active.note} (
             {active.feePercent}% + <PriceTag amountEUR={active.feeFixedEUR} />)
@@ -158,24 +96,9 @@ export function CheckoutPaymentStep({
             <i className="fa-brands fa-bitcoin" aria-hidden="true" style={{ marginRight: 8 }} />
             Crypto
           </div>
-          <div className="payment-methods" style={{ marginBottom: 14 }}>
-            {CRYPTO_OPTIONS.map((c) => (
-              <button
-                key={c.key}
-                type="button"
-                className={`payment-method${crypto === c.key ? " is-selected" : ""}`}
-                onClick={() => setCrypto(c.key)}
-              >
-                <i className={c.icon} aria-hidden="true" />
-                {c.label}
-              </button>
-            ))}
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>
-            You&rsquo;ll receive a payment address after clicking below.
-          </p>
-          <p style={{ fontSize: 12, color: "var(--warning)" }}>
-            <i className="fa-solid fa-circle-info" aria-hidden="true" /> {active.note} ({active.feePercent}%)
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            Not available yet — there&rsquo;s no crypto processor connected, so this would take an address that
+            nobody watches. Pay by card, PayPal or credits for now.
           </p>
         </div>
       )}
@@ -205,16 +128,12 @@ export function CheckoutPaymentStep({
         </div>
       )}
 
-      <button type="submit" className="btn btn--vivid btn--block" disabled={submitting || insufficientCredits}>
-        {submitting ? (
-          "Processing..."
-        ) : method === "paypal" && paypalMode === "payg" ? (
-          <>
-            <i className="fa-brands fa-paypal" aria-hidden="true" /> Connect PayPal &amp; start playing
-          </>
-        ) : (
-          <>Pay <PriceTag amountEUR={totalEUR} /></>
-        )}
+      <button
+        type="submit"
+        className="btn btn--vivid btn--block"
+        disabled={submitting || insufficientCredits || method === "crypto"}
+      >
+        {submitting ? "Processing..." : <>Pay <PriceTag amountEUR={totalEUR} /></>}
       </button>
     </form>
   );

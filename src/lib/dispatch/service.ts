@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { notifyUser, notifyAdmins } from "@/lib/notifications/service";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
+import { issueSessionRewardCoupon } from "@/lib/couponsServer";
 
 /**
  * Server-authoritative dispatch rules. Every transition that decides who
@@ -71,7 +72,11 @@ export async function reconcileOrder(orderId: string) {
     if (!order) return null;
     previousStatus = order.status;
 
-    if (["ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status)) return order;
+    // AWAITING_PAYMENT has no dispatch window running yet — the clock only
+    // starts when the payment releases it, so it must not age out here.
+    if (["AWAITING_PAYMENT", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status)) {
+      return order;
+    }
 
     // Invites nobody answered in time.
     await tx.dispatchCandidate.updateMany({
@@ -482,6 +487,11 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
     await creditOrderPayout(tx, closed);
     return closed;
   });
+
+  // The "10% off next time" code used to be minted in the browser when the
+  // session-complete screen rendered. Earning it is a server-side fact now,
+  // so it exists whether or not the customer ever opens that screen.
+  await issueSessionRewardCoupon(orderId, completed.clientUserId);
 
   if (completed.clientUserId) {
     await notifyUser(completed.clientUserId, {

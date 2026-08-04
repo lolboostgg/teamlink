@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { createOrderWithDispatch } from "@/lib/dispatch/create";
 import { reconcileOrder } from "@/lib/dispatch/service";
 import { toCustomerOrder } from "@/lib/dispatch/customerView";
-import { GAMES } from "@/lib/games";
 
 export const dynamic = "force-dynamic";
 
@@ -47,37 +45,7 @@ export async function GET() {
   );
 }
 
-/** Checkout places the order here — the dispatch fan-out happens server-side. */
-export async function POST(request: Request) {
-  const session = await auth();
-  const body = await request.json();
-
-  const game = GAMES.find((g) => g.slug === body.gameSlug);
-  if (!game) return NextResponse.json({ error: "Unknown game." }, { status: 400 });
-
-  const priceEUR = Number(body.priceEUR);
-  if (!Number.isFinite(priceEUR) || priceEUR < 0) {
-    return NextResponse.json({ error: "Invalid price." }, { status: 400 });
-  }
-
-  const order = await createOrderWithDispatch({
-    gameSlug: game.slug,
-    gameName: game.name,
-    option: String(body.option ?? "").slice(0, 120),
-    priceEUR,
-    teammates: Number(body.teammates) || 1,
-    requestedTeammateId: body.requestedTeammateId ?? null,
-    customerLabel: String(session?.user?.name || session?.user?.email || body.customerLabel || "Customer").slice(0, 120),
-    clientUserId: session?.user?.id ?? null,
-    isReplay: !!body.isReplay,
-    ign: typeof body.ign === "string" ? body.ign.slice(0, 60) : null,
-    ignRegion: typeof body.ignRegion === "string" ? body.ignRegion.slice(0, 20) : null,
-    ignRoles: Array.isArray(body.ignRoles)
-      ? body.ignRoles.filter((role: unknown): role is string => typeof role === "string").slice(0, 6)
-      : [],
-    ignRank: typeof body.ignRank === "string" ? body.ignRank.slice(0, 30) : null,
-    ignDivision: typeof body.ignDivision === "string" ? body.ignDivision.slice(0, 5) : null,
-  });
-
-  return NextResponse.json({ order: toCustomerOrder(order) });
-}
+// There is deliberately no POST here any more. Placing an order is a
+// payment, so it goes through placeCheckoutOrder() in app/actions/checkout.ts
+// — an endpoint that created a live, dispatched order for whatever price the
+// caller sent was a way to book for free.

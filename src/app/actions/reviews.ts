@@ -30,3 +30,44 @@ export async function submitTeammateReview(orderId: string, teammateId: string, 
   });
   return { ok: true } as const;
 }
+
+export interface TeammateReviewView {
+  id: string;
+  rating: number;
+  createdAt: number;
+  client: string;
+  gameName: string;
+}
+
+/**
+ * The reviews a teammate has actually received.
+ *
+ * The panel used to read these out of localStorage, so a teammate only ever
+ * saw ratings that happened to be written in their own browser — which is
+ * none of them, since the customer writes them in theirs.
+ */
+export async function listMyTeammateReviews(): Promise<TeammateReviewView[]> {
+  const session = await auth();
+  if (!session?.user?.id) return [];
+
+  const teammate = await prisma.teammate.findUnique({
+    where: { userId: session.user.id },
+    select: { id: true },
+  });
+  if (!teammate) return [];
+
+  const rows = await prisma.review.findMany({
+    where: { teammateId: teammate.id },
+    include: { order: { select: { customerLabel: true, gameName: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    rating: row.rating,
+    createdAt: row.createdAt.getTime(),
+    client: row.order?.customerLabel ?? "Anonymous",
+    gameName: row.order?.gameName ?? "—",
+  }));
+}

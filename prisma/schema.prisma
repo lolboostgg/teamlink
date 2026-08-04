@@ -50,6 +50,8 @@ model User {
   savedCards         SavedCard[]
   charges            Charge[]
   gameAccounts       GameAccount[]
+  couponsOwned       Coupon[]            @relation("CouponsOwned")
+  tipsSent           Tip[]               @relation("TipsSent")
 }
 
 /**
@@ -88,6 +90,9 @@ enum ChargeKind {
   ORDER
   EXTRA_GAMES
   TIP
+  // Buying store credit. The credit itself is only granted once the webhook
+  // confirms the charge, never on the redirect back.
+  CREDITS
 }
 
 /**
@@ -114,6 +119,13 @@ model Charge {
   stripePaymentIntentId String?      @unique
   stripeSessionId       String?      @unique
   failureMessage        String?
+  /**
+   * Set by whoever first hands out what this charge bought. The action that
+   * took the money and the webhook that confirms it both race for this, and
+   * claiming it is a conditional update — so the games are added, or the tip
+   * credited, exactly once no matter who gets there first.
+   */
+  fulfilledAt           DateTime?
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
@@ -271,11 +283,14 @@ model Teammate {
   favoredBy         FavoriteTeammate[]
   earnings          TeammateEarning[]
   payoutRequests    PayoutRequest[]
+  tipsReceived      Tip[]                @relation("TipsReceived")
 }
 
 enum TeammateEarningType {
   // Credited when an order completes — the teammate's share of the price.
   ORDER_PAYOUT
+  // The customer's tip for a session, credited in full.
+  TIP
   // Booked negative when an admin actually pays the balance out.
   PAYOUT_SENT
   // Manual correction by an admin, either direction.
@@ -409,6 +424,10 @@ model PayoutRequest {
 }
 
 enum OrderStatus {
+  // Placed, but nobody has been invited yet because the money hasn't
+  // arrived. Stripe's webhook is what moves it on to SEARCHING — see
+  // activateOrderAfterPayment() in lib/dispatch/create.ts.
+  AWAITING_PAYMENT
   SEARCHING
   CANDIDATES_READY
   SELECTING
@@ -460,6 +479,8 @@ model Order {
   review     Review?
   earnings   TeammateEarning[]
   charges    Charge[]
+  tip        Tip?
+  couponsRedeemed Coupon[] @relation("CouponsRedeemed")
   /** Snapshot of the in-game identity this order was booked with. */
   ign         String?
   ignRegion   String?
@@ -549,4 +570,47 @@ model Review {
   createdAt     DateTime @default(now())
 
   @@index([teammateId])
+}
+
+// A discount code the customer owns. Was localStorage, which meant a code
+// only existed in the browser that earned it and could be re-used by
+// clearing site data — both gone now that redemption is decided server-side.
+model Coupon {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  discountPercent Int
+  /** Where it came from: an order id for the post-session reward, or a campaign name. */
+  source          String
+  // Null for a public campaign code anyone may redeem; set for a code that
+  // was earned by one account.
+  ownerUserId     String?
+  ownerUser       User?     @relation("CouponsOwned", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  // Redemption is one-shot: the timestamp is written in the same
+  // transaction that places the order it paid for.
+  usedAt          DateTime?
+  usedOnOrderId   String?
+  usedOnOrder     Order?    @relation("CouponsRedeemed", fields: [usedOnOrderId], references: [id])
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([ownerUserId, usedAt])
+}
+
+// A tip for a completed session. One per order — paying again for the same
+// session replaces nothing, it is simply refused, so a double-clicked button
+// cannot tip twice.
+model Tip {
+  id         String   @id @default(cuid())
+  orderId    String   @unique
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  teammateId String
+  teammate   Teammate @relation("TipsReceived", fields: [teammateId], references: [id])
+  fromUserId String?
+  fromUser   User?    @relation("TipsSent", fields: [fromUserId], references: [id])
+  amountEUR  Decimal  @db.Decimal(10, 2)
+  /** The Stripe charge that paid for it; null when it was paid from credits. */
+  chargeId   String?
+  createdAt  DateTime @default(now())
+
+  @@index([teammateId, createdAt])
 }

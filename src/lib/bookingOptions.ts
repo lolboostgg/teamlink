@@ -46,6 +46,27 @@ export const BOOKING_CATEGORIES: BookingCategory[] = [
   },
 ];
 
+export function getBookingOption(name: string): BookingOption | undefined {
+  for (const cat of BOOKING_CATEGORIES) {
+    const match = cat.options.find((o) => o.name === name);
+    if (match) return match;
+  }
+  return undefined;
+}
+
+/**
+ * What an order actually costs, decided here rather than taken from the
+ * client. The booking widget puts its total in the checkout URL, which
+ * anyone can edit — so the server prices the booking again from the same
+ * catalogue before charging for it.
+ */
+export function quoteBookingEUR(optionName: string, teammates: number): number | null {
+  const option = getBookingOption(optionName);
+  if (!option) return null;
+  const size = Math.max(1, Math.min(5, Math.round(teammates)));
+  return Math.round(option.price * size * 100) / 100;
+}
+
 export function getBookingOptionDescription(name: string): string | undefined {
   for (const cat of BOOKING_CATEGORIES) {
     const match = cat.options.find((o) => o.name === name);

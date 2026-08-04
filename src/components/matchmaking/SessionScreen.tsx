@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
-import { placeOrder, placeReplayOrder } from "@/lib/matchmaking/createOrderClient";
+import { placeReplayCheckout, rerollOrder } from "@/app/actions/checkout";
 import { getTeammateById } from "@/lib/teammates";
 import { setFavorite, useFavoriteIds } from "@/lib/favorites";
 import { submitTeammateReview } from "@/app/actions/reviews";
-import { addTip, getTipForOrder } from "@/lib/tips";
-import { addCoupon } from "@/lib/coupons";
+import { addGames, sendTip, loadTip } from "@/app/actions/sessionExtras";
 import { conversationKey, useConversationMessages } from "@/lib/matchmaking/chatStore";
-import { spendCredits } from "@/app/actions/credits";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
@@ -45,11 +43,6 @@ function formatClock(totalSeconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-function discountCodeFor(orderId: string): string {
-  const clean = orderId.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-  return `TL10-${clean.slice(-6)}`;
-}
-
 // The "live session" phase — rendered in place by MatchmakingScreen once a
 // teammate has been assigned (no route change: same page, same persistent
 // site header throughout the whole order, not the dashboard shell). One
@@ -59,7 +52,7 @@ function discountCodeFor(orderId: string): string {
 export function SessionScreen({ orderId }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
-  const { order, now, sessionElapsedSeconds, cancelOrder, requestCancelSession } = useDispatchOrder(orderId);
+  const { order, now, sessionElapsedSeconds, requestCancelSession } = useDispatchOrder(orderId);
   const completionConversationKey = order?.selectedTeammateId
     ? conversationKey(order.selectedTeammateId, order.customerLabel)
     : undefined;
@@ -91,21 +84,20 @@ export function SessionScreen({ orderId }: Props) {
     return () => clearTimeout(t);
   }, [order?.status, order?.cancelApprovedAt, router]);
 
-  // Turns the discount code shown below into a real, checkout-redeemable
-  // coupon the moment this screen appears (addCoupon is idempotent by
-  // code), and restores tip-sent state from the real tip store so a reload
-  // doesn't show the tip buttons as if nothing had been sent yet.
+  // The reward coupon is minted server-side when the teammate closes the
+  // order, so nothing has to be created here any more. This only asks
+  // whether a tip was already paid, so a reload doesn't offer the buttons
+  // again as if none had been sent.
   useEffect(() => {
     if (order?.status !== "completed") return;
-    addCoupon(discountCodeFor(order.id), 10, order.id);
-    const existingTip = getTipForOrder(order.id);
-    // Restores tip-sent state from the real store on reload — a
-    // necessary sync with external (localStorage) state, not avoidable
-    // via lazy initial state since `order` itself only resolves async.
-    if (existingTip) {
+    let cancelled = false;
+    void loadTip(order.id).then((tip) => {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTipSent(existingTip.amountEUR);
-    }
+      if (tip && !cancelled) setTipSent(tip.amountEUR);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [order?.status, order?.id]);
 
   if (!order) {
@@ -159,20 +151,18 @@ export function SessionScreen({ orderId }: Props) {
     );
   }
 
+  // No second payment: the reroll carries this booking's price onto the
+  // replacement order server-side and cancels this one.
   async function handleReroll() {
     setRerollModalOpen(false);
     setRerolling(true);
-    cancelOrder();
-    const fresh = await placeOrder({
-      gameSlug: order!.gameSlug,
-      gameName: order!.gameName,
-      option: order!.option,
-      priceEUR: order!.priceEUR,
-      teammates: order!.teammates,
-      requestedTeammateId: null,
-      customerLabel: order!.customerLabel,
-    });
-    if (fresh) router.push(`/checkout/matching?order=${fresh.id}`);
+    const result = await rerollOrder(order!.id);
+    if (!result.ok) {
+      setRerolling(false);
+      showToast(result.error, "error");
+      return;
+    }
+    router.push(result.redirect);
   }
 
   function handleConfirmCancel() {
@@ -181,20 +171,19 @@ export function SessionScreen({ orderId }: Props) {
   }
 
 
-  // Rebooking skips the full checkout form (it's the same game/option/
-  // price as the order you just finished), so credits are the payment
-  // method here — a real deduction from the Postgres balance, same action
-  // checkout's "pay with credits" option uses.
+  // Rebooking skips the checkout form — it's the same game, option and price
+  // as the session that just ended — but not the payment: the replay is
+  // priced from the original order server-side and paid for like any other.
   async function handleKeepPlaying() {
     setStartingReplay(true);
-    const result = await spendCredits(order!.priceEUR, `Replay · ${order!.gameName}`);
+    const result = await placeReplayCheckout(order!.id, "card");
     if (!result.ok) {
       setStartingReplay(false);
-      showToast(result.error ?? "Couldn't charge credits for this replay.", "error");
+      showToast(result.error, "error");
       return;
     }
-    const replay = await placeReplayOrder(order!);
-    if (replay) router.push(`/checkout/matching?order=${replay.id}`);
+    if (result.redirect.startsWith("http")) window.location.assign(result.redirect);
+    else router.push(result.redirect);
   }
 
   function handleHelpReason() {
@@ -202,23 +191,19 @@ export function SessionScreen({ orderId }: Props) {
     showToast("Your teammate initiated a refund for your game(s) and we've credited your account.", "success");
   }
 
+  // The price per game is the order's own, worked out server-side — this
+  // only says how many. A saved card is charged on the spot; without one the
+  // customer finishes on Stripe's page and the webhook adds the games.
   async function handleBuyMore() {
     setBuyingMore(true);
-    const result = await spendCredits(order!.priceEUR * buyMoreQty, `${buyMoreQty}x replay · ${order!.gameName}`);
+    const result = await addGames(order!.id, buyMoreQty, "card");
     if (!result.ok) {
       setBuyingMore(false);
-      showToast(result.error ?? "Couldn't charge credits for this purchase.", "error");
+      showToast(result.error, "error");
       return;
     }
-    const response = await fetch(`/api/dispatch/orders/${order!.id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "add-games", quantity: buyMoreQty }),
-    });
-    if (!response.ok) {
-      const data = await response.json();
-      setBuyingMore(false);
-      showToast(data.error ?? "Couldn't add more games.", "error");
+    if ("redirect" in result) {
+      window.location.assign(result.redirect);
       return;
     }
     setBuyingMore(false);
@@ -429,7 +414,9 @@ export function SessionScreen({ orderId }: Props) {
                 Confirm a <strong>€{tipTarget}</strong> tip — 100% goes to {teammate.name}.
               </p>
             )}
-            <p className="cancel-confirm__sub tip-confirm__note">Mock payment for this demo — no real charge.</p>
+            <p className="cancel-confirm__sub tip-confirm__note">
+              Charged to your saved card and credited to {teammate.name} straight away.
+            </p>
             <div className="cancel-confirm__actions">
               <button type="button" className="btn btn--ghost btn--block" onClick={() => setTipTarget(null)} disabled={sendingTip}>
                 Cancel
@@ -438,17 +425,26 @@ export function SessionScreen({ orderId }: Props) {
                 type="button"
                 className="btn btn--vivid btn--block"
                 disabled={sendingTip || (tipTarget === -1 && !(Number(tipCustom) > 0))}
-                onClick={() => {
+                onClick={async () => {
                   const amount = tipTarget === -1 ? Number(tipCustom) : tipTarget!;
                   if (!(amount > 0)) return;
                   setSendingTip(true);
-                  setTimeout(() => {
-                    addTip(teammate.id, order.id, amount);
-                    setTipSent(amount);
+                  const result = await sendTip(order.id, amount, "card");
+                  if (!result.ok) {
                     setSendingTip(false);
-                    setTipTarget(null);
-                    showToast(`Tip of €${amount} sent to ${teammate.name}.`, "success");
-                  }, 700);
+                    showToast(result.error, "error");
+                    return;
+                  }
+                  // No saved card: Stripe's page finishes the payment and the
+                  // webhook credits the teammate.
+                  if ("redirect" in result) {
+                    window.location.assign(result.redirect);
+                    return;
+                  }
+                  setTipSent(amount);
+                  setSendingTip(false);
+                  setTipTarget(null);
+                  showToast(`Tip of €${amount} sent to ${teammate.name}.`, "success");
                 }}
               >
                 {sendingTip ? "Processing payment..." : `Pay €${tipTarget === -1 ? tipCustom || "0" : tipTarget}`}

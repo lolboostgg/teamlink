@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { auth } from "@/auth";
 import { reconcileOrder, selectTeammates, DispatchError } from "@/lib/dispatch/service";
 import { toCustomerOrder } from "@/lib/dispatch/customerView";
-import { teammateCut } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
 
 export const dynamic = "force-dynamic";
@@ -62,40 +60,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
         });
         break;
       }
-      case "add-games": {
-        const session = await auth();
-        const quantity = Math.max(1, Math.min(9, Number(body.quantity) || 1));
-        const current = await prisma.order.findFirst({
-          where: { id: orderId, clientUserId: session?.user?.id, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
-          include: { candidates: { where: { selected: true }, include: { teammate: true } } },
-        });
-        if (!current) return NextResponse.json({ error: "This session cannot be extended." }, { status: 403 });
-        const unitPrice = Number(current.priceEUR) / Math.max(1, current.gamesBooked);
-        await prisma.order.update({
-          where: { id: orderId },
-          data: {
-            gamesBooked: { increment: quantity },
-            priceEUR: { increment: unitPrice * quantity },
-            // Extra games pay the same fixed share as the original booking.
-            teammatePayoutEUR: current.teammatePayoutEUR === null
-              ? teammateCut(Number(current.priceEUR) + unitPrice * quantity)
-              : { increment: teammateCut(unitPrice * quantity) },
-          },
-        });
-        const userIds = current.candidates.map((candidate) => candidate.teammate.userId).filter(Boolean) as string[];
-        if (userIds.length > 0) {
-          await prisma.notification.createMany({
-            data: userIds.map((userId) => ({
-              userId,
-              type: "order.games_added",
-              title: `${current.customerLabel} booked ${quantity === 1 ? "one more game" : `${quantity} more games`}`,
-              body: `${current.gameName} · ${current.gamesBooked + quantity} games total`,
-              href: `/dashboard/teammate/session/${current.id}`,
-            })),
-          });
-        }
-        break;
-      }
+      // "add-games" used to live here and simply incremented the booking.
+      // It is a purchase, so it moved to addGames() in
+      // app/actions/sessionExtras.ts, where it is paid for first.
       default:
         return NextResponse.json({ error: "Unknown action." }, { status: 400 });
     }
