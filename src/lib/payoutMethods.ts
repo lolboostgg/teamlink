@@ -37,8 +37,8 @@ export const PAYOUT_LABELS: Record<PayoutMethodType, string> = {
 
 const IBAN_COUNTRY_CODES = new Set("AD AT AZ BH BE BA BR BG CR HR CY CZ DK DO EG SV EE FO FI FR GE DE GI GR GL GT HU IS IQ IE IL IT JO KZ XK KW LV LB LI LT LU MT MR MU MD MC ME NL MK NO PK PS PL PT QA RO LC SM ST SA RS SC SK SI ES SE CH TL TN TR UA AE GB VA VG".split(" "));
 
-export function countryUsesIban(country: string): boolean {
-  const normalized = country.trim();
+export function countryUsesIban(country?: string | null): boolean {
+  const normalized = country?.trim() ?? "";
   if (!normalized) return true;
   if (IBAN_COUNTRY_CODES.has(normalized.toUpperCase())) return true;
   const names = new Intl.DisplayNames(["en"], { type: "region" });
