@@ -6101,10 +6101,16 @@ ul {
 .client-profile-form__section-title span { color: var(--text-faint); font-size: 11px; }
 
 .pick-card--center .pick-card__art { top: 0; }
-.pick-card__art img { object-fit: cover; object-position: center top; transform: none; }
+.pick-card__art img {
+  object-fit: cover;
+  object-position: center;
+  transform: none;
+  filter: none;
+  image-rendering: auto;
+}
 .pick-card:hover .pick-card__art img,
 .pick-card:focus-visible .pick-card__art img { transform: scale(1.04); }
-.pick-card__art::after { background: linear-gradient(180deg, rgba(4,6,13,.08) 18%, rgba(4,6,13,.42) 48%, rgba(4,6,13,.98) 78%); }
+.pick-card__art::after { background: linear-gradient(180deg, transparent 28%, rgba(4,6,13,.22) 52%, rgba(4,6,13,.9) 82%, rgba(4,6,13,.98) 100%); }
 
 .pick-card__rating {
   top: 12px;
@@ -6119,7 +6125,7 @@ ul {
 .pick-card__body {
   gap: 5px;
   padding: 14px;
-  background: linear-gradient(180deg, transparent, rgba(7,9,17,.96) 20%);
+  background: transparent;
 }
 .pick-card__flags { min-height: 17px; }
 .pick-card__name { font-size: 16px; letter-spacing: -.01em; }
