@@ -33,6 +33,7 @@ export interface SettingsProps {
   /** `?discord=` outcome from the OAuth callback, if we just came back. */
   discordStatus?: string;
   prefs: NotificationPrefs;
+  loginActivity: { ip: string; device: string; location: string; current: boolean }[];
 }
 
 export function SettingsScreen({ account }: { account: SettingsProps }) {
@@ -61,7 +62,7 @@ export function SettingsScreen({ account }: { account: SettingsProps }) {
         {section === "profile" && <ProfileSection account={account} />}
         {section === "notifications" && <NotificationsSection initial={account.prefs} discordId={account.discordId} />}
         {section === "connections" && <ConnectionsSection account={account} />}
-        {section === "security" && <SecuritySection />}
+        {section === "security" && <SecuritySection activity={account.loginActivity} />}
       </div>
     </div>
   );
@@ -87,7 +88,7 @@ function ProfileSection({ account }: { account: SettingsProps }) {
 
       <ClientProfileForm
         initial={{ name: account.name, email: account.email, avatarUrl: account.avatarUrl }}
-        section="profile"
+        section="both"
       />
     </>
   );
@@ -211,17 +212,12 @@ function ConnectionsSection({ account }: { account: SettingsProps }) {
   );
 }
 
-function SecuritySection() {
+function SecuritySection({ activity }: { activity: SettingsProps["loginActivity"] }) {
   return (
     <>
       <header className="settings-head">
         <h3>Security</h3>
       </header>
-
-      <ClientProfileForm
-        initial={{ name: "", email: "", avatarUrl: "" }}
-        section="password"
-      />
 
       <div className="settings-rows">
         <div className="settings-row">
@@ -237,17 +233,14 @@ function SecuritySection() {
           <span className="dashboard-pill dashboard-pill--muted">coming soon</span>
         </div>
 
-        <div className="settings-row">
-          <div className="settings-row__brand">
-            <span className="settings-row__logo">
-              <i className="fa-solid fa-desktop" aria-hidden="true" />
-            </span>
-            <div>
-              <strong>Login sessions</strong>
-              <span>Sign-ins aren&rsquo;t recorded, so there&rsquo;s no device list to show</span>
-            </div>
-          </div>
-          <span className="dashboard-pill dashboard-pill--muted">coming soon</span>
+        <div className="security-logins">
+          <div className="security-logins__head"><strong>Login activity</strong><span>Devices currently accessing your account</span></div>
+          {activity.map((login, index) => <div className="security-login" key={`${login.ip}-${index}`}>
+            <span className="settings-row__logo"><i className="fa-solid fa-desktop" aria-hidden="true" /></span>
+            <span><strong>{login.device}</strong><small>{login.location}</small></span>
+            <span><strong>{login.ip}</strong><small>IP address</small></span>
+            <span className="dashboard-pill dashboard-pill--success">{login.current ? "Active now" : "Previous"}</span>
+          </div>)}
         </div>
       </div>
     </>

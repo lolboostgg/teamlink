@@ -91,6 +91,7 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
 
       {section !== "profile" && (
       <form onSubmit={handlePasswordSubmit}>
+        {section === "both" && <div className="client-profile-form__section-title"><strong>Password</strong><span>Update the password used for email login</span></div>}
         <div className="form-row-grid">
           <div className="form-row">
             <label htmlFor="cp-current-password">Current password</label>

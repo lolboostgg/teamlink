@@ -337,22 +337,28 @@ function PayoutMethods({
         </table>
       )}
 
-      <div className="profile-tabs">
+      <div className="payout-method-picker" aria-label="Select your payout method">
         {(Object.keys(PAYOUT_LABELS) as PayoutMethodType[]).map((t) => (
           <button
             key={t}
             type="button"
-            className={`profile-tab${type === t ? " is-active" : ""}`}
+            className={`payout-method-option${type === t ? " is-active" : ""}`}
             onClick={() => {
               setType(t);
               setDraft({});
               setEditingId(undefined);
             }}
           >
-            <i className={t === "BANK" ? "fa-solid fa-building-columns" : "fa-brands fa-bitcoin"} aria-hidden="true" />
-            {PAYOUT_LABELS[t]}
+            <span className="payout-method-option__icon"><i className={t === "BANK" ? "fa-solid fa-building-columns" : "fa-brands fa-bitcoin"} aria-hidden="true" /></span>
+            <span><strong>{PAYOUT_LABELS[t]}</strong><small>{t === "BANK" ? "SEPA and international transfer" : "USDT, USDC and supported coins"}</small><em>{t === "BANK" ? "2% processing fee" : "5% network fee"}</em></span>
+            <i className={type === t ? "fa-solid fa-circle-check" : "fa-regular fa-circle"} aria-hidden="true" />
           </button>
         ))}
+        <button type="button" className="payout-method-option is-disabled" disabled>
+          <span className="payout-method-option__icon"><i className="fa-solid fa-s" aria-hidden="true" /></span>
+          <span><strong>Skrill</strong><small>Send earnings to your Skrill wallet</small><em>Coming soon</em></span>
+          <i className="fa-regular fa-circle" aria-hidden="true" />
+        </button>
       </div>
 
       <div className="form-row-grid">
