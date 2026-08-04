@@ -17,12 +17,15 @@ export const PAYOUT_FIELDS: Record<PayoutMethodType, PayoutField[]> = {
     { key: "bankName", label: "Bank name" },
     { key: "country", label: "Country", required: true },
     { key: "currency", label: "Currency", placeholder: "EUR" },
+    { key: "address", label: "Address", placeholder: "Street, ZIP, City", required: true },
   ],
   CRYPTO: [
     { key: "coin", label: "Coin", placeholder: "USDC", required: true },
     { key: "network", label: "Network", placeholder: "Solana", required: true },
+    { key: "name", label: "Name", placeholder: "Your full name", required: true },
+    { key: "exchange", label: "Wallet / exchange", placeholder: "e.g. Binance", required: true },
+    { key: "country", label: "Country", placeholder: "e.g. Germany", required: true },
     { key: "wallet", label: "Wallet address", required: true },
-    { key: "name", label: "Wallet label" },
   ],
 };
 

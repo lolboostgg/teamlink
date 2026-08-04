@@ -264,10 +264,12 @@ function PayoutMethods({
   const [type, setType] = useState<PayoutMethodType>("BANK");
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | undefined>();
+  const [editorOpen, setEditorOpen] = useState(methods.length === 0);
 
   function reset() {
     setDraft({});
     setEditingId(undefined);
+    setEditorOpen(false);
   }
 
   return (
@@ -279,64 +281,21 @@ function PayoutMethods({
             Where your earnings go. The beneficiary name has to match the account holder exactly.
           </div>
         </div>
+        {!editorOpen && <button type="button" className="btn btn--vivid btn--sm" onClick={() => { setType("BANK"); setDraft({}); setEditingId(undefined); setEditorOpen(true); }}><i className="fa-solid fa-plus" aria-hidden="true" /> Add payout method</button>}
       </div>
 
-      {methods.length > 0 && (
-        <table className="dashboard-table">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Details</th>
-              <th>Default</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {methods.map((m) => (
-              <tr key={m.id}>
-                <td className="dashboard-table__primary">{PAYOUT_LABELS[m.type]}</td>
-                <td>{describePayoutMethod(m.type, m.details)}</td>
-                <td>
-                  {m.isDefault ? (
-                    <span className="dashboard-pill dashboard-pill--success">default</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      disabled={pending}
-                      onClick={() => onRun(() => makeDefault(m.id), "Default updated.")}
-                    >
-                      Make default
-                    </button>
-                  )}
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    onClick={() => {
-                      setType(m.type);
-                      setDraft(m.details);
-                      setEditingId(m.id);
-                    }}
-                  >
-                    Edit
-                  </button>{" "}
-                  <button
-                    type="button"
-                    className="btn btn--ghost btn--sm"
-                    disabled={pending}
-                    onClick={() => onRun(() => deletePayoutMethod(m.id), "Method removed.")}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {methods.length > 0 ? <div className="payout-methods-list">{methods.map((m) => <article className={`payout-method-card${m.isDefault ? " is-default" : ""}`} key={m.id}>
+        <span className="payout-method-card__icon"><i className={m.type === "BANK" ? "fa-solid fa-building-columns" : "fa-brands fa-bitcoin"} aria-hidden="true" /></span>
+        <div className="payout-method-card__details"><span>{PAYOUT_LABELS[m.type]}</span><strong>{describePayoutMethod(m.type, m.details)}</strong></div>
+        {m.isDefault ? <span className="dashboard-pill dashboard-pill--success"><i className="fa-solid fa-star" aria-hidden="true" /> Default</span> : <button type="button" className="btn btn--ghost btn--sm" disabled={pending} onClick={() => onRun(() => makeDefault(m.id), "Default updated.")}><i className="fa-regular fa-star" aria-hidden="true" /> Set default</button>}
+        <div className="payout-method-card__actions">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setType(m.type); setDraft(m.details); setEditingId(m.id); setEditorOpen(true); }}><i className="fa-solid fa-pen" aria-hidden="true" /> Edit</button>
+          <button type="button" className="btn btn--danger btn--sm" disabled={pending} onClick={() => onRun(() => deletePayoutMethod(m.id), "Method removed.")} aria-label={`Delete ${PAYOUT_LABELS[m.type]}`}><i className="fa-solid fa-trash" aria-hidden="true" /></button>
+        </div>
+      </article>)}</div> : !editorOpen && <div className="dashboard-empty dashboard-empty--compact"><i className="fa-solid fa-wallet" aria-hidden="true" /><p>No payout method saved yet.</p></div>}
 
+      {editorOpen && <div className="payout-method-editor">
+      <div className="payout-method-editor__head"><div><strong>{editingId ? "Edit payout method" : "Add payout method"}</strong><span>Choose where your earnings should be paid.</span></div>{methods.length > 0 && <button type="button" className="btn btn--ghost btn--sm" onClick={reset}><i className="fa-solid fa-xmark" aria-hidden="true" /> Close</button>}</div>
       <div className="payout-method-picker" aria-label="Select your payout method">
         {(Object.keys(PAYOUT_LABELS) as PayoutMethodType[]).map((t) => (
           <button
@@ -354,16 +313,13 @@ function PayoutMethods({
             <i className={type === t ? "fa-solid fa-circle-check" : "fa-regular fa-circle"} aria-hidden="true" />
           </button>
         ))}
-        <button type="button" className="payout-method-option is-disabled" disabled>
-          <span className="payout-method-option__icon"><i className="fa-solid fa-s" aria-hidden="true" /></span>
-          <span><strong>Skrill</strong><small>Send earnings to your Skrill wallet</small><em>Coming soon</em></span>
-          <i className="fa-regular fa-circle" aria-hidden="true" />
-        </button>
       </div>
+
+      <div className="payout-method-notice"><i className="fa-solid fa-circle-info" aria-hidden="true" /><span>{type === "BANK" ? "The beneficiary name must match the bank account holder exactly." : "The name must match your wallet or exchange account exactly. Incorrect details can delay payouts."}</span></div>
 
       <div className="form-row-grid">
         {PAYOUT_FIELDS[type].map((field) => (
-          <div className="form-row" key={field.key}>
+          <div className={`form-row${field.key === "address" || field.key === "wallet" ? " payout-method-field--wide" : ""}`} key={field.key}>
             <label htmlFor={`payout-${field.key}`}>
               {field.label}
               {field.required && " *"}
@@ -402,9 +358,10 @@ function PayoutMethods({
             }, editingId ? "Method updated." : "Method added.")
           }
         >
-          {editingId ? "Save method" : "Add method"}
+          <i className="fa-solid fa-floppy-disk" aria-hidden="true" /> {editingId ? "Save method" : "Add payout method"}
         </button>
       </div>
+      </div>}
     </div>
   );
 }
