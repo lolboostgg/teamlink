@@ -117,8 +117,7 @@ export function DashboardTrigger() {
               <img src={session?.user?.image || DEFAULT_AVATAR} alt="" />
             </span>
             <span className="dropdown-switcher__account-copy">
-              <span className="dropdown-switcher__account-name">{session?.user?.name || "Account"}</span>
-              <span className={`dropdown-switcher__role dropdown-switcher__role--${role.toLowerCase()}`}>{roleLabel}</span>
+              <span className="dropdown-switcher__account-name-row"><span className="dropdown-switcher__account-name">{session?.user?.name || "Account"}</span><span className={`dropdown-switcher__role dropdown-switcher__role--${role.toLowerCase()}`}>{roleLabel}</span></span>
               <span className="dropdown-switcher__account-email">{session?.user?.email}</span>
             </span>
           </div>

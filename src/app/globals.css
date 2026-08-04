@@ -7975,6 +7975,7 @@ ul {
 
 .dropdown-switcher__account-avatar { width: 40px; height: 40px; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--border); border-radius: 11px; }
 .dropdown-switcher__account-copy { min-width: 0; flex: 1; }
+.dropdown-switcher__account-name-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
 
 .dropdown-switcher__account-name {
   display: block;
@@ -7983,7 +7984,7 @@ ul {
   color: var(--text);
 }
 
-.dropdown-switcher__role { display: inline-flex; margin-left: 7px; padding: 2px 6px; border: 1px solid rgba(70, 104, 255, 0.3); border-radius: 999px; background: rgba(70, 104, 255, 0.12); color: var(--accent); font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: 1px; }
+.dropdown-switcher__role { display: inline-flex; flex: 0 0 auto; margin-left: 0; padding: 2px 6px; border: 1px solid rgba(70, 104, 255, 0.3); border-radius: 999px; background: rgba(70, 104, 255, 0.12); color: var(--accent); font-size: 8.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: 1px; }
 .dropdown-switcher__role--teammate { border-color: rgba(47, 191, 113, 0.3); background: rgba(47, 191, 113, 0.11); color: var(--hue-green); }
 .dropdown-switcher__role--admin { border-color: rgba(160, 93, 255, 0.35); background: rgba(160, 93, 255, 0.12); color: #b786ff; }
 .account-dropdown__section-label { padding: 10px 10px 4px; color: var(--text-faint); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -9039,9 +9040,10 @@ a.notification-panel__item:hover {
 .dashboard-account-trigger__meta small { margin-top: 3px; color: var(--text-faint); font-size: 9.5px; }
 .dashboard-account-trigger > i { color: var(--text-faint); font-size: 8px; }
 .dashboard-account-menu__identity { display: flex; flex-direction: column; padding: 10px; margin-bottom: 5px; border-bottom: 1px solid var(--border); }
+.dashboard-account-menu__identity > div { display: flex; align-items: center; gap: 7px; }
 .dashboard-account-menu__identity strong { color: var(--text); font-size: 13px; }
 .dashboard-account-menu__identity span { margin-top: 2px; overflow: hidden; color: var(--text-faint); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.dashboard-account-menu__identity small { align-self: flex-start; margin-top: 7px; padding: 3px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 9px; font-weight: 700; }
+.dashboard-account-menu__identity small { padding: 3px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 9px; font-weight: 700; }
 
 @media (max-width: 680px) {
   .dashboard-account-trigger__meta,
@@ -9709,6 +9711,8 @@ a.notification-panel__item:hover {
 .account-overview { gap: 0; border: 1px solid var(--dash-line); border-radius: 11px; overflow: hidden; }
 .account-overview > div { padding: 14px; }
 .account-overview > div + div { border-left: 1px solid var(--dash-line); }
+.admin-account-orders { overflow-x: auto; }
+.admin-account-orders .dashboard-table { min-width: 760px; }
 .account-facts > div { border-radius: 0; border-width: 1px 0 0; background: transparent; }
 
 @media (max-width: 700px) {

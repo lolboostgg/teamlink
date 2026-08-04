@@ -73,9 +73,8 @@ export function DashboardTopbar() {
           {open && (
             <div className="dropdown-switcher__menu dropdown-switcher__menu--right account-dropdown" role="menu">
               <div className="dashboard-account-menu__identity">
-                <strong>{session?.user?.name || roleMeta.label}</strong>
+                <div><strong>{session?.user?.name || roleMeta.label}</strong><small>{roleMeta.label}</small></div>
                 <span>{session?.user?.email}</span>
-                <small>{roleMeta.label} account</small>
               </div>
               {profileHref && <Link href={profileHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}><i className="fa-solid fa-id-card" aria-hidden="true" /> My profile</Link>}
               <Link href={roleMeta.href} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}><i className="fa-solid fa-gauge" aria-hidden="true" /> Dashboard overview</Link>

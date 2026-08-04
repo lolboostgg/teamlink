@@ -18,7 +18,8 @@ export async function getAccountDetail(idOrNumber: string) {
   });
   if (!user) return null;
 
-  const [orderCount, completedCount, reviewAgg] = await Promise.all([
+  const [orders, orderCount, completedCount, reviewAgg] = await Promise.all([
+    prisma.order.findMany({ where: { clientUserId: user.id }, orderBy: { createdAt: "desc" }, take: 100 }),
     prisma.order.count({ where: { clientUserId: user.id } }),
     prisma.order.count({ where: { clientUserId: user.id, status: "COMPLETED" } }),
     user.teammate
@@ -32,6 +33,7 @@ export async function getAccountDetail(idOrNumber: string) {
 
   return {
     user,
+    orders,
     teammate: user.teammate,
     orderCount,
     completedCount,

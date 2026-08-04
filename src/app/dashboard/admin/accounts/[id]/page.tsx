@@ -30,6 +30,7 @@ export default async function AdminAccountPage({ params }: Props) {
         <i className="fa-solid fa-arrow-left" aria-hidden="true" /> Back to users
       </Link>
       <AccountDetail
+        orders={detail.orders.map((order) => ({ id: order.id, orderNo: order.orderNo, gameName: order.gameName, option: order.option, status: order.status, priceEUR: order.priceEUR.toString(), createdAt: order.createdAt.getTime() }))}
         account={{
           id: user.id,
           accountNo: user.accountNo,

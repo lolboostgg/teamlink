@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { GAMES } from "@/lib/games";
 import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
@@ -69,7 +70,8 @@ export interface PayoutMethodView {
   isDefault: boolean;
 }
 
-type Section = "overview" | "account" | "games" | "verification" | "security";
+export interface AccountOrderRow { id: string; orderNo: number; gameName: string; option: string; status: string; priceEUR: string; createdAt: number; }
+type Section = "overview" | "orders" | "account" | "games" | "verification" | "security";
 
 const STATUS_PILL: Record<string, string> = {
   UNSUBMITTED: "dashboard-pill--muted",
@@ -96,30 +98,27 @@ function StatTile({ label, value, sub, icon }: { label: string; value: string; s
   );
 }
 
-export function AccountDetail({ account, teammate }: { account: AccountSummary; teammate: TeammateSummary | null }) {
+export function AccountDetail({ account, teammate, orders }: { account: AccountSummary; teammate: TeammateSummary | null; orders: AccountOrderRow[] }) {
   const { showToast } = useToast();
   const [section, setSection] = useState<Section>("overview");
 
-  const sections: { key: Section; label: string; sub: string; icon: string }[] = [
-    { key: "overview", label: "Overview", sub: "Profile at a glance", icon: "fa-solid fa-id-card" },
-    { key: "account", label: "Account", sub: "Name and email", icon: "fa-solid fa-user-gear" },
+  const sections: { key: Section; label: string }[] = [
+    { key: "overview", label: "General" },
+    { key: "orders", label: `Orders (${orders.length})` },
+    { key: "account", label: "Account" },
     ...(teammate
       ? [
           {
             key: "games" as const,
             label: "Game Profiles",
-            sub: "Ranks, roles and pools",
-            icon: "fa-solid fa-gamepad",
           },
           {
             key: "verification" as const,
             label: "Verification & Payouts",
-            sub: "ID check and payout details",
-            icon: "fa-solid fa-id-badge",
           },
         ]
       : []),
-    { key: "security", label: "Security", sub: "Reset the password", icon: "fa-solid fa-shield-halved" },
+    { key: "security", label: "Security" },
   ];
 
   return (
@@ -205,27 +204,23 @@ export function AccountDetail({ account, teammate }: { account: AccountSummary; 
         )}
       </div>
 
-      <nav className="account-sections" aria-label="Account sections">
+      <nav className="profile-tabs profile-tabs--page" aria-label="Account sections">
         {sections.map((s) => (
           <button
             key={s.key}
             type="button"
-            className={`account-section-card${section === s.key ? " is-active" : ""}`}
+            className={`profile-tab${section === s.key ? " is-active" : ""}`}
             onClick={() => setSection(s.key)}
           >
-            <span className="account-section-card__icon">
-              <i className={s.icon} aria-hidden="true" />
-            </span>
-            <span>
-              <strong>{s.label}</strong>
-              <em>{s.sub}</em>
-            </span>
+            {s.label}
           </button>
         ))}
       </nav>
 
       <div className="dashboard-panel">
         {section === "overview" && <OverviewPanel account={account} teammate={teammate} />}
+
+        {section === "orders" && (orders.length ? <div className="admin-account-orders"><table className="dashboard-table"><thead><tr><th>Order</th><th>Game</th><th>Option</th><th>Status</th><th>Price</th><th>Date</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id}><td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${order.id}`}>#{order.orderNo}</Link></td><td>{order.gameName}</td><td>{order.option}</td><td><span className="dashboard-pill dashboard-pill--muted">{order.status.toLowerCase().replaceAll("_", " ")}</span></td><td>€{order.priceEUR}</td><td>{DATE.format(order.createdAt)}</td></tr>)}</tbody></table></div> : <div className="dashboard-empty dashboard-empty--compact"><i className="fa-solid fa-receipt" /><p>No orders yet.</p></div>)}
 
         {section === "account" && (
           <AccountPanel
