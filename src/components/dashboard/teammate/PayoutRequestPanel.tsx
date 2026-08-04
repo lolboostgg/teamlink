@@ -108,7 +108,11 @@ export function PayoutRequestPanel({
         </button>
       </div>
 
-      {blocked && <p className="form-row__note">{blocked}</p>}
+      {blocked && (
+        <p className="payout-blocked">
+          <i className="fa-solid fa-circle-info" aria-hidden="true" /> {blocked}
+        </p>
+      )}
 
       {requests.length === 0 ? (
         <div className="dashboard-empty dashboard-empty--compact">
@@ -117,64 +121,82 @@ export function PayoutRequestPanel({
         </div>
       ) : (
         <div className="payout-request-list">
-          {requests.map((request) => (
-            <article className="payout-request" key={request.id}>
-              <div className="payout-request__main">
-                <div className="payout-request__title">
-                  <strong>#{request.requestNo}</strong>
-                  <span className={`dashboard-pill ${STATUS_PILL[request.status]}`}>
-                    {PAYOUT_STATUS_LABEL[request.status]}
-                  </span>
-                </div>
-                <span className="payout-request__meta">
-                  {PAYOUT_LABELS[request.methodType]} &middot; {request.methodSummary} &middot;{" "}
-                  {dateTimeFormat.format(request.createdAt)}
+          {requests.map((request) => {
+            const paid = request.status === "PAID" && request.netEUR !== null;
+            return (
+              <article className="payout-row" key={request.id}>
+                <span className={`payout-row__icon payout-row__icon--${request.methodType.toLowerCase()}`}>
+                  <i
+                    className={request.methodType === "BANK" ? "fa-solid fa-building-columns" : "fa-brands fa-bitcoin"}
+                    aria-hidden="true"
+                  />
                 </span>
-                {request.adminNote && <em className="payout-request__note">{request.adminNote}</em>}
-              </div>
 
-              <div className="payout-request__amount">
-                {request.status === "PAID" && request.netEUR !== null ? (
-                  <>
-                    <strong>
-                      <PriceTag amountEUR={request.netEUR} />
-                    </strong>
-                    <small>
-                      after {request.feePercent}% fee on <PriceTag amountEUR={request.grossEUR ?? 0} />
-                    </small>
-                  </>
-                ) : (
-                  <>
-                    <strong>
-                      {request.amountEUR === null ? "Full balance" : <PriceTag amountEUR={request.amountEUR} />}
-                    </strong>
-                    <small>{request.feePercent}% fee applies</small>
-                  </>
+                <div className="payout-row__main">
+                  <div className="payout-row__title">
+                    <strong>#{request.requestNo}</strong>
+                    <span className={`dashboard-pill ${STATUS_PILL[request.status]}`}>
+                      {PAYOUT_STATUS_LABEL[request.status]}
+                    </span>
+                    {request.amountEUR === null && request.status === "PENDING" && (
+                      <span className="dashboard-pill dashboard-pill--muted">Full balance</span>
+                    )}
+                  </div>
+                  <span className="payout-row__meta">
+                    {PAYOUT_LABELS[request.methodType]} &middot; {request.methodSummary} &middot;{" "}
+                    {dateTimeFormat.format(request.createdAt)}
+                  </span>
+                  {request.adminNote && <em className="payout-row__note">{request.adminNote}</em>}
+                </div>
+
+                <div className="payout-row__amounts">
+                  <strong>
+                    {paid ? (
+                      <PriceTag amountEUR={request.netEUR ?? 0} />
+                    ) : request.amountEUR === null ? (
+                      "Full balance"
+                    ) : (
+                      <PriceTag amountEUR={request.amountEUR} />
+                    )}
+                  </strong>
+                  {paid ? (
+                    <>
+                      <span className="payout-chip payout-chip--fee">
+                        Fee <PriceTag amountEUR={(request.grossEUR ?? 0) - (request.netEUR ?? 0)} /> ({request.feePercent}
+                        %)
+                      </span>
+                      <span className="payout-chip payout-chip--gross">
+                        Original <PriceTag amountEUR={request.grossEUR ?? 0} />
+                      </span>
+                    </>
+                  ) : (
+                    <span className="payout-chip payout-chip--fee">{request.feePercent}% fee on payout</span>
+                  )}
+                </div>
+
+                {request.status === "PENDING" && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    disabled={pending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        try {
+                          await cancelPayoutRequest(request.id);
+                          showToast("Request cancelled.", "success");
+                          router.refresh();
+                        } catch (err) {
+                          showToast(err instanceof Error ? err.message : "Couldn't cancel.", "error");
+                        }
+                      })
+                    }
+                  >
+                    Cancel
+                  </button>
                 )}
-              </div>
-
-              {request.status === "PENDING" && (
-                <button
-                  type="button"
-                  className="btn btn--ghost btn--sm"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      try {
-                        await cancelPayoutRequest(request.id);
-                        showToast("Request cancelled.", "success");
-                        router.refresh();
-                      } catch (err) {
-                        showToast(err instanceof Error ? err.message : "Couldn't cancel.", "error");
-                      }
-                    })
-                  }
-                >
-                  Cancel
-                </button>
-              )}
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 

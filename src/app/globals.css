@@ -4561,7 +4561,9 @@ ul {
 .icon-select__glyph {
   width: 22px;
   text-align: center;
-  color: var(--cta-vivid);
+  /* --cta-vivid resolves to cyan; the accent is what the rest of the form
+     controls (pills, checkboxes, focus rings) use. */
+  color: var(--accent);
 }
 
 .icon-select__list {
@@ -10922,9 +10924,24 @@ a.notification-panel__item:hover {
 
 .payout-request-list { display: grid; gap: 9px; }
 
-.payout-request {
+.payout-blocked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 13px;
+  border: 1px solid rgba(233, 168, 62, 0.26);
+  border-radius: 10px;
+  background: rgba(233, 168, 62, 0.07);
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.payout-blocked > i { color: var(--hue-gold); font-size: 11px; }
+
+.payout-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 14px;
   padding: 13px;
@@ -10933,40 +10950,32 @@ a.notification-panel__item:hover {
   background: var(--dash-surface-2);
 }
 
-.payout-request__main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.payout-request__title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.payout-request__title strong { color: var(--text); font-size: 13px; }
-.payout-request__meta { color: var(--text-faint); font-size: 11px; }
-.payout-request__note { color: var(--text-muted); font-size: 10.5px; font-style: normal; }
-.payout-request__note--alert { color: #ff9a9a; }
-
-.payout-request__amount { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; white-space: nowrap; }
-.payout-request__amount strong { color: var(--hue-green); font-size: 14px; font-weight: 800; }
-.payout-request__amount small { color: var(--text-faint); font-size: 10px; }
-
-.payout-request__actions { display: flex; align-items: center; gap: 8px; }
-
-/* The process step gets its own full-width row under the request. */
-.payout-process {
-  grid-column: 1 / -1;
+.payout-row__icon {
+  width: 40px;
+  height: 40px;
   display: grid;
-  gap: 12px;
-  margin-top: 4px;
-  padding: 14px;
-  border: 1px solid var(--border);
+  place-items: center;
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(79, 112, 255, 0.1);
+  color: var(--accent);
+  font-size: 15px;
 }
 
-.payout-process textarea { min-height: 62px; resize: vertical; }
-.payout-process__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.payout-row__icon--crypto { background: rgba(233, 168, 62, 0.12); color: var(--hue-gold); }
 
-@media (max-width: 900px) {
-  .payout-request, .payout-request--admin { grid-template-columns: minmax(0, 1fr); }
-  .payout-request__amount { align-items: flex-start; text-align: left; }
-  .payout-request__actions { flex-wrap: wrap; }
-  .payout-process__actions { justify-content: stretch; }
-  .payout-process__actions > .btn { flex: 1 1 auto; justify-content: center; }
+.payout-row__main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.payout-row__title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.payout-row__title strong { color: var(--text); font-size: 13px; }
+.payout-row__meta { overflow: hidden; color: var(--text-faint); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.payout-row__note { color: var(--text-muted); font-size: 10.5px; font-style: normal; }
+
+.payout-row__amounts { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.payout-row__amounts > strong { color: var(--hue-green); font-size: 15px; font-weight: 800; white-space: nowrap; }
+
+@media (max-width: 760px) {
+  .payout-row { grid-template-columns: 40px minmax(0, 1fr); }
+  .payout-row__amounts { grid-column: 2 / -1; align-items: flex-start; text-align: left; }
+  .payout-row > .btn { grid-column: 2 / -1; justify-self: start; }
 }
 
 /* Request modal. The panel itself defaults to 400px (it is sized for short
