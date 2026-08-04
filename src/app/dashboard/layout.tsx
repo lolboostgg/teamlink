@@ -6,6 +6,7 @@ import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
 import { NotificationProvider } from "@/components/dashboard/NotificationProvider";
 import { DispatchFlow } from "@/components/dashboard/teammate/DispatchFlow";
 import { prisma } from "@/lib/db";
+import { discordAvatarUrl } from "@/lib/discord";
 
 // Sibling of the (marketing) route group, so /dashboard/* gets its own
 // shell (sidebar + topbar) instead of inheriting the marketing Header/
@@ -27,19 +28,38 @@ import { prisma } from "@/lib/db";
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   const teammate = session?.user?.id
-    ? await prisma.teammate.findUnique({
+      ? await prisma.teammate.findUnique({
         where: { userId: session.user.id },
-        select: { name: true, avatarUrl: true, rating: true, sessionsCount: true, available: true },
+        select: {
+          name: true,
+          avatarUrl: true,
+          rating: true,
+          available: true,
+          user: { select: { avatarUrl: true, discordId: true, discordAvatar: true } },
+          _count: { select: { candidacies: { where: { selected: true } } } },
+        },
       })
+    : null;
+  const teammateProfile = teammate
+    ? {
+        name: teammate.name,
+        avatarUrl:
+          teammate.avatarUrl ||
+          teammate.user?.avatarUrl ||
+          discordAvatarUrl(teammate.user?.discordId ?? null, teammate.user?.discordAvatar ?? null),
+        rating: teammate.rating,
+        sessionsCount: teammate._count.candidacies,
+        available: teammate.available,
+      }
     : null;
   return (
     <DashboardAuthGate initiallyAuthenticated={!!session}>
       <NotificationProvider>
         <DispatchFlow />
         <div className="dashboard-shell">
-          <DashboardSidebar teammate={teammate} />
+          <DashboardSidebar teammate={teammateProfile} />
           <div className="dashboard-shell__main">
-            <DashboardTopbar />
+            <DashboardTopbar avatarUrl={teammateProfile?.avatarUrl} />
             <ViewTransition
               enter={{ "dashboard-enter": "dash-in-fwd", default: "none" }}
               exit={{ "dashboard-exit": "dash-out-back", default: "none" }}

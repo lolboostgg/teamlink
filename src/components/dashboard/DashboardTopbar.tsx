@@ -10,7 +10,7 @@ import { DASHBOARD_ROLES } from "@/lib/roles";
 import { profileHrefForRole } from "@/lib/roles";
 import { useSession } from "next-auth/react";
 
-export function DashboardTopbar() {
+export function DashboardTopbar({ avatarUrl }: { avatarUrl?: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuthModal();
@@ -65,7 +65,14 @@ export function DashboardTopbar() {
             aria-haspopup="menu"
             aria-expanded={open}
           >
-            <span className="dashboard-avatar"><span className="dashboard-avatar__initials">{initials}</span></span>
+            <span className="dashboard-avatar">
+              {avatarUrl || session?.user?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl || session?.user?.image || ""} alt="" />
+              ) : (
+                <span className="dashboard-avatar__initials">{initials}</span>
+              )}
+            </span>
             <span className="dashboard-account-trigger__meta"><strong>{session?.user?.name || roleMeta.label}</strong><small>{roleMeta.label}</small></span>
             <i className="fa-solid fa-chevron-down" aria-hidden="true" />
           </button>
