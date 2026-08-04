@@ -10,13 +10,15 @@ interface Props {
   currency?: boolean;
   /** One of the curated --hue-* CSS custom properties from globals.css. */
   color?: string;
+  /** Keep long text values compact and on a single line. */
+  compactValue?: boolean;
 }
 
-export function StatCard({ icon, label, value, deltaPct, currency, color }: Props) {
+export function StatCard({ icon, label, value, deltaPct, currency, color, compactValue = false }: Props) {
   const style = color ? ({ "--item-color": color } as CSSProperties) : undefined;
 
   return (
-    <div className="stat-card" style={style}>
+    <div className={`stat-card${compactValue ? " stat-card--compact-value" : ""}`} style={style}>
       <div className="stat-card__icon">
         <i className={icon} aria-hidden="true" />
       </div>

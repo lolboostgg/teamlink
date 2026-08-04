@@ -8979,6 +8979,15 @@ a.notification-panel__item:hover {
   align-self: end;
 }
 
+.stat-card--compact-value .stat-card__value {
+  min-width: 0;
+  overflow: hidden;
+  font-size: clamp(14px, 1.25vw, 19px);
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .stat-card__label {
   grid-area: label;
   align-self: start;

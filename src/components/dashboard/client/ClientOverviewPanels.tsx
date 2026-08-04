@@ -37,7 +37,7 @@ export function ClientOverviewPanels() {
         <StatCard icon="fa-solid fa-sack-dollar" label="Total spend" value={spend} currency color="var(--hue-green)" />
         <StatCard icon="fa-solid fa-calendar-check" label="Upcoming bookings" value={upcoming.length} color="var(--accent)" />
         <StatCard icon="fa-solid fa-flag-checkered" label="Completed sessions" value={completedCount} color="var(--hue-gold)" />
-        <StatCard icon="fa-solid fa-gamepad" label="Favorite game" value={favoriteGame} color="var(--hue-purple)" />
+        <StatCard icon="fa-solid fa-star" label="Favorite game" value={favoriteGame} color="var(--hue-purple)" compactValue />
       </StatGrid>
 
       <div className="dashboard-panel">
