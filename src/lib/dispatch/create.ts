@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { MAX_CANDIDATES, DISPATCH_WINDOW_MS } from "@/lib/dispatch/service";
 import { teammateCut } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
+import { Prisma } from "@/generated/prisma/client";
 
 export interface CreateOrderInput {
   gameSlug: string;
@@ -13,6 +14,10 @@ export interface CreateOrderInput {
   customerLabel: string;
   clientUserId: string | null;
   isReplay?: boolean;
+  /** In-game identity, snapshotted onto the order. */
+  ign?: string | null;
+  ignRegion?: string | null;
+  ignRoles?: string[];
 }
 
 /**
@@ -48,6 +53,9 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       status: pool.length > 0 ? "CANDIDATES_READY" : "NO_MATCH",
       dispatchDeadline: deadline,
       isReplay: !!input.isReplay,
+      ign: input.ign ?? null,
+      ignRegion: input.ignRegion ?? null,
+      ignRoles: (input.ignRoles ?? []) as Prisma.InputJsonValue,
       candidates: {
         create: pool.slice(0, MAX_CANDIDATES).map((t) => ({
           teammateId: t.id,

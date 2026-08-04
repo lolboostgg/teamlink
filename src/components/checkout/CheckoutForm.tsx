@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckoutIdentityStep } from "@/components/checkout/CheckoutIdentityStep";
+import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/CheckoutIngameStep";
 import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
 import { CouponModal } from "@/components/checkout/CouponModal";
@@ -23,17 +24,24 @@ interface Props {
   baseTotalEUR: number;
 }
 
-type Step = "identity" | "payment";
+type Step = "identity" | "ingame" | "payment";
+
+const STEPS: { key: Step; label: string }[] = [
+  { key: "identity", label: "Your details" },
+  { key: "ingame", label: "In-game info" },
+  { key: "payment", label: "Payment" },
+];
 type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 
 // Orchestrates the checkout flow: identity (guest email or login/register)
-// -> payment method + fee -> mock submit. Owns both columns because the
-// order summary must react live to the selected payment method's fee.
+// -> in-game account -> payment method + fee -> submit. Owns both columns
+// because the order summary must react live to the payment method's fee.
 export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalEUR }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const [step, setStep] = useState<Step>("identity");
   const [identity, setIdentity] = useState<Identity>(null);
+  const [ingame, setIngame] = useState<IngameIdentity | null>(null);
   const [method, setMethod] = useState<PaymentMethodKey>("card");
   const [submitting, setSubmitting] = useState(false);
   const [couponModalOpen, setCouponModalOpen] = useState(false);
@@ -47,11 +55,16 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
 
   function handleGuestContinue(email: string) {
     setIdentity({ mode: "guest", email });
-    setStep("payment");
+    setStep("ingame");
   }
 
   function handleLoggedIn() {
     setIdentity({ mode: "account" });
+    setStep("ingame");
+  }
+
+  function handleIngameContinue(next: IngameIdentity) {
+    setIngame(next);
     setStep("payment");
   }
 
@@ -81,6 +94,11 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
       teammates,
       requestedTeammateId: null,
       customerLabel: identity?.mode === "guest" ? identity.email : "Logged-in customer",
+      // Frozen onto the order: editing the saved account later must not
+      // rewrite who a past order was played on.
+      ign: ingame?.ign ?? null,
+      ignRegion: ingame?.region ?? null,
+      ignRoles: ingame?.roles ?? [],
     });
     // Only burns the coupon once the order is actually placed — applying
     // it in the modal alone doesn't consume it, so abandoning checkout
@@ -106,23 +124,41 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
       <div>
         <Reveal>
           <div className="checkout-steps">
-            <span className={`checkout-steps__item${step === "identity" ? " is-active" : " is-done"}`}>
-              <span className="checkout-steps__num">
-                {step === "payment" ? <i className="fa-solid fa-check" aria-hidden="true" /> : "1"}
-              </span>
-              Your details
-            </span>
-            <span className="checkout-steps__line" aria-hidden="true" />
-            <span className={`checkout-steps__item${step === "payment" ? " is-active" : ""}`}>
-              <span className="checkout-steps__num">2</span>
-              Payment
-            </span>
+            {STEPS.map((entry, index) => {
+              const position = STEPS.findIndex((s) => s.key === step);
+              const done = index < position;
+              return (
+                <Fragment key={entry.key}>
+                  {index > 0 && <span className="checkout-steps__line" aria-hidden="true" />}
+                  <span
+                    className={`checkout-steps__item${step === entry.key ? " is-active" : done ? " is-done" : ""}`}
+                  >
+                    <span className="checkout-steps__num">
+                      {done ? <i className="fa-solid fa-check" aria-hidden="true" /> : index + 1}
+                    </span>
+                    {entry.label}
+                  </span>
+                </Fragment>
+              );
+            })}
           </div>
         </Reveal>
 
         {step === "identity" && (
           <Reveal delay={80}>
             <CheckoutIdentityStep onContinueAsGuest={handleGuestContinue} onLoggedIn={handleLoggedIn} />
+          </Reveal>
+        )}
+
+        {step === "ingame" && (
+          <Reveal delay={80}>
+            <CheckoutIngameStep
+              gameSlug={gameSlug}
+              gameName={gameName}
+              canSave={identity?.mode === "account"}
+              onContinue={handleIngameContinue}
+              onBack={() => setStep("identity")}
+            />
           </Reveal>
         )}
 
@@ -141,6 +177,20 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
                 </button>
               </div>
             </Reveal>
+
+            {ingame && (
+              <Reveal delay={100}>
+                <div className="checkout-card checkout-card--identity">
+                  <span className="checkout-card__identity-text">
+                    <i className="fa-solid fa-gamepad" aria-hidden="true" />
+                    Playing as {ingame.ign} ({ingame.region})
+                  </span>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("ingame")}>
+                    Change
+                  </button>
+                </div>
+              </Reveal>
+            )}
             <Reveal delay={140}>
               <CheckoutPaymentStep
                 method={method}

@@ -70,6 +70,11 @@ export async function POST(request: Request) {
     customerLabel: String(session?.user?.name || session?.user?.email || body.customerLabel || "Customer").slice(0, 120),
     clientUserId: session?.user?.id ?? null,
     isReplay: !!body.isReplay,
+    ign: typeof body.ign === "string" ? body.ign.slice(0, 60) : null,
+    ignRegion: typeof body.ignRegion === "string" ? body.ignRegion.slice(0, 20) : null,
+    ignRoles: Array.isArray(body.ignRoles)
+      ? body.ignRoles.filter((role: unknown): role is string => typeof role === "string").slice(0, 6)
+      : [],
   });
 
   return NextResponse.json({ order: toCustomerOrder(order) });

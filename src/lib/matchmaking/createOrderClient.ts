@@ -14,6 +14,10 @@ export async function placeOrder(input: {
   requestedTeammateId: string | null;
   customerLabel: string;
   isReplay?: boolean;
+  /** The in-game identity the teammate has to add. */
+  ign?: string | null;
+  ignRegion?: string | null;
+  ignRoles?: string[];
 }): Promise<DispatchOrder | null> {
   try {
     const res = await fetch("/api/dispatch/orders", {
