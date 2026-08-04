@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
-import { AdminTableToolbar } from "@/components/dashboard/admin/AdminTableToolbar";
+import { TableFilterPills } from "@/components/dashboard/TableFilterPills";
 import { PayoutRequestQueue, type AdminPayoutRow } from "@/components/dashboard/admin/PayoutRequestQueue";
 import type { PayoutMethodType } from "@/lib/payoutMethods";
 import { nextPayoutDate, payoutBreakdown, type PayoutRequestStatus } from "@/lib/payouts";
@@ -91,15 +91,15 @@ export default async function AdminPayoutsPage({ searchParams }: Props) {
           </div>
         </div>
 
-        <AdminTableToolbar
-          initialQuery=""
-          searchable={false}
-          filters={[
+        <TableFilterPills
+          basePath="/dashboard/admin/payouts"
+          groups={[
             {
               param: "state",
-              value: state ?? "",
+              label: "Request status",
+              active: state ?? "",
               options: [
-                { value: "", label: "All requests", icon: "fa-solid fa-layer-group" },
+                { value: "", label: "All" },
                 { value: "open", label: "Open", icon: "fa-solid fa-inbox" },
                 { value: "paid", label: "Paid", icon: "fa-solid fa-check" },
                 { value: "rejected", label: "Rejected", icon: "fa-solid fa-xmark" },
@@ -107,10 +107,11 @@ export default async function AdminPayoutsPage({ searchParams }: Props) {
             },
             {
               param: "method",
-              value: method ?? "",
+              label: "Payout method",
+              active: method ?? "",
               options: [
-                { value: "", label: "All methods", icon: "fa-solid fa-layer-group" },
-                { value: "BANK", label: "Bank transfer", icon: "fa-solid fa-building-columns" },
+                { value: "", label: "All" },
+                { value: "BANK", label: "Bank", icon: "fa-solid fa-building-columns" },
                 { value: "CRYPTO", label: "Crypto", icon: "fa-brands fa-bitcoin" },
               ],
             },

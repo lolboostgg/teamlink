@@ -11012,10 +11012,9 @@ a.notification-panel__item:hover {
 .payout-table__user:hover strong { color: var(--accent); }
 
 .payout-table__method {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -11027,9 +11026,9 @@ a.notification-panel__item:hover {
   cursor: pointer;
 }
 
-.payout-table__method > i { color: var(--accent); font-size: 11px; }
-.payout-table__method > span { color: var(--text-faint); font-size: 10px; font-weight: 500; text-decoration: underline dotted; }
-.payout-table__method:hover > span { color: var(--accent); }
+.payout-table__method > i { color: var(--accent); font-size: 12px; }
+.payout-table__method:hover { color: var(--accent); }
+.payout-table__method:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
 .payout-table__amounts { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .payout-table__amounts > strong { color: var(--text); font-size: 13.5px; font-weight: 800; }
@@ -11093,3 +11092,34 @@ a.notification-panel__item:hover {
 .payout-details dd { margin: 0; color: var(--text); font-size: 13px; font-weight: 700; overflow-wrap: anywhere; user-select: text; }
 
 .payout-details__note { margin: 0; color: var(--text-muted); font-size: 12px; }
+
+/* ── Segmented table filters ─────────────────────────────────────────── */
+
+.filter-pills { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+
+.filter-pills__group {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--dash-surface-2);
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  color: var(--text-faint);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.filter-pill > i { font-size: 10px; }
+.filter-pill:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+.filter-pill.is-active { background: var(--accent); color: #fff; }
+.filter-pill.is-active:hover { background: var(--accent); }

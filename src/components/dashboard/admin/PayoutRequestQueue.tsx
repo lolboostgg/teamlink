@@ -118,13 +118,17 @@ export function PayoutRequestQueue({ rows }: { rows: AdminPayoutRow[] }) {
                   </td>
 
                   <td>
-                    <button type="button" className="payout-table__method" onClick={() => setMethodFor(row)}>
+                    <button
+                      type="button"
+                      className="payout-table__method"
+                      title="Show the full payout details"
+                      onClick={() => setMethodFor(row)}
+                    >
                       <i
                         className={row.methodType === "BANK" ? "fa-solid fa-building-columns" : "fa-brands fa-bitcoin"}
                         aria-hidden="true"
                       />
                       {PAYOUT_LABELS[row.methodType]}
-                      <span>View details</span>
                     </button>
                   </td>
 
