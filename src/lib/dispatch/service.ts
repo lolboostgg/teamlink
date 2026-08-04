@@ -331,7 +331,7 @@ export async function recordGame(
   }
 }
 
-export async function completeOrder(orderId: string, teammateId: string) {
+export async function completeOrder(orderId: string, teammateId: string, farewell?: string) {
   await assertAssignedTeammate(orderId, teammateId);
 
   const order = await prisma.order.findUnique({ where: { id: orderId }, include: { games: true } });
@@ -346,11 +346,16 @@ export async function completeOrder(orderId: string, teammateId: string) {
     data: { status: "COMPLETED", sessionStatus: "ORDER_COMPLETED", sessionCompleteAt: new Date() },
   });
 
+  await prisma.teammate.update({
+    where: { id: teammateId },
+    data: { available: true, availableSince: new Date(), lastSeenAt: new Date(), sessionsCount: { increment: 1 } },
+  });
+
   if (completed.clientUserId) {
     await notifyUser(completed.clientUserId, {
       type: "order.completed",
       title: "Your session is complete",
-      body: `${completed.gameName} · ${completed.option}`,
+      body: (farewell ?? "GG!").trim().slice(0, 80) || "GG!",
       href: `/checkout/matching?order=${orderId}`,
     });
   }

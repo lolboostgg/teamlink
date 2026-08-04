@@ -96,7 +96,7 @@ export function WalletScreen({
             <div className="dashboard-panel__sub">Every change to your store credit</div>
           </div>
           <div className="wallet-filter-pills" role="group" aria-label="Filter transactions">
-            {([ ["all", "All", "fa-solid fa-layer-group"], ["in", "Money in", "fa-solid fa-arrow-down"], ["out", "Money out", "fa-solid fa-arrow-up"] ] as const).map(([value, label, icon]) => (
+            {([ ["all", "All", "fa-solid fa-list-ul"], ["in", "Money in", "fa-solid fa-circle-plus"], ["out", "Money out", "fa-solid fa-circle-minus"] ] as const).map(([value, label, icon]) => (
               <button key={value} type="button" className={`wallet-filter-pill wallet-filter-pill--${value}${filter === value ? " is-active" : ""}`} onClick={() => { setFilter(value); setPage(1); }}><i className={icon} aria-hidden="true" />{label}<span>{value === "all" ? transactions.length : transactions.filter((item) => value === "in" ? item.amountCents >= 0 : item.amountCents < 0).length}</span></button>
             ))}
           </div>

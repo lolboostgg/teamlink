@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { playNotificationSound } from "@/lib/notificationSound";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export interface FeedNotification {
   id: string;
@@ -42,6 +43,7 @@ export function useNotifications() {
  * trade-off as the dispatch state, and honest about its latency.
  */
 export function NotificationProvider({ children }: { children: ReactNode }) {
+  const { showToast } = useToast();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user?.id);
   const { phase, order, refresh } = useDispatchState(session?.user?.role === "TEAMMATE");
@@ -71,9 +73,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const newest = stored.find((n) => !n.read);
     if (!newest || announced === newest.id) return;
-    if (announced !== null) playNotificationSound();
+    if (announced !== null) {
+      playNotificationSound();
+      if (newest.type === "order.completed") showToast(newest.body || newest.title, "success");
+    }
     setAnnounced(newest.id);
-  }, [stored, announced]);
+  }, [stored, announced, showToast]);
 
   const notifications: FeedNotification[] = useMemo(() => {
     const invite: FeedNotification[] =

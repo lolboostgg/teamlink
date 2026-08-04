@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 const SECTIONS = [
   { href: "/dashboard/client", label: "Overview", icon: "fa-solid fa-gauge" },
   { href: "/dashboard/client/orders", label: "Orders", icon: "fa-solid fa-calendar-check" },
-  { href: "/dashboard/client/chat", label: "Chat", icon: "fa-solid fa-comments" },
   { href: "/dashboard/client/favorites", label: "Favorites", icon: "fa-solid fa-heart" },
   { href: "/dashboard/client/wallet", label: "Wallet", icon: "fa-solid fa-wallet" },
   { href: "/dashboard/client/settings", label: "Settings", icon: "fa-solid fa-gear" },

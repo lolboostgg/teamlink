@@ -77,10 +77,10 @@ export async function recordGameAction(
   }
 }
 
-export async function completeOrderAction(orderId: string): Promise<Result> {
+export async function completeOrderAction(orderId: string, farewell?: string): Promise<Result> {
   try {
     const teammate = await requireTeammate();
-    await completeOrder(orderId, teammate.id);
+    await completeOrder(orderId, teammate.id, farewell);
     revalidatePath("/dashboard/teammate");
     return { ok: true };
   } catch (err) {

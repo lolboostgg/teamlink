@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { ClientChatContent } from "@/components/dashboard/client/ClientChatContent";
-
-export const metadata: Metadata = { title: "Chat" };
+import { redirect } from "next/navigation";
 
 export default function ClientChatPage() {
-  return <ClientChatContent />;
+  redirect("/dashboard/client/orders");
 }

@@ -14,7 +14,6 @@ export default function ClientDashboardPage() {
         links={[
           { href: "/games", label: "Book a teammate", icon: "fa-solid fa-bolt" },
           { href: "/dashboard/client/orders", label: "View orders", icon: "fa-solid fa-calendar-check" },
-          { href: "/dashboard/client/chat", label: "Chat", icon: "fa-solid fa-comments" },
         ]}
       />
 

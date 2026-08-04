@@ -27,7 +27,6 @@ export default async function TeammateDashboardPage() {
         message="Stay online to keep receiving booking requests."
         links={[
           { href: "/dashboard/teammate/sessions", label: "Sessions", icon: "fa-solid fa-calendar-check" },
-          { href: "/dashboard/teammate/chat", label: "Chat", icon: "fa-solid fa-comments" },
         ]}
       />
 

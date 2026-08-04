@@ -12,7 +12,6 @@ import { withdrawDispatchAction } from "@/app/dashboard/teammate/dispatchActions
 import { useToast } from "@/components/ui/ToastProvider";
 import type { DispatchOrderView } from "@/lib/dispatch/phase";
 
-const SELECTION_ACK_KEY = "teamlink:acknowledged-selections";
 const NOT_SELECTED_ACK_KEY = "teamlink:acknowledged-not-selected";
 
 function acknowledgedItems(key: string): string[] {
@@ -87,7 +86,6 @@ export function DispatchFlow() {
   const [pending, startTransition] = useTransition();
   const announced = useRef<string | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
-  const [dismissedSelection, setDismissedSelection] = useState<string | null>(null);
   const stateOrderId = state.order?.id;
   const stateOrderGameName = state.order?.gameName;
   const stateOrderOption = state.order?.option;
@@ -101,6 +99,12 @@ export function DispatchFlow() {
       new Notification("New order request", { body: `${stateOrderGameName} · ${stateOrderOption}` });
     }
   }, [state.phase, stateOrderId, stateOrderGameName, stateOrderOption]);
+
+  useEffect(() => {
+    if (!isTeammate || state.phase !== "SELECTED" || !stateOrderId) return;
+    const href = `/dashboard/teammate/session/${stateOrderId}`;
+    if (pathname !== href) router.replace(href);
+  }, [isTeammate, state.phase, stateOrderId, pathname, router]);
 
   useEffect(() => {
     if (state.phase !== "NOT_SELECTED" || !stateOrderId) return;
@@ -246,50 +250,7 @@ export function DispatchFlow() {
   }
 
   if (state.phase === "SELECTED" && state.order) {
-    const order = state.order;
-
-    // DispatchFlow lives in the shared dashboard layout, so it remains
-    // mounted after navigating to the order room. Do not cover the room
-    // with the same selection modal once the teammate has opened it.
-    if (
-      pathname === `/dashboard/teammate/session/${order.id}` ||
-      dismissedSelection === order.id ||
-      acknowledgedItems(SELECTION_ACK_KEY).includes(order.id)
-    ) return null;
-
-    function dismissSelection() {
-      acknowledgeItem(SELECTION_ACK_KEY, order.id);
-      setDismissedSelection(order.id);
-    }
-
-    return (
-      <div className="dispatch-modal__backdrop" role="status">
-        <div className="dispatch-modal dispatch-modal--selected">
-          <button type="button" className="dispatch-modal__close" aria-label="Close" onClick={dismissSelection}>
-            <i className="fa-solid fa-xmark" aria-hidden="true" />
-          </button>
-          <span className="dispatch-modal__check">
-            <i className="fa-solid fa-check" aria-hidden="true" />
-          </span>
-          <h2 className="dispatch-modal__title">You&rsquo;ve been selected</h2>
-          <p className="dispatch-modal__lead">
-            {order.customerLabel} wants to play {order.gameName} with you.
-          </p>
-          <div className="dispatch-modal__actions">
-            <button
-              type="button"
-              className="btn btn--vivid"
-              onClick={() => {
-                dismissSelection();
-                router.push(`/dashboard/teammate/session/${order.id}`);
-              }}
-            >
-              Open the order room
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   if (

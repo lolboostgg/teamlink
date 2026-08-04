@@ -22,7 +22,6 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   teammate: [
     { href: "/dashboard/teammate", label: "Overview", icon: "fa-solid fa-gauge" },
     { href: "/dashboard/teammate/sessions", label: "Orders", icon: "fa-solid fa-receipt" },
-    { href: "/dashboard/teammate/chat", label: "Chat", icon: "fa-solid fa-comments" },
     { href: "/dashboard/teammate/reviews", label: "Reviews", icon: "fa-solid fa-star" },
     { href: "/dashboard/teammate/profile", label: "Game profile", icon: "fa-solid fa-id-card" },
     { href: "/dashboard/teammate/verification", label: "Verification & payouts", icon: "fa-solid fa-shield-halved" },

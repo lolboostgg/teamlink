@@ -43,9 +43,6 @@ export function ActiveOrderCard() {
       </div>
 
       <div className="teammate-profile-form__actions">
-        <Link href="/dashboard/teammate/chat" className="btn btn--ghost">
-          Message customer
-        </Link>
         <Link href={`/dashboard/teammate/session/${order.id}`} className="btn btn--vivid">
           Open order room
         </Link>

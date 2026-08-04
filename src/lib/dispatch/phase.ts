@@ -32,6 +32,7 @@ export interface DispatchOrderView {
   status: string;
   sessionStatus: string | null;
   assignedAt: number | null;
+  teammateCompletedSessions?: number;
   games: { gameNumber: number; result: string; note: string | null; proofPath: string | null }[];
 }
 

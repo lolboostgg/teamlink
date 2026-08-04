@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { conversationKey } from "@/lib/matchmaking/chatStore";
@@ -148,12 +149,14 @@ function GameCompletionModal({
 }
 
 export function OrderRoom({ orderId }: { orderId: string }) {
+  const router = useRouter();
   const { showToast } = useToast();
   const [order, setOrder] = useState<DispatchOrderView | null>(null);
   const [denied, setDenied] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [farewell, setFarewell] = useState("GG!");
   const previousGamesBooked = useRef<number | null>(null);
   const [, startTransition] = useTransition();
 
@@ -242,6 +245,10 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             <div>
               <dt>Started</dt>
               <dd>{order.assignedAt ? new Date(order.assignedAt).toLocaleTimeString() : "—"}</dd>
+            </div>
+            <div>
+              <dt>Completed sessions</dt>
+              <dd>{order.teammateCompletedSessions ?? 0}</dd>
             </div>
           </dl>
         </div>
@@ -410,6 +417,13 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               <span>I confirm the booked games were played in full.</span>
             </label>
 
+            <div className="form-row">
+              <label>Message to the customer</label>
+              <div className="session-farewell-pills">
+                {["GG!", "Nice!", "See ya next time!"].map((message) => <button key={message} type="button" className={farewell === message ? "is-active" : ""} onClick={() => setFarewell(message)}>{message}</button>)}
+              </div>
+            </div>
+
             <div className="dispatch-modal__actions">
               <button type="button" className="btn btn--ghost" onClick={() => setConfirming(false)}>
                 Back
@@ -420,14 +434,14 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                 disabled={!confirmed}
                 onClick={() =>
                   startTransition(async () => {
-                    const res = await completeOrderAction(orderId);
+                    const res = await completeOrderAction(orderId, farewell);
                     if (!res.ok) {
                       showToast(res.error, "error");
                       return;
                     }
                     setConfirming(false);
-                    load();
                     showToast("Order completed.", "success");
+                    router.replace("/dashboard/teammate");
                   })
                 }
               >
