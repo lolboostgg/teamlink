@@ -16,7 +16,7 @@ export async function getTeammateDetail(teammateNo: number) {
   });
   if (!teammate) return null;
 
-  const [candidacies, reviewAgg] = await Promise.all([
+  const [candidacies, reviewAgg, reviews] = await Promise.all([
     prisma.dispatchCandidate.findMany({
       where: { teammateId: teammate.id },
       include: { order: { include: { clientUser: true } } },
@@ -28,11 +28,18 @@ export async function getTeammateDetail(teammateNo: number) {
       _avg: { rating: true },
       _count: true,
     }),
+    prisma.review.findMany({
+      where: { teammateId: teammate.id },
+      include: { order: true, clientUser: true },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
   ]);
 
   return {
     teammate,
     candidacies,
+    reviews,
     reviewCount: reviewAgg._count,
     reviewAverage: reviewAgg._avg.rating,
   };

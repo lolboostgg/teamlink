@@ -26,6 +26,7 @@ import { EarningsLedger } from "@/components/dashboard/teammate/EarningsLedger";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { EarningsSummary } from "@/lib/earnings";
+import { ReviewsList, type DisplayReview } from "@/components/dashboard/teammate/ReviewsList";
 
 export interface TeammateDetailView {
   id: string;
@@ -61,7 +62,7 @@ export interface TeammateOrderRow {
   createdAt: number;
 }
 
-type Tab = "general" | "orders" | "earnings" | "games" | "verification" | "security";
+type Tab = "general" | "orders" | "earnings" | "reviews" | "games" | "verification" | "security";
 
 const DATE = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
 
@@ -76,12 +77,14 @@ export function TeammateDetail({
   account,
   orders,
   earnings,
+  reviews,
 }: {
   teammate: TeammateDetailView;
   /** Null for roster rows that were never linked to a real login. */
   account: AccountSummary | null;
   orders: TeammateOrderRow[];
   earnings: EarningsSummary;
+  reviews: DisplayReview[];
 }) {
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>("general");
@@ -90,6 +93,7 @@ export function TeammateDetail({
     { key: "general", label: "General" },
     { key: "orders", label: "Orders", count: orders.length },
     { key: "earnings", label: "Earnings", count: earnings.rows.length },
+    { key: "reviews", label: "Reviews", count: reviews.length },
     { key: "games", label: "Game Profiles" },
     { key: "verification", label: "Verification & Payouts" },
     ...(account ? [{ key: "security" as const, label: "Security" }] : []),
@@ -279,6 +283,29 @@ export function TeammateDetail({
             <EarningsLedger rows={earnings.rows} emptyHint="This teammate hasn't completed a paid session yet." />
           </div>
         </>
+      )}
+
+      {tab === "reviews" && (
+        <div className="dashboard-panel">
+          <div className="dashboard-panel__head">
+            <div>
+              <div className="dashboard-panel__title">Client reviews</div>
+              <div className="dashboard-panel__sub">
+                {reviews.length > 0
+                  ? `${reviews.length} review${reviews.length === 1 ? "" : "s"}${teammate.reviewAverage !== null ? ` · ${teammate.reviewAverage.toFixed(1)} average` : ""}`
+                  : "What clients said after a completed session"}
+              </div>
+            </div>
+          </div>
+          {reviews.length > 0 ? (
+            <ReviewsList reviews={reviews} />
+          ) : (
+            <div className="dashboard-empty dashboard-empty--compact">
+              <i className="fa-solid fa-star-half-stroke" aria-hidden="true" />
+              <p>No reviews yet.</p>
+            </div>
+          )}
+        </div>
       )}
 
       {tab === "games" && (

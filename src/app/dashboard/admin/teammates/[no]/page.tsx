@@ -28,7 +28,7 @@ export default async function AdminTeammatePage({ params }: Props) {
 
   const earnings = await loadTeammateEarnings(detail.teammate.id);
 
-  const { teammate, candidacies } = detail;
+  const { teammate, candidacies, reviews } = detail;
   const user = teammate.user;
   const v = teammate.verification;
 
@@ -100,6 +100,18 @@ export default async function AdminTeammatePage({ params }: Props) {
             : null
         }
         earnings={earnings}
+        reviews={reviews.map((review) => ({
+          id: review.id,
+          client: review.clientUser?.name || review.order.customerLabel || "Anonymous",
+          gameName: review.order.gameName,
+          gameSlug: review.order.gameSlug,
+          option: review.order.option,
+          orderNo: review.order.orderNo,
+          clientAvatarUrl: review.clientUser?.avatarUrl ?? null,
+          clientProfileHref: review.clientUser ? `/dashboard/admin/accounts/${review.clientUser.accountNo}` : null,
+          rating: review.rating,
+          date: new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(review.createdAt),
+        }))}
         orders={candidacies.map((c) => ({
           orderId: c.orderId,
           orderNo: c.order.orderNo,
