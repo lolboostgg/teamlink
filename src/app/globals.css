@@ -9231,6 +9231,7 @@ a.notification-panel__item:hover {
 .admin-orders-table td small { display: block; margin-top: 4px; color: var(--text-faint); font-size: 11px; }
 .admin-orders-table td a { display: block; color: var(--accent); font-weight: 700; }
 .admin-orders-table td:last-child a { color: var(--text); }
+.admin-orders-table td:last-child a.admin-order-view { width: auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
 .admin-list-identity { display: inline-flex; align-items: center; gap: 9px; }
 .admin-list-avatar { width: 30px; height: 30px; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--dash-line); border-radius: 9px; background: var(--dash-surface-2); }
 .admin-list-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
