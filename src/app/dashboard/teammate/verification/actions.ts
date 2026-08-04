@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
-import { sanitizePayoutDetails, type PayoutMethodType } from "@/lib/payoutMethods";
+import { countryUsesIban, PAYOUT_FIELDS, sanitizePayoutDetails, type PayoutMethodType } from "@/lib/payoutMethods";
 import { notifyAdmins } from "@/lib/notifications/service";
 
 async function requireOwnTeammate() {
@@ -81,6 +81,12 @@ export async function savePayoutMethod(input: {
 }) {
   const teammate = await requireOwnTeammate();
   const details = sanitizePayoutDetails(input.type, input.details);
+  const missing = PAYOUT_FIELDS[input.type].filter((field) => field.required && !details[field.key]);
+  if (input.type === "BANK") {
+    const accountField = countryUsesIban(details.country ?? "") ? "iban" : "accountNumber";
+    if (!details[accountField]) missing.push({ key: accountField, label: accountField === "iban" ? "IBAN" : "Account number" });
+  }
+  if (missing.length) throw new Error(`Missing: ${missing.map((field) => field.label).join(", ")}.`);
 
   const method = input.id
     ? await prisma.payoutMethod.update({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/ToastProvider";
 import { FileDrop } from "@/components/ui/FileDrop";
@@ -8,6 +8,7 @@ import { PrivateImage } from "@/components/ui/PrivateImage";
 import {
   PAYOUT_FIELDS,
   PAYOUT_LABELS,
+  countryUsesIban,
   describePayoutMethod,
   type PayoutMethodType,
 } from "@/lib/payoutMethods";
@@ -50,6 +51,37 @@ const DOCUMENTS = [
   { kind: "id-back", label: "ID back", field: "idBackPath" },
   { kind: "selfie", label: "Selfie holding the ID", field: "selfiePath" },
 ] as const;
+
+interface PayoutSelectOption { value: string; label: string; }
+
+const COUNTRY_CODES = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
+const CURRENCY_CODES = "EUR USD GBP CHF JPY CAD AUD NZD SEK NOK DKK PLN CZK HUF RON BGN TRY AED SAR QAR KWD BHD SGD HKD CNY INR KRW BRL MXN ZAR THB IDR MYR PHP VND".split(" ");
+
+function displayOptions(codes: string[], type: "region" | "currency") {
+  const names = new Intl.DisplayNames(["en"], { type });
+  return codes.map((value) => ({ value, label: names.of(value) ?? value })).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+function SearchablePayoutSelect({ label, value, options, searchable = false, placeholder, onChange }: { label: string; value: string; options: PayoutSelectOption[]; searchable?: boolean; placeholder: string; onChange: (value: string) => void; }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const selected = options.find((option) => option.value === value || option.label === value);
+  const filtered = useMemo(() => options.filter((option) => `${option.label} ${option.value}`.toLowerCase().includes(query.trim().toLowerCase())), [options, query]);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return <div className={`payout-select${open ? " is-open" : ""}`} ref={rootRef}>
+    <button type="button" className="payout-select__trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={listId} onClick={() => { setOpen((current) => !current); setQuery(""); }}><span className={selected || value ? "" : "is-placeholder"}>{selected?.label ?? (value || placeholder)}</span><i className="fa-solid fa-chevron-down" aria-hidden="true" /></button>
+    {open && <div className="payout-select__popover">{searchable && <label className="payout-select__search"><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${label.toLowerCase()}…`} /></label>}<ul id={listId} role="listbox" aria-label={label}>{filtered.map((option) => <li key={option.value}><button type="button" role="option" aria-selected={option.value === selected?.value} onClick={() => { onChange(option.value); setOpen(false); setQuery(""); }}><span><strong>{option.label}</strong><small>{option.value}</small></span>{option.value === selected?.value && <i className="fa-solid fa-check" aria-hidden="true" />}</button></li>)}</ul>{filtered.length === 0 && <p>No matches found.</p>}</div>}
+  </div>;
+}
 
 function DocumentUpload({
   kind,
@@ -265,6 +297,11 @@ function PayoutMethods({
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | undefined>();
   const [editorOpen, setEditorOpen] = useState(methods.length === 0);
+  const countryOptions = useMemo(() => displayOptions(COUNTRY_CODES, "region"), []);
+  const currencyOptions = useMemo(() => displayOptions(CURRENCY_CODES, "currency"), []);
+  const selectedCountry = countryOptions.find((country) => country.value === draft.country || country.label === draft.country)?.value ?? draft.country;
+  const usesIban = countryUsesIban(selectedCountry);
+  const visibleFields = PAYOUT_FIELDS[type].filter((field) => type !== "BANK" || (field.key !== "iban" && field.key !== "accountNumber") || (usesIban ? field.key === "iban" : field.key === "accountNumber"));
 
   function reset() {
     setDraft({});
@@ -318,18 +355,18 @@ function PayoutMethods({
       <div className="payout-method-notice"><i className="fa-solid fa-circle-info" aria-hidden="true" /><span>{type === "BANK" ? "The beneficiary name must match the bank account holder exactly." : "The name must match your wallet or exchange account exactly. Incorrect details can delay payouts."}</span></div>
 
       <div className="form-row-grid">
-        {PAYOUT_FIELDS[type].map((field) => (
+        {visibleFields.map((field) => (
           <div className={`form-row${field.key === "address" || field.key === "wallet" ? " payout-method-field--wide" : ""}`} key={field.key}>
             <label htmlFor={`payout-${field.key}`}>
               {field.label}
-              {field.required && " *"}
+              {(field.required || field.key === "iban" || field.key === "accountNumber") && " *"}
             </label>
-            <input
+            {field.key === "country" ? <SearchablePayoutSelect label="Country" value={draft.country ?? ""} options={countryOptions} searchable placeholder="Select a country" onChange={(value) => setDraft({ ...draft, country: value, iban: "", accountNumber: "" })} /> : field.key === "currency" ? <SearchablePayoutSelect label="Currency" value={draft.currency ?? ""} options={currencyOptions} placeholder="Select a currency" onChange={(value) => setDraft({ ...draft, currency: value })} /> : <input
               id={`payout-${field.key}`}
               value={draft[field.key] ?? ""}
               placeholder={field.placeholder}
               onChange={(e) => setDraft({ ...draft, [field.key]: e.target.value })}
-            />
+            />}
           </div>
         ))}
       </div>
@@ -346,7 +383,7 @@ function PayoutMethods({
           disabled={pending}
           onClick={() =>
             onRun(async () => {
-              const missing = PAYOUT_FIELDS[type].filter((f) => f.required && !draft[f.key]?.trim());
+              const missing = visibleFields.filter((f) => (f.required || f.key === "iban" || f.key === "accountNumber") && !draft[f.key]?.trim());
               if (missing.length > 0) throw new Error(`Missing: ${missing.map((f) => f.label).join(", ")}.`);
               await savePayoutMethod({
                 id: editingId,
