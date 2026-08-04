@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
-import { promoteToTeammate, demoteToClient } from "@/app/dashboard/admin/users/actions";
+import { setUserRole } from "@/app/dashboard/admin/users/actions";
 import { DiscordTag } from "@/components/dashboard/DiscordTag";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
@@ -19,36 +19,13 @@ export interface AdminUserRow {
   discordId: string | null;
   discordUsername: string | null;
   discordAvatar: string | null;
+  storeCreditCents?: number;
+  teammateBalanceEUR?: number;
 }
-
-const ROLE_PILL: Record<string, string> = {
-  ADMIN: "dashboard-pill--warning",
-  TEAMMATE: "dashboard-pill--success",
-  CLIENT: "dashboard-pill--muted",
-};
 
 export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
   const [pending, startTransition] = useTransition();
-  const [promotingId, setPromotingId] = useState<string | null>(null);
-  const [nameDraft, setNameDraft] = useState("");
-
-  function startPromote(user: AdminUserRow) {
-    setPromotingId(user.id);
-    setNameDraft(user.name ?? user.email.split("@")[0]);
-  }
-
-  function confirmPromote(userId: string) {
-    const name = nameDraft.trim();
-    if (!name) return;
-    startTransition(async () => {
-      await promoteToTeammate(userId, name);
-      setPromotingId(null);
-    });
-  }
-
-  function handleDemote(userId: string) {
-    startTransition(() => demoteToClient(userId));
-  }
+  const [roleDrafts, setRoleDrafts] = useState<Record<string, "ADMIN" | "TEAMMATE" | "CLIENT">>({});
 
   if (users.length === 0) {
     return (
@@ -69,6 +46,7 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
           <th>Discord</th>
           <th>Joined</th>
           <th>Role</th>
+          <th>Balance</th>
           <th />
         </tr>
       </thead>
@@ -87,41 +65,13 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
             </td>
             <td>{formatOrderDate(u.createdAt)}</td>
             <td>
-              <span className={`dashboard-pill ${ROLE_PILL[u.role] ?? "dashboard-pill--muted"}`}>
-                {u.role.toLowerCase()}
-              </span>
+              <div className="admin-role-picker"><select value={roleDrafts[u.id] ?? u.role} onChange={(event) => setRoleDrafts((current) => ({ ...current, [u.id]: event.target.value as "ADMIN" | "TEAMMATE" | "CLIENT" }))}><option value="ADMIN">Admin</option><option value="TEAMMATE">Teammate</option><option value="CLIENT">Client</option></select><button type="button" className="btn btn--ghost btn--sm" disabled={pending || !roleDrafts[u.id] || roleDrafts[u.id] === u.role} onClick={() => startTransition(async () => { const nextRole = roleDrafts[u.id]; if (!nextRole) return; await setUserRole(u.id, nextRole); setRoleDrafts((current) => { const next = { ...current }; delete next[u.id]; return next; }); })}>Confirm</button></div>
             </td>
+            <td><span className="admin-user-balance"><i className={`fa-solid ${u.role === "TEAMMATE" ? "fa-coins" : "fa-wallet"}`} />€{((u.role === "TEAMMATE" ? u.teammateBalanceEUR ?? 0 : (u.storeCreditCents ?? 0) / 100)).toFixed(2)}<small>{u.role === "TEAMMATE" ? "earned" : "store credit"}</small></span></td>
             <td>
-              {u.role === "CLIENT" &&
-                (promotingId === u.id ? (
-                  <div className="admin-users-table__promote-form">
-                    <input
-                      className="admin-users-table__promote-input"
-                      value={nameDraft}
-                      onChange={(e) => setNameDraft(e.target.value)}
-                      placeholder="Display name"
-                      autoFocus
-                    />
-                    <button type="button" className="btn btn--vivid btn--sm" disabled={pending} onClick={() => confirmPromote(u.id)}>
-                      Confirm
-                    </button>
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPromotingId(null)}>
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => startPromote(u)}>
-                    Make teammate
-                  </button>
-                ))}
               <Link href={`/dashboard/admin/accounts/${u.accountNo}`} className="btn btn--ghost btn--sm">
                 <i className="fa-solid fa-eye" aria-hidden="true" /> View
-              </Link>{" "}
-              {u.role === "TEAMMATE" && (
-                <button type="button" className="btn btn--ghost btn--sm" disabled={pending} onClick={() => handleDemote(u.id)}>
-                  Make client
-                </button>
-              )}
+              </Link>
             </td>
           </tr>
         ))}

@@ -6707,6 +6707,9 @@ ul {
 .session-chat__messages {
   flex: 1;
 }
+.session-chat__end { width: 100%; height: 1px; flex: 0 0 1px; }
+.session-chat__admin-icon, .chat-message-row__avatar--admin { width: 28px; height: 28px; flex: 0 0 28px; display: grid; place-items: center; border: 1px solid rgba(255, 255, 255, .13); border-radius: 50%; background: rgba(255, 255, 255, .08); color: var(--text); font-size: 11px; }
+.chat-message--admin { align-self: flex-start; }
 
 .order-room__chat-panel {
   display: flex;
@@ -9746,6 +9749,7 @@ a.notification-panel__item:hover {
 .chat-message-row { width: 100%; display: flex; align-items: flex-end; gap: 8px; }
 .chat-message-row--me { justify-content: flex-end; }
 .chat-message-row--them { justify-content: flex-start; }
+.chat-message-row--admin { justify-content: flex-start; }
 .chat-message-row__avatar { width: 28px; height: 28px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; background: rgba(255, 255, 255, .05); }
 .chat-message-row__avatar img { width: 100%; height: 100%; object-fit: cover; }
 .chat-message-row .chat-bubble { align-self: auto; }
@@ -9765,6 +9769,12 @@ a.notification-panel__item:hover {
 .admin-order-person:hover strong { color: var(--accent); }
 .admin-order-game { display: flex; align-items: center; gap: 9px; }
 .admin-order-game > span { display: flex; min-width: 0; flex-direction: column; }
+.admin-role-picker { display: flex; align-items: center; gap: 7px; }
+.admin-role-picker select { min-width: 105px; height: 34px; padding: 0 28px 0 10px; border: 1px solid var(--dash-line); border-radius: 8px; background: var(--dash-surface-2); color: var(--text); font-size: 11px; font-weight: 650; }
+.admin-role-picker .btn { min-height: 34px; }
+.admin-user-balance { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-size: 12px; font-weight: 750; white-space: nowrap; }
+.admin-user-balance > i { color: var(--hue-green); font-size: 11px; }
+.admin-user-balance > small { margin: 0 0 0 2px; color: var(--text-faint); font-size: 9px; font-weight: 550; }
 @media (max-width: 760px) { .teammate-review-card { grid-template-columns: 1fr; } }
 
 .chat-thread__locked { min-height: 68px; display: flex; align-items: center; justify-content: center; gap: 11px; padding: 13px 18px; border-top: 1px solid var(--border); background: rgba(255, 255, 255, .018); color: var(--text-faint); font-size: 11px; }

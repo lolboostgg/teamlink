@@ -49,6 +49,7 @@ export function SessionChat({
   const otherTyping = useChatTyping(conversationKey, otherSide);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const element = messagesRef.current;
@@ -68,7 +69,12 @@ export function SessionChat({
       window.cancelAnimationFrame(secondFrame);
       observer.disconnect();
     };
-  }, [messages.length, otherTyping]);
+  }, [conversationKey, messages.length, otherTyping]);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => endRef.current?.scrollIntoView({ block: "end" }));
+    return () => cancelAnimationFrame(frame);
+  }, [conversationKey, messages.at(-1)?.id, otherTyping]);
 
   useEffect(() => {
     markConversationRead(conversationKey, viewer);
@@ -128,19 +134,21 @@ export function SessionChat({
             ))}
           </div>
         ))}
-        {messages.map((m) => (
-          <div key={m.id} className={`chat-message chat-message--${m.from === viewer ? "me" : "them"}`}>
-            <AvatarIcon seed={`${conversationKey}-${m.from}`} />
-            <div className={`chat-bubble chat-bubble--${m.from === viewer ? "me" : "them"}`}>
-              <strong className="chat-bubble__sender">{m.from === "client" ? customerName : teammateName}</strong>
+        {messages.map((m) => {
+          const isAdmin = m.from === "admin";
+          const mine = m.from === viewer;
+          return <div key={m.id} className={`chat-message chat-message--${isAdmin ? "admin" : mine ? "me" : "them"}`}>
+            {isAdmin ? <span className="session-chat__admin-icon"><i className="fa-solid fa-shield-halved" /></span> : <AvatarIcon seed={`${conversationKey}-${m.from}`} />}
+            <div className={`chat-bubble chat-bubble--${mine ? "me" : "them"}`}>
+              <strong className="chat-bubble__sender">{isAdmin ? "Admin" : m.from === "client" ? customerName : teammateName}</strong>
               <p>{m.text}</p>
               <span>
                 {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                {m.from === viewer && (m.readBy?.includes(otherSide) ? " · Read" : " · Sent")}
+                {mine && (m.readBy?.includes(otherSide) ? " · Read" : " · Sent")}
               </span>
             </div>
-          </div>
-        ))}
+          </div>;
+        })}
         {otherTyping && (
           <div className="chat-typing" role="status">
             <AvatarIcon seed={`${conversationKey}-${otherSide}`} />
@@ -148,6 +156,7 @@ export function SessionChat({
             {otherSide === "client" ? customerName : teammateName} is typing…
           </div>
         )}
+        <div ref={endRef} className="session-chat__end" aria-hidden="true" />
       </div>
 
       <div className="session-chat__quick-replies">

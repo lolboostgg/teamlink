@@ -83,12 +83,13 @@ export function DashboardChat({ conversations, from }: Props) {
             <p className="chat-thread__empty">No messages yet — say hello to get the conversation started.</p>
           )}
           {messages.map((m) => {
+            const isAdmin = m.from === "admin";
             const mine = m.from === from;
             const avatarUrl = mine ? session?.user?.image : active.withAvatarUrl;
-            return <div key={m.id} className={`chat-message-row chat-message-row--${mine ? "me" : "them"}`}>
-              {!mine && <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} /></span>}
+            return <div key={m.id} className={`chat-message-row chat-message-row--${isAdmin ? "admin" : mine ? "me" : "them"}`}>
+              {!mine && (isAdmin ? <span className="chat-message-row__avatar chat-message-row__avatar--admin"><i className="fa-solid fa-shield-halved" /></span> : <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} /></span>)}
               <div className={`chat-bubble chat-bubble--${mine ? "me" : "them"}`}>
-                <strong className="chat-bubble__sender">{mine ? (session?.user?.name || "You") : active.withName}</strong>
+                <strong className="chat-bubble__sender">{isAdmin ? "Admin" : mine ? (session?.user?.name || "You") : active.withName}</strong>
                 <p>{m.text}</p>
                 <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>

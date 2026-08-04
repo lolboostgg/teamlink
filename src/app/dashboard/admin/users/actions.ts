@@ -11,6 +11,35 @@ async function requireAdmin() {
   }
 }
 
+type AssignableRole = "ADMIN" | "TEAMMATE" | "CLIENT";
+
+export async function setUserRole(userId: string, role: AssignableRole) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") throw new Error("Forbidden — admin only.");
+  if (session.user.id === userId && role !== "ADMIN") throw new Error("You cannot remove your own admin role.");
+  const user = await prisma.user.findUnique({ where: { id: userId }, include: { teammate: true } });
+  if (!user) throw new Error("User not found.");
+
+  if (role === "TEAMMATE") {
+    const name = user.teammate?.name || user.name || user.email.split("@")[0];
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: userId }, data: { role } }),
+      prisma.teammate.upsert({
+        where: { userId },
+        create: { id: crypto.randomUUID(), userId, name, avatarInitials: initialsFrom(name), gameSlugs: [], languages: ["en"], available: true },
+        update: { available: true },
+      }),
+    ]);
+  } else {
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: userId }, data: { role } }),
+      prisma.teammate.updateMany({ where: { userId }, data: { available: false } }),
+    ]);
+  }
+  revalidatePath("/dashboard/admin/users");
+  revalidatePath("/dashboard/admin");
+}
+
 function initialsFrom(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const initials = parts.slice(0, 2).map((p) => p[0]!.toUpperCase()).join("");

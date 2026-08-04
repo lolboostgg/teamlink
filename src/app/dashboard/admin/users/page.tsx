@@ -4,13 +4,22 @@ import { AdminUsersTable, type AdminUserRow } from "@/components/dashboard/admin
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
+import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Users" };
 // See src/app/dashboard/admin/page.tsx for why this is forced dynamic.
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
-  const users = await getUsersWithTeammate();
+  const [users, completedOrders] = await Promise.all([
+    getUsersWithTeammate(),
+    prisma.order.findMany({ where: { status: "COMPLETED", candidates: { some: { selected: true } } }, select: { priceEUR: true, teammatePayoutEUR: true, candidates: { where: { selected: true }, select: { teammateId: true } } } }),
+  ]);
+  const teammateBalances = new Map<string, number>();
+  for (const order of completedOrders) {
+    const share = Number(order.teammatePayoutEUR ?? order.priceEUR) / Math.max(1, order.candidates.length);
+    for (const candidate of order.candidates) teammateBalances.set(candidate.teammateId, (teammateBalances.get(candidate.teammateId) ?? 0) + share);
+  }
   const rows: AdminUserRow[] = users.map((u) => ({
     id: u.id,
     accountNo: u.accountNo,
@@ -23,6 +32,8 @@ export default async function AdminUsersPage() {
     discordId: u.discordId,
     discordUsername: u.discordUsername,
     discordAvatar: u.discordAvatar,
+    storeCreditCents: u.creditBalanceCents,
+    teammateBalanceEUR: u.teammate ? teammateBalances.get(u.teammate.id) ?? 0 : 0,
   }));
 
   // Real counts straight off the roster — the overview's other tiles come
