@@ -7,6 +7,7 @@ import {
   respondToDispatch,
   setSessionStatus,
   recordGame,
+  deleteRecordedGame,
   completeOrder,
   withdrawDispatchAcceptance,
   DispatchError,
@@ -71,6 +72,16 @@ export async function recordGameAction(
   try {
     const teammate = await requireTeammate();
     await recordGame(orderId, teammate.id, game);
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export async function deleteGameAction(orderId: string, gameNumber: number): Promise<Result> {
+  try {
+    const teammate = await requireTeammate();
+    await deleteRecordedGame(orderId, teammate.id, gameNumber);
     return { ok: true };
   } catch (err) {
     return fail(err);

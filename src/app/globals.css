@@ -9143,6 +9143,53 @@ a.notification-panel__item:hover {
   padding-right: 0;
 }
 
+.order-room__proof-count { color: var(--text-faint); font-size: 11px; font-weight: 700; }
+.order-room__proofs { display: flex; align-items: stretch; gap: 8px; margin-top: 10px; overflow-x: auto; }
+.order-room__proof,
+.order-room__proof-upload { min-width: 170px; flex: 1 1 190px; }
+.order-room__proof {
+  height: 62px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px;
+  border-radius: 11px;
+  background: var(--dash-surface-2);
+}
+.order-room__proof .private-image { width: 48px; height: 48px; border-radius: 8px; overflow: hidden; }
+.order-room__proof-placeholder { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px; background: var(--dash-surface); color: var(--text-faint); }
+.order-room__proof .private-image img { width: 100%; height: 100%; object-fit: cover; }
+.order-room__proof > span { display: flex; flex-direction: column; min-width: 0; }
+.order-room__proof > span strong { font-size: 12px; }
+.order-room__proof > span small { color: var(--hue-green); font-size: 9px; }
+.order-room__proof > button,
+.session-complete-modal__proof > button { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; background: rgba(239,83,100,.1); color: #ef5364; cursor: pointer; }
+.order-room__proof-upload .file-drop { min-height: 62px; height: 62px; padding: 8px 10px; }
+.order-room__proof-upload .file-drop__icon { width: 34px; height: 34px; }
+.order-room__proof-upload .file-drop__preview { width: 48px; height: 46px; }
+.order-room__session-panel { padding-block: 13px; }
+.order-room__session-panel .dashboard-panel__head { margin-bottom: 6px; padding-bottom: 7px; }
+.order-room__session-panel .profile-tabs { min-height: 32px; }
+.order-room__session-panel .profile-tab { padding-block: 6px; font-size: 10px; }
+
+.session-complete-modal { max-width: 590px; border-radius: 22px; }
+.session-complete-modal__proofs { display: flex; gap: 8px; margin: 16px 0; overflow-x: auto; }
+.session-complete-modal__proof { min-width: 112px; display: grid; grid-template-columns: 44px 1fr 26px; align-items: center; gap: 7px; padding: 7px; border: 1px solid var(--border); border-radius: 11px; background: var(--dash-surface-2); }
+.session-complete-modal__proof .private-image { width: 44px; height: 44px; overflow: hidden; border-radius: 8px; }
+.session-complete-modal__proof .private-image img { width: 100%; height: 100%; object-fit: cover; }
+.session-complete-modal__proof strong { font-size: 10px; }
+.session-complete-modal__proof > button { width: 26px; height: 26px; }
+.session-complete-modal .session-confirm-check { position: relative; padding: 13px; border-radius: 14px; background: var(--dash-surface-2); }
+.session-complete-modal .session-confirm-check input { position: absolute; opacity: 0; pointer-events: none; }
+.session-confirm-check__box { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 10px; color: transparent; background: var(--dash-surface); transition: .16s ease; }
+.session-confirm-check input:checked + .session-confirm-check__box { color: #fff; border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 3px rgba(79,112,255,.14); }
+.session-confirm-check > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.session-confirm-check > span:last-child strong { font-size: 12px; }
+.session-confirm-check > span:last-child small { color: var(--text-faint); font-size: 10px; }
+.session-complete-modal .session-farewell-pills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.session-complete-modal .session-farewell-pills button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 11px; }
+
 .dashboard-panel__head {
   display: flex;
   align-items: center;

@@ -13,6 +13,7 @@ import { PrivateImage } from "@/components/ui/PrivateImage";
 import {
   setSessionStatusAction,
   recordGameAction,
+  deleteGameAction,
   completeOrderAction,
 } from "@/app/dashboard/teammate/dispatchActions";
 import {
@@ -153,10 +154,13 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   const { showToast } = useToast();
   const [order, setOrder] = useState<DispatchOrderView | null>(null);
   const [denied, setDenied] = useState<string | null>(null);
-  const [finishing, setFinishing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [farewell, setFarewell] = useState("GG!");
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [deletingGame, setDeletingGame] = useState<number | null>(null);
+  const completionPromptedFor = useRef<number | null>(null);
   const previousGamesBooked = useRef<number | null>(null);
   const [, startTransition] = useTransition();
 
@@ -181,6 +185,57 @@ export function OrderRoom({ orderId }: { orderId: string }) {
     const interval = setInterval(load, 4000);
     return () => clearInterval(interval);
   }, [load]);
+
+  useEffect(() => {
+    if (!order || order.status === "COMPLETED" || order.games.length < order.gamesBooked) return;
+    if (completionPromptedFor.current === order.gamesBooked) return;
+    completionPromptedFor.current = order.gamesBooked;
+    setConfirming(true);
+  }, [order]);
+
+  async function uploadAndSubmit(file: File) {
+    if (!order) return;
+    const gameNumber = Array.from({ length: order.gamesBooked }, (_, index) => index + 1)
+      .find((number) => !order.games.some((game) => game.gameNumber === number)) ?? order.games.length + 1;
+    const objectUrl = URL.createObjectURL(file);
+    setUploadPreview(objectUrl);
+    setUploadingProof(true);
+    try {
+      const body = new FormData();
+      body.append("orderId", orderId);
+      body.append("gameNumber", String(gameNumber));
+      body.append("file", file);
+      const response = await fetch("/api/dispatch/proof", { method: "POST", body });
+      const proof = await response.json();
+      if (!response.ok) throw new Error(proof.error ?? "Upload failed.");
+      const result = await recordGameAction(orderId, {
+        gameNumber,
+        result: "WIN",
+        proofPath: proof.path,
+        proofName: proof.name,
+      });
+      if (!result.ok) throw new Error(result.error);
+      showToast(`Game ${gameNumber} screenshot submitted.`, "success");
+      await load();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Upload failed.", "error");
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setUploadPreview(null);
+      setUploadingProof(false);
+    }
+  }
+
+  async function removeGame(gameNumber: number) {
+    setDeletingGame(gameNumber);
+    const result = await deleteGameAction(orderId, gameNumber);
+    setDeletingGame(null);
+    if (!result.ok) return showToast(result.error, "error");
+    completionPromptedFor.current = null;
+    setConfirming(false);
+    await load();
+    showToast(`Game ${gameNumber} screenshot removed.`, "success");
+  }
 
   if (denied) {
     return (
@@ -284,11 +339,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               <div className="dashboard-panel__title">Session</div>
               <div className="dashboard-panel__sub">{SESSION_STATUS_LABELS[status]}</div>
             </div>
-            {!isClosed && (
-              <button type="button" className="btn btn--vivid btn--sm" onClick={() => setFinishing(true)}>
-              Finish session
-              </button>
-            )}
+            <span className="order-room__proof-count">{played}/{booked} games submitted</span>
           </div>
 
           <div className="profile-tabs">
@@ -311,38 +362,35 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             ))}
           </div>
 
-          <ol className="session-steps">
-            {Array.from({ length: Math.max(booked, played) }, (_, i) => {
-              const game = order.games.find((g) => g.gameNumber === i + 1);
-              return (
-                <li key={i} className={game ? "is-done" : ""}>
-                  <span>Game {i + 1}</span>
-                  {game ? (
-                    <span style={{ display: "flex", gap: 10 }}>
-                      {GAME_RESULT_LABELS[game.result as GameResult] ?? game.result}
-                      {game.proofPath && (
-                        <PrivateImage
-                          src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`}
-                          name={game.proofPath}
-                          alt={`Game ${i + 1} result`}
-                        />
-                      )}
-                    </span>
-                  ) : (
-                    "pending"
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-
-          {played >= booked && !isClosed && (
-            <div className="teammate-profile-form__actions">
-              <button type="button" className="btn btn--vivid" onClick={() => setConfirming(true)}>
-                Complete order
-              </button>
-            </div>
-          )}
+          <div className="order-room__proofs">
+            {order.games.map((game) => (
+              <div className="order-room__proof" key={game.gameNumber}>
+                {game.proofPath ? <PrivateImage
+                  src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`}
+                  name={game.proofName ?? `Game ${game.gameNumber}`}
+                  alt={`Game ${game.gameNumber} result`}
+                /> : <span className="order-room__proof-placeholder"><i className="fa-solid fa-image" /></span>}
+                <span><strong>Game {game.gameNumber}</strong><small>Submitted</small></span>
+                {!isClosed && (
+                  <button type="button" onClick={() => removeGame(game.gameNumber)} disabled={deletingGame === game.gameNumber} aria-label={`Delete game ${game.gameNumber} screenshot`}>
+                    <i className={deletingGame === game.gameNumber ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trash-can"} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {!isClosed && played < booked && (
+              <div className="order-room__proof-upload">
+                <FileDrop
+                  accept="image/jpeg,image/png,image/webp"
+                  label={`Upload game ${played + 1} screenshot`}
+                  hint="Automatically submitted · JPG, PNG or WEBP"
+                  preview={uploadPreview}
+                  busy={uploadingProof}
+                  onFile={uploadAndSubmit}
+                />
+              </div>
+            )}
+          </div>
 
           {isClosed && (
             <p className="form-row__hint">
@@ -372,19 +420,6 @@ export function OrderRoom({ orderId }: { orderId: string }) {
         </div>
       </div>
 
-      {finishing && (
-        <GameCompletionModal
-          orderId={orderId}
-          gameNumber={played + 1}
-          onClose={() => setFinishing(false)}
-          onDone={() => {
-            setFinishing(false);
-            load();
-            showToast(`Game ${played + 1} submitted.`, "success");
-          }}
-        />
-      )}
-
       {confirming && (
         <div className="dispatch-modal__backdrop" role="dialog" aria-modal="true">
           <div className="dispatch-modal dispatch-modal--form session-complete-modal">
@@ -393,6 +428,15 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               <div><div className="dispatch-modal__eyebrow">Final confirmation</div><h2 className="dispatch-modal__title">Complete this order?</h2></div>
             </div>
             <p className="dispatch-modal__lead">Review the session summary before releasing it for payout.</p>
+            <div className="session-complete-modal__proofs">
+              {order.games.map((game) => (
+                <div key={game.gameNumber} className="session-complete-modal__proof">
+                  {game.proofPath ? <PrivateImage src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`} name={game.proofName ?? `Game ${game.gameNumber}`} alt={`Game ${game.gameNumber}`} /> : <span className="order-room__proof-placeholder"><i className="fa-solid fa-image" /></span>}
+                  <strong>Game {game.gameNumber}</strong>
+                  <button type="button" onClick={() => removeGame(game.gameNumber)} aria-label={`Delete game ${game.gameNumber}`}><i className="fa-solid fa-trash-can" /></button>
+                </div>
+              ))}
+            </div>
             <dl className="account-facts">
               <div>
                 <dt>Games booked</dt>
@@ -416,13 +460,14 @@ export function OrderRoom({ orderId }: { orderId: string }) {
 
             <label className="session-confirm-check">
               <input type="checkbox" checked={confirmed} onChange={() => setConfirmed((v) => !v)} />
-              <span>I confirm the booked games were played in full.</span>
+              <span className="session-confirm-check__box"><i className="fa-solid fa-check" aria-hidden="true" /></span>
+              <span><strong>Games played in full</strong><small>I confirm that every booked game was completed.</small></span>
             </label>
 
             <div className="form-row">
               <label>Message to the customer</label>
               <div className="session-farewell-pills">
-                {["GG!", "Nice!", "See ya next time!"].map((message) => <button key={message} type="button" className={farewell === message ? "is-active" : ""} onClick={() => setFarewell(message)}>{message}</button>)}
+                {["GG!", "Nice!", "See ya next time!"].map((message) => <button key={message} type="button" className={farewell === message ? "is-active" : ""} onClick={() => setFarewell(message)}><i className="fa-regular fa-message" aria-hidden="true" />{message}</button>)}
               </div>
             </div>
 

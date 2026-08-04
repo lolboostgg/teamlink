@@ -35,7 +35,7 @@ export interface DispatchOrderView {
   teammateCompletedSessions?: number;
   teammateAvatarUrl?: string | null;
   customerAvatarUrl?: string | null;
-  games: { gameNumber: number; result: string; note: string | null; proofPath: string | null }[];
+  games: { gameNumber: number; result: string; note: string | null; proofPath: string | null; proofName: string | null }[];
 }
 
 export interface DispatchStateView {

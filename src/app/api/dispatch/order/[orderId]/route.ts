@@ -58,6 +58,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
         result: g.result,
         note: g.note,
         proofPath: g.proofPath,
+        proofName: g.proofName,
       })),
     },
     { headers: { "Cache-Control": "no-store" } },

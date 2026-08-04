@@ -331,6 +331,19 @@ export async function recordGame(
   }
 }
 
+export async function deleteRecordedGame(orderId: string, teammateId: string, gameNumber: number) {
+  await assertAssignedTeammate(orderId, teammateId);
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order || order.status === "COMPLETED") throw new DispatchError("This order can no longer be edited.");
+  const game = await prisma.sessionGame.findUnique({ where: { orderId_gameNumber: { orderId, gameNumber } } });
+  if (!game) throw new DispatchError("That game result no longer exists.");
+  await prisma.sessionGame.delete({ where: { id: game.id } });
+  if (game.proofPath) {
+    const { deletePrivateFile } = await import("@/lib/storage");
+    await deletePrivateFile(game.proofPath, "proofs").catch(() => undefined);
+  }
+}
+
 export async function completeOrder(orderId: string, teammateId: string, farewell?: string) {
   await assertAssignedTeammate(orderId, teammateId);
 

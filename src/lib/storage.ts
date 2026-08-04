@@ -62,9 +62,9 @@ export async function createSignedUrl(path: string, expiresIn = 60, bucket: Stor
   return `${base}${signedURL.startsWith("/") ? "" : "/"}${signedURL}`;
 }
 
-export async function deletePrivateFile(path: string): Promise<void> {
+export async function deletePrivateFile(path: string, bucket: StorageBucket = BUCKET): Promise<void> {
   const { base, key } = config();
-  await fetch(`${base}/object/${BUCKET}/${path}`, {
+  await fetch(`${base}/object/${bucket}/${path}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${key}` },
   });
