@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useAllOrdersState } from "@/lib/matchmaking/useAllOrders";
 import { BookingsTable } from "@/components/dashboard/client/BookingsTable";
 import { displayStatus } from "@/lib/dashboard/orderDisplay";
+import { getTeammateById } from "@/lib/teammates";
 
 const ORDERS_PER_PAGE = 20;
 type StatusFilter = "all" | "upcoming" | "completed" | "cancelled";
@@ -28,7 +29,8 @@ export function OrdersHistoryPanel() {
     return orders.filter((order) => {
       if (status !== "all" && displayStatus(order.status) !== status) return false;
       if (!normalizedQuery) return true;
-      return [order.id, order.gameSlug, order.option]
+      const teammateName = order.selectedTeammateId ? getTeammateById(order.selectedTeammateId)?.name : "";
+      return [order.id, order.orderNo, order.gameName, order.gameSlug, order.option, teammateName]
         .some((value) => String(value).toLowerCase().includes(normalizedQuery));
     });
   }, [orders, query, status]);

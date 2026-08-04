@@ -9117,6 +9117,18 @@ a.notification-panel__item:hover {
 .orders-toolbar__reset { padding: 7px 3px; color: var(--text-faint); font-size: 11px; font-weight: 700; }
 .orders-toolbar__reset:hover { color: var(--text); }
 .orders-table-wrap { overflow-x: auto; }
+.client-orders-table { min-width: 1040px; }
+.client-order-game, .client-order-teammate { display: inline-flex; align-items: center; gap: 9px; }
+.client-order-game strong { max-width: 145px; overflow: hidden; color: var(--text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.client-order-option { display: flex; flex-direction: column; gap: 3px; }
+.client-order-option strong { color: var(--text); font-size: 11px; }
+.client-order-option small { color: var(--text-faint); font-size: 9px; white-space: nowrap; }
+.client-order-teammate__avatar { width: 29px; height: 29px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; border: 1px solid var(--dash-line); border-radius: 50%; background: var(--dash-surface-2); color: var(--text-faint); font-size: 9px; }
+.client-order-teammate__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.client-order-teammate > span:last-child { display: flex; flex-direction: column; gap: 2px; color: var(--text-muted); font-size: 10px; white-space: nowrap; }
+.client-order-teammate strong { color: var(--text); font-size: 11px; }
+.client-order-teammate small { color: var(--text-faint); font-size: 9px; }
+.client-order-teammate--pending { color: var(--text-faint); }
 .dashboard-empty--compact { padding: 34px 20px; }
 
 .orders-pagination {
