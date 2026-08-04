@@ -20,6 +20,8 @@ interface Props {
   onBack: () => void;
   backLabel?: string;
   continueLabel?: string;
+  /** Lets a dialog point aria-labelledby at this step's own heading. */
+  headingId?: string;
 }
 
 /**
@@ -36,6 +38,7 @@ export function CheckoutIngameStep({
   onBack,
   backLabel = "Back",
   continueLabel = "Continue to payment",
+  headingId,
 }: Props) {
   const roleOptions = getGameProfileConfig(gameSlug)?.roles;
   const regions = regionsForGame(gameSlug);
@@ -111,7 +114,7 @@ export function CheckoutIngameStep({
   return (
     <div className="checkout-card ingame-step">
       <div className="ingame-step__head">
-        <h2>
+        <h2 id={headingId}>
           <i className="fa-solid fa-user-check" aria-hidden="true" /> In-game information
         </h2>
         <p>So your teammate knows who to add in {gameName}.</p>
@@ -196,8 +199,9 @@ export function CheckoutIngameStep({
           )}
 
           {!canSave && (
-            <p className="form-row__note">
-              Checking out as a guest — create an account afterwards to keep this for next time.
+            <p className="ingame-step__guest">
+              <i className="fa-regular fa-circle-user" aria-hidden="true" />
+              Checking out as a guest &mdash; create an account afterwards to keep this for next time.
             </p>
           )}
         </>

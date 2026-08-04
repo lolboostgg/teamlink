@@ -167,10 +167,8 @@ export function BookingWidget({ game }: Props) {
 
       <Modal open={ingameOpen} onClose={() => setIngameOpen(false)} labelledBy="booking-ingame-title">
         <div className="ingame-modal">
-          <h2 id="booking-ingame-title" className="ingame-modal__title">
-            Enter in-game info
-          </h2>
           <CheckoutIngameStep
+            headingId="booking-ingame-title"
             gameSlug={game.slug}
             gameName={game.name}
             canSave={status === "authenticated"}

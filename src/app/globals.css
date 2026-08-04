@@ -11304,15 +11304,37 @@ a.notification-panel__item:hover {
 .ingame-step__actions { display: flex; justify-content: flex-end; gap: 9px; }
 
 /* In-game info asked from the booking page, before checkout. */
-.modal-panel:has(.ingame-modal) { max-width: 560px; padding: 0; overflow: visible; }
+.modal-panel:has(.ingame-modal) { max-width: 520px; padding: 0; overflow: visible; }
 .ingame-modal {
   max-height: min(760px, calc(100vh - 80px));
-  padding: 24px;
+  padding: 26px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
 }
-.ingame-modal__title { margin: 0 38px 14px 0; font-size: 17px; font-weight: 800; }
 /* The step brings its own card chrome for the checkout page; inside the
-   modal the panel already provides it. */
+   modal the panel already provides it, and the step's own heading is the
+   dialog title — a second one above it just read as a duplicate. */
 .ingame-modal .checkout-card { padding: 0; border: 0; background: transparent; }
+.ingame-modal .ingame-step { gap: 18px; }
+.ingame-modal .ingame-step__head { padding-right: 34px; }
+.ingame-modal .ingame-step__head h2 { font-size: 18px; }
+/* Full-width buttons: at this width the pair reads as one decision rather
+   than two small controls pushed into a corner. */
+.ingame-modal .ingame-step__actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+
+.ingame-step__guest {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.ingame-step__guest > i { color: var(--accent); font-size: 12px; }

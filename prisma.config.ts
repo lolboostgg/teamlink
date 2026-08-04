@@ -3,12 +3,24 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+/**
+ * `prisma generate` runs in `prebuild`, and generating a client needs the
+ * schema, not a reachable database. A build container that only injects
+ * DATABASE_URL at runtime would otherwise fail the whole build here, with an
+ * error that points at the config rather than at the missing variable.
+ *
+ * The placeholder is never connected to: anything that actually talks to the
+ * database (`db execute`, `db push`, the app itself) reads the real value and
+ * fails loudly if it is absent — see the check in src/lib/db.ts.
+ */
+const url = process.env["DATABASE_URL"] ?? "postgresql://placeholder/placeholder";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url,
   },
 });
