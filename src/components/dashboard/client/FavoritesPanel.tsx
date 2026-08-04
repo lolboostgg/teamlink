@@ -15,7 +15,7 @@ export function FavoritesPanel() {
   const favoriteIds = useFavoriteIds();
 
   const favorites: FavoriteTeammate[] = favoriteIds
-    .map((id) => {
+    .map<FavoriteTeammate | null>((id) => {
       const teammate = getTeammateById(id);
       if (!teammate) return null;
       const sessions = orders.filter((o) => o.selectedTeammateId === id && o.status === "completed").length;
