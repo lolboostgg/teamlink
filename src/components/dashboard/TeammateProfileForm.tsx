@@ -39,6 +39,10 @@ function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
+const TIMEZONE_OPTIONS: ProfileOption[] = [
+  "UTC-12:00", "UTC-11:00", "UTC-10:00", "UTC-09:30", "UTC-09:00", "UTC-08:00", "UTC-07:00", "UTC-06:00", "UTC-05:00", "UTC-04:00", "UTC-03:30", "UTC-03:00", "UTC-02:00", "UTC-01:00", "UTC+00:00", "UTC+01:00", "UTC+02:00", "UTC+03:00", "UTC+03:30", "UTC+04:00", "UTC+04:30", "UTC+05:00", "UTC+05:30", "UTC+05:45", "UTC+06:00", "UTC+06:30", "UTC+07:00", "UTC+08:00", "UTC+08:45", "UTC+09:00", "UTC+09:30", "UTC+10:00", "UTC+10:30", "UTC+11:00", "UTC+12:00", "UTC+12:45", "UTC+13:00", "UTC+14:00",
+].map((value) => ({ value, label: value, glyph: "fa-regular fa-clock" }));
+
 function OptionPill({
   option,
   checked,
@@ -135,6 +139,9 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
   // Falls back to General if the active game gets unassigned mid-edit.
   const activeGame = sections.find((s) => s.game.slug === tab) ?? null;
   const showGeneral = tab === "general" || !activeGame;
+  const timezoneOptions = timezone && !TIMEZONE_OPTIONS.some((option) => option.value === timezone)
+    ? [{ value: timezone, label: timezone, glyph: "fa-regular fa-clock" }, ...TIMEZONE_OPTIONS]
+    : TIMEZONE_OPTIONS;
 
   return (
     <form className="teammate-profile-form" onSubmit={handleSubmit}>
@@ -173,13 +180,8 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
           <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
 
           <div className="form-row">
-            <label htmlFor="tp-timezone">Timezone</label>
-            <input
-              id="tp-timezone"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              placeholder="CET (UTC+1)"
-            />
+            <label>Timezone</label>
+            <IconSelect label="Timezone" value={timezone || null} options={timezoneOptions} searchable placeholder="Select timezone" onChange={(value) => setTimezone(value ?? "")} />
           </div>
 
           <div className="form-row">

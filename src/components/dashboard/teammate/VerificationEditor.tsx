@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/ToastProvider";
 import { FileDrop } from "@/components/ui/FileDrop";
 import { PrivateImage } from "@/components/ui/PrivateImage";
+import { Modal } from "@/components/ui/Modal";
 import {
   PAYOUT_FIELDS,
   PAYOUT_LABELS,
@@ -55,7 +56,9 @@ const DOCUMENTS = [
 interface PayoutSelectOption { value: string; label: string; }
 
 const COUNTRY_CODES = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
-const CURRENCY_CODES = "EUR USD GBP CHF JPY CAD AUD NZD SEK NOK DKK PLN CZK HUF RON BGN TRY AED SAR QAR KWD BHD SGD HKD CNY INR KRW BRL MXN ZAR THB IDR MYR PHP VND".split(" ");
+// Full set of circulating ISO 4217 codes — the list is searchable, so there's
+// no reason to pre-trim it to the "common" ones.
+const CURRENCY_CODES = "AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT BGN BHD BIF BMD BND BOB BRL BSD BTN BWP BYN BZD CAD CDF CHF CLP CNY COP CRC CUP CVE CZK DJF DKK DOP DZD EGP ERN ETB EUR FJD FKP GBP GEL GHS GIP GMD GNF GTQ GYD HKD HNL HTG HUF IDR ILS INR IQD IRR ISK JMD JOD JPY KES KGS KHR KMF KPW KRW KWD KYD KZT LAK LBP LKR LRD LSL LYD MAD MDL MGA MKD MMK MNT MOP MRU MUR MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PAB PEN PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD SHP SLE SOS SRD SSP STN SVC SYP SZL THB TJS TMT TND TOP TRY TTD TWD TZS UAH UGX USD UYU UZS VES VND VUV WST XAF XCD XOF XPF YER ZAR ZMW ZWG".split(" ");
 
 function displayOptions(codes: string[], type: "region" | "currency") {
   const names = new Intl.DisplayNames(["en"], { type });
@@ -296,7 +299,8 @@ function PayoutMethods({
   const [type, setType] = useState<PayoutMethodType>("BANK");
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | undefined>();
-  const [editorOpen, setEditorOpen] = useState(methods.length === 0);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [choosingType, setChoosingType] = useState(false);
   const countryOptions = useMemo(() => displayOptions(COUNTRY_CODES, "region"), []);
   const currencyOptions = useMemo(() => displayOptions(CURRENCY_CODES, "currency"), []);
   const selectedCountry = countryOptions.find((country) => country.value === draft.country || country.label === draft.country)?.value ?? draft.country;
@@ -307,6 +311,7 @@ function PayoutMethods({
     setDraft({});
     setEditingId(undefined);
     setEditorOpen(false);
+    setChoosingType(false);
   }
 
   return (
@@ -318,7 +323,7 @@ function PayoutMethods({
             Where your earnings go. The beneficiary name has to match the account holder exactly.
           </div>
         </div>
-        {!editorOpen && <button type="button" className="btn btn--vivid btn--sm" onClick={() => { setType("BANK"); setDraft({}); setEditingId(undefined); setEditorOpen(true); }}><i className="fa-solid fa-plus" aria-hidden="true" /> Add payout method</button>}
+        {!editorOpen && <button type="button" className="btn btn--vivid btn--sm" onClick={() => { setDraft({}); setEditingId(undefined); setChoosingType(true); setEditorOpen(true); }}><i className="fa-solid fa-plus" aria-hidden="true" /> Add payout method</button>}
       </div>
 
       {methods.length > 0 ? <div className="payout-methods-list">{methods.map((m) => <article className={`payout-method-card${m.isDefault ? " is-default" : ""}`} key={m.id}>
@@ -326,14 +331,14 @@ function PayoutMethods({
         <div className="payout-method-card__details"><span>{PAYOUT_LABELS[m.type]}</span><strong>{describePayoutMethod(m.type, m.details)}</strong></div>
         {m.isDefault ? <span className="dashboard-pill dashboard-pill--success"><i className="fa-solid fa-star" aria-hidden="true" /> Default</span> : <button type="button" className="btn btn--ghost btn--sm" disabled={pending} onClick={() => onRun(() => makeDefault(m.id), "Default updated.")}><i className="fa-regular fa-star" aria-hidden="true" /> Set default</button>}
         <div className="payout-method-card__actions">
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setType(m.type); setDraft(m.details); setEditingId(m.id); setEditorOpen(true); }}><i className="fa-solid fa-pen" aria-hidden="true" /> Edit</button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => { setType(m.type); setDraft(m.details); setEditingId(m.id); setChoosingType(false); setEditorOpen(true); }}><i className="fa-solid fa-pen" aria-hidden="true" /> Edit</button>
           <button type="button" className="btn btn--danger btn--sm" disabled={pending} onClick={() => onRun(() => deletePayoutMethod(m.id), "Method removed.")} aria-label={`Delete ${PAYOUT_LABELS[m.type]}`}><i className="fa-solid fa-trash" aria-hidden="true" /></button>
         </div>
-      </article>)}</div> : !editorOpen && <div className="dashboard-empty dashboard-empty--compact"><i className="fa-solid fa-wallet" aria-hidden="true" /><p>No payout method saved yet.</p></div>}
+      </article>)}</div> : <div className="dashboard-empty dashboard-empty--compact"><i className="fa-solid fa-wallet" aria-hidden="true" /><p>No payout method saved yet.</p></div>}
 
-      {editorOpen && <div className="payout-method-editor">
-      <div className="payout-method-editor__head"><div><strong>{editingId ? "Edit payout method" : "Add payout method"}</strong><span>Choose where your earnings should be paid.</span></div>{methods.length > 0 && <button type="button" className="btn btn--ghost btn--sm" onClick={reset}><i className="fa-solid fa-xmark" aria-hidden="true" /> Close</button>}</div>
-      <div className="payout-method-picker" aria-label="Select your payout method">
+      <Modal open={editorOpen} onClose={reset} labelledBy="payout-method-modal-title"><div className="payout-method-modal"><div className="payout-method-editor">
+      <div className="payout-method-editor__head"><div><strong id="payout-method-modal-title">{choosingType ? "Bank Transfer or Crypto?" : editingId ? `Edit ${PAYOUT_LABELS[type]}` : `Add ${PAYOUT_LABELS[type]}`}</strong><span>{choosingType ? "Choose where your earnings should be paid." : editingId ? "Update the details for this payout method." : "Enter and confirm your payout details."}</span></div></div>
+      {choosingType && <div className="payout-method-picker" aria-label="Select your payout method">
         {(Object.keys(PAYOUT_LABELS) as PayoutMethodType[]).map((t) => (
           <button
             key={t}
@@ -343,6 +348,7 @@ function PayoutMethods({
               setType(t);
               setDraft({});
               setEditingId(undefined);
+              setChoosingType(false);
             }}
           >
             <span className="payout-method-option__icon"><i className={t === "BANK" ? "fa-solid fa-building-columns" : "fa-brands fa-bitcoin"} aria-hidden="true" /></span>
@@ -350,9 +356,9 @@ function PayoutMethods({
             <i className={type === t ? "fa-solid fa-circle-check" : "fa-regular fa-circle"} aria-hidden="true" />
           </button>
         ))}
-      </div>
+      </div>}
 
-      <div className="payout-method-notice"><i className="fa-solid fa-circle-info" aria-hidden="true" /><span>{type === "BANK" ? "The beneficiary name must match the bank account holder exactly." : "The name must match your wallet or exchange account exactly. Incorrect details can delay payouts."}</span></div>
+      {!choosingType && <><div className="payout-method-notice"><i className="fa-solid fa-circle-info" aria-hidden="true" /><span>{type === "BANK" ? "The beneficiary name must match the bank account holder exactly." : "The name must match your wallet or exchange account exactly. Incorrect details can delay payouts."}</span></div>
 
       <div className="form-row-grid">
         {visibleFields.map((field) => (
@@ -361,7 +367,7 @@ function PayoutMethods({
               {field.label}
               {(field.required || field.key === "iban" || field.key === "accountNumber") && " *"}
             </label>
-            {field.key === "country" ? <SearchablePayoutSelect label="Country" value={draft.country ?? ""} options={countryOptions} searchable placeholder="Select a country" onChange={(value) => setDraft({ ...draft, country: value, iban: "", accountNumber: "" })} /> : field.key === "currency" ? <SearchablePayoutSelect label="Currency" value={draft.currency ?? ""} options={currencyOptions} placeholder="Select a currency" onChange={(value) => setDraft({ ...draft, currency: value })} /> : <input
+            {field.key === "country" ? <SearchablePayoutSelect label="Country" value={draft.country ?? ""} options={countryOptions} searchable placeholder="Select a country" onChange={(value) => setDraft({ ...draft, country: value, iban: "", accountNumber: "" })} /> : field.key === "currency" ? <SearchablePayoutSelect label="Currency" value={draft.currency ?? ""} options={currencyOptions} searchable placeholder="Select a currency" onChange={(value) => setDraft({ ...draft, currency: value })} /> : <input
               id={`payout-${field.key}`}
               value={draft[field.key] ?? ""}
               placeholder={field.placeholder}
@@ -372,11 +378,7 @@ function PayoutMethods({
       </div>
 
       <div className="teammate-profile-form__actions">
-        {editingId && (
-          <button type="button" className="btn btn--ghost" onClick={reset}>
-            Cancel
-          </button>
-        )}
+        {!editingId && <button type="button" className="btn btn--ghost" onClick={() => setChoosingType(true)}><i className="fa-solid fa-arrow-left" aria-hidden="true" /> Back</button>}
         <button
           type="button"
           className="btn btn--vivid"
@@ -397,8 +399,8 @@ function PayoutMethods({
         >
           <i className="fa-solid fa-floppy-disk" aria-hidden="true" /> {editingId ? "Save method" : "Add payout method"}
         </button>
-      </div>
-      </div>}
+      </div></>}
+      </div></div></Modal>
     </div>
   );
 }

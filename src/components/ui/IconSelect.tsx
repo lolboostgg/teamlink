@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ProfileOption } from "@/lib/gameProfiles";
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   value: string | null;
   options: ProfileOption[];
   placeholder?: string;
+  /** Adds a filter box above the list — worth it past ~20 options. */
+  searchable?: boolean;
   onChange: (value: string | null) => void;
 }
 
@@ -17,12 +19,18 @@ interface Props {
  * theme, which fights the dark UI), so this is a button + listbox with
  * keyboard support.
  */
-export function IconSelect({ label, value, options, placeholder = "Not set", onChange }: Props) {
+export function IconSelect({ label, value, options, placeholder = "Not set", searchable = false, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const selected = options.find((o) => o.value === value) ?? null;
+  const needle = query.trim().toLowerCase();
+  const filtered = useMemo(
+    () => (needle ? options.filter((o) => `${o.label} ${o.value}`.toLowerCase().includes(needle)) : options),
+    [options, needle],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -34,11 +42,16 @@ export function IconSelect({ label, value, options, placeholder = "Not set", onC
   }, [open]);
 
   useEffect(() => {
-    if (open) setActive(Math.max(0, options.findIndex((o) => o.value === value)));
-  }, [open, options, value]);
+    if (!open) setQuery("");
+  }, [open]);
+
+  // Keep the keyboard cursor inside the filtered list — it shrinks as you type.
+  useEffect(() => {
+    if (open) setActive(Math.max(0, filtered.findIndex((o) => o.value === value)));
+  }, [open, filtered, value]);
 
   function commit(index: number) {
-    const option = options[index];
+    const option = filtered[index];
     if (!option) return;
     onChange(option.value === value ? null : option.value);
     setOpen(false);
@@ -57,7 +70,8 @@ export function IconSelect({ label, value, options, placeholder = "Not set", onC
     if (!open) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
-      setActive((i) => (i + (e.key === "ArrowDown" ? 1 : options.length - 1)) % options.length);
+      if (filtered.length === 0) return;
+      setActive((i) => (i + (e.key === "ArrowDown" ? 1 : filtered.length - 1)) % filtered.length);
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       commit(active);
@@ -86,9 +100,27 @@ export function IconSelect({ label, value, options, placeholder = "Not set", onC
         <i className="fa-solid fa-chevron-down icon-select__chevron" aria-hidden="true" />
       </button>
 
+      {open && searchable && (
+        <label className="icon-select__search">
+          <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+          <input
+            autoFocus
+            value={query}
+            placeholder={`Search ${label.toLowerCase()}…`}
+            aria-label={`Search ${label}`}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              // Space has to stay typable here, so only the navigation keys pass through.
+              if (e.key === "Escape" || e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp") onKeyDown(e);
+            }}
+          />
+        </label>
+      )}
+
       {open && (
-        <ul className="icon-select__list" id={listId} role="listbox" aria-label={label}>
-          {options.map((o, i) => (
+        <ul className={`icon-select__list${searchable ? " icon-select__list--under-search" : ""}`} id={listId} role="listbox" aria-label={label}>
+          {filtered.length === 0 && <li className="icon-select__empty">No matches found.</li>}
+          {filtered.map((o, i) => (
             <li key={o.value}>
               <button
                 type="button"

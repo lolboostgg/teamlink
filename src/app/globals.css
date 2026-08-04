@@ -4546,6 +4546,52 @@ ul {
   box-shadow: var(--shadow-lg);
 }
 
+/* Search box floats above the list, so the list drops by its height + gap. */
+.icon-select__search {
+  position: absolute;
+  z-index: 41;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--dash-line-strong);
+  background: var(--dash-surface-2);
+  box-shadow: var(--shadow-lg);
+}
+
+.icon-select__search i {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.icon-select__search input {
+  min-width: 0;
+  flex: 1;
+  min-height: 38px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+}
+
+.icon-select__list--under-search {
+  top: calc(100% + 50px);
+  max-height: 240px;
+}
+
+.icon-select__empty {
+  padding: 14px 10px;
+  color: var(--text-faint);
+  font-size: 12px;
+  text-align: center;
+}
+
 .icon-select__option {
   display: flex;
   align-items: center;
@@ -9280,6 +9326,11 @@ a.notification-panel__item:hover {
 .payout-method-card__details strong { overflow: hidden; color: var(--text-faint); font-size: 10px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
 .payout-method-card__actions { display: flex; align-items: center; gap: 7px; }
 .payout-method-editor { display: grid; gap: 17px; margin-top: 18px; padding: 17px; border: 1px solid var(--border); border-radius: 14px; background: rgba(0, 0, 0, .1); }
+.modal-panel:has(.payout-method-modal) { max-width: 780px; padding: 0; overflow: visible; }
+.payout-method-modal { max-height: min(760px, calc(100vh - 80px)); padding: 24px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.payout-method-modal .payout-method-editor { margin: 0; padding: 0; border: 0; background: transparent; }
+.payout-method-modal .payout-method-editor__head { padding-right: 38px; }
+.payout-method-modal .payout-method-editor__head strong { font-size: 18px; }
 .payout-method-editor__head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .payout-method-editor__head > div { display: flex; flex-direction: column; gap: 3px; }
 .payout-method-editor__head strong { color: var(--text); font-size: 13px; }
