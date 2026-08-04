@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { reconcileOrder, selectTeammates, DispatchError } from "@/lib/dispatch/service";
 import { toCustomerOrder } from "@/lib/dispatch/customerView";
+import { teammateCut } from "@/lib/payoutSplit";
+import { publish } from "@/lib/events/bus";
 
 export const dynamic = "force-dynamic";
 
@@ -74,9 +76,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
           data: {
             gamesBooked: { increment: quantity },
             priceEUR: { increment: unitPrice * quantity },
+            // Extra games pay the same fixed share as the original booking.
             teammatePayoutEUR: current.teammatePayoutEUR === null
-              ? undefined
-              : { increment: unitPrice * quantity },
+              ? teammateCut(Number(current.priceEUR) + unitPrice * quantity)
+              : { increment: teammateCut(unitPrice * quantity) },
           },
         });
         const userIds = current.candidates.map((candidate) => candidate.teammate.userId).filter(Boolean) as string[];
@@ -102,5 +105,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
   }
 
   const order = await prisma.order.findUnique({ where: { id: orderId }, include });
+  // selectTeammates() announces its own change; the other actions here
+  // (preferences, cancel, add-games) don't go through the dispatch service.
+  if (body.action !== "select") {
+    const teammates = await prisma.dispatchCandidate.findMany({
+      where: { orderId },
+      select: { teammate: { select: { userId: true } } },
+    });
+    const userIds = [
+      order?.clientUserId,
+      ...teammates.map((candidate) => candidate.teammate.userId),
+    ].filter((id): id is string => Boolean(id));
+    await publish({ topic: "orders", key: orderId, userIds });
+  }
   return NextResponse.json({ order: order ? toCustomerOrder(order) : null });
 }

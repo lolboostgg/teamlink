@@ -12,9 +12,15 @@ interface Props {
   color?: string;
   /** Keep long text values compact and on a single line. */
   compactValue?: boolean;
+  /**
+   * Renders a placeholder bar instead of the value. Without this the stats
+   * that are computed in the browser paint a hard "0" for the first frame
+   * and then snap to the real number.
+   */
+  loading?: boolean;
 }
 
-export function StatCard({ icon, label, value, deltaPct, currency, color, compactValue = false }: Props) {
+export function StatCard({ icon, label, value, deltaPct, currency, color, compactValue = false, loading = false }: Props) {
   const style = color ? ({ "--item-color": color } as CSSProperties) : undefined;
 
   return (
@@ -24,7 +30,13 @@ export function StatCard({ icon, label, value, deltaPct, currency, color, compac
       </div>
       <div className="stat-card__label">{label}</div>
       <div className="stat-card__value">
-        {currency && typeof value === "number" ? <PriceTag amountEUR={value} /> : value}
+        {loading ? (
+          <span className="stat-card__skeleton" aria-label="Loading" />
+        ) : currency && typeof value === "number" ? (
+          <PriceTag amountEUR={value} />
+        ) : (
+          value
+        )}
       </div>
       {deltaPct !== undefined && (
         <div className={`stat-card__delta${deltaPct >= 0 ? " is-positive" : " is-negative"}`}>

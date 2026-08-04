@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DispatchStateView } from "@/lib/dispatch/phase";
+import { useLiveSync } from "@/lib/events/useLiveSync";
 
 const EMPTY: DispatchStateView & { maxCandidates: number } = {
   phase: "OFFLINE",
@@ -43,12 +44,7 @@ export function useDispatchState(enabled = true) {
   const urgent =
     state.phase === "DISPATCH_INCOMING" || state.phase === "WAITING_FOR_CUSTOMER_SELECTION";
 
-  useEffect(() => {
-    if (!enabled) return;
-    load();
-    const interval = setInterval(load, urgent ? 500 : 2000);
-    return () => clearInterval(interval);
-  }, [load, urgent, enabled]);
+  useLiveSync("dispatch", load, urgent ? 500 : 2000, { enabled });
 
   // Local interpolation between polls.
   const [now, setNow] = useState(() => Date.now());

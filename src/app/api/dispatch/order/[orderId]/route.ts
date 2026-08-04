@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { assertAssignedTeammate, DispatchError } from "@/lib/dispatch/service";
+import { payoutForOrder } from "@/lib/payoutSplit";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +40,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
       gameName: order.gameName,
       option: order.option,
       priceEUR: Number(order.priceEUR),
-      payoutEUR: order.teammatePayoutEUR !== null ? Number(order.teammatePayoutEUR) : Number(order.priceEUR),
+      payoutEUR: payoutForOrder(order),
       customerLabel: order.clientUser?.name || order.clientUser?.email || order.customerLabel,
       customerKey: order.customerLabel,
       teammatesRequested: order.teammatesRequested,

@@ -9142,6 +9142,27 @@ a.notification-panel__item:hover {
   line-height: 1.15;
 }
 
+/* Placeholder while a browser-computed stat is still loading — better than
+   painting a "0" that jumps to the real number a moment later. */
+.stat-card__skeleton {
+  display: block;
+  width: 72px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.11) 50%, rgba(255, 255, 255, 0.05) 75%);
+  background-size: 220% 100%;
+  animation: stat-card-shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes stat-card-shimmer {
+  from { background-position: 130% 0; }
+  to { background-position: -30% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card__skeleton { animation: none; }
+}
+
 .stat-card__icon {
   grid-area: icon;
 }
@@ -9327,15 +9348,127 @@ a.notification-panel__item:hover {
 .security-login strong { overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .security-login small { color: var(--text-faint); font-size: 10px; }
 
+/* Persistent way back into a running order. Pinned rather than inline: the
+   teammate can be on any dashboard page when they need it, and it must not
+   push the page content around as it appears. */
+.running-order-bar {
+  position: fixed;
+  z-index: 60;
+  right: 24px;
+  bottom: 24px;
+  max-width: min(360px, calc(100vw - 32px));
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 14px;
+  border: 1px solid rgba(47, 191, 113, 0.34);
+  border-radius: 14px;
+  background: var(--dash-surface-2);
+  box-shadow: var(--shadow-lg);
+}
+
+.running-order-bar__pulse {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--hue-green);
+  box-shadow: 0 0 0 0 rgba(47, 191, 113, 0.55);
+  animation: running-order-pulse 1.9s ease-out infinite;
+}
+
+@keyframes running-order-pulse {
+  to { box-shadow: 0 0 0 11px rgba(47, 191, 113, 0); }
+}
+
+.running-order-bar__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.running-order-bar__copy strong { color: var(--text); font-size: 12px; }
+.running-order-bar__copy span {
+  overflow: hidden;
+  color: var(--text-faint);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.running-order-bar > .btn { flex-shrink: 0; }
+
+/* Clear of the mobile tab bar, and never wider than the viewport. */
+@media (max-width: 720px) {
+  .running-order-bar { right: 12px; left: 12px; bottom: 12px; max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .running-order-bar__pulse { animation: none; }
+}
+
+/* Payout blocker on the teammate overview — earnings accrue either way, so
+   this states what is missing rather than reading as an error. */
+.verification-banner {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--dash-radius);
+  background: var(--dash-surface-2);
+}
+
+.verification-banner--warning {
+  border-color: rgba(233, 168, 62, 0.3);
+  background: linear-gradient(90deg, rgba(233, 168, 62, 0.07), transparent 45%), var(--dash-surface-2);
+}
+
+.verification-banner__icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(233, 168, 62, 0.12);
+  color: var(--hue-gold);
+}
+
+.verification-banner--muted .verification-banner__icon {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-faint);
+}
+
+.verification-banner__copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.verification-banner__copy strong { color: var(--text); font-size: 13px; }
+.verification-banner__copy span { color: var(--text-muted); font-size: 11px; line-height: 1.45; }
+
+@media (max-width: 620px) {
+  .verification-banner { grid-template-columns: 40px minmax(0, 1fr); }
+  .verification-banner > .btn { grid-column: 1 / -1; justify-self: start; }
+}
+
 /* Both panels keep the full width — the identity one is three times as tall,
    so side by side just left a half-empty column. The payout cards use the
    width instead: two (or more) per row, one per row on narrow screens. */
 .verification-split { display: grid; gap: 18px; }
 .verification-split > .dashboard-panel { margin-bottom: 0; }
-.payout-methods-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 9px; }
-/* Below this the halves get too narrow for the card's four-column row. */
-@media (max-width: 1280px) { .payout-methods-list { grid-template-columns: minmax(0, 1fr); } }
+/* 500px is what the card's icon + name + three controls actually need on one
+   line. Below that auto-fit drops to a single column rather than squeezing
+   the name into two characters. */
+.payout-methods-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 9px; }
+@media (max-width: 620px) { .payout-methods-list { grid-template-columns: minmax(0, 1fr); } }
 .payout-method-card { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 13px; border: 1px solid var(--border); border-radius: 13px; background: var(--dash-surface-2); }
+.payout-method-card__details span, .payout-method-card > .dashboard-pill, .payout-method-card > .btn { white-space: nowrap; }
 .payout-method-card.is-default { border-color: rgba(47, 191, 113, .24); background: linear-gradient(90deg, rgba(47, 191, 113, .055), transparent 38%), var(--dash-surface-2); }
 .payout-method-card__icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 11px; background: rgba(79, 112, 255, .1); color: var(--accent); }
 .payout-method-card__details { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -9417,6 +9550,14 @@ a.notification-panel__item:hover {
   margin-bottom: 16px;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--dash-line);
+}
+
+/* The action on the right keeps its label — flex was shrinking "Add payout
+   method" down to just the plus icon when the subtitle ran long. */
+.dashboard-panel__head > .btn,
+.dashboard-panel__head > a.btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* Body face, not the display caps — a workspace reads better in sentence

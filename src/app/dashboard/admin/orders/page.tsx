@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { PriceTag } from "@/components/currency/PriceTag";
-import { AdminOrdersToolbar } from "@/components/dashboard/admin/AdminOrdersToolbar";
+import { AdminTableToolbar } from "@/components/dashboard/admin/AdminTableToolbar";
+import { TablePagination, paginate } from "@/components/dashboard/TablePagination";
 import { GameMark } from "@/components/dashboard/GameMark";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import { OrderStatus, Prisma } from "@/generated/prisma/client";
@@ -22,7 +23,6 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
   const params = await searchParams;
   const q = params.q?.trim().slice(0, 100) ?? "";
   const status = Object.values(OrderStatus).includes(params.status as OrderStatus) ? params.status as OrderStatus : undefined;
-  const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const where: Prisma.OrderWhereInput = {
     ...(status ? { status } : {}),
     ...(q ? { OR: [
@@ -35,8 +35,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
     ] } : {}),
   };
   const total = await prisma.order.count({ where });
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const page = Math.min(requestedPage, pageCount);
+  const { page, pageCount, skip, take } = paginate(params.page, total, PAGE_SIZE);
   const orders = await prisma.order.findMany({
     where,
     include: {
@@ -45,8 +44,8 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
       candidates: { where: { selected: true }, include: { teammate: true } },
     },
     orderBy: { createdAt: "desc" },
-    skip: (page - 1) * PAGE_SIZE,
-    take: PAGE_SIZE,
+    skip,
+    take,
   });
   const pageHref = (nextPage: number) => {
     const next = new URLSearchParams();
@@ -65,13 +64,18 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <AdminOrdersToolbar
+      <AdminTableToolbar
         initialQuery={q}
-        initialStatus={status ?? ""}
-        statusOptions={[
+        placeholder="Search order, client, game or teammate…"
+        searchLabel="Search orders"
+        filter={{
+          param: "status",
+          value: status ?? "",
+          options: [
             { value: "", label: "All statuses", icon: "fa-solid fa-layer-group" },
             ...Object.values(OrderStatus).map((value) => ({ value, label: value.toLowerCase().replaceAll("_", " ") })),
-        ]}
+          ],
+        }}
       />
 
       {orders.length === 0 ? (
@@ -97,14 +101,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         </div>
       )}
 
-      {pageCount > 1 && <nav className="orders-pagination" aria-label="Orders pagination">
-        <span>{(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}</span>
-        <div className="orders-pagination__buttons">
-          {page > 1 ? <Link className="btn btn--ghost btn--sm" href={pageHref(page - 1)}><i className="fa-solid fa-chevron-left" /> Previous</Link> : <span className="btn btn--ghost btn--sm is-disabled">Previous</span>}
-          <span className="orders-pagination__page">Page {page} of {pageCount}</span>
-          {page < pageCount ? <Link className="btn btn--ghost btn--sm" href={pageHref(page + 1)}>Next <i className="fa-solid fa-chevron-right" /></Link> : <span className="btn btn--ghost btn--sm is-disabled">Next</span>}
-        </div>
-      </nav>}
+      <TablePagination page={page} pageCount={pageCount} total={total} pageSize={PAGE_SIZE} hrefFor={pageHref} label="Orders pagination" />
     </div>
   );
 }

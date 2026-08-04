@@ -6,6 +6,7 @@ import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { playNotificationSound } from "@/lib/notificationSound";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useLiveSync } from "@/lib/events/useLiveSync";
 
 export interface FeedNotification {
   id: string;
@@ -63,11 +64,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, [signedIn]);
 
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 8000);
-    return () => clearInterval(interval);
-  }, [load]);
+  useLiveSync("notifications", load, 8000, { enabled: signedIn });
 
   // A newly arrived unread notification gets one sound, not one per poll.
   useEffect(() => {

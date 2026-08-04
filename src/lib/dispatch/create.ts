@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import { MAX_CANDIDATES, DISPATCH_WINDOW_MS } from "@/lib/dispatch/service";
+import { teammateCut } from "@/lib/payoutSplit";
+import { publish } from "@/lib/events/bus";
 
 export interface CreateOrderInput {
   gameSlug: string;
@@ -30,7 +32,7 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
     ? await prisma.teammate.findMany({ where: { id: input.requestedTeammateId } })
     : await eligibleTeammates(input.gameSlug, input.clientUserId);
 
-  return prisma.$transaction(async (tx) => {
+  const created = await prisma.$transaction(async (tx) => {
     const order = await tx.order.create({ data: {
       clientUserId: input.clientUserId,
       customerLabel: input.customerLabel,
@@ -38,6 +40,9 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       gameName: input.gameName,
       option: input.option,
       priceEUR: input.priceEUR,
+      // Frozen at creation, so a later price change to the roster or the
+      // options table can't retroactively move what this order pays out.
+      teammatePayoutEUR: teammateCut(input.priceEUR),
       teammatesRequested: Math.max(1, input.teammates),
       requestedTeammateId: input.requestedTeammateId,
       status: pool.length > 0 ? "CANDIDATES_READY" : "NO_MATCH",
@@ -61,6 +66,14 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
     }
     return order;
   });
+
+  // Wakes the invited teammates' panels straight away — this is the one event
+  // where a poll interval is the difference between taking the order and
+  // losing it to someone faster.
+  const invited = pool.slice(0, MAX_CANDIDATES).map((teammate) => teammate.userId).filter((id): id is string => Boolean(id));
+  await publish({ topic: "dispatch", key: created.id, userIds: invited });
+
+  return created;
 }
 
 async function eligibleTeammates(gameSlug: string, clientUserId: string | null) {

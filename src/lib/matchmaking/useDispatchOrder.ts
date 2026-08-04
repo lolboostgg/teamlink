@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
+import { useLiveSync } from "@/lib/events/useLiveSync";
 
 // Customer-side view of one order, now served by /api/dispatch/orders/[id]
 // instead of localStorage. The API hands back the same DispatchOrder shape
@@ -33,11 +34,7 @@ export function useDispatchOrder(orderId: string | null) {
     }
   }, [orderId]);
 
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 1000);
-    return () => clearInterval(interval);
-  }, [load]);
+  useLiveSync("orders", load, 1000, { enabled: Boolean(orderId), key: orderId ?? undefined });
 
   const post = useCallback(
     async (body: Record<string, unknown>) => {

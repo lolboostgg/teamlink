@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { AdminOverviewPanels } from "@/components/dashboard/admin/AdminOverviewPanels";
 import { AdminUsersTable, type AdminUserRow } from "@/components/dashboard/admin/AdminUsersTable";
-import { getUsersWithTeammate } from "@/lib/admin/users";
+import { getRecentUsers } from "@/lib/admin/users";
 import { prisma } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Admin Dashboard" };
@@ -15,21 +15,29 @@ export const metadata: Metadata = { title: "Admin Dashboard" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  const [session, users, orders] = await Promise.all([
+  // One grouped query instead of pulling every order row into memory just to
+  // reduce four numbers out of it.
+  const [session, users, byStatus] = await Promise.all([
     auth(),
-    getUsersWithTeammate(),
-    prisma.order.findMany({ select: { priceEUR: true, status: true } }),
+    getRecentUsers(5),
+    prisma.order.groupBy({ by: ["status"], _sum: { priceEUR: true }, _count: { _all: true } }),
   ]);
+
   const failed = new Set(["CANCELLED", "NO_MATCH"]);
   const terminal = new Set(["COMPLETED", "CANCELLED", "NO_MATCH"]);
+  const sumWhere = (predicate: (status: string) => boolean) =>
+    byStatus.filter((row) => predicate(row.status)).reduce((sum, row) => sum + Number(row._sum.priceEUR ?? 0), 0);
+  const countWhere = (predicate: (status: string) => boolean) =>
+    byStatus.filter((row) => predicate(row.status)).reduce((sum, row) => sum + row._count._all, 0);
+
   const stats = {
-    gmvEUR: orders.filter((order) => !failed.has(order.status)).reduce((sum, order) => sum + Number(order.priceEUR), 0),
-    activeBookings: orders.filter((order) => !terminal.has(order.status)).length,
-    totalOrders: orders.length,
-    completedSessions: orders.filter((order) => order.status === "COMPLETED").length,
+    gmvEUR: sumWhere((status) => !failed.has(status)),
+    activeBookings: countWhere((status) => !terminal.has(status)),
+    totalOrders: countWhere(() => true),
+    completedSessions: countWhere((status) => status === "COMPLETED"),
   };
   const displayName = session?.user?.name || session?.user?.email?.split("@")[0] || "Admin";
-  const recentRows: AdminUserRow[] = users.slice(0, 5).map((u) => ({
+  const recentRows: AdminUserRow[] = users.map((u) => ({
     id: u.id,
     accountNo: u.accountNo,
     email: u.email,

@@ -1,3 +1,5 @@
+import { payoutForOrder } from "@/lib/payoutSplit";
+
 // The teammate's position in the dispatch flow. Accepting makes you a
 // candidate, not the assignee — see lib/dispatch/service.ts.
 export type TeammatePhase =
@@ -90,9 +92,7 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
     gameName: order.gameName,
     option: order.option,
     priceEUR: price,
-    // No commission model yet — the teammate's cut mirrors the order price
-    // until one exists, rather than inventing a split here.
-    payoutEUR: order.teammatePayoutEUR !== null ? Number(order.teammatePayoutEUR) : price,
+    payoutEUR: payoutForOrder(order),
     customerLabel: order.customerLabel,
     teammatesRequested: order.teammatesRequested,
     gamesBooked: order.gamesBooked,

@@ -8,6 +8,7 @@ import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { conversationKey, sendChatMessage } from "@/lib/matchmaking/chatStore";
 import { gameIcon } from "@/lib/gameArt";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useLiveSync } from "@/lib/events/useLiveSync";
 import { FileDrop } from "@/components/ui/FileDrop";
 import { PrivateImage } from "@/components/ui/PrivateImage";
 import {
@@ -180,11 +181,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
     setOrder(data);
   }, [orderId, showToast]);
 
-  useEffect(() => {
-    load();
-    const interval = setInterval(load, 4000);
-    return () => clearInterval(interval);
-  }, [load]);
+  useLiveSync("orders", load, 4000, { key: orderId });
 
   useEffect(() => {
     if (!order || order.status === "COMPLETED" || order.games.length < order.gamesBooked) return;

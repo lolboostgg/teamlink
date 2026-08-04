@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLiveSync } from "@/lib/events/useLiveSync";
 
 // Real, shared chat, same architecture as lib/matchmaking/store.ts: a
 // localStorage-backed record pushed to other tabs of the same browser via
@@ -155,41 +156,36 @@ export function useConversationMessages(key: string | undefined): { messages: Ch
     setMessages(key ? getMessages(key) : []);
   }, [key]);
 
-  useEffect(() => {
+  // One-time upload of anything this browser wrote before the chat was
+  // persisted server-side. Guarded by a ref so a re-render can't redo it.
+  const migrated = useRef(false);
+
+  const sync = useCallback(async () => {
     if (!key) return;
-    let cancelled = false;
-    let migrated = false;
-    const sync = async () => {
-      if (!migrated) {
-        migrated = true;
-        await Promise.all(getMessages(key).map(persistMessage));
-      }
-      try {
-        const response = await fetch(`/api/chat?key=${encodeURIComponent(key)}`, { cache: "no-store" });
-        if (!response.ok) return;
-        const data = (await response.json()) as { messages?: ChatMessage[]; typing?: Partial<Record<ChatSide, number>> };
-        if (!cancelled && data.messages) {
-          writeConversation(key, data.messages);
-          if (data.typing) {
-            const presence = readPresence();
-            presence[key] = { ...presence[key], ...data.typing };
-            window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
-            getChannel()?.postMessage({ type: "chat-presence" });
-          }
-          setMessages(data.messages);
-        }
-      } catch {
-        // Keep the last local copy and retry on the next poll.
-      }
-    };
-    void sync();
-    const interval = window.setInterval(sync, 2000);
-    const unsubscribe = subscribeToChat(refresh);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-      unsubscribe();
-    };
+    if (!migrated.current) {
+      migrated.current = true;
+      await Promise.all(getMessages(key).map(persistMessage));
+    }
+    const response = await fetch(`/api/chat?key=${encodeURIComponent(key)}`, { cache: "no-store" });
+    // Deliberately thrown rather than swallowed: usePoll reads a rejection as
+    // "back off", which is what should happen when the chat API is down.
+    if (!response.ok) throw new Error(`Chat sync failed: ${response.status}`);
+    const data = (await response.json()) as { messages?: ChatMessage[]; typing?: Partial<Record<ChatSide, number>> };
+    if (!data.messages) return;
+    writeConversation(key, data.messages);
+    if (data.typing) {
+      const presence = readPresence();
+      presence[key] = { ...presence[key], ...data.typing };
+      window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
+      getChannel()?.postMessage({ type: "chat-presence" });
+    }
+    setMessages(data.messages);
+  }, [key]);
+
+  useLiveSync("chat", sync, 2000, { enabled: Boolean(key), key });
+
+  useEffect(() => {
+    if (!key) return subscribeToChat(refresh);
   }, [key, refresh]);
 
   return { messages, refresh };

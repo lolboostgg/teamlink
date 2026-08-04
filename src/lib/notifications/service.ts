@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { publish } from "@/lib/events/bus";
 
 /**
  * In-app notifications. Every platform event that someone should hear about
@@ -13,9 +14,12 @@ export interface NotifyInput {
 }
 
 export async function notifyUser(userId: string, input: NotifyInput) {
-  return prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: { userId, type: input.type, title: input.title, body: input.body, href: input.href },
   });
+  // Pushes the bell instead of making it wait out its poll interval.
+  await publish({ topic: "notifications", userIds: [userId] });
+  return notification;
 }
 
 /** Fans an event out to every admin — used for things like a new ID check. */
@@ -32,6 +36,7 @@ export async function notifyAdmins(input: NotifyInput) {
       href: input.href,
     })),
   });
+  await publish({ topic: "notifications", userIds: admins.map((a) => a.id) });
 }
 
 export async function listNotifications(userId: string, take = 30) {

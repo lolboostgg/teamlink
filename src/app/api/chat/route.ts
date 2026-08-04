@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { publish } from "@/lib/events/bus";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,38 @@ async function conversationAccess(userId: string, role: string, key: string) {
     ? (order.sessionCompleteAt ?? order.createdAt).getTime() + 60 * 60 * 1000
     : null;
   return { allowed: Boolean(order), locked: Boolean(lockedAt && lockedAt <= Date.now()) };
+}
+
+/**
+ * Everyone allowed to see a conversation: the client, the teammates actually
+ * on the order, and every admin. Used to address change events — a chat
+ * signal must not fan out to unrelated accounts, since the key itself
+ * identifies a customer.
+ */
+async function conversationAudience(key: string): Promise<string[]> {
+  const separator = key.indexOf("::");
+  const teammateId = separator > 0 ? key.slice(0, separator) : "";
+  const customerLabel = separator > 0 ? key.slice(separator + 2) : "";
+  if (!teammateId || !customerLabel) return [];
+
+  const [order, admins] = await Promise.all([
+    prisma.order.findFirst({
+      where: { customerLabel, candidates: { some: { teammateId, selected: true } } },
+      orderBy: { createdAt: "desc" },
+      select: {
+        clientUserId: true,
+        candidates: { where: { selected: true }, select: { teammate: { select: { userId: true } } } },
+      },
+    }),
+    prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } }),
+  ]);
+
+  const ids = new Set<string>(admins.map((admin) => admin.id));
+  if (order?.clientUserId) ids.add(order.clientUserId);
+  for (const candidate of order?.candidates ?? []) {
+    if (candidate.teammate.userId) ids.add(candidate.teammate.userId);
+  }
+  return [...ids];
 }
 
 export async function GET(request: NextRequest) {
@@ -109,5 +142,7 @@ export async function POST(request: NextRequest) {
         update: {},
       })
     : await prisma.conversationMessage.create({ data });
+  // Everyone with this conversation open gets it now, not on the next poll.
+  await publish({ topic: "chat", key, userIds: await conversationAudience(key) });
   return NextResponse.json({ id: message.id, createdAt: message.createdAt.getTime() });
 }

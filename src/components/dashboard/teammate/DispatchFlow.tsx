@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { PriceTag } from "@/components/currency/PriceTag";
@@ -13,6 +14,10 @@ import { useToast } from "@/components/ui/ToastProvider";
 import type { DispatchOrderView } from "@/lib/dispatch/phase";
 
 const NOT_SELECTED_ACK_KEY = "teamlink:acknowledged-not-selected";
+// Orders we've already sent the teammate into the session room for. Without
+// this the redirect below re-fires on every navigation, which locks them
+// inside the session room for as long as the order sits in ASSIGNED.
+const SESSION_ROUTED_KEY = "teamlink:routed-to-session";
 
 function acknowledgedItems(key: string): string[] {
   if (typeof window === "undefined") return [];
@@ -100,8 +105,15 @@ export function DispatchFlow() {
     }
   }, [state.phase, stateOrderId, stateOrderGameName, stateOrderOption]);
 
+  // Being picked takes the teammate to the session room — but only once. The
+  // phase stays SELECTED for the whole time the order is ASSIGNED (it only
+  // becomes ACTIVE_SESSION once they mark themselves in-game, see phase.ts),
+  // so redirecting on every pathname change meant they could not open
+  // Reviews, their profile, or anything else until the session started.
   useEffect(() => {
     if (!isTeammate || state.phase !== "SELECTED" || !stateOrderId) return;
+    if (acknowledgedItems(SESSION_ROUTED_KEY).includes(stateOrderId)) return;
+    acknowledgeItem(SESSION_ROUTED_KEY, stateOrderId);
     const href = `/dashboard/teammate/session/${stateOrderId}`;
     if (pathname !== href) router.replace(href);
   }, [isTeammate, state.phase, stateOrderId, pathname, router]);
@@ -249,8 +261,27 @@ export function DispatchFlow() {
     );
   }
 
-  if (state.phase === "SELECTED" && state.order) {
-    return null;
+  // Now that being picked no longer pins the teammate to the session room,
+  // there has to be a way back — otherwise a running order is only reachable
+  // via the Orders list, which reads like it isn't running at all.
+  if ((state.phase === "SELECTED" || state.phase === "ACTIVE_SESSION") && state.order) {
+    const href = `/dashboard/teammate/session/${state.order.id}`;
+    if (pathname === href) return null;
+
+    return (
+      <div className="running-order-bar" role="status">
+        <span className="running-order-bar__pulse" aria-hidden="true" />
+        <div className="running-order-bar__copy">
+          <strong>Order in progress</strong>
+          <span>
+            {state.order.gameName} &middot; {state.order.option}
+          </span>
+        </div>
+        <Link href={href} className="btn btn--vivid btn--sm">
+          Back to order
+        </Link>
+      </div>
+    );
   }
 
   if (

@@ -10,7 +10,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate:legacy": "prisma db execute --file prisma/sql/2026-08-03-session-upgrade.sql && prisma db execute --file prisma/sql/2026-08-03-persist-chat.sql && prisma db execute --file prisma/sql/2026-08-03-dispatch-fairness-favorites.sql && prisma db execute --file prisma/sql/2026-08-04-public-order-numbers.sql",
+    "db:migrate:legacy": "prisma db execute --file prisma/sql/2026-08-03-session-upgrade.sql && prisma db execute --file prisma/sql/2026-08-03-persist-chat.sql && prisma db execute --file prisma/sql/2026-08-03-dispatch-fairness-favorites.sql && prisma db execute --file prisma/sql/2026-08-04-public-order-numbers.sql && prisma db execute --file prisma/sql/2026-08-04-teammate-earnings.sql",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

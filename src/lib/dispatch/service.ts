@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { notifyUser, notifyAdmins } from "@/lib/notifications/service";
+import { payoutForOrder } from "@/lib/payoutSplit";
+import { publish } from "@/lib/events/bus";
 
 /**
  * Server-authoritative dispatch rules. Every transition that decides who
@@ -21,12 +23,53 @@ export class DispatchError extends Error {}
  * auto-selecting the first acceptor when the customer runs out of time.
  * Idempotent, so it's safe to call on every read.
  */
+/**
+ * Announces that an order moved, so the client's matching screen and the
+ * teammates' dispatch panels update now instead of on their next poll.
+ * Addressed to the people actually on the order plus every admin; never
+ * throws, since a missed notification must not fail the transition.
+ */
+async function publishOrderChange(orderId: string) {
+  try {
+    const [order, admins] = await Promise.all([
+      prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+          clientUserId: true,
+          // Every invited teammate, not only the selected ones — a candidate
+          // whose invite just expired needs to see that too.
+          candidates: { select: { teammate: { select: { userId: true } } } },
+        },
+      }),
+      prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } }),
+    ]);
+
+    const userIds = new Set<string>(admins.map((admin) => admin.id));
+    if (order?.clientUserId) userIds.add(order.clientUserId);
+    for (const candidate of order?.candidates ?? []) {
+      if (candidate.teammate.userId) userIds.add(candidate.teammate.userId);
+    }
+
+    const audience = [...userIds];
+    await publish({ topic: "orders", key: orderId, userIds: audience });
+    await publish({ topic: "dispatch", key: orderId, userIds: audience });
+  } catch {
+    // Best-effort: the polling fallback still catches this change.
+  }
+}
+
 export async function reconcileOrder(orderId: string) {
   const now = new Date();
 
-  return prisma.$transaction(async (tx) => {
+  // Captured from the transaction's own read so the clock-driven transitions
+  // can be announced without paying for a second query on every reconcile —
+  // and this runs on every order read.
+  let previousStatus: string | null = null;
+
+  const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
     if (!order) return null;
+    previousStatus = order.status;
 
     if (["ASSIGNED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status)) return order;
 
@@ -71,6 +114,11 @@ export async function reconcileOrder(orderId: string) {
 
     return order;
   });
+
+  if (result && previousStatus !== null && result.status !== previousStatus) {
+    await publishOrderChange(orderId);
+  }
+  return result;
 }
 
 /** Tells the picked teammates the order is theirs. */
@@ -132,7 +180,7 @@ async function assignWinners(
 export async function respondToDispatch(orderId: string, teammateId: string, accept: boolean) {
   const now = new Date();
 
-  return prisma.$transaction(
+  const responded = await prisma.$transaction(
     async (tx) => {
       const candidate = await tx.dispatchCandidate.findUnique({
         where: { orderId_teammateId: { orderId, teammateId } },
@@ -207,12 +255,15 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
     },
     { isolationLevel: "Serializable" },
   );
+
+  await publishOrderChange(orderId);
+  return responded;
 }
 
 /** Releases an accepted candidate slot while the customer is still choosing. */
 export async function withdrawDispatchAcceptance(orderId: string, teammateId: string) {
   const now = new Date();
-  return prisma.$transaction(async (tx) => {
+  const withdrawn = await prisma.$transaction(async (tx) => {
     const candidate = await tx.dispatchCandidate.findUnique({
       where: { orderId_teammateId: { orderId, teammateId } },
       include: { order: true },
@@ -244,13 +295,16 @@ export async function withdrawDispatchAcceptance(orderId: string, teammateId: st
       });
     }
   });
+
+  await publishOrderChange(orderId);
+  return withdrawn;
 }
 
 /** The customer picking. Only accepted candidates of a SELECTING order qualify. */
 export async function selectTeammates(orderId: string, teammateIds: string[]) {
   const now = new Date();
 
-  return prisma.$transaction(
+  const picked = await prisma.$transaction(
     async (tx) => {
       const order = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
       if (!order) throw new DispatchError("Unknown order.");
@@ -266,6 +320,9 @@ export async function selectTeammates(orderId: string, teammateIds: string[]) {
     },
     { isolationLevel: "Serializable" },
   );
+
+  await publishOrderChange(orderId);
+  return picked;
 }
 
 /** Guard for the order room: only a selected teammate may read or write it. */
@@ -279,13 +336,15 @@ export async function assertAssignedTeammate(orderId: string, teammateId: string
 
 export async function setSessionStatus(orderId: string, teammateId: string, status: string) {
   await assertAssignedTeammate(orderId, teammateId);
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
       sessionStatus: status,
       status: status === "IN_GAME" ? "IN_PROGRESS" : undefined,
     },
   });
+  await publishOrderChange(orderId);
+  return updated;
 }
 
 /**
@@ -323,6 +382,7 @@ export async function recordGame(
       }),
       prisma.order.update({ where: { id: orderId }, data: { sessionStatus: "WAITING_FOR_NEXT_GAME" } }),
     ]);
+    await publishOrderChange(orderId);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       throw new DispatchError("That game was already submitted.");
@@ -342,6 +402,58 @@ export async function deleteRecordedGame(orderId: string, teammateId: string, ga
     const { deletePrivateFile } = await import("@/lib/storage");
     await deletePrivateFile(game.proofPath, "proofs").catch(() => undefined);
   }
+  await publishOrderChange(orderId);
+}
+
+/**
+ * Books the teammates' share of a completed order into the earnings ledger
+ * and moves their balances.
+ *
+ * The order's `teammatePayoutEUR` is the whole pot (half the price), split
+ * evenly across everyone who actually played it — not 50% per head, which on
+ * a three-teammate order would pay out more than the customer paid. Rounding
+ * remainders go to the primary so the shares always add back up to the pot.
+ *
+ * Idempotent: the ledger's unique (teammateId, orderId, ORDER_PAYOUT) index
+ * means a replayed completion credits nobody twice, and we skip rows that are
+ * already there so the balance isn't moved either.
+ */
+async function creditOrderPayout(tx: Prisma.TransactionClient, order: { id: string; priceEUR: unknown; teammatePayoutEUR: unknown }) {
+  const selected = await tx.dispatchCandidate.findMany({
+    where: { orderId: order.id, selected: true },
+    select: { teammateId: true, isPrimary: true },
+    orderBy: { isPrimary: "desc" },
+  });
+  if (selected.length === 0) return;
+
+  const alreadyPaid = new Set(
+    (
+      await tx.teammateEarning.findMany({
+        where: { orderId: order.id, type: "ORDER_PAYOUT" },
+        select: { teammateId: true },
+      })
+    ).map((row) => row.teammateId),
+  );
+
+  // Split in whole cents so nothing evaporates in floating point.
+  const potCents = Math.round(payoutForOrder(order) * 100);
+  const baseCents = Math.floor(potCents / selected.length);
+  let remainder = potCents - baseCents * selected.length;
+
+  for (const candidate of selected) {
+    const cents = baseCents + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder -= 1;
+    if (alreadyPaid.has(candidate.teammateId) || cents === 0) continue;
+
+    const amountEUR = new Prisma.Decimal(cents).dividedBy(100);
+    await tx.teammateEarning.create({
+      data: { teammateId: candidate.teammateId, orderId: order.id, type: "ORDER_PAYOUT", amountEUR },
+    });
+    await tx.teammate.update({
+      where: { id: candidate.teammateId },
+      data: { balanceEUR: { increment: amountEUR } },
+    });
+  }
 }
 
 export async function completeOrder(orderId: string, teammateId: string, farewell?: string) {
@@ -354,14 +466,21 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
     throw new DispatchError(`Submit all ${order.gamesBooked} booked game results first.`);
   }
 
-  const completed = await prisma.order.update({
-    where: { id: orderId },
-    data: { status: "COMPLETED", sessionStatus: "ORDER_COMPLETED", sessionCompleteAt: new Date() },
-  });
+  // Closing the order and paying for it are one atomic step. If the ledger
+  // write fails, the order must not end up COMPLETED with nobody credited.
+  const completed = await prisma.$transaction(async (tx) => {
+    const closed = await tx.order.update({
+      where: { id: orderId },
+      data: { status: "COMPLETED", sessionStatus: "ORDER_COMPLETED", sessionCompleteAt: new Date() },
+    });
 
-  await prisma.teammate.update({
-    where: { id: teammateId },
-    data: { available: true, availableSince: new Date(), lastSeenAt: new Date(), sessionsCount: { increment: 1 } },
+    await tx.teammate.update({
+      where: { id: teammateId },
+      data: { available: true, availableSince: new Date(), lastSeenAt: new Date(), sessionsCount: { increment: 1 } },
+    });
+
+    await creditOrderPayout(tx, closed);
+    return closed;
   });
 
   if (completed.clientUserId) {
@@ -379,6 +498,7 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
     href: "/dashboard/admin/payouts",
   });
 
+  await publishOrderChange(orderId);
   return completed;
 }
 
