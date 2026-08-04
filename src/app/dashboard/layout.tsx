@@ -5,6 +5,7 @@ import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
 import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
 import { NotificationProvider } from "@/components/dashboard/NotificationProvider";
 import { DispatchFlow } from "@/components/dashboard/teammate/DispatchFlow";
+import { prisma } from "@/lib/db";
 
 // Sibling of the (marketing) route group, so /dashboard/* gets its own
 // shell (sidebar + topbar) instead of inheriting the marketing Header/
@@ -25,12 +26,18 @@ import { DispatchFlow } from "@/components/dashboard/teammate/DispatchFlow";
 // not a second nested SessionProvider (that broke the header instead).
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
+  const teammate = session?.user?.id
+    ? await prisma.teammate.findUnique({
+        where: { userId: session.user.id },
+        select: { name: true, avatarUrl: true, rating: true, sessionsCount: true, available: true },
+      })
+    : null;
   return (
     <DashboardAuthGate initiallyAuthenticated={!!session}>
       <NotificationProvider>
         <DispatchFlow />
         <div className="dashboard-shell">
-          <DashboardSidebar />
+          <DashboardSidebar teammate={teammate} />
           <div className="dashboard-shell__main">
             <DashboardTopbar />
             <ViewTransition

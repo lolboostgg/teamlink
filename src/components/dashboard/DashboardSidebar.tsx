@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/Logo";
+import { TeammateSidebarProfile, type TeammateSidebarData } from "@/components/dashboard/teammate/TeammateSidebarProfile";
 
 // Client dashboard has its own tab strip instead (see
 // ClientDashboardNav.tsx) — it no longer uses this shell/sidebar at all.
@@ -29,7 +30,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   ],
 };
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ teammate }: { teammate?: TeammateSidebarData | null }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const role: ShellRole = pathname.startsWith("/dashboard/admin") ? "admin" : "teammate";
@@ -50,6 +51,8 @@ export function DashboardSidebar() {
         <Logo withWordmark={!collapsed} />
         <button type="button" className="dashboard-sidebar__collapse" onClick={toggleCollapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}><i className={`fa-solid ${collapsed ? "fa-angles-right" : "fa-angles-left"}`} /></button>
       </div>
+
+      {role === "teammate" && teammate && <TeammateSidebarProfile teammate={teammate} />}
 
       <nav className="dashboard-sidebar__nav" aria-label="Dashboard sections">
         {sections.map((s) => {

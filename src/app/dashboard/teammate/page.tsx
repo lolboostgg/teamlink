@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
-import { AvailabilityToggle } from "@/components/dashboard/teammate/AvailabilityToggle";
 import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
 import { TeammateOverviewPanels } from "@/components/dashboard/teammate/TeammateOverviewPanels";
 
@@ -32,7 +31,6 @@ export default async function TeammateDashboardPage() {
         ]}
       />
 
-      <AvailabilityToggle initialOnline={teammate?.available ?? false} />
       <TeammateOverviewPanels />
       <ActiveOrderCard />
     </>
