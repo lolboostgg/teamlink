@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { LoginActivityList, type LoginActivityEntry } from "@/components/dashboard/LoginActivityList";
 import { ClientProfileForm } from "@/components/dashboard/client/ClientProfileForm";
 import { DiscordConnection } from "@/components/dashboard/DiscordConnection";
 import { beginTwoFactorSetup, disableTwoFactor, enableTwoFactor, saveNotificationPrefs } from "@/app/(marketing)/dashboard/client/settings/actions";
@@ -34,7 +35,7 @@ export interface SettingsProps {
   discordStatus?: string;
   prefs: NotificationPrefs;
   twoFactorEnabled: boolean;
-  loginActivity: { ip: string; device: string; location: string; current: boolean }[];
+  loginActivity: LoginActivityEntry[];
 }
 
 export function SettingsScreen({ account }: { account: SettingsProps }) {
@@ -256,15 +257,7 @@ function SecuritySection({ activity, initialEnabled }: { activity: SettingsProps
           {enabled && <div className="two-factor-disable"><input value={code} onChange={(event) => cleanCode(event.target.value)} inputMode="numeric" placeholder="Current 6-digit code" /><button type="button" className="btn btn--ghost btn--sm" disabled={pending || code.length !== 6} onClick={disable}>Disable</button></div>}
         </section>
 
-        <section className="security-logins">
-          <div className="security-logins__head"><strong>Login activity</strong><span>Devices currently accessing your account</span></div>
-          {activity.map((login, index) => <div className="security-login" key={`${login.ip}-${index}`}>
-            <span className="settings-row__logo"><i className="fa-solid fa-desktop" aria-hidden="true" /></span>
-            <span><strong>{login.device}</strong><small>{login.location}</small></span>
-            <span><strong>{login.ip}</strong><small>IP address</small></span>
-            <span className="dashboard-pill dashboard-pill--success">{login.current ? "Active now" : "Previous"}</span>
-          </div>)}
-        </section>
+        <LoginActivityList entries={activity} subtitle="Devices that have accessed your account" />
       </div>
     </>
   );

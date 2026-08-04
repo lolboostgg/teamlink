@@ -1,5 +1,5 @@
 import { PriceTag } from "@/components/currency/PriceTag";
-import { EARNING_LABELS, type EarningRow } from "@/lib/teammateEarnings";
+import { EARNING_LABELS, type EarningRow } from "@/lib/earnings";
 
 const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" });
 

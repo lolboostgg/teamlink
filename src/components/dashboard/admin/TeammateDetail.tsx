@@ -25,7 +25,7 @@ import type { LanguageCode } from "@/lib/i18n";
 import { EarningsLedger } from "@/components/dashboard/teammate/EarningsLedger";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
-import type { EarningsSummary } from "@/lib/teammateEarnings";
+import type { EarningsSummary } from "@/lib/earnings";
 
 export interface TeammateDetailView {
   id: string;

@@ -1,6 +1,15 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+// SERVER ONLY. Nothing reachable from a "use client" component may import a
+// *value* from this file, or from any module that imports it — the adapter
+// pulls in `pg`, which needs Node's `net`/`tls`/`dns` and fails the build with
+// a module-not-found error that points at pg rather than at the real culprit.
+//
+// `import type` is fine (it's erased). If a client component needs a shape or
+// a label that lives next to a query, split the pure part into its own module
+// — see lib/earnings.ts alongside lib/teammateEarnings.ts.
+
 // Prisma 7 requires a driver adapter for the SQL execution path — see
 // .agents/skills/prisma-upgrade-v7/references/driver-adapters.md. Cached on
 // globalThis so hot-reloading in dev doesn't open a fresh connection pool

@@ -1,34 +1,6 @@
 import { prisma } from "@/lib/db";
 import { payoutForOrder } from "@/lib/payoutSplit";
-
-export type EarningType = "ORDER_PAYOUT" | "PAYOUT_SENT" | "ADJUSTMENT";
-
-export interface EarningRow {
-  id: string;
-  type: EarningType;
-  amountEUR: number;
-  note: string | null;
-  createdAt: number;
-  order: { orderNo: number; gameName: string; option: string } | null;
-}
-
-export interface EarningsSummary {
-  /** Booked and available, straight off the teammate row. */
-  balanceEUR: number;
-  /** What assigned/in-progress orders will add once they complete. */
-  pendingEUR: number;
-  /** Everything ever credited from completed orders. */
-  earnedEUR: number;
-  /** Everything ever paid out (a positive number). */
-  paidOutEUR: number;
-  rows: EarningRow[];
-}
-
-export const EARNING_LABELS: Record<EarningType, string> = {
-  ORDER_PAYOUT: "Session payout",
-  PAYOUT_SENT: "Paid out",
-  ADJUSTMENT: "Adjustment",
-};
+import type { EarningType, EarningsSummary } from "@/lib/earnings";
 
 /**
  * The full earnings picture for one teammate, shared by their own payments

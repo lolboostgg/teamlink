@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { SettingsScreen } from "@/components/dashboard/client/SettingsScreen";
 import { sanitizeNotificationPrefs } from "@/lib/notificationPrefs";
 import { headers } from "next/headers";
-import { readTwoFactor } from "@/lib/twoFactor";
+import { readLoginActivity, readTwoFactor } from "@/lib/twoFactor";
 
 export const metadata: Metadata = { title: "Settings" };
 // Direct top-level Prisma query in a Server Component — same build-time-
@@ -81,7 +81,12 @@ export default async function ClientSettingsPage({
         discordStatus: discord,
         prefs: sanitizeNotificationPrefs(user.notificationPrefs),
         twoFactorEnabled: Boolean(readTwoFactor(user.notificationPrefs)),
-        loginActivity: [{ ip, device: `${browser} on ${device}`, location, current: true }],
+        // The stored history is the point of this list. The request's own
+        // device is only prepended when nothing has been recorded yet — a
+        // brand-new account would otherwise show an empty panel.
+        loginActivity: readLoginActivity(user.notificationPrefs).length > 0
+          ? readLoginActivity(user.notificationPrefs)
+          : [{ ip, device: `${browser} on ${device}`, location, at: new Date().toISOString() }],
       }}
     />
   );

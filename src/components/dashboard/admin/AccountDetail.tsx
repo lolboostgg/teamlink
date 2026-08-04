@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { LoginActivityList } from "@/components/dashboard/LoginActivityList";
 import Link from "next/link";
 import { GameMark } from "@/components/dashboard/GameMark";
 import { GAMES } from "@/lib/games";
@@ -597,12 +598,10 @@ export function SecurityPanel({ userId, twoFactorEnabled, loginActivity, onSaved
       {hasTwoFactor && !confirmTwoFactorReset && <button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirmTwoFactorReset(true)}>Remove 2FA</button>}
       {confirmTwoFactorReset && <div className="admin-security-confirm"><span><strong>Remove two-factor authentication?</strong><small>The user can sign in with only their password afterward.</small></span><button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirmTwoFactorReset(false)}>Cancel</button><button type="button" className="btn btn--vivid btn--sm" disabled={pending} onClick={() => startTransition(async () => { try { await removeUserTwoFactor(userId); setHasTwoFactor(false); setConfirmTwoFactorReset(false); } catch (err) { setError(err instanceof Error ? err.message : "Could not remove 2FA."); } })}>Confirm removal</button></div>}
     </section>
-    <section className="dashboard-panel admin-security-card">
-      <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Login activity</div><div className="dashboard-panel__sub">Recent devices, IP addresses and locations used for password sign-ins.</div></div></div>
-      <div className="admin-login-activity">
-        {loginActivity.length ? loginActivity.map((login) => <div key={`${login.ip}-${login.at}`}><i className="fa-solid fa-desktop" aria-hidden="true" /><span><strong>{login.device}</strong><small>{login.location}</small></span><span><strong>{login.ip}</strong><small>{new Date(login.at).toLocaleString()}</small></span></div>) : <p>No password login has been recorded yet.</p>}
-      </div>
-    </section>
+    <LoginActivityList
+      entries={loginActivity}
+      subtitle="Recent devices, IP addresses and locations used for password sign-ins."
+    />
     <form
       className="teammate-profile-form dashboard-panel admin-security-card admin-security-password-reset"
       onSubmit={(e) => {

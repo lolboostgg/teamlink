@@ -10782,3 +10782,97 @@ a.notification-panel__item:hover {
 }
 .payments-facts dt { color: var(--text-faint); font-size: 11px; }
 .payments-facts dd { margin: 0; color: var(--text); font-size: 12px; font-weight: 700; }
+
+/* ── Login activity ──────────────────────────────────────────────────── */
+
+.login-activity { display: grid; gap: 8px; margin: 0; padding: 12px; list-style: none; }
+
+.login-activity__row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* A sign-in from a new address is the one thing in this list worth
+   reacting to, so it gets the only colour on the panel. */
+.login-activity__row.is-alert {
+  border-color: rgba(224, 82, 82, 0.28);
+  background: rgba(224, 82, 82, 0.05);
+}
+
+.login-activity__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 16px;
+}
+
+.login-activity__row.is-alert .login-activity__icon {
+  border-color: rgba(224, 82, 82, 0.42);
+  color: #e05252;
+}
+
+.login-activity__main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.login-activity__title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.login-activity__title strong { color: var(--text); font-size: 13px; }
+
+.login-activity__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.login-activity__badge--current {
+  border: 1px solid rgba(79, 112, 255, 0.4);
+  background: rgba(79, 112, 255, 0.14);
+  color: #8ea2ff;
+}
+
+.login-activity__badge--alert {
+  border: 1px solid rgba(224, 82, 82, 0.45);
+  background: rgba(224, 82, 82, 0.14);
+  color: #ff8080;
+}
+
+/* Middot separators between the meta parts, added by CSS so the markup
+   stays a plain list of spans. */
+.login-activity__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--text-faint); font-size: 11px; }
+.login-activity__meta > span + span::before { content: "· "; }
+
+.login-activity__ip {
+  padding: 9px 12px;
+  max-width: 230px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--text-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.login-activity__row.is-alert .login-activity__ip {
+  border-color: rgba(224, 82, 82, 0.4);
+  color: #ff9a9a;
+}
+
+@media (max-width: 720px) {
+  .login-activity__row { grid-template-columns: 44px minmax(0, 1fr); }
+  .login-activity__ip { grid-column: 1 / -1; max-width: none; }
+}
