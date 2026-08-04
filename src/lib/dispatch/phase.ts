@@ -74,7 +74,7 @@ type CandidateRow = {
     dispatchDeadline: Date;
     selectionDeadline: Date | null;
     candidates: { status: string; teammateId: string; selected: boolean; isPrimary: boolean }[];
-    games: { gameNumber: number; result: string; note: string | null; proofPath: string | null }[];
+    games: { gameNumber: number; result: string; note: string | null; proofPath: string | null; proofName: string | null }[];
   };
 };
 
