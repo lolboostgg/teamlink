@@ -46,7 +46,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         avatarUrl:
           teammate.avatarUrl ||
           teammate.user?.avatarUrl ||
-          discordAvatarUrl(teammate.user?.discordId ?? null, teammate.user?.discordAvatar ?? null),
+          discordAvatarUrl(teammate.user?.discordId ?? null, teammate.user?.discordAvatar ?? null) ||
+          "/avatars/default.webp",
         rating: teammate.rating,
         sessionsCount: teammate._count.candidacies,
         available: teammate.available,

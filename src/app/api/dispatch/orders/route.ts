@@ -17,8 +17,15 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ orders: [] });
 
+  const teammate = session.user.role === "TEAMMATE"
+    ? await prisma.teammate.findUnique({ where: { userId: session.user.id }, select: { id: true } })
+    : null;
+  const orderWhere = teammate
+    ? { candidates: { some: { teammateId: teammate.id, selected: true } } }
+    : { clientUserId: session.user.id };
+
   const rows = await prisma.order.findMany({
-    where: { clientUserId: session.user.id },
+    where: orderWhere,
     include: { candidates: true, review: true },
     orderBy: { createdAt: "desc" },
     take: 40,

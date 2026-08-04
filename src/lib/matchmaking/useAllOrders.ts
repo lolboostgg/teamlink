@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 
-// The signed-in customer's order history (any status), newest first —
-// powers the client dashboard's stats, order list and the chat/favorites
-// derived from real matched teammates. Server-backed now, so it follows the
-// account across devices instead of living in one browser's localStorage.
+// The signed-in account's order history (any status), newest first. The API
+// scopes clients by clientUserId and teammates by their selected candidacy.
 export function useAllOrders(): DispatchOrder[] {
   return useAllOrdersState().orders;
 }
