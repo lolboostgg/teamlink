@@ -437,7 +437,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                 </div>
               ))}
             </div>
-            <dl className="account-facts">
+            <dl className="account-facts session-complete-modal__facts">
               <div>
                 <dt>Games booked</dt>
                 <dd>{booked}</dd>
@@ -464,7 +464,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               <span><strong>Games played in full</strong><small>I confirm that every booked game was completed.</small></span>
             </label>
 
-            <div className="form-row">
+            <div className="form-row session-complete-modal__message">
               <label>Message to the customer</label>
               <div className="session-farewell-pills">
                 {["GG!", "Nice!", "See ya next time!"].map((message) => <button key={message} type="button" className={farewell === message ? "is-active" : ""} onClick={() => setFarewell(message)}><i className="fa-regular fa-message" aria-hidden="true" />{message}</button>)}
