@@ -3,6 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { AdminOrdersToolbar } from "@/components/dashboard/admin/AdminOrdersToolbar";
+import { GameMark } from "@/components/dashboard/GameMark";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import { OrderStatus, Prisma } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Orders & Sessions" };
@@ -81,14 +83,14 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
             <tbody>{orders.map((order) => (
               <tr key={order.id}>
                 <td><strong>#{order.orderNo}</strong></td>
-                <td>{order.clientUser?.name || order.clientUser?.email || order.customerLabel}</td>
-                <td><strong>{order.gameName}</strong><small>{order.option}</small></td>
-                <td>{order.candidates.length ? order.candidates.map((candidate) => <Link key={candidate.teammateId} href={`/dashboard/admin/teammates/${candidate.teammate.teammateNo}`}>{candidate.teammate.name}</Link>) : "—"}</td>
+                <td>{order.clientUser ? <Link className="admin-order-person" href={`/dashboard/admin/accounts/${order.clientUser.accountNo}`}><span><SafeAvatarImage src={order.clientUser.avatarUrl} /></span><strong>{order.clientUser.name || order.clientUser.email}</strong></Link> : <span className="admin-order-person"><span><SafeAvatarImage /></span><strong>{order.customerLabel}</strong></span>}</td>
+                <td><span className="admin-order-game"><GameMark slug={order.gameSlug} /><span><strong>{order.gameName}</strong><small>{order.option}</small></span></span></td>
+                <td>{order.candidates.length ? order.candidates.map((candidate) => <Link className="admin-order-person" key={candidate.teammateId} href={`/dashboard/admin/teammates/${candidate.teammate.teammateNo}`}><span><SafeAvatarImage src={candidate.teammate.avatarUrl} /></span><strong>{candidate.teammate.name}</strong></Link>) : "—"}</td>
                 <td>{order.games.length} / {order.gamesBooked}</td>
                 <td><PriceTag amountEUR={Number(order.priceEUR)} /></td>
                 <td><span className={`dashboard-pill ${STATUS_CLASS[order.status] ?? "dashboard-pill--warning"}`}>{order.status.toLowerCase().replaceAll("_", " ")}</span>{order.sessionStatus && <small>{order.sessionStatus.toLowerCase().replaceAll("_", " ")}</small>}</td>
                 <td>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(order.createdAt)}</td>
-                <td><Link href={`/dashboard/admin/orders/${order.id}`} className="btn btn--ghost btn--sm">Inspect</Link></td>
+                <td><Link href={`/dashboard/admin/orders/${order.id}`} className="btn btn--ghost btn--sm"><i className="fa-solid fa-eye" /> View</Link></td>
               </tr>
             ))}</tbody>
           </table>

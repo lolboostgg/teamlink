@@ -1,31 +1,26 @@
+import Link from "next/link";
+import { GameMark } from "@/components/dashboard/GameMark";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
+
 export interface DisplayReview {
   id: string;
   client: string;
   gameName: string;
   rating: number;
   date: string;
+  orderNo?: number;
+  gameSlug?: string;
+  option?: string;
+  clientAvatarUrl?: string | null;
+  clientProfileHref?: string | null;
 }
 
-// No free-text comment field exists in the real review data (the rating
-// control on Session Complete is stars-only) — showing which game/client
-// it was for instead of a fabricated quote.
 export function ReviewsList({ reviews }: { reviews: DisplayReview[] }) {
-  return (
-    <div className="dashboard-list">
-      {reviews.map((r) => (
-        <div className="dashboard-list-item" key={r.id}>
-          <div className="dashboard-list-item__meta">
-            <div className="dashboard-list-item__title">{r.client}</div>
-            <div className="dashboard-list-item__sub">
-              {r.gameName} · {r.date}
-            </div>
-          </div>
-          <span className="dashboard-list-item__stars">
-            {"★".repeat(r.rating)}
-            <em style={{ color: "var(--text-faint)", fontStyle: "normal" }}>{"★".repeat(5 - r.rating)}</em>
-          </span>
-        </div>
-      ))}
-    </div>
-  );
+  return <div className="teammate-reviews-grid">{reviews.map((review) =>
+    <article className="teammate-review-card" key={review.id}>
+      <div className="teammate-review-card__client"><span><SafeAvatarImage src={review.clientAvatarUrl} /></span><div>{review.clientProfileHref ? <Link href={review.clientProfileHref}>{review.client}</Link> : <strong>{review.client}</strong>}<small>Client review</small></div></div>
+      <div className="teammate-review-card__order">{review.gameSlug && <GameMark slug={review.gameSlug} />}<div><strong>{review.gameName}</strong><small>{review.orderNo ? `Order #${review.orderNo}` : "Session"}{review.option ? ` · ${review.option}` : ""} · {review.date}</small></div></div>
+      <span className="dashboard-list-item__stars" aria-label={`${review.rating} out of 5 stars`}>{"★".repeat(review.rating)}<em>{"★".repeat(5 - review.rating)}</em></span>
+    </article>
+  )}</div>;
 }

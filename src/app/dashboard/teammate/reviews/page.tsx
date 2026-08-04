@@ -21,6 +21,10 @@ export default async function TeammateReviewsPage() {
     id: review.id,
     client: review.clientUser?.name || review.order.customerLabel || "Anonymous",
     gameName: review.order.gameName,
+    gameSlug: review.order.gameSlug,
+    option: review.order.option,
+    orderNo: review.order.orderNo,
+    clientAvatarUrl: review.clientUser?.avatarUrl ?? null,
     rating: review.rating,
     date: new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(review.createdAt),
   }));

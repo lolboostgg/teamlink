@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
 interface Props {
   value: string;
@@ -98,8 +99,7 @@ export function AvatarUpload({ value, onChange, label = "Profile picture" }: Pro
         }}
       >
         <span className="avatar-upload__preview">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value || DEFAULT_AVATAR} alt="" />
+          <SafeAvatarImage src={value || DEFAULT_AVATAR} />
         </span>
         <span className="avatar-upload__hint">
           <strong>Drag &amp; drop</strong> an image, or click to browse
