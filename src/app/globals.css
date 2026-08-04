@@ -9750,7 +9750,7 @@ a.notification-panel__item:hover {
   flex-direction: column;
   gap: 10px;
   width: 100%;
-  background: rgba(0, 0, 0, .08);
+  background: transparent;
   /* Default OS scrollbars render light/system-themed even on this dark
      panel — force a dark thumb/track so it doesn't stand out as a pale bar. */
   scrollbar-width: thin;
@@ -9801,14 +9801,15 @@ a.notification-panel__item:hover {
 
 .chat-bubble--them {
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--dash-surface-2);
+  border: 0;
   border-bottom-left-radius: 4px;
 }
 
 .chat-bubble--me {
   align-self: flex-end;
-  background: rgba(255, 255, 255, 0.075);
-  border: 1px solid rgba(132, 139, 166, .16);
+  background: var(--dash-surface-2);
+  border: 0;
   color: var(--text);
   border-bottom-right-radius: 4px;
 }
