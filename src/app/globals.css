@@ -6864,10 +6864,13 @@ ul {
 
 .session-complete__grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
+
+.session-complete__card-wrap,
+.session-complete__card-wrap > .dashboard-panel { height: 100%; }
 
 .session-complete__teammate-hero {
   display: flex;
@@ -6936,6 +6939,7 @@ ul {
 .session-complete__star i { font-size: 30px; filter: drop-shadow(0 4px 10px rgba(245, 176, 34, .18)); }
 .session-complete__review-label { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
 .session-complete__trustpilot { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+.session-complete__rate { display: flex; flex-direction: column; }
 .session-complete__trustpilot-mark { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 16px; color: #fff; background: #00b67a; font-size: 25px; box-shadow: 0 12px 30px rgba(0,182,122,.22); }
 .session-complete__trustpilot-title { font-size: 18px; font-weight: 800; }
 .session-complete__stars--trustpilot { gap: 5px; }
@@ -6962,6 +6966,8 @@ ul {
 
 .session-complete__actions-row {
   display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 10px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
@@ -6972,29 +6978,45 @@ ul {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  gap: 16px;
+  margin-top: auto;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(52, 211, 153, .07), rgba(255, 255, 255, .025));
   font-size: 13px;
   color: var(--text-muted);
 }
 
+.session-complete__tip-copy { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.session-complete__tip-copy > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.session-complete__tip-copy strong { color: var(--text); font-size: 13px; }
+.session-complete__tip-copy small { color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+.session-complete__tip-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  color: var(--hue-green);
+  background: rgba(52, 211, 153, .12);
+  border: 1px solid rgba(52, 211, 153, .2);
+}
+
 .session-complete__tip-options {
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.035);
-  border: 1px solid var(--border);
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .session-complete__tip-btn {
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  min-width: 48px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(255,255,255,.035);
+  min-width: 42px;
   transition: color .18s ease, background .18s ease, transform .18s ease;
-  height: 34px;
+  height: 32px;
+  padding: 0 10px;
   color: var(--text);
   font-size: 12.5px;
   font-weight: 700;
@@ -7101,6 +7123,10 @@ ul {
   .session-complete__grid {
     grid-template-columns: 1fr;
   }
+
+  .session-complete__tip { align-items: stretch; flex-direction: column; }
+  .session-complete__tip-options { width: 100%; }
+  .session-complete__tip-btn { flex: 1; }
 }
 
 /* ── Ask-to-cancel confirm dialog ───────────────────────────────── */

@@ -246,7 +246,7 @@ export function SessionScreen({ orderId }: Props) {
         </Reveal>
 
         <div className="session-complete__grid">
-          <Reveal delay={60}>
+          <Reveal delay={60} className="session-complete__card-wrap">
             <div className="dashboard-panel session-complete__rate">
               <div className="session-complete__review-label">Review your teammate</div>
               <div className="session-complete__teammate-hero">
@@ -314,7 +314,15 @@ export function SessionScreen({ orderId }: Props) {
               </div>
 
               <div className="session-complete__tip">
-                <span>Add a tip for {teammate.name}</span>
+                <div className="session-complete__tip-copy">
+                  <span className="session-complete__tip-icon" aria-hidden="true">
+                    <i className="fa-solid fa-hand-holding-heart" />
+                  </span>
+                  <span>
+                    <strong>Send a tip</strong>
+                    <small>100% goes to {teammate.name}</small>
+                  </span>
+                </div>
                 {tipSent !== null ? (
                   <span className="session-complete__tip-sent">
                     <i className="fa-solid fa-circle-check" aria-hidden="true" /> Tip sent · €{tipSent}
@@ -335,7 +343,7 @@ export function SessionScreen({ orderId }: Props) {
             </div>
           </Reveal>
 
-          <Reveal delay={100}>
+          <Reveal delay={100} className="session-complete__card-wrap">
             <div className="dashboard-panel session-complete__trustpilot">
               <span className="session-complete__trustpilot-mark">
                 <i className="fa-solid fa-star" aria-hidden="true" />
