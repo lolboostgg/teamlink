@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { ReviewsList } from "@/components/dashboard/teammate/ReviewsList";
+import { requireOnboardedTeammate } from "@/lib/teammateGate";
 
 export const metadata: Metadata = { title: "Reviews" };
 
 export default async function TeammateReviewsPage() {
+  await requireOnboardedTeammate();
   const session = await auth();
   const teammate = session?.user?.id
     ? await prisma.teammate.findUnique({ where: { userId: session.user.id } })

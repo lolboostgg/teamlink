@@ -41,8 +41,14 @@ export async function savePersonalDetails(input: PersonalDetailsInput) {
 }
 
 /**
- * Hands the profile to the admins. Everything has to be there — a half-filled
+ * Completes verification. Everything has to be there — a half-filled
  * submission would just bounce back and forth.
+ *
+ * Approval is automatic for now: a teammate who has uploaded all three
+ * documents is unblocked immediately rather than waiting on an admin. The
+ * documents are still stored and still visible to admins, who can reject
+ * afterwards — this trades an up-front gate for an after-the-fact review, so
+ * onboarding doesn't stall on nobody being online to click approve.
  */
 export async function submitForReview() {
   const teammate = await requireOwnTeammate();
@@ -58,19 +64,23 @@ export async function submitForReview() {
   if (!record?.selfiePath) missing.push("selfie");
   if (missing.length > 0) throw new Error(`Still missing: ${missing.join(", ")}.`);
 
+  const now = new Date();
   await prisma.teammateVerification.update({
     where: { teammateId: teammate.id },
-    data: { status: "PENDING", submittedAt: new Date(), reviewNote: null },
+    data: { status: "APPROVED", submittedAt: now, reviewedAt: now, reviewNote: null },
   });
 
+  // Admins are told after the fact rather than asked up front — they can
+  // still open the documents and reject from the teammate detail page.
   await notifyAdmins({
     type: "verification.submitted",
-    title: `${teammate.name} submitted an identity verification`,
-    body: "Documents are ready for review.",
+    title: `${teammate.name} completed identity verification`,
+    body: "Auto-approved — documents are available for review.",
     href: `/dashboard/admin/teammates/${teammate.teammateNo}`,
   });
 
   revalidatePath("/dashboard/teammate/verification");
+  revalidatePath("/dashboard/teammate/onboarding");
 }
 
 export async function savePayoutMethod(input: {

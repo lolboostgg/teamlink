@@ -26,10 +26,9 @@ export interface TeammateProfileFormValue
 
 interface Props {
   initial: TeammateProfileFormValue;
-  // Admin editing someone else's row can rename them and assign which
-  // games they're listed for; a teammate editing their own profile can't
-  // (name changes and game assignment both stay admin-only, per the
-  // request — "der admin kann dann die games festlegen für die teammates").
+  // Renaming stays admin-only. Game assignment does not: onboarding asks a
+  // new teammate to pick their own games, and the admin form keeps the same
+  // control for correcting them afterwards.
   showAdminFields: boolean;
   onSave: (value: TeammateProfileFormValue) => Promise<void>;
   onCancel?: () => void;
@@ -245,29 +244,27 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
             </div>
           </div>
 
-          {showAdminFields && (
-            <div className="form-row">
-              <label>Games this teammate is listed for</label>
-              <div className="chip-check-group">
-                {GAMES.map((g) => (
-                  <label key={g.slug} className="chip-check chip-check--avatar">
-                    <input
-                      type="checkbox"
-                      checked={gameSlugs.includes(g.slug)}
-                      onChange={() => setGameSlugs((prev) => toggle(prev, g.slug))}
-                    />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={gameIcon(g.slug)} alt="" className="chip-check__icon" />
-                    <span>{g.name}</span>
-                  </label>
-                ))}
-              </div>
+          <div className="form-row">
+            <label>{showAdminFields ? "Games this teammate is listed for" : "Games you want to be booked for"}</label>
+            <div className="chip-check-group">
+              {GAMES.map((g) => (
+                <label key={g.slug} className="chip-check chip-check--avatar">
+                  <input
+                    type="checkbox"
+                    checked={gameSlugs.includes(g.slug)}
+                    onChange={() => setGameSlugs((prev) => toggle(prev, g.slug))}
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={gameIcon(g.slug)} alt="" className="chip-check__icon" />
+                  <span>{g.name}</span>
+                </label>
+              ))}
             </div>
-          )}
+          </div>
 
           {sections.length === 0 && (
             <p className="form-row__hint">
-              No games assigned yet — an admin decides which games you&rsquo;re listed for.
+              Pick at least one game above &mdash; each one you select gets its own tab for rank, roles and pool.
             </p>
           )}
         </>

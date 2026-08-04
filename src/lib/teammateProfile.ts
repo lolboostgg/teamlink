@@ -6,8 +6,10 @@ import {
   type GameProfileEntry,
 } from "@/lib/gameProfiles";
 import type { LolRankTier, ChampionName, LolLane } from "@/lib/lolAssets";
+import { GAMES } from "@/lib/games";
 
 const LANGUAGE_CODES = new Set(LANGUAGES.map((l) => l.code));
+const GAME_SLUGS = new Set(GAMES.map((game) => game.slug));
 const MAX_AVATAR_DATA_URL_LENGTH = 60_000;
 
 function sanitizeAvatarUrl(raw: string | undefined): string {
@@ -24,6 +26,8 @@ export interface TeammateProfileInput {
   timezone: string;
   avatarUrl: string;
   languages: LanguageCode[];
+  /** Which games this teammate is listed for. */
+  gameSlugs: string[];
   gameProfiles: GameProfileMap;
   // Legacy League-only mirror of gameProfiles["league-of-legends"], derived
   // by the sanitizer — never trusted from the client.
@@ -45,9 +49,13 @@ export function sanitizeTeammateProfileInput(raw: {
   timezone?: string;
   avatarUrl?: string;
   languages?: string[];
+  gameSlugs?: string[];
   gameProfiles?: unknown;
 }): TeammateProfileInput {
   const languages = (raw.languages ?? []).filter((v): v is LanguageCode => LANGUAGE_CODES.has(v as LanguageCode));
+  // Checked against the registry for the same reason as the languages above:
+  // this lands in a Json column, so an unknown slug would sit there forever.
+  const gameSlugs = [...new Set((raw.gameSlugs ?? []).filter((slug) => GAME_SLUGS.has(slug)))];
   const gameProfiles = sanitizeGameProfiles(raw.gameProfiles);
   const lol: GameProfileEntry = gameProfiles["league-of-legends"] ?? EMPTY_GAME_PROFILE;
 
@@ -56,6 +64,7 @@ export function sanitizeTeammateProfileInput(raw: {
     timezone: (raw.timezone ?? "").trim().slice(0, 60),
     avatarUrl: sanitizeAvatarUrl(raw.avatarUrl),
     languages,
+    gameSlugs,
     gameProfiles,
     lolRank: lol.rank,
     lolChampions: lol.pool,

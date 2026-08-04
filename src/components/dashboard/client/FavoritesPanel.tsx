@@ -18,9 +18,30 @@ export function FavoritesPanel() {
     .map<FavoriteTeammate | null>((id) => {
       const teammate = getTeammateById(id);
       if (!teammate) return null;
-      const sessions = orders.filter((o) => o.selectedTeammateId === id && o.status === "completed").length;
-      const gameName = getGameBySlug(teammate.gameSlugs[0])?.name ?? teammate.gameSlugs[0];
-      return { id: teammate.id, name: teammate.name, avatarUrl: teammate.avatarUrl, gameName, gameSlug: teammate.gameSlugs[0], rating: teammate.rating, sessions };
+
+      // Orders are newest first, so the first match is the last thing you
+      // played together — a better target for "Play again" than whichever
+      // game happens to sit first in their roster entry.
+      const together = orders.filter((o) => o.selectedTeammateIds.includes(id) && o.status === "completed");
+      const lastPlayed = together[0];
+      const playSlug = lastPlayed?.gameSlug ?? teammate.gameSlugs[0] ?? "";
+      const playGameName = lastPlayed?.gameName ?? getGameBySlug(playSlug)?.name ?? playSlug;
+
+      return {
+        id: teammate.id,
+        name: teammate.name,
+        avatarUrl: teammate.avatarUrl,
+        tagline: teammate.tagline,
+        languages: teammate.languages,
+        timezone: teammate.timezone,
+        gameSlugs: teammate.gameSlugs,
+        playSlug,
+        playGameName,
+        rating: teammate.rating,
+        reviewCount: teammate.reviewCount ?? 0,
+        sessions: together.length,
+        totalSessions: teammate.sessions,
+      };
     })
     .filter((f): f is FavoriteTeammate => f !== null);
 

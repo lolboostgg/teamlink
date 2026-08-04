@@ -42,6 +42,38 @@ model User {
   creditTransactions CreditTransaction[]
   notifications      Notification[]
   favoriteTeammates  FavoriteTeammate[]
+  invitesCreated     TeammateInvite[]    @relation("InvitesCreated")
+  inviteUsed         TeammateInvite?     @relation("InviteUsed")
+}
+
+/**
+ * A one-time link that lets someone register themselves as a teammate.
+ *
+ * Deliberately consumed on *registration*, not on opening: a link posted in
+ * Discord is fetched by the unfurl bot before a human ever sees it, so an
+ * open counter would burn the invite before it was used. Capping signups is
+ * also what actually matters — the link can be forwarded to a hundred people
+ * and still only ever create one account.
+ */
+model TeammateInvite {
+  id           String    @id @default(cuid())
+  /** The random secret in the URL. */
+  token        String    @unique
+  /** Free-text reminder of who this was meant for. */
+  note         String?
+  email        String?
+  createdById  String
+  createdBy    User      @relation("InvitesCreated", fields: [createdById], references: [id])
+  expiresAt    DateTime
+  /** Informational only — never gates anything, see the note above. */
+  openCount    Int       @default(0)
+  usedAt       DateTime?
+  usedByUserId String?   @unique
+  usedByUser   User?     @relation("InviteUsed", fields: [usedByUserId], references: [id])
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([createdAt])
 }
 
 // In-app notification feed. Every row targets one user; a platform event

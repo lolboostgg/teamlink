@@ -6,6 +6,8 @@ import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
 import { DispatchFlow } from "@/components/dashboard/teammate/DispatchFlow";
 import { prisma } from "@/lib/db";
 import { discordAvatarUrl } from "@/lib/discord";
+import { loadOnboardingSubject } from "@/lib/teammateGate";
+import { isOnboardingComplete } from "@/lib/teammateOnboarding";
 
 // Sibling of the (marketing) route group, so /dashboard/* gets its own
 // shell (sidebar + topbar) instead of inheriting the marketing Header/
@@ -39,6 +41,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
         },
       })
     : null;
+  // Drives the sidebar's locked state, so a teammate mid-onboarding sees why
+  // the other sections don't respond instead of being bounced back by the
+  // per-page gate with no explanation.
+  const onboarding =
+    session?.user?.id && session.user.role === "TEAMMATE"
+      ? await loadOnboardingSubject(session.user.id)
+      : null;
+  const onboardingPending = onboarding ? !isOnboardingComplete(onboarding) : false;
+
   const storedAvatar = teammate?.avatarUrl || teammate?.user?.avatarUrl || null;
   // Older uploads were truncated to exactly 2,000 characters by the profile
   // sanitizer. A partial data URL can never render, so fall through to the
@@ -63,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <>
         <DispatchFlow />
         <div className="dashboard-shell">
-          <DashboardSidebar teammate={teammateProfile} />
+          <DashboardSidebar teammate={teammateProfile} onboardingPending={onboardingPending} />
           <div className="dashboard-shell__main">
             <DashboardTopbar avatarUrl={teammateProfile?.avatarUrl} />
             <ViewTransition

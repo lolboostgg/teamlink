@@ -16,6 +16,10 @@ import { Prisma } from "@/generated/prisma/client";
 // itself instead of relying on adapter-managed Account rows.
 const REMEMBERED_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const NOT_REMEMBERED_MAX_AGE_SECONDS = 24 * 60 * 60; // 1 day
+// How stale a role in an existing JWT may get. Low enough that "change the
+// role, reload the page" behaves the way an admin expects, high enough that
+// a burst of requests for one page view doesn't each hit the database.
+const ROLE_RECHECK_SECONDS = 10;
 
 // JWT sessions are stored in cookies. An uploaded avatar is often a base64
 // data URL several kilobytes large; putting that into `token.picture` makes
@@ -161,6 +165,40 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.name = fresh.name;
           token.picture = sessionSafeAvatar(fresh.avatarUrl);
           token.role = fresh.role;
+        }
+        return token;
+      }
+
+      // Existing session, no sign-in happening: re-read the role so an admin
+      // promoting or demoting an account takes effect on the next page load
+      // instead of only after a sign-out/sign-in cycle. The JWT is the only
+      // place the role lives, so nothing else can notice the change.
+      //
+      // Throttled, because this callback runs on every request that touches
+      // auth() — a full re-read each time would put a query in front of every
+      // page. ROLE_RECHECK_SECONDS is the worst-case delay before a role
+      // change is visible.
+      if (!user && token.id) {
+        const checkedAt = typeof token.roleCheckedAt === "number" ? token.roleCheckedAt : 0;
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        if (nowSeconds - checkedAt < ROLE_RECHECK_SECONDS) return token;
+
+        try {
+          const fresh = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true, name: true, avatarUrl: true },
+          });
+          // A deleted account keeps whatever the token already said; the
+          // route guards still reject it, and failing the callback here
+          // would sign everyone out on a transient database blip.
+          if (fresh) {
+            token.role = fresh.role;
+            token.name = fresh.name;
+            token.picture = sessionSafeAvatar(fresh.avatarUrl);
+          }
+          token.roleCheckedAt = nowSeconds;
+        } catch {
+          // Same reasoning: a failed lookup must not invalidate the session.
         }
         return token;
       }

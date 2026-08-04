@@ -10,6 +10,16 @@ import { TeammateSidebarProfile, type TeammateSidebarData } from "@/components/d
 // ClientDashboardNav.tsx) — it no longer uses this shell/sidebar at all.
 type ShellRole = "admin" | "teammate";
 
+const ONBOARDING_HREF = "/dashboard/teammate/onboarding";
+// Kept in step with ONBOARDING_ALLOWED_PATHS in lib/teammateOnboarding.ts —
+// these are the pages the checklist itself links to.
+const ONBOARDING_OPEN_PATHS = [
+  ONBOARDING_HREF,
+  "/dashboard/teammate/verification",
+  "/dashboard/teammate/connections",
+  "/dashboard/teammate/profile",
+];
+
 const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[]> = {
   admin: [
     { href: "/dashboard/admin", label: "Overview", icon: "fa-solid fa-gauge" },
@@ -18,6 +28,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
     { href: "/dashboard/admin/orders", label: "Orders & sessions", icon: "fa-solid fa-receipt" },
     { href: "/dashboard/admin/chat", label: "Chats", icon: "fa-solid fa-comments" },
     { href: "/dashboard/admin/payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
+    { href: "/dashboard/admin/onboarding", label: "Onboarding", icon: "fa-solid fa-user-plus" },
   ],
   teammate: [
     { href: "/dashboard/teammate", label: "Overview", icon: "fa-solid fa-gauge" },
@@ -29,11 +40,24 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   ],
 };
 
-export function DashboardSidebar({ teammate }: { teammate?: TeammateSidebarData | null }) {
+export function DashboardSidebar({
+  teammate,
+  onboardingPending = false,
+}: {
+  teammate?: TeammateSidebarData | null;
+  onboardingPending?: boolean;
+}) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const role: ShellRole = pathname.startsWith("/dashboard/admin") ? "admin" : "teammate";
-  const sections = SECTIONS[role];
+  const baseSections = SECTIONS[role];
+  // While the checklist is open, the sidebar becomes the checklist plus the
+  // three pages it sends you to. Everything else is rendered locked rather
+  // than hidden, so it's obvious the panel exists and what unlocks it.
+  const sections =
+    role === "teammate" && onboardingPending
+      ? [{ href: ONBOARDING_HREF, label: "Finish setup", icon: "fa-solid fa-list-check" }, ...baseSections]
+      : baseSections;
 
   useEffect(() => setCollapsed(window.localStorage.getItem("teamlink:dashboard-sidebar-collapsed") === "true"), []);
   function toggleCollapsed() {
@@ -57,6 +81,24 @@ export function DashboardSidebar({ teammate }: { teammate?: TeammateSidebarData 
         {sections.map((s) => {
           const isOverview = s.href === `/dashboard/${role}`;
           const active = isOverview ? pathname === s.href : pathname.startsWith(s.href);
+          const locked =
+            role === "teammate" && onboardingPending && !ONBOARDING_OPEN_PATHS.includes(s.href);
+
+          if (locked) {
+            return (
+              <span
+                key={s.href}
+                className="dashboard-sidebar__nav-link is-locked"
+                aria-disabled="true"
+                title={collapsed ? `${s.label} — finish your setup first` : "Finish your setup first"}
+              >
+                <i className={s.icon} aria-hidden="true" />
+                <span>{s.label}</span>
+                <i className="fa-solid fa-lock dashboard-sidebar__lock" aria-hidden="true" />
+              </span>
+            );
+          }
+
           return (
             <Link
               key={s.href}

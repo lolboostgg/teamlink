@@ -6,10 +6,9 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { sanitizeTeammateProfileInput, type TeammateProfileClientInput } from "@/lib/teammateProfile";
 
-// Teammates edit their own game profile — not the admin-only gameSlugs
-// (which games they're listed for) or name, which stays admin territory
-// per the request ("der admin kann dann die games festlegen für die
-// teammates").
+// Teammates edit their own game profile, including which games they're
+// listed for — onboarding asks them to choose those themselves. The display
+// name stays admin territory.
 export async function updateOwnProfile(input: TeammateProfileClientInput) {
   const session = await auth();
   if (session?.user?.role !== "TEAMMATE") {
@@ -30,6 +29,7 @@ export async function updateOwnProfile(input: TeammateProfileClientInput) {
         timezone: clean.timezone || null,
         avatarUrl: clean.avatarUrl || null,
         languages: clean.languages,
+        gameSlugs: clean.gameSlugs,
         // See the note in the admin action — Prisma's Json input type needs
         // the assertion for a Record of interfaces.
         gameProfiles: clean.gameProfiles as unknown as Prisma.InputJsonObject,
@@ -43,4 +43,5 @@ export async function updateOwnProfile(input: TeammateProfileClientInput) {
   if (count === 0) throw new Error("No teammate profile linked to this account.");
 
   revalidatePath("/dashboard/teammate/profile");
+  revalidatePath("/dashboard/teammate/onboarding");
 }

@@ -6,6 +6,7 @@ import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard
 import { TeammateOverviewPanels } from "@/components/dashboard/teammate/TeammateOverviewPanels";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import { VerificationBanner } from "@/components/dashboard/teammate/VerificationBanner";
+import { requireOnboardedTeammate } from "@/lib/teammateGate";
 
 export const metadata: Metadata = { title: "Teammate Dashboard" };
 // Direct top-level Prisma query in a Server Component — same build-time-
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Teammate Dashboard" };
 export const dynamic = "force-dynamic";
 
 export default async function TeammateDashboardPage() {
+  await requireOnboardedTeammate();
   const session = await auth();
   const teammate = session?.user?.id
     ? await prisma.teammate.findUnique({

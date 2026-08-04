@@ -7750,9 +7750,9 @@ ul {
   pointer-events: none;
 }
 .auth-modal__remember-box { width: 19px; height: 19px; display: grid; place-items: center; flex: 0 0 auto; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--bg-input); color: transparent; font-size: 10px; transition: .16s ease; }
-.auth-modal__remember:hover .auth-modal__remember-box { border-color: var(--cta-vivid); }
-.auth-modal__remember input:checked + .auth-modal__remember-box { border-color: var(--cta-vivid); background: var(--cta-vivid); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--cta-vivid) 16%, transparent); }
-.auth-modal__remember input:focus-visible + .auth-modal__remember-box { outline: 2px solid var(--cta-vivid); outline-offset: 2px; }
+.auth-modal__remember:hover .auth-modal__remember-box { border-color: var(--accent); }
+.auth-modal__remember input:checked + .auth-modal__remember-box { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+.auth-modal__remember input:focus-visible + .auth-modal__remember-box { outline: 2px solid var(--accent); outline-offset: 2px; }
 .auth-modal__back { display: block; margin: 12px auto 0; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .auth-modal__back:hover { color: var(--text); }
 
@@ -7999,7 +7999,7 @@ ul {
 }
 
 .credits-widget__pill i.fa-coins {
-  color: var(--hue-gold);
+  color: var(--accent);
   font-size: 12px;
 }
 
@@ -10126,15 +10126,39 @@ a.notification-panel__item:hover {
 }
 .favorite-teammate__avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
 
-.favorite-teammate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 12px; }
-.favorite-teammate-card { position: relative; min-width: 0; display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 10px 13px; padding: 16px; overflow: hidden; border: 1px solid var(--dash-line); border-radius: 14px; background: linear-gradient(135deg, rgba(70, 104, 255, .075), transparent 52%), var(--dash-surface-2); }
+/* Cards carry tagline, languages, timezone and every game now, so the track
+   minimum went up — at 310px the fact row wrapped into a stack. */
+.favorite-teammate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+.favorite-teammate-card { position: relative; min-width: 0; display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: start; gap: 12px 13px; padding: 16px; overflow: hidden; border: 1px solid var(--dash-line); border-radius: 14px; background: linear-gradient(135deg, rgba(70, 104, 255, .075), transparent 52%), var(--dash-surface-2); }
 .favorite-teammate-card::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 2px; background: linear-gradient(180deg, var(--accent), #9d5cff); opacity: .85; }
-.favorite-teammate-card .favorite-teammate__avatar { width: 54px; height: 54px; grid-row: 1 / 3; border-radius: 14px; }
+.favorite-teammate-card .favorite-teammate__avatar { width: 54px; height: 54px; border-radius: 14px; }
 .favorite-teammate-card__meta { min-width: 0; }
 .favorite-teammate-card__name { overflow: hidden; color: var(--text); font-size: 15px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-.favorite-teammate-card__game, .favorite-teammate-card__sessions { margin-top: 3px; color: var(--text-faint); font-size: 11px; }
-.favorite-teammate-card__sessions i { margin-right: 4px; color: var(--accent); font-size: 9px; }
-.favorite-teammate-card__rating { align-self: start; display: inline-flex; align-items: center; gap: 4px; color: var(--warning); font-size: 11px; font-weight: 800; }
+
+/* Two lines maximum: a long tagline must not push the card out of step with
+   its neighbours in the grid row. */
+.favorite-teammate-card__tagline {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  margin: 4px 0 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.favorite-teammate-card__facts { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; margin-top: 7px; }
+.favorite-teammate-card__fact { display: inline-flex; align-items: center; gap: 5px; color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+.favorite-teammate-card__fact > i { color: var(--accent); font-size: 9px; }
+.favorite-teammate-card__langs { gap: 4px; }
+.favorite-teammate-card__langs .flag-icon { width: 15px; height: 11px; border-radius: 2px; }
+
+.favorite-teammate-card__games { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.favorite-teammate-card__games .game-mark { border-radius: 6px; }
+
+.favorite-teammate-card__rating { align-self: start; display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px; color: var(--warning); font-size: 11px; font-weight: 800; white-space: nowrap; }
+.favorite-teammate-card__rating small { color: var(--text-faint); font-size: 9px; font-weight: 600; }
 .favorite-teammate-card__play { grid-column: 2 / 4; justify-self: start; }
 
 @media (max-width: 520px) {
@@ -10506,3 +10530,133 @@ a.notification-panel__item:hover {
     animation-delay: 0s !important;
   }
 }
+
+/* ── Teammate onboarding checklist ───────────────────────────────────── */
+
+.onboarding-progress {
+  height: 6px;
+  margin: 0 0 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.onboarding-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #9d5cff);
+  transition: width 0.3s ease;
+}
+
+.onboarding-steps { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+
+.onboarding-step {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--dash-surface-2);
+}
+
+/* Finished steps recede: the point of the list is what is still missing. */
+.onboarding-step.is-done { border-color: rgba(47, 191, 113, 0.22); opacity: 0.72; }
+
+.onboarding-step__mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(79, 112, 255, 0.1);
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.onboarding-step.is-done .onboarding-step__mark { background: rgba(47, 191, 113, 0.14); color: var(--hue-green); }
+
+.onboarding-step__copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.onboarding-step__copy strong { color: var(--text); font-size: 13px; }
+.onboarding-step__copy span { color: var(--text-faint); font-size: 11px; line-height: 1.45; }
+.onboarding-step__copy em { color: var(--hue-gold); font-size: 10.5px; font-style: normal; font-weight: 650; }
+.onboarding-step__state { color: var(--hue-green); font-size: 11px; font-weight: 700; }
+
+@media (max-width: 620px) {
+  .onboarding-step { grid-template-columns: 38px minmax(0, 1fr); }
+  .onboarding-step > .btn, .onboarding-step__state { grid-column: 2 / -1; justify-self: start; }
+}
+
+/* ── Public invite redemption page ───────────────────────────────────── */
+
+.join-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background: var(--bg);
+}
+
+.join-card {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 28px;
+  border: 1px solid var(--dash-line-strong);
+  border-radius: 18px;
+  background: var(--dash-surface);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.join-card__icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: rgba(79, 112, 255, 0.12);
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.join-card__icon--dead { background: rgba(233, 168, 62, 0.12); color: var(--hue-gold); }
+
+.join-card h1 { margin: 0; color: var(--text); font-size: 20px; font-weight: 800; }
+.join-card > p { margin: 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.55; }
+.join-card__foot { margin: 0; color: var(--text-faint); font-size: 11.5px; }
+.join-card__foot a { color: var(--accent); }
+
+.join-form { width: 100%; display: grid; gap: 12px; margin-top: 6px; text-align: left; }
+.join-form__submit { width: 100%; margin-top: 4px; }
+
+.join-form__password { position: relative; display: flex; align-items: center; }
+.join-form__password input { width: 100%; padding-right: 40px; }
+.join-form__password button {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.join-form__password button:hover { color: var(--text); }
+
+/* Sidebar entries that onboarding hasn't unlocked yet. */
+.dashboard-sidebar__nav-link.is-locked {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.dashboard-sidebar__nav-link.is-locked:hover { background: transparent; color: inherit; }
+.dashboard-sidebar__lock { margin-left: auto; font-size: 9px; }
+.dashboard-sidebar.is-collapsed .dashboard-sidebar__lock { display: none; }
