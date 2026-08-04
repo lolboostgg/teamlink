@@ -5,6 +5,7 @@ import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
 import { TeammateOverviewPanels } from "@/components/dashboard/teammate/TeammateOverviewPanels";
 import { VerificationBanner } from "@/components/dashboard/teammate/VerificationBanner";
+import { RulesPanel } from "@/components/dashboard/teammate/RulesPanel";
 import { requireOnboardedTeammate } from "@/lib/teammateGate";
 import { loadTeammateEarnings } from "@/lib/teammateEarnings";
 import type { DisplayReview } from "@/components/dashboard/teammate/ReviewsList";
@@ -88,6 +89,7 @@ export default async function TeammateDashboardPage() {
         reviews={reviews}
       />
       <ActiveOrderCard />
+      <RulesPanel />
     </>
   );
 }

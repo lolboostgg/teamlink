@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { formatCurrency, type CurrencyCode } from "@/lib/currency";
+import { formatCurrency, type CurrencyCode, type RateTable } from "@/lib/currency";
 
 const STORAGE_KEY = "teamlink:currency";
 
@@ -9,6 +9,8 @@ interface CurrencyContextValue {
   currency: CurrencyCode;
   setCurrency: (code: CurrencyCode) => void;
   format: (amountInEUR: number) => string;
+  /** ECB publication date, or null while the static fallback is in use. */
+  rateDate: string | null;
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
@@ -26,6 +28,27 @@ export function useCurrency() {
 // server/cookie involved since there's no backend to read a locale from.
 export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<CurrencyCode>("EUR");
+  // Undefined until the ECB rates land; formatCurrency then falls back to the
+  // static table, so the first paint matches what the server rendered.
+  const [rates, setRates] = useState<RateTable | undefined>(undefined);
+  const [rateDate, setRateDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/fx")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((snapshot: { rates: RateTable; date: string | null } | null) => {
+        if (cancelled || !snapshot?.rates) return;
+        setRates(snapshot.rates);
+        setRateDate(snapshot.date);
+      })
+      .catch(() => {
+        // The static table stays in effect; nothing to tell the user.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as CurrencyCode | null;
@@ -43,9 +66,15 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, code);
   }, []);
 
-  const format = useCallback((amountInEUR: number) => formatCurrency(amountInEUR, currency), [currency]);
+  const format = useCallback(
+    (amountInEUR: number) => formatCurrency(amountInEUR, currency, rates),
+    [currency, rates],
+  );
 
-  const value = useMemo(() => ({ currency, setCurrency, format }), [currency, setCurrency, format]);
+  const value = useMemo(
+    () => ({ currency, setCurrency, format, rateDate }),
+    [currency, setCurrency, format, rateDate],
+  );
 
   return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
 }

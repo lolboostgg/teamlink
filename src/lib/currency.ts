@@ -22,10 +22,11 @@ export interface CurrencyMeta {
   code: CurrencyCode;
   label: string;
   symbol: string;
-  /** Units of this currency per 1 EUR. Static, illustrative rates — NOT
-   *  live market data. There's no backend/FX feed in this project (mock
-   *  data throughout); wire a real provider here before this ever handles
-   *  real money. */
+  /**
+   * Units of this currency per 1 EUR — the fallback used until the live ECB
+   * rates arrive (see lib/fx.ts) and if that fetch ever fails. Display only:
+   * every amount is stored and charged in EUR.
+   */
   rate: number;
   /** Decimal places to show. Defaults to 2; JPY has none. */
   decimals?: number;
@@ -61,9 +62,16 @@ export function getCurrencyMeta(code: CurrencyCode): CurrencyMeta {
   return CURRENCY_BY_CODE.get(code) ?? CURRENCIES[0];
 }
 
-export function formatCurrency(amountInEUR: number, code: CurrencyCode): string {
+export type RateTable = Partial<Record<CurrencyCode, number>>;
+
+/**
+ * `rates` overrides the static table when live ECB rates have loaded. It is
+ * optional so server-rendered output and the first client paint agree.
+ */
+export function formatCurrency(amountInEUR: number, code: CurrencyCode, rates?: RateTable): string {
   const meta = getCurrencyMeta(code);
-  const converted = amountInEUR * meta.rate;
+  const rate = rates?.[code] ?? meta.rate;
+  const converted = amountInEUR * rate;
   const decimals = meta.decimals ?? 2;
   const value = converted.toLocaleString("en-US", {
     minimumFractionDigits: decimals,

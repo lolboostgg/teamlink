@@ -45,6 +45,99 @@ model User {
   invitesCreated     TeammateInvite[]    @relation("InvitesCreated")
   inviteUsed         TeammateInvite?     @relation("InviteUsed")
   payoutsProcessed   PayoutRequest[]     @relation("PayoutsProcessed")
+  /** Stripe's customer object, created lazily on first checkout. */
+  stripeCustomerId   String?             @unique
+  savedCards         SavedCard[]
+  charges            Charge[]
+  gameAccounts       GameAccount[]
+}
+
+/**
+ * A card (or wallet) the customer told Stripe to keep for later.
+ *
+ * Only the identifiers and the display crumbs live here — the number never
+ * touches this database. Charging later means sending Stripe the payment
+ * method id, which is useless to anyone who does not also hold our secret key.
+ */
+model SavedCard {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentMethodId String   @unique
+  brand                 String
+  last4                 String
+  expMonth              Int
+  expYear               Int
+  isDefault             Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  charges Charge[]
+
+  @@index([userId])
+}
+
+enum ChargeStatus {
+  PENDING
+  REQUIRES_ACTION
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum ChargeKind {
+  ORDER
+  EXTRA_GAMES
+  TIP
+}
+
+/**
+ * One attempt to take money, mirrored from Stripe.
+ *
+ * Stripe stays the source of truth for whether money moved; this table exists
+ * so the app can answer "what did this customer pay for" without calling the
+ * API, and so a webhook has somewhere to land. The unique payment-intent id
+ * is what makes replayed webhooks harmless.
+ */
+model Charge {
+  id                    String       @id @default(cuid())
+  userId                String?
+  user                  User?        @relation(fields: [userId], references: [id])
+  /** Set for guest checkouts, which have no account behind them. */
+  guestEmail            String?
+  orderId               String?
+  order                 Order?       @relation(fields: [orderId], references: [id])
+  savedCardId           String?
+  savedCard             SavedCard?   @relation(fields: [savedCardId], references: [id])
+  kind                  ChargeKind   @default(ORDER)
+  status                ChargeStatus @default(PENDING)
+  amountEUR             Decimal      @db.Decimal(10, 2)
+  stripePaymentIntentId String?      @unique
+  stripeSessionId       String?      @unique
+  failureMessage        String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([orderId])
+}
+
+/**
+ * The customer's in-game identity for one game — IGN, region and the roles
+ * they want to play. Asked for before checkout so the teammate knows who to
+ * add and where.
+ */
+model GameAccount {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameSlug  String
+  ign       String
+  region    String
+  roles     Json
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, gameSlug])
 }
 
 /**
@@ -362,6 +455,11 @@ model Order {
   games      SessionGame[]
   review     Review?
   earnings   TeammateEarning[]
+  charges    Charge[]
+  /** Snapshot of the in-game identity this order was booked with. */
+  ign        String?
+  ignRegion  String?
+  ignRoles   Json?
 
   @@index([clientUserId])
   @@index([status])
