@@ -83,7 +83,12 @@ export function useLiveSync(
 ) {
   const { enabled = true, key } = options;
   const refreshRef = useRef(refresh);
-  refreshRef.current = refresh;
+  // Kept in an effect rather than assigned during render: a render can be
+  // thrown away or replayed, and writing to a ref in that phase is exactly
+  // what React's rules forbid.
+  useEffect(() => {
+    refreshRef.current = refresh;
+  });
 
   useEffect(() => {
     if (!enabled) return;

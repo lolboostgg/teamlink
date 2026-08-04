@@ -23,7 +23,12 @@ const MAX_BACKOFF_MS = 60_000;
  */
 export function usePoll(task: () => void | Promise<unknown>, intervalMs: number, enabled = true) {
   const taskRef = useRef(task);
-  taskRef.current = task;
+  // Kept in an effect rather than assigned during render: a render can be
+  // thrown away or replayed, and writing to a ref in that phase is exactly
+  // what React's rules forbid.
+  useEffect(() => {
+    taskRef.current = task;
+  });
 
   useEffect(() => {
     if (!enabled) return;
