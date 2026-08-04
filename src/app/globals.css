@@ -8525,6 +8525,17 @@ ul {
   border-radius: 14px;
 }
 
+/* Chat alignment and containment: client left, teammate/admin right. */
+.admin-chat-overview .chat-list__item.is-active { background: rgba(255, 255, 255, .055); box-shadow: inset 3px 0 0 rgba(132, 139, 166, .45); }
+.chat-list__avatar > img { width: 100%; height: 100%; display: block; border-radius: inherit; object-fit: cover; }
+.admin-chat-overview .chat-thread { min-width: 0; min-height: 0; overflow: hidden; }
+.admin-chat-overview .chat-list { min-height: 0; }
+.admin-chat-overview .chat-thread__messages { min-height: 0; overflow-y: scroll; overscroll-behavior: contain; }
+.admin-overview-message--teammate, .admin-overview-message--admin { align-self: flex-end; }
+.admin-overview-message--teammate .chat-bubble, .admin-overview-message--admin .chat-bubble { border: 1px solid rgba(132, 139, 166, .16); background: rgba(255, 255, 255, .07); }
+.admin-chat-sender small, .chat-thread__name small { color: var(--text-faint); font-size: 9px; font-weight: 600; }
+.admin-order-chat__input { border-top: 1px solid var(--dash-line); background: rgba(255, 255, 255, .012); }
+
 .notification-panel__head { height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 13px 0 15px; border-bottom: 1px solid var(--border); background: rgba(255, 255, 255, .025); }
 .notification-panel__head > span { display: flex; align-items: center; gap: 8px; color: var(--text); font-size: 13px; font-weight: 750; }
 .notification-panel__head > span > i { color: var(--accent); font-size: 12px; }

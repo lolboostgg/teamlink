@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
+import { AdminOrderReply } from "@/components/dashboard/admin/AdminOrderReply";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             </article>;
           })}
         </div>
-        <footer className="chat-thread__locked"><i className="fa-solid fa-shield-halved" /><span><strong>Admin conversation access</strong>Open the conversation to reply as TeamLink support.</span></footer>
+        <AdminOrderReply conversationKey={conversationKey} orderNo={order.orderNo} />
       </div>}
     </section>
 

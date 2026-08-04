@@ -102,6 +102,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       unreadCount,
       markAllSeen: () => {
         setSeenIds(new Set(notifications.map((n) => n.id)));
+        setStored((current) => current.map((item) => ({ ...item, read: true })));
         fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(load);
       },
       markSeen: (id) => {

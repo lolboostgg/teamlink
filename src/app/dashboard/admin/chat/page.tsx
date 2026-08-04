@@ -20,7 +20,9 @@ export default async function AdminChatPage({ searchParams }: { searchParams: Pr
         key,
         orderNo: order.orderNo,
         clientName: order.clientUser?.name || order.clientUser?.email || order.customerLabel,
+        clientAvatarUrl: order.clientUser?.avatarUrl ?? null,
         teammateName: candidate.teammate.name,
+        teammateAvatarUrl: candidate.teammate.avatarUrl,
         gameName: order.gameName,
         status: order.status === "COMPLETED" ? "completed" : "active",
       });
