@@ -66,6 +66,7 @@ export interface DispatchOrder {
   // order actually moves to "cancelled".
   cancelApprovedAt: number | null;
   customerLabel: string;
+  customerAvatarUrl?: string | null;
   createdAt: number;
 }
 

@@ -21,7 +21,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   ],
   teammate: [
     { href: "/dashboard/teammate", label: "Overview", icon: "fa-solid fa-gauge" },
-    { href: "/dashboard/teammate/sessions", label: "Sessions", icon: "fa-solid fa-calendar-check" },
+    { href: "/dashboard/teammate/sessions", label: "Orders", icon: "fa-solid fa-receipt" },
     { href: "/dashboard/teammate/chat", label: "Chat", icon: "fa-solid fa-comments" },
     { href: "/dashboard/teammate/reviews", label: "Reviews", icon: "fa-solid fa-star" },
     { href: "/dashboard/teammate/profile", label: "Game profile", icon: "fa-solid fa-id-card" },
@@ -74,6 +74,7 @@ export function DashboardSidebar({ teammate }: { teammate?: TeammateSidebarData 
 
       <div className="dashboard-sidebar__utility">
         {role === "teammate" && <Link href="/dashboard/teammate/profile" title={collapsed ? "My profile" : undefined}><i className="fa-solid fa-user" /><span>My profile</span></Link>}
+        {role === "admin" && <Link href="/dashboard/admin/profile" title={collapsed ? "My profile" : undefined}><i className="fa-solid fa-user" /><span>My profile</span></Link>}
         <a href="mailto:support@teamlink.gg" title={collapsed ? "Help & support" : undefined}><i className="fa-regular fa-circle-question" /><span>Help & support</span></a>
         <Link href="/" transitionTypes={["dashboard-exit"]} title={collapsed ? "Back to site" : undefined}><i className="fa-solid fa-arrow-left" /><span>Back to site</span></Link>
       </div>

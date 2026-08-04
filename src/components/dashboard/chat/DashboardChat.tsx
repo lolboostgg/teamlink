@@ -3,7 +3,8 @@
 import { useState } from "react";
 import type { ChatConversation } from "@/lib/dashboard/chatData";
 import { useConversationMessages, sendChatMessage, getLastMessage } from "@/lib/matchmaking/chatStore";
-import { AvatarIcon } from "@/components/ui/AvatarIcon";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
+import { useSession } from "next-auth/react";
 
 interface Props {
   conversations: ChatConversation[];
@@ -15,6 +16,7 @@ interface Props {
 export function DashboardChat({ conversations, from }: Props) {
   const [activeId, setActiveId] = useState(conversations[0]?.id);
   const [draft, setDraft] = useState("");
+  const { data: session } = useSession();
 
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
   const { messages, refresh } = useConversationMessages(active?.conversationKey);
@@ -46,7 +48,7 @@ export function DashboardChat({ conversations, from }: Props) {
               onClick={() => setActiveId(c.id)}
             >
               <span className="chat-list__avatar">
-                <AvatarIcon seed={c.id + c.withName} />
+                <SafeAvatarImage src={c.withAvatarUrl} />
               </span>
               <span className="chat-list__meta">
                 <span className="chat-list__name">{c.withName}{c.status === "completed" && <span className="chat-status-badge">Completed</span>}</span>
@@ -60,7 +62,7 @@ export function DashboardChat({ conversations, from }: Props) {
       <div className="chat-thread">
         <div className="chat-thread__head">
           <span className="chat-list__avatar">
-            <AvatarIcon seed={active.id + active.withName} />
+            <SafeAvatarImage src={active.withAvatarUrl} />
           </span>
           <div className="chat-thread__identity">
             <div className="chat-thread__name">{active.withName}{active.status === "completed" && <span className="chat-status-badge">Completed</span>}</div>
@@ -72,12 +74,19 @@ export function DashboardChat({ conversations, from }: Props) {
           {messages.length === 0 && (
             <p className="chat-thread__empty">No messages yet — say hello to get the conversation started.</p>
           )}
-          {messages.map((m) => (
-            <div key={m.id} className={`chat-bubble chat-bubble--${m.from === from ? "me" : "them"}`}>
-              <p>{m.text}</p>
-              <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          {messages.map((m) => {
+            const mine = m.from === from;
+            const avatarUrl = mine ? session?.user?.image : active.withAvatarUrl;
+            return <div key={m.id} className={`chat-message-row chat-message-row--${mine ? "me" : "them"}`}>
+              {!mine && <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} /></span>}
+              <div className={`chat-bubble chat-bubble--${mine ? "me" : "them"}`}>
+                <strong className="chat-bubble__sender">{mine ? (session?.user?.name || "You") : active.withName}</strong>
+                <p>{m.text}</p>
+                <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+              {mine && <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} /></span>}
             </div>
-          ))}
+          })}
         </div>
 
         {readOnly ? (

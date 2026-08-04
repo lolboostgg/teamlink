@@ -9,6 +9,7 @@ import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { DASHBOARD_ROLES } from "@/lib/roles";
 import { profileHrefForRole } from "@/lib/roles";
 import { useSession } from "next-auth/react";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
 export function DashboardTopbar({ avatarUrl }: { avatarUrl?: string | null }) {
   const pathname = usePathname();
@@ -67,8 +68,7 @@ export function DashboardTopbar({ avatarUrl }: { avatarUrl?: string | null }) {
           >
             <span className="dashboard-avatar">
               {avatarUrl || session?.user?.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarUrl || session?.user?.image || ""} alt="" />
+                <SafeAvatarImage src={avatarUrl || session?.user?.image} />
               ) : (
                 <span className="dashboard-avatar__initials">{initials}</span>
               )}

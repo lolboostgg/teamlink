@@ -18,6 +18,7 @@ export async function updateProfile(input: { name: string; avatarUrl: string }) 
   });
 
   revalidatePath("/dashboard/client/profile");
+  revalidatePath("/dashboard/admin/profile");
 }
 
 export async function changePassword(input: { currentPassword: string; newPassword: string }) {

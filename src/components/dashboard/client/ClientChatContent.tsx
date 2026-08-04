@@ -38,6 +38,7 @@ export function ClientChatContent() {
         return {
           id: teammateId,
           withName: name,
+          withAvatarUrl: getTeammateById(teammateId)?.avatarUrl ?? null,
           gameName: info.gameName,
           conversationKey: conversationKey(teammateId, info.customerLabel),
           orderNo: info.orderNo,

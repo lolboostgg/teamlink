@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { setOnlineAction } from "@/app/dashboard/teammate/dispatchActions";
 import { useToast } from "@/components/ui/ToastProvider";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
 export type TeammateSidebarData = {
   name: string;
@@ -35,8 +36,7 @@ export function TeammateSidebarProfile({ teammate }: { teammate: TeammateSidebar
     <section className={`teammate-sidebar-profile${online ? " is-online" : ""}`} aria-label="Teammate status">
       <Link href="/dashboard/teammate/profile" className="teammate-sidebar-profile__identity" title={teammate.name}>
         <span className="teammate-sidebar-profile__avatar">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={teammate.avatarUrl || "/avatars/default.webp"} alt="" />
+          <SafeAvatarImage src={teammate.avatarUrl} />
           <span className="teammate-sidebar-profile__presence" aria-hidden="true" />
         </span>
         <span className="teammate-sidebar-profile__name">{teammate.name}</span>

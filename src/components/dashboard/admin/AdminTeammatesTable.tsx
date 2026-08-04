@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GameMark } from "@/components/dashboard/GameMark";
 import { DiscordTag } from "@/components/dashboard/DiscordTag";
+import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
 export interface AdminTeammateRow {
   id: string;
@@ -48,7 +49,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
             <td className="dashboard-table__no">#{t.teammateNo}</td>
             <td className="dashboard-table__primary">
               <Link href={`/dashboard/admin/teammates/${t.teammateNo}`} className="dashboard-table__link">
-                <span className="admin-list-identity"><span className="admin-list-avatar">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={t.avatarUrl || "/avatars/default.webp"} alt="" /></span><span>{t.name}</span></span>
+                <span className="admin-list-identity"><span className="admin-list-avatar"><SafeAvatarImage src={t.avatarUrl} /></span><span>{t.name}</span></span>
               </Link>
             </td>
             <td>{t.email ?? "—"}</td>

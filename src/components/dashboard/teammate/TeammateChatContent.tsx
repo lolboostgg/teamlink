@@ -16,7 +16,7 @@ export function TeammateChatContent() {
   const teammateId = useCurrentTeammateId();
 
   const conversations: ChatConversation[] = useMemo(() => {
-    const byClient = new Map<string, { orderNo: number; gameName: string; createdAt: number; status: "active" | "completed"; lockedAt: number | null }>();
+    const byClient = new Map<string, { orderNo: number; gameName: string; createdAt: number; avatarUrl: string | null; status: "active" | "completed"; lockedAt: number | null }>();
     orders.forEach((order) => {
       if (!teammateId || !order.selectedTeammateIds.includes(teammateId)) return;
       const existing = byClient.get(order.customerLabel);
@@ -25,6 +25,7 @@ export function TeammateChatContent() {
           gameName: order.gameName,
           orderNo: order.orderNo,
           createdAt: order.createdAt,
+          avatarUrl: order.customerAvatarUrl ?? null,
           status: order.status === "completed" ? "completed" : "active",
           lockedAt: order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
         });
@@ -36,6 +37,7 @@ export function TeammateChatContent() {
       .map(([client, info], i) => ({
         id: `${client}-${i}`,
         withName: client,
+        withAvatarUrl: info.avatarUrl,
         gameName: info.gameName,
         conversationKey: teammateId ? conversationKey(teammateId, client) : "",
         orderNo: info.orderNo,

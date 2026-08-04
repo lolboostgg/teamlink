@@ -44,6 +44,8 @@ export function profileHrefForRole(role: string | undefined | null): string | nu
       return "/dashboard/teammate/profile";
     case "CLIENT":
       return "/dashboard/client/profile";
+    case "ADMIN":
+      return "/dashboard/admin/profile";
     default:
       return null;
   }

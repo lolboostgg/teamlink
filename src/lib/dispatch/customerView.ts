@@ -47,6 +47,7 @@ type Row = {
   playStylePref: string | null;
   cancelApprovedAt: Date | null;
   customerLabel: string;
+  clientUser?: { avatarUrl: string | null } | null;
   createdAt: Date;
   candidates: {
     teammateId: string;
@@ -100,6 +101,7 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     playStylePref: row.playStylePref,
     cancelApprovedAt: row.cancelApprovedAt?.getTime() ?? null,
     customerLabel: row.customerLabel,
+    customerAvatarUrl: row.clientUser?.avatarUrl ?? null,
     createdAt: row.createdAt.getTime(),
   };
 }
