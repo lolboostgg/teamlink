@@ -19,7 +19,7 @@ export async function getTeammateDetail(teammateNo: number) {
   const [candidacies, reviewAgg] = await Promise.all([
     prisma.dispatchCandidate.findMany({
       where: { teammateId: teammate.id },
-      include: { order: true },
+      include: { order: { include: { clientUser: true } } },
       orderBy: { order: { createdAt: "desc" } },
       take: 25,
     }),

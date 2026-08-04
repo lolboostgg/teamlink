@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { GameMark } from "@/components/dashboard/GameMark";
 import { GAMES } from "@/lib/games";
 import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
@@ -44,6 +45,9 @@ export interface TeammateOrderRow {
   orderId: string;
   orderNo: number;
   gameName: string;
+  gameSlug: string;
+  clientName: string;
+  clientAvatarUrl: string | null;
   option: string;
   priceEUR: string;
   status: string;
@@ -248,23 +252,26 @@ export function TeammateDetail({
               <p>No dispatches yet.</p>
             </div>
           ) : (
-            <table className="dashboard-table">
+            <table className="dashboard-table admin-profile-orders">
               <thead>
                 <tr>
-                  <th>Order</th>
                   <th>Game</th>
-                  <th>Price</th>
+                  <th>Order ID</th>
+                  <th>Option</th>
+                  <th>Client</th>
                   <th>Dispatch</th>
                   <th>Status</th>
-                  <th>Created</th>
+                  <th>Price</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((o) => (
                   <tr key={o.orderId}>
-                    <td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${o.orderId}`}>#{o.orderNo}</Link><small>{o.option}</small></td>
-                    <td>{o.gameName}</td>
-                    <td>€{o.priceEUR}</td>
+                    <td><span className="client-order-game"><GameMark slug={o.gameSlug} /><strong>{o.gameName}</strong></span></td>
+                    <td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${o.orderId}`}>#{o.orderNo}</Link></td>
+                    <td><span className="client-order-option"><strong>{o.option}</strong></span></td>
+                    <td><span className="client-order-teammate"><span className="client-order-teammate__avatar">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={o.clientAvatarUrl || "/avatars/default.webp"} alt="" /></span><strong>{o.clientName}</strong></span></td>
                     <td>
                       {o.selected ? (
                         <span className="dashboard-pill dashboard-pill--success">played</span>
@@ -277,6 +284,7 @@ export function TeammateDetail({
                         {o.status.toLowerCase().replace(/_/g, " ")}
                       </span>
                     </td>
+                    <td>€{o.priceEUR}</td>
                     <td>{DATE.format(o.createdAt)}</td>
                   </tr>
                 ))}

@@ -9713,6 +9713,7 @@ a.notification-panel__item:hover {
 .account-overview > div + div { border-left: 1px solid var(--dash-line); }
 .admin-account-orders { overflow-x: auto; }
 .admin-account-orders .dashboard-table { min-width: 760px; }
+.admin-profile-orders { min-width: 1020px; }
 .account-facts > div { border-radius: 0; border-width: 1px 0 0; background: transparent; }
 
 @media (max-width: 700px) {

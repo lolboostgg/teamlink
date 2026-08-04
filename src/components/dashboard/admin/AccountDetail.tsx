@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { GameMark } from "@/components/dashboard/GameMark";
 import { GAMES } from "@/lib/games";
 import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
@@ -70,7 +71,7 @@ export interface PayoutMethodView {
   isDefault: boolean;
 }
 
-export interface AccountOrderRow { id: string; orderNo: number; gameName: string; option: string; status: string; priceEUR: string; createdAt: number; }
+export interface AccountOrderRow { id: string; orderNo: number; gameSlug: string; gameName: string; option: string; status: string; priceEUR: string; createdAt: number; teammateName: string | null; teammateAvatarUrl: string | null; }
 type Section = "overview" | "orders" | "account" | "games" | "verification" | "security";
 
 const STATUS_PILL: Record<string, string> = {
@@ -177,7 +178,7 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
         </div>
       </header>
 
-      <div className="account-stats">
+      {teammate && <div className="account-stats">
         <StatTile
           icon="fa-solid fa-wallet"
           label="Store credit"
@@ -202,7 +203,7 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
         ) : (
           <StatTile icon="fa-solid fa-star" label="Reviews written" value={String(account.reviewCount)} />
         )}
-      </div>
+      </div>}
 
       <nav className="profile-tabs profile-tabs--page" aria-label="Account sections">
         {sections.map((s) => (
@@ -218,9 +219,9 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
       </nav>
 
       <div className="dashboard-panel">
-        {section === "overview" && <OverviewPanel account={account} teammate={teammate} />}
+        {section === "overview" && <><div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Overview</div><div className="dashboard-panel__sub">Account #{account.accountNo}</div></div></div><OverviewPanel account={account} teammate={teammate} /></>}
 
-        {section === "orders" && (orders.length ? <div className="admin-account-orders"><table className="dashboard-table"><thead><tr><th>Order</th><th>Game</th><th>Option</th><th>Status</th><th>Price</th><th>Date</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id}><td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${order.id}`}>#{order.orderNo}</Link></td><td>{order.gameName}</td><td>{order.option}</td><td><span className="dashboard-pill dashboard-pill--muted">{order.status.toLowerCase().replaceAll("_", " ")}</span></td><td>€{order.priceEUR}</td><td>{DATE.format(order.createdAt)}</td></tr>)}</tbody></table></div> : <div className="dashboard-empty dashboard-empty--compact"><i className="fa-solid fa-receipt" /><p>No orders yet.</p></div>)}
+        {section === "orders" && (orders.length ? <div className="admin-account-orders"><table className="dashboard-table admin-profile-orders"><thead><tr><th>Game</th><th>Order ID</th><th>Option</th><th>Teammate</th><th>Status</th><th>Price</th><th>Date</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id}><td><span className="client-order-game"><GameMark slug={order.gameSlug} /><strong>{order.gameName}</strong></span></td><td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${order.id}`}>#{order.orderNo}</Link></td><td><span className="client-order-option"><strong>{order.option}</strong></span></td><td>{order.teammateName ? <span className="client-order-teammate"><span className="client-order-teammate__avatar">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={order.teammateAvatarUrl || "/avatars/default.webp"} alt="" /></span><strong>{order.teammateName}</strong></span> : "—"}</td><td><span className="dashboard-pill dashboard-pill--muted">{order.status.toLowerCase().replaceAll("_", " ")}</span></td><td>€{order.priceEUR}</td><td>{DATE.format(order.createdAt)}</td></tr>)}</tbody></table></div> : <div className="dashboard-empty dashboard-empty--compact"><i className="fa-solid fa-receipt" /><p>No orders yet.</p></div>)}
 
         {section === "account" && (
           <AccountPanel
@@ -278,6 +279,7 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
 function OverviewPanel({ account, teammate }: { account: AccountSummary; teammate: TeammateSummary | null }) {
   return (
     <div className="account-overview">
+      {!teammate && <div><div className="account-overview__title">Client</div><dl className="account-facts"><div><dt>Store credit</dt><dd>{EUR.format(account.creditBalanceCents / 100)}</dd></div><div><dt>Orders</dt><dd>{account.orderCount}</dd></div><div><dt>Completed</dt><dd>{account.completedCount}</dd></div><div><dt>Reviews written</dt><dd>{account.reviewCount}</dd></div></dl></div>}
       <div>
         <div className="account-overview__title">Account</div>
         <dl className="account-facts">

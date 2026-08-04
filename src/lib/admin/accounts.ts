@@ -19,7 +19,7 @@ export async function getAccountDetail(idOrNumber: string) {
   if (!user) return null;
 
   const [orders, orderCount, completedCount, reviewAgg] = await Promise.all([
-    prisma.order.findMany({ where: { clientUserId: user.id }, orderBy: { createdAt: "desc" }, take: 100 }),
+    prisma.order.findMany({ where: { clientUserId: user.id }, include: { candidates: { where: { selected: true }, include: { teammate: true } } }, orderBy: { createdAt: "desc" }, take: 100 }),
     prisma.order.count({ where: { clientUserId: user.id } }),
     prisma.order.count({ where: { clientUserId: user.id, status: "COMPLETED" } }),
     user.teammate
