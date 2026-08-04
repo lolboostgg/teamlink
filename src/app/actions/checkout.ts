@@ -8,6 +8,7 @@ import { calculateFee, type PaymentMethodKey } from "@/lib/payments";
 import { createOrderWithDispatch, activateOrderAfterPayment } from "@/lib/dispatch/create";
 import { findRedeemableCoupon, reserveCoupon, releaseCouponForOrder } from "@/lib/couponsServer";
 import { startCheckout } from "@/lib/stripeCheckout";
+import { settleCheckoutSession } from "@/lib/fulfilment";
 import { spendCredits } from "@/app/actions/credits";
 
 export interface PlaceOrderInput {
@@ -27,6 +28,20 @@ export interface PlaceOrderInput {
 }
 
 export type PlaceOrderResult = { ok: true; redirect: string } | { ok: false; error: string };
+
+/**
+ * Settles the checkout the customer just came back from.
+ *
+ * Without this the screen sits on "confirming your payment" until Stripe's
+ * webhook happens to arrive — which is fine when it's seconds away and
+ * dreadful when the endpoint is slow or misconfigured. The session id in the
+ * return URL is only a pointer: the payment status is read back from Stripe
+ * itself, so a hand-typed URL settles nothing. The webhook stays the
+ * guarantee for customers who close the tab.
+ */
+export async function confirmCheckoutReturn(sessionId: string): Promise<{ settled: boolean }> {
+  return { settled: await settleCheckoutSession(sessionId) };
+}
 
 /**
  * Checkout, end to end.

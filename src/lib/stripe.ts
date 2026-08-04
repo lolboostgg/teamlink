@@ -147,7 +147,14 @@ export async function createCheckoutSession(input: {
           },
         },
       ],
-      ...(saveCard ? { payment_intent_data: { setup_future_usage: "off_session" } } : {}),
+      // Copied onto the payment intent as well, not just the session. The
+      // intent's own succeeded-event is the one most endpoints subscribe to,
+      // and without this it arrives carrying nothing that says which order it
+      // paid for.
+      payment_intent_data: {
+        metadata: input.metadata,
+        ...(saveCard ? { setup_future_usage: "off_session" } : {}),
+      },
       metadata: input.metadata,
     },
     input.idempotencyKey,

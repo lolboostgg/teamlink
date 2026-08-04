@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyWebhook, getPaymentMethod, getPaymentIntent } from "@/lib/stripe";
-import { activateOrderAfterPayment } from "@/lib/dispatch/create";
-import { applyExtraGames } from "@/lib/dispatch/extraGames";
-import { recordTip } from "@/lib/tipsServer";
+import { verifyWebhook, getPaymentIntent } from "@/lib/stripe";
 import { releaseCouponForOrder } from "@/lib/couponsServer";
-import { grantCreditPackage } from "@/lib/creditsServer";
 import { claimFulfilmentByStripeId } from "@/lib/chargeFulfilment";
-import { Prisma } from "@/generated/prisma/client";
+import { fulfilClaimed, settlePaymentIntent, storeCard } from "@/lib/fulfilment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -111,19 +107,11 @@ export async function POST(request: Request) {
 
       case "payment_intent.succeeded": {
         const intent = event.data.object as { id: string; payment_method: string | null; customer: string | null; metadata?: Record<string, string> };
-        await prisma.charge.updateMany({
-          where: { stripePaymentIntentId: intent.id },
-          data: { status: "SUCCEEDED", failureMessage: null },
-        });
-
-        // Covers the off-session charges the app takes itself (tips, extra
-        // games): the action usually fulfils them inline, and the claim below
-        // makes sure this path only steps in when it didn't get that far.
-        // Hosted checkouts carry no metadata on the intent and are handled by
-        // the session event above.
-        if (intent.metadata?.kind) {
-          await fulfilClaimed(await claimFulfilmentByStripeId({ paymentIntentId: intent.id }), intent.metadata);
-        }
+        // Handles both the off-session charges the app takes itself and a
+        // hosted checkout whose session event we never see — some endpoints
+        // only subscribe to this one. Fulfilment is claimed, so whoever got
+        // there first (the action, the session event) still wins.
+        await settlePaymentIntent(intent.id, intent.metadata ?? {});
 
         // First successful payment for this account: remember the card so it
         // can be charged again without another checkout.
@@ -183,79 +171,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true });
-}
-
-type ClaimedCharge = Awaited<ReturnType<typeof claimFulfilmentByStripeId>>;
-
-/**
- * Hands out what a payment bought.
- *
- * `charge` is null when somebody else already claimed this payment — the
- * action that took it, or an earlier delivery of the same event — so there is
- * nothing left to do. Everything below therefore runs exactly once per charge.
- */
-async function fulfilClaimed(charge: ClaimedCharge, metadata: Record<string, string>) {
-  if (!charge) return;
-
-  switch (metadata.kind ?? charge.kind) {
-    case "ORDER": {
-      const orderId = metadata.orderId ?? charge.orderId;
-      // This is the moment teammates are invited: not when the order was
-      // written, but when it was paid for.
-      if (orderId) await activateOrderAfterPayment(orderId);
-      break;
-    }
-
-    case "EXTRA_GAMES": {
-      const orderId = metadata.orderId ?? charge.orderId;
-      const quantity = Number(metadata.quantity ?? 1);
-      if (orderId) await applyExtraGames(orderId, Number.isFinite(quantity) ? quantity : 1);
-      break;
-    }
-
-    case "TIP": {
-      const orderId = metadata.orderId ?? charge.orderId;
-      if (orderId) {
-        await recordTip({
-          orderId,
-          amountEUR: Number(charge.amountEUR),
-          fromUserId: charge.userId,
-          chargeId: charge.id,
-        });
-      }
-      break;
-    }
-
-    case "CREDITS": {
-      const userId = metadata.userId ?? charge.userId;
-      if (userId && metadata.packageId) await grantCreditPackage(userId, metadata.packageId);
-      break;
-    }
-
-    default:
-      break;
-  }
-}
-
-/** Mirrors a payment method onto the account, ignoring one we already have. */
-async function storeCard(userId: string, paymentMethodId: string) {
-  const existing = await prisma.savedCard.findUnique({ where: { stripePaymentMethodId: paymentMethodId } });
-  if (existing) return;
-
-  const method = await getPaymentMethod(paymentMethodId);
-  if (!method.card) return;
-
-  const count = await prisma.savedCard.count({ where: { userId } });
-  await prisma.savedCard.create({
-    data: {
-      userId,
-      stripePaymentMethodId: method.id,
-      brand: method.card.brand,
-      last4: method.card.last4,
-      expMonth: method.card.exp_month,
-      expYear: method.card.exp_year,
-      // The first card a customer saves becomes the one we charge later.
-      isDefault: count === 0,
-    } satisfies Prisma.SavedCardUncheckedCreateInput,
-  });
 }

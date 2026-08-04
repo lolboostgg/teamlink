@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { CREDIT_PACKAGES } from "@/lib/credits";
 import { purchaseCredits } from "@/app/actions/credits";
+import { confirmCheckoutReturn } from "@/app/actions/checkout";
 import { useToast } from "@/components/ui/ToastProvider";
 import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
 
@@ -36,18 +38,34 @@ export function WalletScreen({
   transactions: WalletTransaction[];
 }) {
   const { showToast } = useToast();
+  const router = useRouter();
+  const settledCheckout = useRef(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [filter, setFilter] = useState<TransactionFilter>("all");
   const [page, setPage] = useState(1);
   const [pending, startTransition] = useTransition();
+  // Back from Stripe after buying credit: settle it here instead of waiting
+  // for the webhook, then re-render so the new balance is the one on screen.
+  useEffect(() => {
+    const sessionId = new URLSearchParams(window.location.search).get("checkout");
+    if (!sessionId || !sessionId.startsWith("cs_") || settledCheckout.current) return;
+    settledCheckout.current = true;
+    void confirmCheckoutReturn(sessionId).then((result) => {
+      if (!result.settled) return;
+      showToast("Balance added.", "success");
+      router.replace("/dashboard/client/wallet");
+      router.refresh();
+    });
+  }, [router, showToast]);
+
   const filtered = transactions.filter((transaction) => filter === "all" || (filter === "in" ? transaction.amountCents >= 0 : transaction.amountCents < 0));
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const visibleTransactions = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Buying credit is a real payment now, so this leaves for Stripe's hosted
-  // page. The balance appears when the webhook confirms it — landing back
-  // here is not, by itself, proof that anything was paid.
+  // page. The balance is only granted once the payment is confirmed against
+  // Stripe — on the way back above, or by the webhook.
   function buy(packageId: string) {
     startTransition(async () => {
       const result = await purchaseCredits(packageId);

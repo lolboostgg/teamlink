@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
+import { confirmCheckoutReturn } from "@/app/actions/checkout";
 import { firstAcceptedCandidate } from "@/lib/matchmaking/types";
 import { getTeammateById } from "@/lib/teammates";
 import { getBookingOptionDescription } from "@/lib/bookingOptions";
@@ -124,6 +125,18 @@ export function MatchmakingScreen({ orderId }: Props) {
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const pickSoundPlayed = useRef(false);
   const sessionSoundPlayed = useRef(false);
+  const settledCheckout = useRef(false);
+
+  // Coming back from Stripe's hosted page. Rather than waiting for the
+  // webhook to make its way to us, the return settles the payment itself —
+  // the session id here is just a pointer, its status is read back from
+  // Stripe server-side. Once per mount, hence the ref.
+  useEffect(() => {
+    const sessionId = new URLSearchParams(window.location.search).get("checkout");
+    if (!sessionId || !sessionId.startsWith("cs_") || settledCheckout.current) return;
+    settledCheckout.current = true;
+    void confirmCheckoutReturn(sessionId);
+  }, []);
 
   function handleConfirmCancelRequest() {
     cancelOrder();
