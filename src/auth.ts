@@ -5,6 +5,7 @@ import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { discordDisplayName } from "@/lib/discord";
+import { decryptTwoFactorSecret, readTwoFactor, verifyTwoFactorCode } from "@/lib/twoFactor";
 
 // Credentials provider requires JWT sessions (NextAuth can't use database
 // sessions with it) — that also means no Account/Session/VerificationToken
@@ -51,6 +52,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: {},
         password: {},
         remember: {},
+        otp: {},
       },
       async authorize(credentials) {
         const email = String(credentials?.email ?? "").trim().toLowerCase();
@@ -63,6 +65,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const valid = await bcrypt.compare(password, user.passwordHash);
           if (!valid) return null;
+
+          const twoFactor = readTwoFactor(user.notificationPrefs);
+          if (twoFactor) {
+            const secret = decryptTwoFactorSecret(twoFactor.secret);
+            const otp = String(credentials?.otp ?? "");
+            if (!secret || !verifyTwoFactorCode(secret, otp)) return null;
+          }
 
           // Stashed on the returned user object so the jwt() callback below
           // can read it on initial sign-in (only `authorize` sees the raw

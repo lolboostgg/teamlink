@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { ClientProfileForm } from "@/components/dashboard/client/ClientProfileForm";
 import { DiscordConnection } from "@/components/dashboard/DiscordConnection";
-import { saveNotificationPrefs } from "@/app/(marketing)/dashboard/client/settings/actions";
+import { beginTwoFactorSetup, disableTwoFactor, enableTwoFactor, saveNotificationPrefs } from "@/app/(marketing)/dashboard/client/settings/actions";
 import { useToast } from "@/components/ui/ToastProvider";
 import {
   NOTIFICATION_TOPICS,
@@ -33,6 +33,7 @@ export interface SettingsProps {
   /** `?discord=` outcome from the OAuth callback, if we just came back. */
   discordStatus?: string;
   prefs: NotificationPrefs;
+  twoFactorEnabled: boolean;
   loginActivity: { ip: string; device: string; location: string; current: boolean }[];
 }
 
@@ -62,7 +63,7 @@ export function SettingsScreen({ account }: { account: SettingsProps }) {
         {section === "profile" && <ProfileSection account={account} />}
         {section === "notifications" && <NotificationsSection initial={account.prefs} discordId={account.discordId} />}
         {section === "connections" && <ConnectionsSection account={account} />}
-        {section === "security" && <SecuritySection activity={account.loginActivity} />}
+        {section === "security" && <SecuritySection activity={account.loginActivity} initialEnabled={account.twoFactorEnabled} />}
       </div>
     </div>
   );
@@ -212,28 +213,50 @@ function ConnectionsSection({ account }: { account: SettingsProps }) {
   );
 }
 
-function SecuritySection({ activity }: { activity: SettingsProps["loginActivity"] }) {
+function SecuritySection({ activity, initialEnabled }: { activity: SettingsProps["loginActivity"]; initialEnabled: boolean }) {
+  const [enabled, setEnabled] = useState(initialEnabled);
+  const [secret, setSecret] = useState("");
+  const [code, setCode] = useState("");
+  const [pending, startTransition] = useTransition();
+  const { showToast } = useToast();
+
+  const cleanCode = (value: string) => setCode(value.replace(/\D/g, "").slice(0, 6));
+  const setup = () => startTransition(async () => {
+    try { setSecret((await beginTwoFactorSetup()).secret); }
+    catch (error) { showToast(error instanceof Error ? error.message : "Could not start 2FA setup.", "error"); }
+  });
+  const enable = () => startTransition(async () => {
+    try { await enableTwoFactor({ secret, code }); setEnabled(true); setSecret(""); setCode(""); showToast("Two-factor authentication enabled", "success"); }
+    catch (error) { showToast(error instanceof Error ? error.message : "Could not enable 2FA.", "error"); }
+  });
+  const disable = () => startTransition(async () => {
+    try { await disableTwoFactor(code); setEnabled(false); setCode(""); showToast("Two-factor authentication disabled", "success"); }
+    catch (error) { showToast(error instanceof Error ? error.message : "Could not disable 2FA.", "error"); }
+  });
+
   return (
     <>
       <header className="settings-head">
         <h3>Security</h3>
       </header>
 
-      <div className="settings-rows">
-        <div className="settings-row">
-          <div className="settings-row__brand">
-            <span className="settings-row__logo">
-              <i className="fa-solid fa-mobile-screen-button" aria-hidden="true" />
-            </span>
-            <div>
-              <strong>Two-factor authentication</strong>
-              <span>Not available yet</span>
-            </div>
+      <div className="security-sections">
+        <section className="security-card">
+          <div className="security-card__head">
+            <span className="settings-row__logo"><i className="fa-solid fa-mobile-screen-button" aria-hidden="true" /></span>
+            <div><strong>Two-factor authentication</strong><span>Protect password sign-ins with an authenticator app</span></div>
+            <span className={`dashboard-pill ${enabled ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>{enabled ? "Enabled" : "Not enabled"}</span>
           </div>
-          <span className="dashboard-pill dashboard-pill--muted">coming soon</span>
-        </div>
+          {!enabled && !secret && <button type="button" className="btn btn--primary btn--sm security-card__action" disabled={pending} onClick={setup}>Set up 2FA</button>}
+          {!enabled && secret && <div className="two-factor-setup">
+            <p>Add this setup key to Google Authenticator, Authy or 1Password, then enter its current code.</p>
+            <label>Setup key <code>{secret.match(/.{1,4}/g)?.join(" ")}</code></label>
+            <div><input value={code} onChange={(event) => cleanCode(event.target.value)} inputMode="numeric" placeholder="000000" /><button type="button" className="btn btn--primary btn--sm" disabled={pending || code.length !== 6} onClick={enable}>Verify & enable</button></div>
+          </div>}
+          {enabled && <div className="two-factor-disable"><input value={code} onChange={(event) => cleanCode(event.target.value)} inputMode="numeric" placeholder="Current 6-digit code" /><button type="button" className="btn btn--ghost btn--sm" disabled={pending || code.length !== 6} onClick={disable}>Disable</button></div>}
+        </section>
 
-        <div className="security-logins">
+        <section className="security-logins">
           <div className="security-logins__head"><strong>Login activity</strong><span>Devices currently accessing your account</span></div>
           {activity.map((login, index) => <div className="security-login" key={`${login.ip}-${index}`}>
             <span className="settings-row__logo"><i className="fa-solid fa-desktop" aria-hidden="true" /></span>
@@ -241,7 +264,7 @@ function SecuritySection({ activity }: { activity: SettingsProps["loginActivity"
             <span><strong>{login.ip}</strong><small>IP address</small></span>
             <span className="dashboard-pill dashboard-pill--success">{login.current ? "Active now" : "Previous"}</span>
           </div>)}
-        </div>
+        </section>
       </div>
     </>
   );

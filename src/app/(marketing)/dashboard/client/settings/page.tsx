@@ -4,11 +4,25 @@ import { prisma } from "@/lib/db";
 import { SettingsScreen } from "@/components/dashboard/client/SettingsScreen";
 import { sanitizeNotificationPrefs } from "@/lib/notificationPrefs";
 import { headers } from "next/headers";
+import { readTwoFactor } from "@/lib/twoFactor";
 
 export const metadata: Metadata = { title: "Settings" };
 // Direct top-level Prisma query in a Server Component — same build-time-
 // probe hazard as the other dashboard pages, see lib/db.ts.
 export const dynamic = "force-dynamic";
+
+async function resolveLoginLocation(ip: string, headerCity: string | null, country: string | null) {
+  let city = headerCity;
+  try { city = headerCity ? decodeURIComponent(headerCity) : null; } catch {}
+  if (city) return [city, country].filter(Boolean).join(", ");
+  if (!ip || ip === "Unknown IP" || /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(ip)) return country ?? "Location unavailable";
+  try {
+    const response = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`, { next: { revalidate: 86_400 }, signal: AbortSignal.timeout(1_500) });
+    const result = await response.json() as { success?: boolean; city?: string; region?: string; country_code?: string };
+    if (response.ok && result.success !== false) return [result.city, result.region, result.country_code ?? country].filter(Boolean).join(", ");
+  } catch {}
+  return country ?? "Location unavailable";
+}
 
 export default async function ClientSettingsPage({
   searchParams,
@@ -23,6 +37,7 @@ export default async function ClientSettingsPage({
   const ip = (requestHeaders.get("x-forwarded-for") ?? requestHeaders.get("cf-connecting-ip") ?? "Unknown IP").split(",")[0].trim();
   const city = requestHeaders.get("x-vercel-ip-city") ?? requestHeaders.get("cf-ipcity");
   const country = requestHeaders.get("x-vercel-ip-country") ?? requestHeaders.get("cf-ipcountry");
+  const location = await resolveLoginLocation(ip, city, country);
   const session = await auth();
   const user = session?.user?.id
     ? await prisma.user.findUnique({
@@ -65,7 +80,8 @@ export default async function ClientSettingsPage({
         discordAvatar: user.discordAvatar,
         discordStatus: discord,
         prefs: sanitizeNotificationPrefs(user.notificationPrefs),
-        loginActivity: [{ ip, device: `${browser} on ${device}`, location: [city, country].filter(Boolean).join(", ") || "Location unavailable", current: true }],
+        twoFactorEnabled: Boolean(readTwoFactor(user.notificationPrefs)),
+        loginActivity: [{ ip, device: `${browser} on ${device}`, location, current: true }],
       }}
     />
   );

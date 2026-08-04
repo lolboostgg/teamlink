@@ -104,6 +104,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     const password = String(data.get("auth-password") ?? "");
     const username = String(data.get("auth-username") ?? "").trim();
     const remember = data.get("auth-remember") === "on";
+    const otp = String(data.get("auth-otp") ?? "").trim();
     const missing = !email || !password || (mode === "signup" && !username);
     if (missing) {
       setFormError("Fill in every field to continue.");
@@ -127,7 +128,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
       }
 
       const login = () => withTimeout(
-        signIn("credentials", { email, password, remember: String(remember), redirect: false }),
+        signIn("credentials", { email, password, otp, remember: String(remember), redirect: false }),
       );
       let result;
       try {
@@ -237,6 +238,13 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
                 </button>
               </div>
             </div>
+
+            {mode === "login" && (
+              <div className="form-row">
+                <label htmlFor="auth-otp">Authenticator code <span className="form-label-optional">if enabled</span></label>
+                <input id="auth-otp" name="auth-otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" />
+              </div>
+            )}
 
             {mode === "login" && (
               <label className="auth-modal__remember">
