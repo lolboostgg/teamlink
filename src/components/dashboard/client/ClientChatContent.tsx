@@ -15,13 +15,14 @@ export function ClientChatContent() {
   const orders = useAllOrders();
 
   const conversations: ChatConversation[] = useMemo(() => {
-    const byTeammate = new Map<string, { gameName: string; createdAt: number; customerLabel: string; status: "active" | "completed"; lockedAt: number | null }>();
+    const byTeammate = new Map<string, { orderNo: number; gameName: string; createdAt: number; customerLabel: string; status: "active" | "completed"; lockedAt: number | null }>();
     orders.forEach((order) => {
       if (!order.selectedTeammateId) return;
       const existing = byTeammate.get(order.selectedTeammateId);
       if (!existing || order.createdAt > existing.createdAt) {
         byTeammate.set(order.selectedTeammateId, {
           gameName: order.gameName,
+          orderNo: order.orderNo,
           createdAt: order.createdAt,
           customerLabel: order.customerLabel,
           status: order.status === "completed" ? "completed" : "active",
@@ -39,6 +40,7 @@ export function ClientChatContent() {
           withName: name,
           gameName: info.gameName,
           conversationKey: conversationKey(teammateId, info.customerLabel),
+          orderNo: info.orderNo,
           status: info.status,
           lockedAt: info.lockedAt,
         };

@@ -22,6 +22,7 @@ interface NotificationContextValue {
   notifications: FeedNotification[];
   unreadCount: number;
   markAllSeen: () => void;
+  markSeen: (id: string) => void;
   accept: (id: string) => void;
   decline: (id: string) => void;
 }
@@ -101,7 +102,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       unreadCount,
       markAllSeen: () => {
         setSeenIds(new Set(notifications.map((n) => n.id)));
-        fetch("/api/notifications", { method: "POST" }).then(load);
+        fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then(load);
+      },
+      markSeen: (id) => {
+        setSeenIds((current) => new Set([...current, id]));
+        setStored((current) => current.map((item) => item.id === id ? { ...item, read: true } : item));
+        fetch("/api/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).then(load);
       },
       accept: (id) => respondToDispatchAction(id, true).then(refresh),
       decline: (id) => respondToDispatchAction(id, false).then(refresh),

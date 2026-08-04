@@ -95,6 +95,7 @@ export default async function AdminTeammatePage({ params }: Props) {
         }
         orders={candidacies.map((c) => ({
           orderId: c.orderId,
+          orderNo: c.order.orderNo,
           gameName: c.order.gameName,
           option: c.order.option,
           priceEUR: c.order.priceEUR.toString(),

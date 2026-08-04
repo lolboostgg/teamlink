@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { GAMES } from "@/lib/games";
 import { gameIcon } from "@/lib/gameArt";
 import { LANGUAGES } from "@/lib/i18n";
@@ -41,6 +42,7 @@ export interface TeammateDetailView {
 
 export interface TeammateOrderRow {
   orderId: string;
+  orderNo: number;
   gameName: string;
   option: string;
   priceEUR: string;
@@ -260,7 +262,7 @@ export function TeammateDetail({
               <tbody>
                 {orders.map((o) => (
                   <tr key={o.orderId}>
-                    <td className="dashboard-table__primary">{o.option}</td>
+                    <td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${o.orderId}`}>#{o.orderNo}</Link><small>{o.option}</small></td>
                     <td>{o.gameName}</td>
                     <td>€{o.priceEUR}</td>
                     <td>

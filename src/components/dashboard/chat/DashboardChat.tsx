@@ -50,7 +50,7 @@ export function DashboardChat({ conversations, from }: Props) {
               </span>
               <span className="chat-list__meta">
                 <span className="chat-list__name">{c.withName}{c.status === "completed" && <span className="chat-status-badge">Completed</span>}</span>
-                <span className="chat-list__last">{preview ? preview.text : `Matched for ${c.gameName}`}</span>
+                <span className="chat-list__last">#{c.orderNo} · {preview ? preview.text : `Matched for ${c.gameName}`}</span>
               </span>
             </button>
           );
@@ -64,7 +64,7 @@ export function DashboardChat({ conversations, from }: Props) {
           </span>
           <div className="chat-thread__identity">
             <div className="chat-thread__name">{active.withName}{active.status === "completed" && <span className="chat-status-badge">Completed</span>}</div>
-            <div className="chat-thread__game">{active.gameName}</div>
+            <div className="chat-thread__game">Order #{active.orderNo} · {active.gameName}</div>
           </div>
         </div>
 

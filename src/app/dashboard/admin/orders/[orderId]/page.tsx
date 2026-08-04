@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PriceTag } from "@/components/currency/PriceTag";
+import { AvatarIcon } from "@/components/ui/AvatarIcon";
 
 export const dynamic = "force-dynamic";
 
@@ -17,35 +18,77 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     },
   });
   if (!order) notFound();
+
   const selected = order.candidates.find((candidate) => candidate.selected);
   const conversationKey = selected ? `${selected.teammateId}::${order.customerLabel}` : null;
   const messages = conversationKey ? await prisma.conversationMessage.findMany({
     where: { conversationKey }, orderBy: { createdAt: "asc" }, take: 500,
   }) : [];
+  const clientName = order.clientUser?.name || order.clientUser?.email || order.customerLabel;
+  const teammateName = selected?.teammate.name ?? "No teammate selected";
+  const statusLabel = order.status.toLowerCase().replaceAll("_", " ");
+  const dateTime = (value: Date) => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(value);
+  const statusTone = order.status === "COMPLETED" ? "success" : order.status === "CANCELLED" || order.status === "CANCEL_PENDING" ? "warning" : "accent";
 
   return <div className="admin-order-detail">
     <Link href="/dashboard/admin/orders" className="admin-order-detail__back"><i className="fa-solid fa-arrow-left" /> Back to orders</Link>
-    <div className="dashboard-panel">
-      <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Order #{order.id.slice(-6)}</div><div className="dashboard-panel__sub">Created {new Intl.DateTimeFormat("en", { dateStyle: "long", timeStyle: "short" }).format(order.createdAt)}</div></div><span className="dashboard-pill dashboard-pill--muted">{order.status.toLowerCase().replaceAll("_", " ")}</span></div>
+
+    <section className="dashboard-panel admin-order-hero">
+      <div className="admin-order-hero__head">
+        <div className="admin-order-hero__identity">
+          <span className="admin-order-hero__icon"><i className="fa-solid fa-receipt" /></span>
+          <div><span className="admin-order-hero__eyebrow">Order details</span><h1>#{order.orderNo}</h1><p>Created {dateTime(order.createdAt)}</p></div>
+        </div>
+        <span className={`admin-order-status admin-order-status--${statusTone}`}><i className={order.status === "COMPLETED" ? "fa-solid fa-check" : "fa-solid fa-circle"} />{statusLabel}</span>
+      </div>
       <dl className="admin-order-facts">
-        <div><dt>Client</dt><dd>{order.clientUser?.name || order.clientUser?.email || order.customerLabel}</dd></div>
-        <div><dt>Game</dt><dd>{order.gameName} · {order.option}</dd></div>
-        <div><dt>Value</dt><dd><PriceTag amountEUR={Number(order.priceEUR)} /></dd></div>
-        <div><dt>Games</dt><dd>{order.games.length} / {order.gamesBooked}</dd></div>
-        <div><dt>Session status</dt><dd>{order.sessionStatus?.toLowerCase().replaceAll("_", " ") || "Not started"}</dd></div>
-        <div><dt>Selected teammate</dt><dd>{selected?.teammate.name ?? "None"}</dd></div>
+        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-user" /></span><span><dt>Client</dt><dd>{clientName}</dd></span></div>
+        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-headset" /></span><span><dt>Teammate</dt><dd>{teammateName}</dd></span></div>
+        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-gamepad" /></span><span><dt>Game & option</dt><dd>{order.gameName}<small>{order.option}</small></dd></span></div>
+        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-coins" /></span><span><dt>Order value</dt><dd><PriceTag amountEUR={Number(order.priceEUR)} /></dd></span></div>
       </dl>
-    </div>
+      <div className="admin-order-session-strip">
+        <div><span>Games</span><strong>{order.games.length}<small> / {order.gamesBooked}</small></strong></div>
+        <div><span>Session status</span><strong>{order.sessionStatus?.toLowerCase().replaceAll("_", " ") || "Not started"}</strong></div>
+        <div><span>Assigned</span><strong>{order.assignedAt ? dateTime(order.assignedAt) : "—"}</strong></div>
+        <div><span>Completed</span><strong>{order.sessionCompleteAt ? dateTime(order.sessionCompleteAt) : "—"}</strong></div>
+      </div>
+    </section>
 
-    <div className="dashboard-panel">
-      <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Session chat</div><div className="dashboard-panel__sub">Read-only moderation view · {messages.length} messages</div></div></div>
-      {!conversationKey ? <div className="dashboard-empty dashboard-empty--compact"><p>No teammate has been selected for this order.</p></div> : messages.length === 0 ? <div className="dashboard-empty dashboard-empty--compact"><i className="fa-regular fa-comments" /><p>No persisted chat messages yet.</p></div> :
-        <div className="admin-chat-log">{messages.map((message) => <article key={message.id} className={`admin-chat-message admin-chat-message--${message.sender}`}><div><strong>{message.sender === "client" ? (order.clientUser?.name || order.customerLabel) : selected?.teammate.name}</strong><time>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(message.createdAt)}</time></div><p>{message.text}</p></article>)}</div>}
-    </div>
+    <section className="dashboard-panel admin-order-chat-panel">
+      <div className="dashboard-panel__head">
+        <div><div className="dashboard-panel__title"><i className="fa-solid fa-comments" /> Session chat</div><div className="dashboard-panel__sub">Conversation preview · {messages.length} messages</div></div>
+        <Link className="admin-order-chat__reply" href={`/dashboard/admin/chat?conversation=${encodeURIComponent(conversationKey ?? "")}`}><i className="fa-solid fa-reply" /> Open & reply</Link>
+      </div>
+      {!conversationKey ? <div className="dashboard-empty dashboard-empty--compact"><p>No teammate has been selected for this order.</p></div> : <div className="admin-order-chat">
+        <header className="admin-order-chat__head">
+          <div className="admin-order-chat__person"><span className="chat-list__avatar"><AvatarIcon seed={`client-${clientName}`} /></span><span><small>Client</small><strong>{clientName}</strong></span></div>
+          <div className="admin-order-chat__connection"><span /><strong>#{order.orderNo}</strong><span /></div>
+          <div className="admin-order-chat__person admin-order-chat__person--teammate"><span><small>Teammate</small><strong>{teammateName}</strong></span><span className="chat-list__avatar"><AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} /></span></div>
+        </header>
+        <div className="admin-order-chat__messages">
+          {messages.length === 0 && <div className="chat-thread__empty"><i className="fa-regular fa-comments" /><p>No persisted chat messages yet.</p></div>}
+          {messages.map((message) => {
+            const fromTeammate = message.sender === "teammate";
+            const fromAdmin = message.sender === "admin";
+            const senderName = fromAdmin ? "Admin" : fromTeammate ? teammateName : clientName;
+            return <article key={message.id} className={`admin-order-chat__message${fromTeammate || fromAdmin ? " admin-order-chat__message--teammate" : ""}`}>
+              {!fromTeammate && !fromAdmin && <span className="admin-order-chat__avatar"><AvatarIcon seed={`client-${clientName}`} /></span>}
+              <div><header><strong>{senderName}</strong><span>{fromAdmin ? "Admin" : fromTeammate ? "Teammate" : "Client"}</span></header><p>{message.text}</p><time>{dateTime(message.createdAt)}</time></div>
+              {(fromTeammate || fromAdmin) && <span className="admin-order-chat__avatar">{fromAdmin ? <i className="fa-solid fa-shield-halved" /> : <AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} />}</span>}
+            </article>;
+          })}
+        </div>
+        <footer className="chat-thread__locked"><i className="fa-solid fa-shield-halved" /><span><strong>Admin conversation access</strong>Open the conversation to reply as TeamLink support.</span></footer>
+      </div>}
+    </section>
 
-    <div className="dashboard-panel">
+    <section className="dashboard-panel">
       <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Candidates & game reports</div><div className="dashboard-panel__sub">Dispatch audit and submitted results</div></div></div>
-      <div className="admin-order-audit"><section><h3>Candidates</h3>{order.candidates.map((candidate) => <div key={candidate.id}><span>{candidate.teammate.name}</span><strong>{candidate.status.toLowerCase()}{candidate.selected ? " · selected" : ""}</strong></div>)}</section><section><h3>Games</h3>{order.games.length ? order.games.map((game) => <div key={game.id}><span>Game {game.gameNumber}</span><strong>{game.result}</strong></div>) : <p>No game reports.</p>}</section></div>
-    </div>
+      <div className="admin-order-audit">
+        <section><h3><i className="fa-solid fa-users" /> Candidates <span>{order.candidates.length}</span></h3>{order.candidates.map((candidate) => <div key={candidate.id}><span><AvatarIcon seed={candidate.teammateId} />{candidate.teammate.name}</span><strong className={candidate.selected ? "is-selected" : ""}>{candidate.status.toLowerCase()}{candidate.selected ? " · selected" : ""}</strong></div>)}</section>
+        <section><h3><i className="fa-solid fa-trophy" /> Game reports <span>{order.games.length}/{order.gamesBooked}</span></h3>{order.games.length ? order.games.map((game) => <div key={game.id}><span>Game {game.gameNumber}</span><strong className={`game-result game-result--${game.result.toLowerCase()}`}>{game.result}</strong></div>) : <p>No game reports.</p>}</section>
+      </div>
+    </section>
   </div>;
 }

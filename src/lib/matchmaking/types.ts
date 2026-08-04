@@ -24,6 +24,7 @@ export type OrderStatus =
 
 export interface DispatchOrder {
   id: string;
+  orderNo: number;
   gameSlug: string;
   gameName: string;
   option: string;

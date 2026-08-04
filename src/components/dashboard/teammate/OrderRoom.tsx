@@ -209,7 +209,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           <div className="dashboard-panel__head">
             <div>
               <div className="dashboard-panel__title">Order</div>
-              <div className="dashboard-panel__sub">#{order.id.slice(-6)}</div>
+              <div className="dashboard-panel__sub">Order #{order.orderNo}</div>
             </div>
           </div>
 
@@ -348,7 +348,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           <div className="dashboard-panel__head">
             <div>
               <div className="dashboard-panel__title">Chat</div>
-              <div className="dashboard-panel__sub">Same thread the customer sees</div>
+              <div className="dashboard-panel__sub">Order #{order.orderNo} · Same thread the customer sees</div>
             </div>
           </div>
           <SessionChat

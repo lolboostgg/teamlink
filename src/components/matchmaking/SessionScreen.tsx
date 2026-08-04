@@ -595,7 +595,7 @@ export function SessionScreen({ orderId }: Props) {
         <Reveal delay={100}>
           <div className="dashboard-panel session-screen__chat-panel">
             <div className="session-screen__chat-head">
-              <span className="session-screen__chat-head-name">{teammate.name}</span>
+              <span className="session-screen__chat-head-name">{teammate.name}<small>Order #{order.orderNo}</small></span>
               <div className="session-screen__chat-head-actions">
                 <button type="button" className="btn btn--ghost btn--sm" onClick={handlePoke}>
                   Poke

@@ -13,10 +13,10 @@ import { useCallback, useEffect, useState } from "react";
 export interface ChatMessage {
   id: string;
   conversationKey: string;
-  from: "client" | "teammate";
+  from: "client" | "teammate" | "admin";
   text: string;
   createdAt: number;
-  readBy?: ("client" | "teammate")[];
+  readBy?: ("client" | "teammate" | "admin")[];
 }
 
 const KEY = "teamlink:chat-messages";
@@ -71,7 +71,7 @@ async function persistMessage(message: ChatMessage): Promise<void> {
   }).catch(() => undefined);
 }
 
-export function sendChatMessage(key: string, from: "client" | "teammate", text: string): void {
+export function sendChatMessage(key: string, from: "client" | "teammate" | "admin", text: string): void {
   const trimmed = text.trim();
   if (!trimmed || typeof window === "undefined") return;
   const messages = readAll();

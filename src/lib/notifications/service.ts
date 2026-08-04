@@ -48,3 +48,7 @@ export async function markAllRead(userId: string) {
     data: { readAt: new Date() },
   });
 }
+
+export async function markNotificationRead(userId: string, notificationId: string) {
+  return prisma.notification.updateMany({ where: { id: notificationId, userId }, data: { readAt: new Date() } });
+}

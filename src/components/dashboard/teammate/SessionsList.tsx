@@ -19,7 +19,7 @@ export function SessionsList({ orders }: { orders: DispatchOrder[] }) {
           <div className="dashboard-list-item" key={order.id}>
             <GameMark slug={order.gameSlug} />
             <div className="dashboard-list-item__meta">
-              <div className="dashboard-list-item__title">{order.customerLabel}</div>
+              <div className="dashboard-list-item__title">#{order.orderNo} · {order.customerLabel}</div>
               <div className="dashboard-list-item__sub">
                 {formatOrderDate(order.createdAt)} · {STATUS_LABEL[order.status] ?? order.status}
               </div>

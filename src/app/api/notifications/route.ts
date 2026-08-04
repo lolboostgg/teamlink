@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { listNotifications, markAllRead } from "@/lib/notifications/service";
+import { listNotifications, markAllRead, markNotificationRead } from "@/lib/notifications/service";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +28,12 @@ export async function GET() {
 }
 
 /** Marks everything read — what opening the bell does. */
-export async function POST() {
+export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ ok: false }, { status: 401 });
 
-  await markAllRead(session.user.id);
+  const body = (await request.json().catch(() => null)) as { id?: string } | null;
+  if (body?.id) await markNotificationRead(session.user.id, body.id);
+  else await markAllRead(session.user.id);
   return NextResponse.json({ ok: true });
 }

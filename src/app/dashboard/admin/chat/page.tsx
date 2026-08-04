@@ -5,7 +5,8 @@ import { AdminChatOverview, type AdminConversation } from "@/components/dashboar
 export const metadata: Metadata = { title: "Chat overview" };
 export const dynamic = "force-dynamic";
 
-export default async function AdminChatPage() {
+export default async function AdminChatPage({ searchParams }: { searchParams: Promise<{ conversation?: string }> }) {
+  const { conversation } = await searchParams;
   const orders = await prisma.order.findMany({
     where: { candidates: { some: { selected: true } } },
     include: { clientUser: true, candidates: { where: { selected: true }, include: { teammate: true } } },
@@ -17,6 +18,7 @@ export default async function AdminChatPage() {
       const key = `${candidate.teammateId}::${order.customerLabel}`;
       if (!byKey.has(key)) byKey.set(key, {
         key,
+        orderNo: order.orderNo,
         clientName: order.clientUser?.name || order.clientUser?.email || order.customerLabel,
         teammateName: candidate.teammate.name,
         gameName: order.gameName,
@@ -35,5 +37,5 @@ export default async function AdminChatPage() {
     })),
   }));
 
-  return <div className="dashboard-panel"><div className="dashboard-panel__head"><div><div className="dashboard-panel__title">All chats</div><div className="dashboard-panel__sub">Client and teammate conversations · {conversations.length} total</div></div></div><AdminChatOverview conversations={conversations} /></div>;
+  return <div className="dashboard-panel"><div className="dashboard-panel__head"><div><div className="dashboard-panel__title">All chats</div><div className="dashboard-panel__sub">Client and teammate conversations · {conversations.length} total</div></div></div><AdminChatOverview conversations={conversations} initialKey={conversation} /></div>;
 }

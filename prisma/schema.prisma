@@ -214,6 +214,7 @@ enum OrderStatus {
 // DispatchCandidate.selected/isPrimary on this order's candidate rows.
 model Order {
   id                  String    @id @default(cuid())
+  orderNo             Int       @unique @default(autoincrement())
   clientUserId        String?
   clientUser          User?     @relation("ClientOrders", fields: [clientUserId], references: [id])
   customerLabel       String

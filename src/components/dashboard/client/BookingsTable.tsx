@@ -17,6 +17,7 @@ export function BookingsTable({ orders }: { orders: DispatchOrder[] }) {
     <table className="dashboard-table">
       <thead>
         <tr>
+          <th>Order</th>
           <th>Game</th>
           <th>Option</th>
           <th>Date</th>
@@ -30,6 +31,7 @@ export function BookingsTable({ orders }: { orders: DispatchOrder[] }) {
           const status = displayStatus(order.status);
           return (
             <tr key={order.id}>
+              <td className="dashboard-table__primary">#{order.orderNo}</td>
               <td>
                 <GameMark slug={order.gameSlug} />
               </td>

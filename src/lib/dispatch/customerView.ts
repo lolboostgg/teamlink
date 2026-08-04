@@ -25,6 +25,7 @@ const CANDIDATE_STATUS: Record<string, CandidateStatus> = {
 
 type Row = {
   id: string;
+  orderNo: number;
   gameSlug: string;
   gameName: string;
   option: string;
@@ -64,6 +65,7 @@ export function toCustomerOrder(row: Row): DispatchOrder {
 
   return {
     id: row.id,
+    orderNo: row.orderNo,
     gameSlug: row.gameSlug,
     gameName: row.gameName,
     option: row.option,

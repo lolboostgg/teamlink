@@ -25,6 +25,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
     ...(status ? { status } : {}),
     ...(q ? { OR: [
       { id: { contains: q, mode: "insensitive" } },
+      ...(/^#?\d+$/.test(q) ? [{ orderNo: Number.parseInt(q.replace("#", ""), 10) }] : []),
       { customerLabel: { contains: q, mode: "insensitive" } },
       { gameName: { contains: q, mode: "insensitive" } },
       { clientUser: { is: { email: { contains: q, mode: "insensitive" } } } },
@@ -79,7 +80,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
             <thead><tr><th>Order</th><th>Client</th><th>Game</th><th>Teammate</th><th>Games</th><th>Value</th><th>Status</th><th>Date</th><th /></tr></thead>
             <tbody>{orders.map((order) => (
               <tr key={order.id}>
-                <td><strong>#{order.id.slice(-6)}</strong></td>
+                <td><strong>#{order.orderNo}</strong></td>
                 <td>{order.clientUser?.name || order.clientUser?.email || order.customerLabel}</td>
                 <td><strong>{order.gameName}</strong><small>{order.option}</small></td>
                 <td>{order.candidates.length ? order.candidates.map((candidate) => <Link key={candidate.teammateId} href={`/dashboard/admin/teammates/${candidate.teammate.teammateNo}`}>{candidate.teammate.name}</Link>) : "—"}</td>

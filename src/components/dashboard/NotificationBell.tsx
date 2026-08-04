@@ -5,7 +5,7 @@ import { useNotifications } from "@/components/dashboard/NotificationProvider";
 import { NotificationPanel } from "@/components/dashboard/NotificationPanel";
 
 export function NotificationBell() {
-  const { notifications, unreadCount, markAllSeen } = useNotifications();
+  const { notifications, unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -18,19 +18,12 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [open]);
 
-  function toggle() {
-    setOpen((v) => {
-      if (!v) markAllSeen();
-      return !v;
-    });
-  }
-
   return (
     <div className="dropdown-switcher" ref={ref}>
       <button
         type="button"
         className="notification-bell"
-        onClick={toggle}
+        onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Notifications"

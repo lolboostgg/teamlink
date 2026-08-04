@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as { id?: string; key?: string; from?: string; text?: string; createdAt?: number } | null;
   const key = body?.key?.slice(0, 300) ?? "";
   const text = body?.text?.trim().slice(0, 4000) ?? "";
-  const sender = body?.from === "teammate" ? "teammate" : "client";
+  const sender = body?.from === "admin" ? "admin" : body?.from === "teammate" ? "teammate" : "client";
   const access = key ? await conversationAccess(session.user.id, session.user.role, key) : { allowed: false, locked: false };
-  const correctSender = (session.user.role === "CLIENT" && sender === "client") || (session.user.role === "TEAMMATE" && sender === "teammate");
+  const correctSender = (session.user.role === "CLIENT" && sender === "client") || (session.user.role === "TEAMMATE" && sender === "teammate") || (session.user.role === "ADMIN" && sender === "admin");
   if (!key || !text || !access.allowed || !correctSender) {
     return NextResponse.json({ error: "Invalid message" }, { status: 400 });
   }
