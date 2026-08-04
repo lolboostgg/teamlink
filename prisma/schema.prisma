@@ -44,6 +44,7 @@ model User {
   favoriteTeammates  FavoriteTeammate[]
   invitesCreated     TeammateInvite[]    @relation("InvitesCreated")
   inviteUsed         TeammateInvite?     @relation("InviteUsed")
+  payoutsProcessed   PayoutRequest[]     @relation("PayoutsProcessed")
 }
 
 /**
@@ -172,6 +173,7 @@ model Teammate {
   payoutMethods     PayoutMethod[]
   favoredBy         FavoriteTeammate[]
   earnings          TeammateEarning[]
+  payoutRequests    PayoutRequest[]
 }
 
 enum TeammateEarningType {
@@ -261,7 +263,52 @@ model PayoutMethod {
   isDefault  Boolean          @default(false)
   createdAt  DateTime         @default(now())
 
+  payoutRequests PayoutRequest[]
+
   @@index([teammateId])
+}
+
+enum PayoutRequestStatus {
+  PENDING
+  PAID
+  REJECTED
+  CANCELLED
+}
+
+/**
+ * A teammate asking for their balance to be sent out.
+ *
+ * `amountEUR` is null when they asked for their full available balance. That
+ * is stored as intent rather than as a number on purpose: requests are
+ * processed on a schedule, and between asking on the 10th and being paid on
+ * the 15th more sessions may have completed. "Everything I have" should mean
+ * everything they have *when the money moves*, not a stale figure.
+ */
+model PayoutRequest {
+  id             String              @id @default(cuid())
+  requestNo      Int                 @unique @default(autoincrement())
+  teammateId     String
+  teammate       Teammate            @relation(fields: [teammateId], references: [id], onDelete: Cascade)
+  payoutMethodId String
+  payoutMethod   PayoutMethod        @relation(fields: [payoutMethodId], references: [id])
+  amountEUR      Decimal?            @db.Decimal(10, 2)
+  /** Frozen at request time so a later fee change can't alter a quoted payout. */
+  feePercent     Decimal             @db.Decimal(5, 2)
+  note           String?
+  status         PayoutRequestStatus @default(PENDING)
+
+  // Filled in when it is actually settled.
+  grossEUR       Decimal?            @db.Decimal(10, 2)
+  feeEUR         Decimal?            @db.Decimal(10, 2)
+  netEUR         Decimal?            @db.Decimal(10, 2)
+  adminNote      String?
+  processedById  String?
+  processedBy    User?               @relation("PayoutsProcessed", fields: [processedById], references: [id])
+  processedAt    DateTime?
+  createdAt      DateTime            @default(now())
+
+  @@index([teammateId, createdAt])
+  @@index([status])
 }
 
 enum OrderStatus {

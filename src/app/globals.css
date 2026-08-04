@@ -10876,3 +10876,56 @@ a.notification-panel__item:hover {
   .login-activity__row { grid-template-columns: 44px minmax(0, 1fr); }
   .login-activity__ip { grid-column: 1 / -1; max-width: none; }
 }
+
+/* ── Payout requests ─────────────────────────────────────────────────── */
+
+.payout-request-list { display: grid; gap: 9px; }
+
+.payout-request {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--dash-surface-2);
+}
+
+.payout-request--admin { grid-template-columns: minmax(160px, auto) minmax(0, 1fr) auto auto; }
+.payout-request.is-alert { border-color: rgba(224, 82, 82, 0.32); background: rgba(224, 82, 82, 0.04); }
+
+.payout-request__main { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.payout-request__title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.payout-request__title strong { color: var(--text); font-size: 13px; }
+.payout-request__meta { color: var(--text-faint); font-size: 11px; }
+.payout-request__note { color: var(--text-muted); font-size: 10.5px; font-style: normal; }
+.payout-request__note--alert { color: #ff9a9a; }
+
+.payout-request__amount { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; text-align: right; white-space: nowrap; }
+.payout-request__amount strong { color: var(--hue-green); font-size: 14px; font-weight: 800; }
+.payout-request__amount small { color: var(--text-faint); font-size: 10px; }
+
+.payout-request__actions { display: flex; align-items: center; gap: 8px; }
+.payout-request__actions input { min-width: 210px; }
+
+@media (max-width: 900px) {
+  .payout-request, .payout-request--admin { grid-template-columns: minmax(0, 1fr); }
+  .payout-request__amount { align-items: flex-start; text-align: left; }
+  .payout-request__actions { flex-wrap: wrap; }
+  .payout-request__actions input { min-width: 0; flex: 1 1 100%; }
+}
+
+/* Request modal */
+.payout-request-modal { display: grid; gap: 15px; padding: 20px; width: min(720px, 92vw); }
+.payout-request__available { float: right; color: var(--text-faint); font-size: 10.5px; font-weight: 600; }
+.payout-request__full { margin-top: 9px; }
+
+.payout-summary { display: grid; gap: 1px; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 11px; overflow: hidden; }
+.payout-summary > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; background: var(--dash-surface-2); }
+.payout-summary dt { color: var(--text-muted); font-size: 11.5px; }
+.payout-summary dd { margin: 0; color: var(--text); font-size: 12px; font-weight: 700; }
+.payout-summary dd.is-negative { color: var(--text-faint); }
+.payout-summary__total { background: rgba(47, 191, 113, 0.08) !important; }
+.payout-summary__total dt { color: var(--text); font-weight: 700; }
+.payout-summary__total dd { color: var(--hue-green); font-size: 14px; }

@@ -10,6 +10,8 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { describePayoutMethod, PAYOUT_LABELS, type PayoutMethodType } from "@/lib/payoutMethods";
 import { TEAMMATE_PAYOUT_RATE } from "@/lib/payoutSplit";
+import { PayoutRequestPanel, type PayoutMethodOption } from "@/components/dashboard/teammate/PayoutRequestPanel";
+import type { PayoutRequestStatus, PayoutRequestView } from "@/lib/payouts";
 
 export const metadata: Metadata = { title: "Payments" };
 export const dynamic = "force-dynamic";
@@ -25,6 +27,11 @@ export default async function TeammatePaymentsPage() {
           id: true,
           payoutMethods: { orderBy: { createdAt: "asc" } },
           verification: { select: { status: true } },
+          payoutRequests: {
+            orderBy: { createdAt: "desc" },
+            take: 20,
+            include: { payoutMethod: true },
+          },
         },
       })
     : null;
@@ -43,6 +50,33 @@ export default async function TeammatePaymentsPage() {
   }
 
   const earnings = await loadTeammateEarnings(teammate.id);
+
+  const methodOptions: PayoutMethodOption[] = teammate.payoutMethods.map((method) => ({
+    id: method.id,
+    type: method.type as PayoutMethodType,
+    summary: describePayoutMethod(method.type as PayoutMethodType, (method.details as Record<string, string> | null) ?? {}),
+    isDefault: method.isDefault,
+  }));
+
+  const requests: PayoutRequestView[] = teammate.payoutRequests.map((request) => ({
+    id: request.id,
+    requestNo: request.requestNo,
+    status: request.status as PayoutRequestStatus,
+    amountEUR: request.amountEUR === null ? null : Number(request.amountEUR),
+    feePercent: Number(request.feePercent),
+    note: request.note,
+    adminNote: request.adminNote,
+    grossEUR: request.grossEUR === null ? null : Number(request.grossEUR),
+    feeEUR: request.feeEUR === null ? null : Number(request.feeEUR),
+    netEUR: request.netEUR === null ? null : Number(request.netEUR),
+    methodType: request.payoutMethod.type as PayoutMethodType,
+    methodSummary: describePayoutMethod(
+      request.payoutMethod.type as PayoutMethodType,
+      (request.payoutMethod.details as Record<string, string> | null) ?? {},
+    ),
+    createdAt: request.createdAt.getTime(),
+    processedAt: request.processedAt?.getTime() ?? null,
+  }));
   const defaultMethod = teammate.payoutMethods.find((method) => method.isDefault) ?? teammate.payoutMethods[0] ?? null;
   const verified = teammate.verification?.status === "APPROVED";
 
@@ -73,6 +107,13 @@ export default async function TeammatePaymentsPage() {
           </Link>
         </div>
       )}
+
+      <PayoutRequestPanel
+        balanceEUR={earnings.balanceEUR}
+        methods={methodOptions}
+        requests={requests}
+        verified={verified}
+      />
 
       <div className="payments-split">
         <div className="dashboard-panel">

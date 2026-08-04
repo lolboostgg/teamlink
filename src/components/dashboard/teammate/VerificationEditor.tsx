@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/ToastProvider";
 import { Modal } from "@/components/ui/Modal";
 import { DocumentUpload, KYC_DOCUMENTS } from "@/components/dashboard/teammate/DocumentUpload";
+import { PAYOUT_FEE_PERCENT } from "@/lib/payouts";
 import {
   PAYOUT_FIELDS,
   PAYOUT_LABELS,
@@ -284,7 +285,7 @@ function PayoutMethods({
             }}
           >
             <span className="payout-method-option__icon"><i className={t === "BANK" ? "fa-solid fa-building-columns" : "fa-brands fa-bitcoin"} aria-hidden="true" /></span>
-            <span><strong>{PAYOUT_LABELS[t]}</strong><small>{t === "BANK" ? "SEPA and international transfer" : "USDT, USDC and supported coins"}</small><em>{t === "BANK" ? "2% processing fee" : "5% network fee"}</em></span>
+            <span><strong>{PAYOUT_LABELS[t]}</strong><small>{t === "BANK" ? "SEPA and international transfer" : "USDT, USDC and supported coins"}</small><em>{t === "BANK" ? `${PAYOUT_FEE_PERCENT.BANK}% processing fee` : `${PAYOUT_FEE_PERCENT.CRYPTO}% network fee`}</em></span>
             <i className={type === t ? "fa-solid fa-circle-check" : "fa-regular fa-circle"} aria-hidden="true" />
           </button>
         ))}
