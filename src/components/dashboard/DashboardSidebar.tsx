@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 
 // Client dashboard has its own tab strip instead (see
@@ -30,13 +31,24 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
   const role: ShellRole = pathname.startsWith("/dashboard/admin") ? "admin" : "teammate";
   const sections = SECTIONS[role];
 
+  useEffect(() => setCollapsed(window.localStorage.getItem("teamlink:dashboard-sidebar-collapsed") === "true"), []);
+  function toggleCollapsed() {
+    setCollapsed((current) => {
+      const next = !current;
+      window.localStorage.setItem("teamlink:dashboard-sidebar-collapsed", String(next));
+      return next;
+    });
+  }
+
   return (
-    <aside className="dashboard-sidebar">
+    <aside className={`dashboard-sidebar${collapsed ? " is-collapsed" : ""}`}>
       <div className="dashboard-sidebar__brand">
-        <Logo />
+        <Logo withWordmark={!collapsed} />
+        <button type="button" className="dashboard-sidebar__collapse" onClick={toggleCollapsed} aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"} title={collapsed ? "Expand sidebar" : "Collapse sidebar"}><i className={`fa-solid ${collapsed ? "fa-angles-right" : "fa-angles-left"}`} /></button>
       </div>
 
       <nav className="dashboard-sidebar__nav" aria-label="Dashboard sections">
@@ -48,18 +60,20 @@ export function DashboardSidebar() {
               key={s.href}
               href={s.href}
               className={`dashboard-sidebar__nav-link${active ? " is-active" : ""}`}
+              title={collapsed ? s.label : undefined}
             >
               <i className={s.icon} aria-hidden="true" />
-              {s.label}
+              <span>{s.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <Link href="/" className="dashboard-sidebar__back" transitionTypes={["dashboard-exit"]}>
-        <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-        Back to site
-      </Link>
+      <div className="dashboard-sidebar__utility">
+        {role === "teammate" && <Link href="/dashboard/teammate/profile" title={collapsed ? "My profile" : undefined}><i className="fa-solid fa-user" /><span>My profile</span></Link>}
+        <a href="mailto:support@teamlink.gg" title={collapsed ? "Help & support" : undefined}><i className="fa-regular fa-circle-question" /><span>Help & support</span></a>
+        <Link href="/" transitionTypes={["dashboard-exit"]} title={collapsed ? "Back to site" : undefined}><i className="fa-solid fa-arrow-left" /><span>Back to site</span></Link>
+      </div>
     </aside>
   );
 }
