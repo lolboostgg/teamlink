@@ -9753,9 +9753,9 @@ a.notification-panel__item:hover {
 .teammate-review-card a, .teammate-review-card strong { color: var(--text); font-size: 12px; font-weight: 750; }
 .teammate-review-card small { overflow: hidden; color: var(--text-faint); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .teammate-review-card .dashboard-list-item__stars em { color: var(--text-faint); font-style: normal; }
-.admin-order-person { display: inline-flex; align-items: center; gap: 9px; color: var(--text); }
-.admin-order-person > span { width: 30px; height: 30px; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--dash-line); border-radius: 8px; }
-.admin-order-person img { width: 100%; height: 100%; object-fit: cover; }
+.admin-orders-table td a.admin-order-person, .admin-order-person { display: inline-flex; align-items: center; gap: 9px; color: var(--text); }
+.admin-order-person > span { width: 32px; min-width: 32px; max-width: 32px; height: 32px; min-height: 32px; max-height: 32px; display: block; flex: 0 0 32px; overflow: hidden; border: 1px solid var(--dash-line); border-radius: 8px; }
+.admin-order-person img { width: 32px !important; max-width: 32px !important; height: 32px !important; max-height: 32px !important; display: block; object-fit: cover; }
 .admin-order-person:hover strong { color: var(--accent); }
 .admin-order-game { display: flex; align-items: center; gap: 9px; }
 .admin-order-game > span { display: flex; min-width: 0; flex-direction: column; }
