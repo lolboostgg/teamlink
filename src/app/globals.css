@@ -4505,6 +4505,16 @@ ul {
   color: var(--text-faint);
 }
 
+/* Labels can carry a hint suffix (e.g. "UTC+01:00 · Berlin, Paris") — keep
+   them on one line instead of letting a row grow two rows tall. */
+.icon-select__trigger > span,
+.icon-select__option > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .icon-select__chevron {
   margin-left: auto;
   font-size: 11px;
@@ -9317,6 +9327,13 @@ a.notification-panel__item:hover {
 .security-login strong { overflow: hidden; color: var(--text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .security-login small { color: var(--text-faint); font-size: 10px; }
 
+/* Identity panel next to payout methods. The identity side carries the three
+   document tiles, so it gets the wider track; they stack again on narrow. */
+.verification-split { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; gap: 18px; }
+.verification-split > .dashboard-panel { margin: 0; }
+.verification-split .payout-method-card { grid-template-columns: 42px minmax(0, 1fr) auto; }
+.verification-split .payout-method-card__actions { grid-column: 2 / -1; justify-content: flex-end; }
+@media (max-width: 1280px) { .verification-split { grid-template-columns: minmax(0, 1fr); } .verification-split .payout-method-card { grid-template-columns: 42px minmax(0, 1fr) auto auto; } .verification-split .payout-method-card__actions { grid-column: auto; } }
 .payout-methods-list { display: grid; gap: 9px; }
 .payout-method-card { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 13px; border: 1px solid var(--border); border-radius: 13px; background: var(--dash-surface-2); }
 .payout-method-card.is-default { border-color: rgba(47, 191, 113, .24); background: linear-gradient(90deg, rgba(47, 191, 113, .055), transparent 38%), var(--dash-surface-2); }

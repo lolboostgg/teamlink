@@ -180,7 +180,7 @@ export function VerificationEditor({
   }
 
   return (
-    <>
+    <div className="verification-split">
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">
           <div>
@@ -283,7 +283,7 @@ export function VerificationEditor({
       </div>
 
       <PayoutMethods methods={methods} onRun={run} pending={pending} />
-    </>
+    </div>
   );
 }
 
