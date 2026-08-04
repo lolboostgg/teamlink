@@ -8,6 +8,16 @@ import {
 import type { LolRankTier, ChampionName, LolLane } from "@/lib/lolAssets";
 
 const LANGUAGE_CODES = new Set(LANGUAGES.map((l) => l.code));
+const MAX_AVATAR_DATA_URL_LENGTH = 60_000;
+
+function sanitizeAvatarUrl(raw: string | undefined): string {
+  const value = (raw ?? "").trim();
+  if (!value) return "";
+  if (value.startsWith("data:image/")) {
+    return value.length <= MAX_AVATAR_DATA_URL_LENGTH ? value : "";
+  }
+  return value.slice(0, 2000);
+}
 
 export interface TeammateProfileInput {
   tagline: string;
@@ -44,7 +54,7 @@ export function sanitizeTeammateProfileInput(raw: {
   return {
     tagline: (raw.tagline ?? "").trim().slice(0, 240),
     timezone: (raw.timezone ?? "").trim().slice(0, 60),
-    avatarUrl: (raw.avatarUrl ?? "").trim().slice(0, 2000),
+    avatarUrl: sanitizeAvatarUrl(raw.avatarUrl),
     languages,
     gameProfiles,
     lolRank: lol.rank,

@@ -8,8 +8,9 @@ interface Props {
   label?: string;
 }
 
-const MAX_DIMENSION = 256;
-const JPEG_QUALITY = 0.85;
+const MAX_DIMENSION = 192;
+const JPEG_QUALITY = 0.8;
+const MAX_DATA_URL_LENGTH = 60_000;
 const DEFAULT_AVATAR = "/avatars/default.webp";
 
 // No object-storage backend is wired up in this app (no S3/Supabase
@@ -41,7 +42,12 @@ function readAndResizeImage(file: File): Promise<string> {
         const drawW = img.width * scale;
         const drawH = img.height * scale;
         ctx.drawImage(img, (size - drawW) / 2, (size - drawH) / 2, drawW, drawH);
-        resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
+        const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+        if (dataUrl.length > MAX_DATA_URL_LENGTH) {
+          reject(new Error("That image is still too large after processing. Please choose a smaller file."));
+          return;
+        }
+        resolve(dataUrl);
       };
       img.src = reader.result as string;
     };

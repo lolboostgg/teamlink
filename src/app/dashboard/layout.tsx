@@ -40,12 +40,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
         },
       })
     : null;
+  const storedAvatar = teammate?.avatarUrl || teammate?.user?.avatarUrl || null;
+  // Older uploads were truncated to exactly 2,000 characters by the profile
+  // sanitizer. A partial data URL can never render, so fall through to the
+  // Discord/default avatar until the user saves the image again.
+  const usableStoredAvatar = storedAvatar?.startsWith("data:image/") && storedAvatar.length <= 2_000
+    ? null
+    : storedAvatar;
   const teammateProfile = teammate
     ? {
         name: teammate.name,
         avatarUrl:
-          teammate.avatarUrl ||
-          teammate.user?.avatarUrl ||
+          usableStoredAvatar ||
           discordAvatarUrl(teammate.user?.discordId ?? null, teammate.user?.discordAvatar ?? null) ||
           "/avatars/default.webp",
         rating: teammate.rating,
