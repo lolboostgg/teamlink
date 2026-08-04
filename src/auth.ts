@@ -15,6 +15,16 @@ import { discordDisplayName } from "@/lib/discord";
 const REMEMBERED_MAX_AGE_SECONDS = 30 * 24 * 60 * 60; // 30 days
 const NOT_REMEMBERED_MAX_AGE_SECONDS = 24 * 60 * 60; // 1 day
 
+// JWT sessions are stored in cookies. An uploaded avatar is often a base64
+// data URL several kilobytes large; putting that into `token.picture` makes
+// the Set-Cookie header exceed the browser/proxy limit and turns an otherwise
+// successful credentials login into a 500. Remote provider URLs are small
+// enough to keep; uploaded images are loaded from our database in dashboards.
+function sessionSafeAvatar(value: string | null | undefined): string | null {
+  if (!value || value.startsWith("data:")) return null;
+  return value.length <= 2_000 ? value : null;
+}
+
 // The union of the Discord and Google profile fields we actually read.
 // NextAuth's own Profile type is deliberately loose, so this keeps the two
 // providers' shapes in one place instead of casting at every use.
@@ -58,7 +68,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // can read it on initial sign-in (only `authorize` sees the raw
           // credentials) — not a real User field, just a one-shot carrier.
           const remember = credentials?.remember !== "false";
-          return { id: user.id, email: user.email, name: user.name, image: user.avatarUrl, role: user.role, remember };
+          return { id: user.id, email: user.email, name: user.name, image: sessionSafeAvatar(user.avatarUrl), role: user.role, remember };
         } catch (err) {
           // Logged server-side instead of surfacing raw DB errors through
           // NextAuth's generic CredentialsSignin error — check the
@@ -124,7 +134,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const fresh = await prisma.user.findUnique({ where: { id: token.id as string } });
         if (fresh) {
           token.name = fresh.name;
-          token.picture = fresh.avatarUrl;
+          token.picture = sessionSafeAvatar(fresh.avatarUrl);
           token.role = fresh.role;
         }
         return token;
@@ -202,7 +212,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       token.id = dbUser.id;
       token.role = dbUser.role;
       token.name = dbUser.name;
-      token.picture = dbUser.avatarUrl;
+      token.picture = sessionSafeAvatar(dbUser.avatarUrl);
       return token;
     },
     async session({ session, token }) {
