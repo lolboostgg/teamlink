@@ -43,8 +43,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <span className={`admin-order-status admin-order-status--${statusTone}`}><i className={order.status === "COMPLETED" ? "fa-solid fa-check" : "fa-solid fa-circle"} />{statusLabel}</span>
       </div>
       <dl className="admin-order-facts">
-        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-user" /></span><span><dt>Client</dt><dd>{clientName}</dd></span></div>
-        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-headset" /></span><span><dt>Teammate</dt><dd>{teammateName}</dd></span></div>
+        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-user" /></span><span><dt>Client</dt><dd>{order.clientUser ? <Link href={`/dashboard/admin/accounts/${order.clientUser.id}`}>{clientName}</Link> : clientName}</dd></span></div>
+        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-headset" /></span><span><dt>Teammate</dt><dd>{selected ? <Link href={`/dashboard/admin/teammates/${selected.teammateId}`}>{teammateName}</Link> : teammateName}</dd></span></div>
         <div><span className="admin-order-fact__icon"><i className="fa-solid fa-gamepad" /></span><span><dt>Game & option</dt><dd>{order.gameName}<small>{order.option}</small></dd></span></div>
         <div><span className="admin-order-fact__icon"><i className="fa-solid fa-coins" /></span><span><dt>Order value</dt><dd><PriceTag amountEUR={Number(order.priceEUR)} /></dd></span></div>
       </dl>
@@ -56,6 +56,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       </div>
     </section>
 
+    <div className="admin-order-workspace">
     <section className="dashboard-panel admin-order-chat-panel">
       <div className="dashboard-panel__head">
         <div><div className="dashboard-panel__title"><i className="fa-solid fa-comments" /> Session chat</div><div className="dashboard-panel__sub">Conversation preview · {messages.length} messages</div></div>
@@ -84,12 +85,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       </div>}
     </section>
 
-    <section className="dashboard-panel">
+    <section className="dashboard-panel admin-order-audit-panel">
       <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Candidates & game reports</div><div className="dashboard-panel__sub">Dispatch audit and submitted results</div></div></div>
       <div className="admin-order-audit">
         <section><h3><i className="fa-solid fa-users" /> Candidates <span>{order.candidates.length}</span></h3>{order.candidates.map((candidate) => <div key={candidate.id}><span><AvatarIcon seed={candidate.teammateId} />{candidate.teammate.name}</span><strong className={candidate.selected ? "is-selected" : ""}>{candidate.status.toLowerCase()}{candidate.selected ? " · selected" : ""}</strong></div>)}</section>
         <section><h3><i className="fa-solid fa-trophy" /> Game reports <span>{order.games.length}/{order.gamesBooked}</span></h3>{order.games.length ? order.games.map((game) => <div key={game.id}><span>Game {game.gameNumber}</span><strong className={`game-result game-result--${game.result.toLowerCase()}`}>{game.result}</strong></div>) : <p>No game reports.</p>}</section>
       </div>
     </section>
+    </div>
   </div>;
 }

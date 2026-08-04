@@ -156,7 +156,7 @@ export function SessionChat({
               <p>{m.text}</p>
               <span>
                 {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                {mine && (m.readBy?.includes(otherSide) ? " · Read" : " · Sent")}
+                {mine && <span className={`chat-receipt${m.readBy?.includes(otherSide) ? " is-read" : ""}`} title={m.readBy?.includes(otherSide) ? "Read" : "Sent"} aria-label={m.readBy?.includes(otherSide) ? "Read" : "Sent"}><i className={`fa-solid ${m.readBy?.includes(otherSide) ? "fa-check-double" : "fa-check"}`} aria-hidden="true" /></span>}
               </span>
             </div>
           </div>;

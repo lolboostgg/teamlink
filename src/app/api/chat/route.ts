@@ -4,6 +4,10 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+type ChatSide = "client" | "teammate" | "admin";
+const globalPresence = globalThis as typeof globalThis & { teamlinkChatTyping?: Map<string, Partial<Record<ChatSide, number>>> };
+const typingPresence = globalPresence.teamlinkChatTyping ??= new Map();
+
 async function conversationAccess(userId: string, role: string, key: string) {
   if (role === "ADMIN") return { allowed: true, locked: false };
   const separator = key.indexOf("::");
@@ -48,7 +52,33 @@ export async function GET(request: NextRequest) {
       createdAt: message.createdAt.getTime(),
       readBy: message.readBy,
     })),
+    typing: Object.fromEntries(Object.entries(typingPresence.get(key) ?? {}).filter(([, until]) => typeof until === "number" && until > Date.now())),
   });
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const body = await request.json().catch(() => null) as { key?: string; action?: "typing" | "read"; side?: ChatSide; typing?: boolean } | null;
+  const key = body?.key?.slice(0, 300) ?? "";
+  const side: ChatSide = body?.side === "admin" ? "admin" : body?.side === "teammate" ? "teammate" : "client";
+  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : { allowed: false };
+  const correctSide = (session.user.role === "CLIENT" && side === "client") || (session.user.role === "TEAMMATE" && side === "teammate") || (session.user.role === "ADMIN" && side === "admin");
+  if (!key || !access.allowed || !correctSide) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  if (body?.action === "typing") {
+    typingPresence.set(key, { ...typingPresence.get(key), [side]: body.typing ? Date.now() + 3_500 : 0 });
+    return NextResponse.json({ ok: true });
+  }
+  if (body?.action === "read") {
+    const unread = await prisma.conversationMessage.findMany({ where: { conversationKey: key, sender: { not: side } }, select: { id: true, readBy: true } });
+    await prisma.$transaction(unread.flatMap((message) => {
+      const readBy = Array.isArray(message.readBy) ? message.readBy.filter((value): value is string => typeof value === "string") : [];
+      return readBy.includes(side) ? [] : [prisma.conversationMessage.update({ where: { id: message.id }, data: { readBy: [...readBy, side] } })];
+    }));
+    return NextResponse.json({ ok: true });
+  }
+  return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 }
 
 export async function POST(request: NextRequest) {

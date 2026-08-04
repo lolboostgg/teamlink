@@ -106,6 +106,7 @@ export function setChatTyping(key: string, side: ChatSide, typing: boolean): voi
   presence[key] = { ...presence[key], [side]: typing ? Date.now() + 1800 : 0 };
   window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
   getChannel()?.postMessage({ type: "chat-presence" });
+  void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, side, action: "typing", typing }) }).catch(() => undefined);
 }
 
 export function isChatTyping(key: string, side: ChatSide): boolean {
@@ -120,7 +121,10 @@ export function markConversationRead(key: string, side: ChatSide): void {
     changed = true;
     return { ...message, readBy: [...(message.readBy ?? [message.from]), side] };
   });
-  if (changed) writeAll(next);
+  if (changed) {
+    writeAll(next);
+    void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, side, action: "read" }) }).catch(() => undefined);
+  }
 }
 
 export function getMessages(key: string): ChatMessage[] {
@@ -163,9 +167,15 @@ export function useConversationMessages(key: string | undefined): { messages: Ch
       try {
         const response = await fetch(`/api/chat?key=${encodeURIComponent(key)}`, { cache: "no-store" });
         if (!response.ok) return;
-        const data = (await response.json()) as { messages?: ChatMessage[] };
+        const data = (await response.json()) as { messages?: ChatMessage[]; typing?: Partial<Record<ChatSide, number>> };
         if (!cancelled && data.messages) {
           writeConversation(key, data.messages);
+          if (data.typing) {
+            const presence = readPresence();
+            presence[key] = { ...presence[key], ...data.typing };
+            window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
+            getChannel()?.postMessage({ type: "chat-presence" });
+          }
           setMessages(data.messages);
         }
       } catch {

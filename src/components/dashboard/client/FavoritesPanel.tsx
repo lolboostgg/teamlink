@@ -20,7 +20,7 @@ export function FavoritesPanel() {
       if (!teammate) return null;
       const sessions = orders.filter((o) => o.selectedTeammateId === id && o.status === "completed").length;
       const gameName = getGameBySlug(teammate.gameSlugs[0])?.name ?? teammate.gameSlugs[0];
-      return { id: teammate.id, name: teammate.name, avatarUrl: teammate.avatarUrl, gameName, rating: teammate.rating, sessions };
+      return { id: teammate.id, name: teammate.name, avatarUrl: teammate.avatarUrl, gameName, gameSlug: teammate.gameSlugs[0], rating: teammate.rating, sessions };
     })
     .filter((f): f is FavoriteTeammate => f !== null);
 

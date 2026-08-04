@@ -516,8 +516,9 @@ export function AccountPanel({ account, onSaved }: { account: AccountSummary; on
   const [pending, startTransition] = useTransition();
 
   return (
+    <div className="admin-security-stack">
     <form
-      className="teammate-profile-form"
+      className="teammate-profile-form dashboard-panel"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -559,7 +560,25 @@ export function AccountPanel({ account, onSaved }: { account: AccountSummary; on
         </button>
       </div>
     </form>
+    <PasswordResetPanel userId={account.id} onSaved={onSaved} />
+    </div>
   );
+}
+
+function PasswordResetPanel({ userId, onSaved }: { userId: string; onSaved: () => void }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  return <form className="teammate-profile-form dashboard-panel admin-security-card" onSubmit={(event) => { event.preventDefault(); setError(null); if (password !== confirm) { setError("The two passwords don't match."); return; } startTransition(async () => { try { await setUserPassword(userId, password); setPassword(""); setConfirm(""); onSaved(); } catch (err) { setError(err instanceof Error ? err.message : "Couldn't save — try again."); } }); }}>
+    <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Reset password</div><div className="dashboard-panel__sub">Set a new password for this account immediately.</div></div></div>
+    <div className="form-row"><label htmlFor="account-new-password">New password</label><input id="account-new-password" type={show ? "text" : "password"} value={password} minLength={8} required autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} /></div>
+    <div className="form-row"><label htmlFor="account-repeat-password">Repeat password</label><input id="account-repeat-password" type={show ? "text" : "password"} value={confirm} minLength={8} required autoComplete="new-password" onChange={(event) => setConfirm(event.target.value)} /></div>
+    <label className="chip-check"><input type="checkbox" checked={show} onChange={() => setShow((value) => !value)} /><i className="fa-solid fa-eye chip-check__glyph" aria-hidden="true" /><span>Show passwords</span></label>
+    {error && <p className="form-row__error"><i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {error}</p>}
+    <div className="teammate-profile-form__actions"><button type="submit" className="btn btn--vivid" disabled={pending || password.length < 8}>{pending ? "Saving..." : "Set password"}</button></div>
+  </form>;
 }
 
 export function SecurityPanel({ userId, twoFactorEnabled, loginActivity, onSaved }: { userId: string; twoFactorEnabled: boolean; loginActivity: AccountSummary["loginActivity"]; onSaved: () => void }) {
@@ -585,7 +604,7 @@ export function SecurityPanel({ userId, twoFactorEnabled, loginActivity, onSaved
       </div>
     </section>
     <form
-      className="teammate-profile-form dashboard-panel admin-security-card"
+      className="teammate-profile-form dashboard-panel admin-security-card admin-security-password-reset"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
