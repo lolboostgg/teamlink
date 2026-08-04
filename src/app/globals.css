@@ -9119,6 +9119,15 @@ a.notification-panel__item:hover {
   margin-bottom: 32px;
 }
 
+/* Five tiles stay on one row instead of leaving a lonely card underneath.
+   Scoped with :has() so the existing three- and four-tile grids are
+   untouched. */
+.stat-grid:has(> :nth-child(5)) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+@media (max-width: 1400px) {
+  .stat-grid:has(> :nth-child(5)) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 /* Icon left, figures right — reads as one line of information instead of a
    stacked poster, which is what lets four of them sit calmly side by side. */
 .stat-card {
@@ -10907,19 +10916,78 @@ a.notification-panel__item:hover {
 .payout-request__amount small { color: var(--text-faint); font-size: 10px; }
 
 .payout-request__actions { display: flex; align-items: center; gap: 8px; }
-.payout-request__actions input { min-width: 210px; }
+
+/* The process step gets its own full-width row under the request. */
+.payout-process {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.payout-process textarea { min-height: 62px; resize: vertical; }
+.payout-process__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 
 @media (max-width: 900px) {
   .payout-request, .payout-request--admin { grid-template-columns: minmax(0, 1fr); }
   .payout-request__amount { align-items: flex-start; text-align: left; }
   .payout-request__actions { flex-wrap: wrap; }
-  .payout-request__actions input { min-width: 0; flex: 1 1 100%; }
+  .payout-process__actions { justify-content: stretch; }
+  .payout-process__actions > .btn { flex: 1 1 auto; justify-content: center; }
 }
 
-/* Request modal */
-.payout-request-modal { display: grid; gap: 15px; padding: 20px; width: min(720px, 92vw); }
+/* Request modal. The panel itself defaults to 400px (it is sized for short
+   confirm dialogs), so widening it is the panel's job — setting a width on
+   the content only makes it overflow. */
+.modal-panel:has(.payout-request-modal) { max-width: 720px; padding: 0; overflow: visible; }
+.payout-request-modal {
+  display: grid;
+  gap: 15px;
+  max-height: min(760px, calc(100vh - 80px));
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+/* Clear of the absolutely positioned close button. */
+.payout-request-modal .payout-method-editor__head { padding-right: 38px; }
+.payout-request-modal .payout-method-editor__head strong { font-size: 18px; }
 .payout-request__available { float: right; color: var(--text-faint); font-size: 10.5px; font-weight: 600; }
-.payout-request__full { margin-top: 9px; }
+.payout-request__full {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.payout-request__full input { position: absolute; opacity: 0; pointer-events: none; }
+
+.payout-request__full-box {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg-input);
+  color: transparent;
+  font-size: 9px;
+  transition: 0.16s ease;
+}
+
+.payout-request__full:hover .payout-request__full-box { border-color: var(--accent); }
+.payout-request__full input:checked + .payout-request__full-box { border-color: var(--accent); background: var(--accent); color: #fff; }
+.payout-request__full input:focus-visible + .payout-request__full-box { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.payout-request__full-copy { display: flex; flex-direction: column; gap: 1px; }
+.payout-request__full-copy strong { color: var(--text); font-size: 12px; }
+.payout-request__full-copy small { color: var(--text-faint); font-size: 10.5px; }
 
 .payout-summary { display: grid; gap: 1px; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 11px; overflow: hidden; }
 .payout-summary > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; background: var(--dash-surface-2); }

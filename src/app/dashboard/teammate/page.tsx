@@ -4,14 +4,17 @@ import { prisma } from "@/lib/db";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { ActiveOrderCard } from "@/components/dashboard/teammate/ActiveOrderCard";
 import { TeammateOverviewPanels } from "@/components/dashboard/teammate/TeammateOverviewPanels";
-import { payoutForOrder } from "@/lib/payoutSplit";
 import { VerificationBanner } from "@/components/dashboard/teammate/VerificationBanner";
 import { requireOnboardedTeammate } from "@/lib/teammateGate";
+import { loadTeammateEarnings } from "@/lib/teammateEarnings";
+import type { DisplayReview } from "@/components/dashboard/teammate/ReviewsList";
 
 export const metadata: Metadata = { title: "Teammate Dashboard" };
 // Direct top-level Prisma query in a Server Component — same build-time-
 // probe hazard as the other admin/teammate pages, see lib/db.ts.
 export const dynamic = "force-dynamic";
+
+const reviewDate = new Intl.DateTimeFormat("en", { dateStyle: "medium" });
 
 export default async function TeammateDashboardPage() {
   await requireOnboardedTeammate();
@@ -23,7 +26,6 @@ export default async function TeammateDashboardPage() {
           id: true,
           name: true,
           available: true,
-          balanceEUR: true,
           sessionsCount: true,
           verification: { select: { status: true } },
           _count: { select: { payoutMethods: true } },
@@ -32,21 +34,32 @@ export default async function TeammateDashboardPage() {
     : null;
   const displayName = teammate?.name || session?.user?.name || "there";
 
-  // What the orders in flight will pay out on completion. Same split rule as
-  // creditOrderPayout(): the order's pot divided across the selected team.
-  const inFlight = teammate
-    ? await prisma.order.findMany({
-        where: {
-          status: { in: ["ASSIGNED", "IN_PROGRESS"] },
-          candidates: { some: { teammateId: teammate.id, selected: true } },
-        },
-        select: { priceEUR: true, teammatePayoutEUR: true, _count: { select: { candidates: { where: { selected: true } } } } },
-      })
-    : [];
-  const pendingEUR = inFlight.reduce(
-    (sum, order) => sum + payoutForOrder(order) / Math.max(1, order._count.candidates),
-    0,
-  );
+  // The rating comes from the reviews table, not from this browser's order
+  // history — that was showing a dash while the sidebar showed a real number.
+  const [earnings, reviewAgg, reviewRows] = teammate
+    ? await Promise.all([
+        loadTeammateEarnings(teammate.id),
+        prisma.review.aggregate({ where: { teammateId: teammate.id }, _avg: { rating: true }, _count: true }),
+        prisma.review.findMany({
+          where: { teammateId: teammate.id },
+          include: { order: true, clientUser: true },
+          orderBy: { createdAt: "desc" },
+          take: 6,
+        }),
+      ])
+    : [null, null, []];
+
+  const reviews: DisplayReview[] = reviewRows.map((review) => ({
+    id: review.id,
+    client: review.clientUser?.name || review.order.customerLabel || "Anonymous",
+    gameName: review.order.gameName,
+    gameSlug: review.order.gameSlug,
+    option: review.order.option,
+    orderNo: review.order.orderNo,
+    clientAvatarUrl: review.clientUser?.avatarUrl ?? null,
+    rating: review.rating,
+    date: reviewDate.format(review.createdAt),
+  }));
 
   return (
     <>
@@ -66,9 +79,13 @@ export default async function TeammateDashboardPage() {
       )}
 
       <TeammateOverviewPanels
-        balanceEUR={Number(teammate?.balanceEUR ?? 0)}
-        pendingEUR={pendingEUR}
+        balanceEUR={earnings?.balanceEUR ?? 0}
+        pendingEUR={earnings?.pendingEUR ?? 0}
+        earnedEUR={earnings?.earnedEUR ?? 0}
         sessionsCount={teammate?.sessionsCount ?? 0}
+        ratingAverage={reviewAgg?._avg.rating ?? null}
+        reviewCount={reviewAgg?._count ?? 0}
+        reviews={reviews}
       />
       <ActiveOrderCard />
     </>

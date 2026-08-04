@@ -123,45 +123,68 @@ export function PayoutRequestQueue({ rows }: { rows: AdminPayoutRow[] }) {
               )}
             </div>
 
-            {row.status === "PENDING" && (
+            {row.status === "PENDING" && noteFor !== row.id && (
               <div className="payout-request__actions">
-                {noteFor === row.id ? (
-                  <>
-                    <input
-                      value={note}
-                      onChange={(event) => setNote(event.target.value)}
-                      placeholder="Note for the teammate (optional)"
-                      aria-label="Note for the teammate"
-                    />
-                    <button
-                      type="button"
-                      className="btn btn--ghost btn--sm"
-                      disabled={pending}
-                      onClick={() => run(() => rejectPayout(row.id, note), "Request rejected.")}
-                    >
-                      Reject
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn--vivid btn--sm"
-                      disabled={pending}
-                      onClick={() => run(() => markPayoutPaid(row.id, note), "Payout booked.")}
-                    >
-                      Confirm paid
-                    </button>
-                  </>
-                ) : (
+                <button
+                  type="button"
+                  className="btn btn--vivid btn--sm"
+                  onClick={() => {
+                    setNoteFor(row.id);
+                    setNote("");
+                  }}
+                >
+                  Process
+                </button>
+              </div>
+            )}
+
+            {/* Its own row rather than a field wedged between the amount and
+                the buttons — a note that will be shown to someone deserves
+                more than 200px and a placeholder. */}
+            {row.status === "PENDING" && noteFor === row.id && (
+              <div className="payout-process">
+                <div className="form-row">
+                  <label htmlFor={`payout-note-${row.id}`}>Note for the teammate (optional)</label>
+                  <textarea
+                    id={`payout-note-${row.id}`}
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    rows={2}
+                    maxLength={300}
+                    placeholder="Shown to them either way — a reason is worth adding when rejecting."
+                  />
+                </div>
+
+                <div className="payout-process__actions">
                   <button
                     type="button"
-                    className="btn btn--vivid btn--sm"
+                    className="btn btn--ghost btn--sm"
+                    disabled={pending}
                     onClick={() => {
-                      setNoteFor(row.id);
+                      setNoteFor(null);
                       setNote("");
                     }}
                   >
-                    Process
+                    Cancel
                   </button>
-                )}
+                  <button
+                    type="button"
+                    className="btn btn--danger btn--sm"
+                    disabled={pending}
+                    onClick={() => run(() => rejectPayout(row.id, note), "Request rejected.")}
+                  >
+                    <i className="fa-solid fa-xmark" aria-hidden="true" /> Reject
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--vivid btn--sm"
+                    disabled={pending}
+                    onClick={() => run(() => markPayoutPaid(row.id, note), "Payout booked.")}
+                  >
+                    <i className="fa-solid fa-check" aria-hidden="true" /> Confirm paid ·{" "}
+                    <PriceTag amountEUR={breakdown.net} />
+                  </button>
+                </div>
               </div>
             )}
           </article>

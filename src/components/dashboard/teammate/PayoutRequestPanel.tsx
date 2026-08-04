@@ -208,16 +208,20 @@ export function PayoutRequestPanel({
                 disabled={fullBalance}
                 onChange={(event) => setAmount(event.target.value)}
               />
-              <label className="chip-check payout-request__full">
+              <label className="payout-request__full">
                 <input type="checkbox" checked={fullBalance} onChange={() => setFullBalance((value) => !value)} />
-                <span>Full available amount</span>
+                <span className="payout-request__full-box" aria-hidden="true">
+                  <i className="fa-solid fa-check" />
+                </span>
+                <span className="payout-request__full-copy">
+                  <strong>Full available amount</strong>
+                  <small>
+                    {fullBalance
+                      ? `Whatever your balance is on ${dateFormat.format(payoutDate)} — sessions you finish before then count.`
+                      : "Use your complete available payout balance."}
+                  </small>
+                </span>
               </label>
-              {fullBalance && (
-                <small className="form-row__note">
-                  Paid out at whatever your balance is on {dateFormat.format(payoutDate)} &mdash; sessions you finish
-                  before then are included.
-                </small>
-              )}
             </div>
 
             <div className="form-row">
