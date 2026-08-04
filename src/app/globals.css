@@ -11314,8 +11314,16 @@ a.notification-panel__item:hover {
 }
 /* The step brings its own card chrome for the checkout page; inside the
    modal the panel already provides it, and the step's own heading is the
-   dialog title — a second one above it just read as a duplicate. */
-.ingame-modal .checkout-card { padding: 0; border: 0; background: transparent; }
+   dialog title — a second one above it just read as a duplicate.
+   The shadow and margin have to go too: a shadow on a transparent box still
+   paints, which is the faint rectangle that showed through the panel. */
+.ingame-modal .checkout-card {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
 .ingame-modal .ingame-step { gap: 18px; }
 .ingame-modal .ingame-step__head { padding-right: 34px; }
 .ingame-modal .ingame-step__head h2 { font-size: 18px; }
