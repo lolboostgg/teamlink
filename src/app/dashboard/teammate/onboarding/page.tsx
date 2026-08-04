@@ -1,19 +1,35 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/db";
+import { isStorageConfigured } from "@/lib/storage";
+import { readGameProfiles } from "@/lib/teammateProfile";
 import { loadOnboardingSubject } from "@/lib/teammateGate";
-import { onboardingSteps, isOnboardingComplete } from "@/lib/teammateOnboarding";
+import { isOnboardingComplete } from "@/lib/teammateOnboarding";
+import { TeammateSetupWizard } from "@/components/dashboard/teammate/TeammateSetupWizard";
+import type { LanguageCode } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Finish your setup" };
 export const dynamic = "force-dynamic";
 
-export default async function TeammateOnboardingPage() {
+export default async function TeammateOnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ discord?: string }>;
+}) {
+  const { discord } = await searchParams;
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
-  const subject = await loadOnboardingSubject(session.user.id);
-  if (!subject) {
+  const teammate = await prisma.teammate.findUnique({
+    where: { userId: session.user.id },
+    include: {
+      verification: true,
+      user: { select: { discordId: true, discordUsername: true, discordAvatar: true } },
+    },
+  });
+
+  if (!teammate) {
     return (
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">
@@ -26,52 +42,41 @@ export default async function TeammateOnboardingPage() {
     );
   }
 
-  // Nothing left to do — sitting on a completed checklist would be a dead end.
-  if (isOnboardingComplete(subject)) redirect("/dashboard/teammate");
+  // Sitting on a completed checklist would be a dead end. Re-derived from the
+  // same helper the gate uses so the two can't disagree.
+  const subject = await loadOnboardingSubject(session.user.id);
+  if (subject && isOnboardingComplete(subject)) redirect("/dashboard/teammate");
 
-  const steps = onboardingSteps(subject);
-  const done = steps.filter((step) => step.done).length;
-  const next = steps.find((step) => !step.done);
+  const verification = teammate.verification;
 
   return (
-    <div className="dashboard-panel onboarding-panel">
-      <div className="dashboard-panel__head">
-        <div>
-          <div className="dashboard-panel__title">Finish your setup</div>
-          <div className="dashboard-panel__sub">
-            Your dashboard unlocks once every step is done. You can leave and come back &mdash; nothing is lost.
-          </div>
-        </div>
-        <span className="dashboard-pill dashboard-pill--muted">
-          {done} of {steps.length} done
-        </span>
-      </div>
-
-      <div className="onboarding-progress" role="progressbar" aria-valuenow={done} aria-valuemin={0} aria-valuemax={steps.length}>
-        <span style={{ width: `${(done / steps.length) * 100}%` }} />
-      </div>
-
-      <ol className="onboarding-steps">
-        {steps.map((step) => (
-          <li key={step.key} className={`onboarding-step${step.done ? " is-done" : ""}`}>
-            <span className="onboarding-step__mark" aria-hidden="true">
-              <i className={step.done ? "fa-solid fa-check" : step.icon} />
-            </span>
-            <div className="onboarding-step__copy">
-              <strong>{step.title}</strong>
-              <span>{step.description}</span>
-              {!step.done && step.detail && <em>{step.detail}</em>}
-            </div>
-            {step.done ? (
-              <span className="onboarding-step__state">Done</span>
-            ) : (
-              <Link href={step.href} className={`btn btn--sm ${step === next ? "btn--vivid" : "btn--ghost"}`}>
-                {step === next ? "Continue" : "Open"}
-              </Link>
-            )}
-          </li>
-        ))}
-      </ol>
-    </div>
+    <TeammateSetupWizard
+      initial={{
+        avatarUrl: teammate.avatarUrl ?? "",
+        tagline: teammate.tagline ?? "",
+        timezone: teammate.timezone ?? "",
+        languages: ((teammate.languages as LanguageCode[] | null) ?? []),
+        gameSlugs: ((teammate.gameSlugs as string[] | null) ?? []),
+        gameProfiles: readGameProfiles(teammate),
+      }}
+      verification={{
+        status: verification?.status ?? "UNSUBMITTED",
+        fullName: verification?.fullName ?? "",
+        dateOfBirth: verification?.dateOfBirth ?? "",
+        address: verification?.address ?? "",
+        country: verification?.country ?? "",
+        idFrontPath: verification?.idFrontPath ?? null,
+        idBackPath: verification?.idBackPath ?? null,
+        selfiePath: verification?.selfiePath ?? null,
+        reviewNote: verification?.reviewNote ?? null,
+      }}
+      storageReady={isStorageConfigured()}
+      discord={{
+        discordId: teammate.user?.discordId ?? null,
+        discordUsername: teammate.user?.discordUsername ?? null,
+        discordAvatar: teammate.user?.discordAvatar ?? null,
+        status: discord,
+      }}
+    />
   );
 }

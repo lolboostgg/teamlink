@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getTeammateDetail } from "@/lib/admin/teammateDetail";
+import { loadTeammateEarnings } from "@/lib/teammateEarnings";
 import { readGameProfiles } from "@/lib/teammateProfile";
 import { TeammateDetail } from "@/components/dashboard/admin/TeammateDetail";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
@@ -24,6 +25,8 @@ export default async function AdminTeammatePage({ params }: Props) {
 
   const detail = await getTeammateDetail(teammateNo);
   if (!detail) notFound();
+
+  const earnings = await loadTeammateEarnings(detail.teammate.id);
 
   const { teammate, candidacies } = detail;
   const user = teammate.user;
@@ -96,6 +99,7 @@ export default async function AdminTeammatePage({ params }: Props) {
               }
             : null
         }
+        earnings={earnings}
         orders={candidacies.map((c) => ({
           orderId: c.orderId,
           orderNo: c.order.orderNo,

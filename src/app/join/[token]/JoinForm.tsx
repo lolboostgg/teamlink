@@ -87,7 +87,7 @@ export function JoinForm({ token, presetEmail }: { token: string; presetEmail: s
             <i className={showPassword ? "fa-regular fa-eye-slash" : "fa-regular fa-eye"} aria-hidden="true" />
           </button>
         </div>
-        <small className="form-row__hint">At least 8 characters.</small>
+        <small className="form-row__note">Use at least 8 characters.</small>
       </div>
 
       {error && (

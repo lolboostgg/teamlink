@@ -16,6 +16,7 @@ import { FlagIcon } from "@/components/ui/FlagIcon";
 import { IconSelect } from "@/components/ui/IconSelect";
 import { IconMultiSelect } from "@/components/ui/IconMultiSelect";
 import { AvatarUpload } from "@/components/ui/AvatarUpload";
+import { TIMEZONE_OPTIONS } from "@/lib/timezones";
 import type { TeammateProfileInput } from "@/lib/teammateProfile";
 
 export interface TeammateProfileFormValue
@@ -38,48 +39,7 @@ function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
-// The stored value stays the bare offset; the city hints only ride along in
-// the label so people can find their zone by searching "Berlin" or "Tokyo".
-const TIMEZONE_OPTIONS: ProfileOption[] = [
-  ["UTC-12:00", "Baker Island"],
-  ["UTC-11:00", "Pago Pago, Niue"],
-  ["UTC-10:00", "Honolulu, Papeete"],
-  ["UTC-09:30", "Marquesas Islands"],
-  ["UTC-09:00", "Anchorage"],
-  ["UTC-08:00", "Los Angeles, Vancouver"],
-  ["UTC-07:00", "Denver, Phoenix"],
-  ["UTC-06:00", "Chicago, Mexico City"],
-  ["UTC-05:00", "New York, Toronto, Bogotá"],
-  ["UTC-04:00", "Halifax, Santiago, Caracas"],
-  ["UTC-03:30", "St. John's"],
-  ["UTC-03:00", "São Paulo, Buenos Aires"],
-  ["UTC-02:00", "Fernando de Noronha"],
-  ["UTC-01:00", "Azores, Cape Verde"],
-  ["UTC+00:00", "London, Lisbon, Accra"],
-  ["UTC+01:00", "Berlin, Paris, Lagos"],
-  ["UTC+02:00", "Athens, Cairo, Johannesburg"],
-  ["UTC+03:00", "Moscow, Istanbul, Nairobi"],
-  ["UTC+03:30", "Tehran"],
-  ["UTC+04:00", "Dubai, Baku"],
-  ["UTC+04:30", "Kabul"],
-  ["UTC+05:00", "Karachi, Tashkent"],
-  ["UTC+05:30", "New Delhi, Colombo"],
-  ["UTC+05:45", "Kathmandu"],
-  ["UTC+06:00", "Dhaka, Almaty"],
-  ["UTC+06:30", "Yangon"],
-  ["UTC+07:00", "Bangkok, Jakarta, Hanoi"],
-  ["UTC+08:00", "Singapore, Beijing, Perth"],
-  ["UTC+08:45", "Eucla"],
-  ["UTC+09:00", "Tokyo, Seoul"],
-  ["UTC+09:30", "Adelaide, Darwin"],
-  ["UTC+10:00", "Sydney, Brisbane"],
-  ["UTC+10:30", "Lord Howe Island"],
-  ["UTC+11:00", "Nouméa, Honiara"],
-  ["UTC+12:00", "Auckland, Suva"],
-  ["UTC+12:45", "Chatham Islands"],
-  ["UTC+13:00", "Apia, Nuku'alofa"],
-  ["UTC+14:00", "Kiritimati"],
-].map(([value, cities]) => ({ value, label: `${value} · ${cities}`, glyph: "fa-regular fa-clock" }));
+
 
 function OptionPill({
   option,

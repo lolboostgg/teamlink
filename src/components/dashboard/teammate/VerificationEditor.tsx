@@ -3,9 +3,8 @@
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/ToastProvider";
-import { FileDrop } from "@/components/ui/FileDrop";
-import { PrivateImage } from "@/components/ui/PrivateImage";
 import { Modal } from "@/components/ui/Modal";
+import { DocumentUpload, KYC_DOCUMENTS } from "@/components/dashboard/teammate/DocumentUpload";
 import {
   PAYOUT_FIELDS,
   PAYOUT_LABELS,
@@ -47,12 +46,6 @@ const STATUS_PILL: Record<string, string> = {
   REJECTED: "dashboard-pill--warning",
 };
 
-const DOCUMENTS = [
-  { kind: "id-front", label: "ID front", field: "idFrontPath" },
-  { kind: "id-back", label: "ID back", field: "idBackPath" },
-  { kind: "selfie", label: "Selfie holding the ID", field: "selfiePath" },
-] as const;
-
 interface PayoutSelectOption { value: string; label: string; }
 
 const COUNTRY_CODES = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
@@ -84,67 +77,6 @@ function SearchablePayoutSelect({ label, value, options, searchable = false, pla
     <button type="button" className="payout-select__trigger" aria-label={label} aria-haspopup="listbox" aria-expanded={open} aria-controls={listId} onClick={() => { setOpen((current) => !current); setQuery(""); }}><span className={selected || value ? "" : "is-placeholder"}>{selected?.label ?? (value || placeholder)}</span><i className="fa-solid fa-chevron-down" aria-hidden="true" /></button>
     {open && <div className="payout-select__popover">{searchable && <label className="payout-select__search"><i className="fa-solid fa-magnifying-glass" aria-hidden="true" /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${label.toLowerCase()}…`} /></label>}<ul id={listId} role="listbox" aria-label={label}>{filtered.map((option) => <li key={option.value}><button type="button" role="option" aria-selected={option.value === selected?.value} onClick={() => { onChange(option.value); setOpen(false); setQuery(""); }}><span><strong>{option.label}</strong><small>{option.value}</small></span>{option.value === selected?.value && <i className="fa-solid fa-check" aria-hidden="true" />}</button></li>)}</ul>{filtered.length === 0 && <p>No matches found.</p>}</div>}
   </div>;
-}
-
-function DocumentUpload({
-  kind,
-  label,
-  path,
-  disabled,
-  onUploaded,
-}: {
-  kind: string;
-  label: string;
-  path: string | null;
-  disabled: boolean;
-  onUploaded: () => void;
-}) {
-  const { showToast } = useToast();
-  const [busy, setBusy] = useState(false);
-
-  async function upload(file: File) {
-    setBusy(true);
-    try {
-      const body = new FormData();
-      body.append("kind", kind);
-      body.append("file", file);
-      const res = await fetch("/api/kyc/upload", { method: "POST", body });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Upload failed.");
-      showToast(`${label} uploaded.`, "success");
-      onUploaded();
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : "Upload failed.", "error");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="kyc-doc">
-      <div className="kyc-doc__head">
-        <span>{label}</span>
-        {path ? (
-          <span className="kyc-doc__state kyc-doc__state--ok">
-            <i className="fa-solid fa-circle-check" aria-hidden="true" /> uploaded
-          </span>
-        ) : (
-          <span className="kyc-doc__state">missing</span>
-        )}
-      </div>
-
-      {path && <PrivateImage src={`/api/kyc/view?path=${encodeURIComponent(path)}`} name={path} alt={label} />}
-
-      <FileDrop
-        accept="image/jpeg,image/png,image/webp,application/pdf"
-        label={path ? "Drop a new file to replace" : "Drag & drop the document"}
-        hint="JPG, PNG, WEBP or PDF · max 8 MB"
-        busy={busy}
-        disabled={disabled}
-        onFile={upload}
-      />
-    </div>
-  );
 }
 
 export function VerificationEditor({
@@ -250,7 +182,7 @@ export function VerificationEditor({
         </div>
 
         <div className="kyc-docs">
-          {DOCUMENTS.map((doc) => (
+          {KYC_DOCUMENTS.map((doc) => (
             <DocumentUpload
               key={doc.kind}
               kind={doc.kind}

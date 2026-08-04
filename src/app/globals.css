@@ -3016,6 +3016,31 @@ ul {
   border-radius: var(--radius-md);
 }
 
+/* One-line note under an input. The dashed box above is meant for a
+   standalone paragraph and reads as an empty input when it sits under a
+   real one. */
+.form-row__note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.form-row__note::before {
+  content: "";
+  width: 3px;
+  height: 3px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+}
+
 .pill-search {
   position: relative;
   margin-bottom: 8px;
@@ -10549,44 +10574,91 @@ a.notification-panel__item:hover {
   transition: width 0.3s ease;
 }
 
-.onboarding-steps { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
+.setup-steps { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
 
-.onboarding-step {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 13px;
-  padding: 13px;
+.setup-step {
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 13px;
   background: var(--dash-surface-2);
+  transition: border-color 0.16s ease;
 }
 
+.setup-step.is-open { border-color: rgba(79, 112, 255, 0.4); }
 /* Finished steps recede: the point of the list is what is still missing. */
-.onboarding-step.is-done { border-color: rgba(47, 191, 113, 0.22); opacity: 0.72; }
+.setup-step.is-done:not(.is-open) { border-color: rgba(47, 191, 113, 0.22); opacity: 0.7; }
 
-.onboarding-step__mark {
-  width: 38px;
-  height: 38px;
+.setup-step__head {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 13px;
+  padding: 13px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.setup-step__mark {
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 10px;
   background: rgba(79, 112, 255, 0.1);
   color: var(--accent);
-  font-size: 14px;
+  font-size: 12px;
+  font-weight: 800;
 }
 
-.onboarding-step.is-done .onboarding-step__mark { background: rgba(47, 191, 113, 0.14); color: var(--hue-green); }
+.setup-step.is-done .setup-step__mark { background: rgba(47, 191, 113, 0.14); color: var(--hue-green); }
 
-.onboarding-step__copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.onboarding-step__copy strong { color: var(--text); font-size: 13px; }
-.onboarding-step__copy span { color: var(--text-faint); font-size: 11px; line-height: 1.45; }
-.onboarding-step__copy em { color: var(--hue-gold); font-size: 10.5px; font-style: normal; font-weight: 650; }
-.onboarding-step__state { color: var(--hue-green); font-size: 11px; font-weight: 700; }
+.setup-step__copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.setup-step__copy strong { color: var(--text); font-size: 13px; }
+.setup-step__copy > span { color: var(--text-faint); font-size: 11px; line-height: 1.4; }
+.setup-step__state { color: var(--hue-green); font-size: 11px; font-weight: 700; }
+
+.setup-step__chevron { color: var(--text-faint); font-size: 10px; transition: transform 0.16s ease; }
+.setup-step.is-open .setup-step__chevron { transform: rotate(180deg); }
+
+.setup-step__body {
+  display: grid;
+  gap: 14px;
+  padding: 4px 13px 15px 60px;
+  border-top: 1px solid var(--dash-line);
+  margin-top: -1px;
+  padding-top: 15px;
+}
+
+.setup-step__empty { margin: 0; color: var(--text-faint); font-size: 11.5px; }
+
+.setup-step__actions { display: flex; justify-content: flex-end; gap: 9px; }
+
+/* One block per picked game inside the game-profile step. */
+.setup-game {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid var(--dash-line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.setup-game__head { display: flex; align-items: center; gap: 9px; }
+.setup-game__head img { width: 22px; height: 22px; border-radius: 6px; }
+.setup-game__head strong { color: var(--text); font-size: 12.5px; }
+
+/* The avatar step passes an empty label; drop the gap it would leave. */
+.setup-step__body .form-row > label:empty { display: none; }
 
 @media (max-width: 620px) {
-  .onboarding-step { grid-template-columns: 38px minmax(0, 1fr); }
-  .onboarding-step > .btn, .onboarding-step__state { grid-column: 2 / -1; justify-self: start; }
+  .setup-step__head { grid-template-columns: 34px minmax(0, 1fr) auto; }
+  .setup-step__state { grid-column: 2 / -1; }
+  .setup-step__body { padding-left: 13px; }
 }
 
 /* ── Public invite redemption page ───────────────────────────────────── */
@@ -10660,3 +10732,53 @@ a.notification-panel__item:hover {
 .dashboard-sidebar__nav-link.is-locked:hover { background: transparent; color: inherit; }
 .dashboard-sidebar__lock { margin-left: auto; font-size: 9px; }
 .dashboard-sidebar.is-collapsed .dashboard-sidebar__lock { display: none; }
+
+/* ── Earnings ledger + payments overview ─────────────────────────────── */
+
+.earnings-table__amount { text-align: right; white-space: nowrap; }
+.earnings-table__amount.is-positive { color: var(--hue-green); font-weight: 700; }
+.earnings-table__amount.is-negative { color: var(--text-muted); font-weight: 700; }
+
+.earnings-entry { display: flex; align-items: center; gap: 10px; }
+.earnings-entry > span:last-child { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.earnings-entry strong { color: var(--text); font-size: 12px; }
+.earnings-entry small { color: var(--text-faint); font-size: 10px; }
+
+.earnings-entry__icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(79, 112, 255, 0.1);
+  color: var(--accent);
+  font-size: 11px;
+}
+
+.earnings-entry__icon--order_payout { background: rgba(47, 191, 113, 0.13); color: var(--hue-green); }
+.earnings-entry__icon--payout_sent { background: rgba(157, 92, 255, 0.13); color: #a882ff; }
+.earnings-entry__icon--adjustment { background: rgba(233, 168, 62, 0.13); color: var(--hue-gold); }
+
+.earnings-order { display: flex; flex-direction: column; gap: 2px; }
+.earnings-order strong { color: var(--text); font-size: 12px; }
+.earnings-order small { color: var(--text-faint); font-size: 10px; }
+.earnings-order__none { color: var(--text-faint); }
+
+/* Ledger takes the wide track; the payout summary is a narrow sidebar. */
+.payments-split { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); align-items: start; gap: 18px; }
+.payments-split > .dashboard-panel { margin-bottom: 0; }
+
+@media (max-width: 1180px) { .payments-split { grid-template-columns: minmax(0, 1fr); } }
+
+.payments-facts { display: grid; gap: 1px; margin: 14px 0 0; padding: 0; }
+.payments-facts > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--dash-line);
+}
+.payments-facts dt { color: var(--text-faint); font-size: 11px; }
+.payments-facts dd { margin: 0; color: var(--text); font-size: 12px; font-weight: 700; }

@@ -106,7 +106,7 @@ export function OnboardingInvites({ invites, origin }: { invites: InviteView[]; 
               value={days}
               onChange={(event) => setDays(Number(event.target.value))}
             />
-            <small className="form-row__hint">Days until the link expires.</small>
+            <small className="form-row__note">Days until the link expires.</small>
           </div>
         </div>
 

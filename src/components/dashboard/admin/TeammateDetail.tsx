@@ -22,6 +22,10 @@ import {
 } from "@/components/dashboard/admin/AccountDetail";
 import type { GameProfileMap } from "@/lib/gameProfiles";
 import type { LanguageCode } from "@/lib/i18n";
+import { EarningsLedger } from "@/components/dashboard/teammate/EarningsLedger";
+import { StatGrid } from "@/components/dashboard/StatGrid";
+import { StatCard } from "@/components/dashboard/StatCard";
+import type { EarningsSummary } from "@/lib/teammateEarnings";
 
 export interface TeammateDetailView {
   id: string;
@@ -57,7 +61,7 @@ export interface TeammateOrderRow {
   createdAt: number;
 }
 
-type Tab = "general" | "orders" | "games" | "verification" | "security";
+type Tab = "general" | "orders" | "earnings" | "games" | "verification" | "security";
 
 const DATE = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
 
@@ -71,11 +75,13 @@ export function TeammateDetail({
   teammate,
   account,
   orders,
+  earnings,
 }: {
   teammate: TeammateDetailView;
   /** Null for roster rows that were never linked to a real login. */
   account: AccountSummary | null;
   orders: TeammateOrderRow[];
+  earnings: EarningsSummary;
 }) {
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>("general");
@@ -83,6 +89,7 @@ export function TeammateDetail({
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "general", label: "General" },
     { key: "orders", label: "Orders", count: orders.length },
+    { key: "earnings", label: "Earnings", count: earnings.rows.length },
     { key: "games", label: "Game Profiles" },
     { key: "verification", label: "Verification & Payouts" },
     ...(account ? [{ key: "security" as const, label: "Security" }] : []),
@@ -249,6 +256,29 @@ export function TeammateDetail({
             </table>
           )}
         </div>
+      )}
+
+      {tab === "earnings" && (
+        <>
+          <StatGrid>
+            <StatCard icon="fa-solid fa-wallet" label="Available balance" value={earnings.balanceEUR} currency color="var(--hue-green)" />
+            <StatCard icon="fa-solid fa-hourglass-half" label="Pending payout" value={earnings.pendingEUR} currency color="var(--hue-gold)" />
+            <StatCard icon="fa-solid fa-sack-dollar" label="Earned all time" value={earnings.earnedEUR} currency color="var(--accent)" />
+            <StatCard icon="fa-solid fa-arrow-up-from-bracket" label="Paid out" value={earnings.paidOutEUR} currency color="var(--hue-purple)" />
+          </StatGrid>
+
+          <div className="dashboard-panel">
+            <div className="dashboard-panel__head">
+              <div>
+                <div className="dashboard-panel__title">Earnings ledger</div>
+                <div className="dashboard-panel__sub">
+                  Append-only — corrections are booked as a new entry rather than an edit
+                </div>
+              </div>
+            </div>
+            <EarningsLedger rows={earnings.rows} emptyHint="This teammate hasn't completed a paid session yet." />
+          </div>
+        </>
       )}
 
       {tab === "games" && (
