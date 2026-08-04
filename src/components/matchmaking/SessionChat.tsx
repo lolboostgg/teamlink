@@ -164,8 +164,11 @@ export function SessionChat({
         {otherTyping && (
           <div className="chat-typing" role="status">
             {senderAvatar(otherSide)}
-            <span><i /><i /><i /></span>
-            {otherSide === "client" ? customerName : teammateName} is typing…
+            <div className="chat-typing__bubble">
+              <strong>{otherSide === "client" ? customerName : teammateName}</strong>
+              <span className="chat-typing__dots" aria-hidden="true"><i /><i /><i /></span>
+              <span className="sr-only">is typing</span>
+            </div>
           </div>
         )}
         <div ref={endRef} className="session-chat__end" aria-hidden="true" />
