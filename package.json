@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "prisma db execute --file prisma/sql/2026-08-03-session-upgrade.sql && prisma db execute --file prisma/sql/2026-08-03-persist-chat.sql && prisma db execute --file prisma/sql/2026-08-03-dispatch-fairness-favorites.sql && prisma db execute --file prisma/sql/2026-08-04-public-order-numbers.sql && prisma generate",
+    "prebuild": "prisma generate",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
+    "db:migrate:legacy": "prisma db execute --file prisma/sql/2026-08-03-session-upgrade.sql && prisma db execute --file prisma/sql/2026-08-03-persist-chat.sql && prisma db execute --file prisma/sql/2026-08-03-dispatch-fairness-favorites.sql && prisma db execute --file prisma/sql/2026-08-04-public-order-numbers.sql",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
