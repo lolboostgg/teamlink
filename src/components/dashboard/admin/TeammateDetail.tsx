@@ -27,6 +27,7 @@ import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { EarningsSummary } from "@/lib/earnings";
 import { ReviewsList, type DisplayReview } from "@/components/dashboard/teammate/ReviewsList";
+import { TeammateActionsMenu } from "@/components/dashboard/admin/TeammateActionsMenu";
 
 export interface TeammateDetailView {
   id: string;
@@ -105,6 +106,12 @@ export function TeammateDetail({
         <span className="account-header__avatar">
           <SafeAvatarImage src={teammate.avatarUrl || account?.avatarUrl} alt={teammate.name} />
         </span>
+
+        <TeammateActionsMenu
+          teammateId={teammate.id}
+          teammateName={teammate.name}
+          balanceEUR={earnings.balanceEUR}
+        />
 
         <div className="account-header__main">
           <h1 className="account-header__name">

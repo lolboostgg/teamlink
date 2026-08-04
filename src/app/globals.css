@@ -11159,3 +11159,51 @@ a.notification-panel__item:hover {
 .filter-pill:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
 .filter-pill.is-active { background: var(--accent); color: #fff; }
 .filter-pill.is-active:hover { background: var(--accent); }
+
+/* ── Admin actions on a teammate ─────────────────────────────────────── */
+
+/* Pinned to the header's top-right rather than inline, so it sits clear of
+   the name, meta row and game tags whatever their length. */
+.teammate-actions { position: absolute; top: 18px; right: 18px; z-index: 5; }
+.teammate-actions__chevron { margin-left: 4px; font-size: 9px; }
+
+.teammate-actions__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 260px;
+  display: grid;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid var(--dash-line-strong);
+  border-radius: var(--dash-radius);
+  background: var(--dash-surface-2);
+  box-shadow: var(--shadow-lg);
+}
+
+.teammate-actions__menu button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.teammate-actions__menu button:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+.teammate-actions__menu button > i { width: 26px; height: 26px; display: grid; place-items: center; flex-shrink: 0; border-radius: 8px; background: rgba(79, 112, 255, 0.12); color: var(--accent); font-size: 10px; }
+.teammate-actions__menu button:last-child > i { background: rgba(224, 82, 82, 0.12); color: #ff8080; }
+.teammate-actions__menu button span { display: flex; flex-direction: column; gap: 1px; }
+.teammate-actions__menu strong { color: var(--text); font-size: 12.5px; }
+.teammate-actions__menu small { color: var(--text-faint); font-size: 10px; }
+
+@media (max-width: 620px) {
+  .teammate-actions { position: static; margin-left: auto; }
+  .teammate-actions__menu { right: auto; left: 0; }
+}
