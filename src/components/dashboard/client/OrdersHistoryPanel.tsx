@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { useAllOrdersState } from "@/lib/matchmaking/useAllOrders";
 import { BookingsTable } from "@/components/dashboard/client/BookingsTable";
 import { displayStatus } from "@/lib/dashboard/orderDisplay";
-import { OrdersStatusSelect } from "@/components/dashboard/OrdersStatusSelect";
 
 const ORDERS_PER_PAGE = 20;
 type StatusFilter = "all" | "upcoming" | "completed" | "cancelled";
@@ -66,13 +65,15 @@ export function OrdersHistoryPanel() {
     <>
       <div className="orders-toolbar">
         <label className="orders-toolbar__search">
-          <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
-          <span className="sr-only">Search orders</span>
+          <span className="orders-toolbar__search-icon" aria-hidden="true">
+            <i className="fa-solid fa-magnifying-glass" />
+          </span>
           <input
             type="search"
             value={query}
             onChange={(event) => { setQuery(event.target.value); setPage(1); }}
-            placeholder="Search orders…"
+            placeholder="Search your orders…"
+            aria-label="Search orders"
           />
           {query && (
             <button type="button" className="orders-toolbar__search-clear" aria-label="Clear search" onClick={() => { setQuery(""); setPage(1); }}>
@@ -80,11 +81,20 @@ export function OrdersHistoryPanel() {
             </button>
           )}
         </label>
-        <OrdersStatusSelect
-          value={status}
-          options={STATUS_FILTERS}
-          onChange={(value) => { setStatus(value as StatusFilter); setPage(1); }}
-        />
+        <div className="orders-status-pills" role="group" aria-label="Filter orders by status">
+          {STATUS_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              className={`orders-status-pill orders-status-pill--${filter.value}${status === filter.value ? " is-active" : ""}`}
+              aria-pressed={status === filter.value}
+              onClick={() => { setStatus(filter.value); setPage(1); }}
+            >
+              <i className={filter.icon} aria-hidden="true" />
+              {filter.label}
+            </button>
+          ))}
+        </div>
         <span className="orders-toolbar__count">
           {filteredOrders.length} {filteredOrders.length === 1 ? "order" : "orders"}
         </span>

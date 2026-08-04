@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { PriceTag } from "@/components/currency/PriceTag";
-import { OrdersStatusSelect } from "@/components/dashboard/OrdersStatusSelect";
+import { AdminOrdersToolbar } from "@/components/dashboard/admin/AdminOrdersToolbar";
 import { OrderStatus, Prisma } from "@/generated/prisma/client";
 
 export const metadata: Metadata = { title: "Orders & Sessions" };
@@ -62,24 +62,14 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <form className="orders-toolbar admin-orders-toolbar" method="get">
-        <label className="orders-toolbar__search">
-          <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
-          <span className="sr-only">Search orders</span>
-          <input name="q" type="search" defaultValue={q} placeholder="Order, client, game or teammate…" />
-        </label>
-        <OrdersStatusSelect
-          key={status ?? "all"}
-          name="status"
-          value={status ?? ""}
-          options={[
+      <AdminOrdersToolbar
+        initialQuery={q}
+        initialStatus={status ?? ""}
+        statusOptions={[
             { value: "", label: "All statuses", icon: "fa-solid fa-layer-group" },
             ...Object.values(OrderStatus).map((value) => ({ value, label: value.toLowerCase().replaceAll("_", " ") })),
-          ]}
-        />
-        <button className="btn btn--vivid btn--sm" type="submit">Apply filters</button>
-        {(q || status) && <Link className="btn btn--ghost btn--sm" href="/dashboard/admin/orders">Clear</Link>}
-      </form>
+        ]}
+      />
 
       {orders.length === 0 ? (
         <div className="dashboard-empty"><i className="fa-solid fa-filter-circle-xmark" aria-hidden="true" /><p>No matching orders.</p></div>
