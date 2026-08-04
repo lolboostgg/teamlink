@@ -25,6 +25,7 @@ async function cancelOrder(orderId: string) {
 }
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
+  awaiting_payment: "Awaiting payment",
   searching: "Searching",
   candidates_ready: "Dispatching",
   selecting: "Choose your teammate",
@@ -37,6 +38,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 };
 
 const STATUS_PILL: Record<OrderStatus, string> = {
+  awaiting_payment: "dashboard-pill--warning",
   searching: "dashboard-pill--warning",
   candidates_ready: "dashboard-pill--warning",
   selecting: "dashboard-pill--warning",

@@ -4,7 +4,10 @@ import type { OrderStatus } from "@/lib/matchmaking/types";
 // dashboard actually distinguishes for history/stats purposes.
 export type DisplayStatus = "upcoming" | "completed" | "cancelled";
 
-const CANCELLED_STATUSES: OrderStatus[] = ["cancelled", "cancel_pending", "no_match"];
+// An order still waiting for its payment is grouped with the cancelled ones:
+// no money has moved, so it must not count towards spend, and most of these
+// are abandoned checkouts that the webhook cancels anyway.
+const CANCELLED_STATUSES: OrderStatus[] = ["awaiting_payment", "cancelled", "cancel_pending", "no_match"];
 
 export function displayStatus(status: OrderStatus): DisplayStatus {
   if (status === "completed") return "completed";
