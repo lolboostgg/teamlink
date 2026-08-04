@@ -8584,7 +8584,7 @@ ul {
 .admin-chat-overview .chat-thread { min-width: 0; min-height: 0; overflow: hidden; }
 .admin-chat-overview .chat-list { min-height: 0; }
 .admin-chat-overview .chat-thread__messages { min-height: 0; overflow-y: scroll; overscroll-behavior: contain; }
-.admin-overview-message--teammate, .admin-overview-message--admin { align-self: flex-end; }
+.admin-overview-message--teammate, .admin-overview-message--admin { align-self: flex-end; justify-content: flex-end; }
 .admin-overview-message--teammate .chat-bubble, .admin-overview-message--admin .chat-bubble { border: 1px solid rgba(132, 139, 166, .16); background: rgba(255, 255, 255, .07); }
 .admin-chat-sender small, .chat-thread__name small { color: var(--text-faint); font-size: 9px; font-weight: 600; }
 .admin-order-chat__input { border-top: 1px solid var(--dash-line); background: rgba(255, 255, 255, .012); }
@@ -9781,7 +9781,8 @@ a.notification-panel__item:hover {
 .admin-overview-message { width: min(72%, 620px); display: flex; align-items: flex-end; gap: 8px; }
 .admin-overview-message--admin { align-self: flex-end; }
 .admin-overview-message .chat-bubble { max-width: 100%; }
-.admin-overview-message__admin-icon { display: grid; place-items: center; background: rgba(70, 104, 255, .15); color: var(--accent); font-size: 10px; }
+.admin-overview-message__admin-icon { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 30px; border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .08); color: var(--text); font-size: 12px; }
+.admin-overview-message__admin-icon > i { width: 100%; height: 100%; display: grid; place-items: center; background: transparent; color: var(--text); font-size: 12px; }
 .session-screen__chat-head-name small { display: block; margin-top: 2px; color: var(--text-faint); font-size: 9px; font-weight: 600; }
 
 /* One quiet, dark scrollbar language across every dashboard surface. */
