@@ -16,6 +16,7 @@ export default async function AdminUsersPage() {
     accountNo: u.accountNo,
     email: u.email,
     name: u.name,
+    avatarUrl: u.avatarUrl,
     role: u.role,
     createdAt: u.createdAt.getTime(),
     teammateName: u.teammate?.name ?? null,

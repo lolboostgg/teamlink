@@ -16,6 +16,7 @@ export default async function AdminTeammatesPage() {
     teammateNo: t.teammateNo,
     accountNo: t.user?.accountNo ?? null,
     name: t.name,
+    avatarUrl: t.avatarUrl,
     email: t.user?.email ?? null,
     gameSlugs: (t.gameSlugs as string[] | null) ?? [],
     available: t.available,

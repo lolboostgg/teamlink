@@ -13,6 +13,7 @@ export type TeammatePhase =
 // carries no other candidate's identity, only counts (see spec §7).
 export interface DispatchOrderView {
   id: string;
+  orderNo: number;
   /** The assigned teammate — what the chat thread is keyed on. */
   teammateId: string | null;
   gameSlug: string;
@@ -52,6 +53,7 @@ type CandidateRow = {
   expiresAt: Date | null;
   order: {
     id: string;
+    orderNo: number;
     gameSlug: string;
     gameName: string;
     option: string;
@@ -79,6 +81,7 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
     order.candidates.find((c) => c.selected && c.isPrimary) ?? order.candidates.find((c) => c.selected);
   return {
     id: order.id,
+    orderNo: order.orderNo,
     teammateId: primary?.teammateId ?? null,
     gameSlug: order.gameSlug,
     gameName: order.gameName,

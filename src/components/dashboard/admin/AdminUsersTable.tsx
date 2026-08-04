@@ -11,6 +11,7 @@ export interface AdminUserRow {
   accountNo: number;
   email: string;
   name: string | null;
+  avatarUrl: string | null;
   role: string;
   createdAt: number;
   teammateName: string | null;
@@ -76,7 +77,7 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
             <td className="dashboard-table__no">#{u.accountNo}</td>
             <td className="dashboard-table__primary">
               <Link href={`/dashboard/admin/accounts/${u.accountNo}`} className="dashboard-table__link">
-                {u.teammateName ?? u.name ?? "—"}
+                <span className="admin-list-identity"><span className="admin-list-avatar">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={u.avatarUrl || "/avatars/default.webp"} alt="" /></span><span>{u.teammateName ?? u.name ?? "—"}</span></span>
               </Link>
             </td>
             <td>{u.email}</td>
