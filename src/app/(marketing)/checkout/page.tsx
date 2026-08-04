@@ -8,7 +8,15 @@ export const metadata: Metadata = {
 };
 
 interface Props {
-  searchParams: Promise<{ game?: string; option?: string; teammates?: string; total?: string }>;
+  searchParams: Promise<{
+    game?: string;
+    option?: string;
+    teammates?: string;
+    total?: string;
+    ign?: string;
+    region?: string;
+    roles?: string;
+  }>;
 }
 
 export default async function CheckoutPage({ searchParams }: Props) {
@@ -34,6 +42,17 @@ export default async function CheckoutPage({ searchParams }: Props) {
           option={option}
           teammates={teammates}
           baseTotalEUR={total}
+          // Collected on the booking page; passing it through means checkout
+          // doesn't ask the same question twice.
+          initialIngame={
+            params.ign && params.region
+              ? {
+                  ign: params.ign,
+                  region: params.region,
+                  roles: params.roles ? params.roles.split(",").filter(Boolean) : [],
+                }
+              : null
+          }
         />
       </div>
     </main>

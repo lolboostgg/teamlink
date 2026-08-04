@@ -22,6 +22,8 @@ interface Props {
   option: string;
   teammates: number;
   baseTotalEUR: number;
+  /** Already answered on the booking page, if the customer came that way. */
+  initialIngame?: { ign: string; region: string; roles: string[] } | null;
 }
 
 type Step = "identity" | "ingame" | "payment";
@@ -36,12 +38,12 @@ type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 // Orchestrates the checkout flow: identity (guest email or login/register)
 // -> in-game account -> payment method + fee -> submit. Owns both columns
 // because the order summary must react live to the payment method's fee.
-export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalEUR }: Props) {
+export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalEUR, initialIngame = null }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const [step, setStep] = useState<Step>("identity");
   const [identity, setIdentity] = useState<Identity>(null);
-  const [ingame, setIngame] = useState<IngameIdentity | null>(null);
+  const [ingame, setIngame] = useState<IngameIdentity | null>(initialIngame);
   const [method, setMethod] = useState<PaymentMethodKey>("card");
   const [submitting, setSubmitting] = useState(false);
   const [couponModalOpen, setCouponModalOpen] = useState(false);
@@ -53,14 +55,17 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
   const totalEUR = Math.max(0, baseTotalEUR + feeEUR - discountEUR);
   const feeLabel = feeEUR > 0 ? `${getPaymentMethod(method).brandLabel} fee` : undefined;
 
+  // Skips the in-game step when the booking page already asked.
+  const nextAfterIdentity = () => (ingame ? "payment" : "ingame");
+
   function handleGuestContinue(email: string) {
     setIdentity({ mode: "guest", email });
-    setStep("ingame");
+    setStep(nextAfterIdentity());
   }
 
   function handleLoggedIn() {
     setIdentity({ mode: "account" });
-    setStep("ingame");
+    setStep(nextAfterIdentity());
   }
 
   function handleIngameContinue(next: IngameIdentity) {

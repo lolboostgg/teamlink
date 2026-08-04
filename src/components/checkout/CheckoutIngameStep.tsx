@@ -18,6 +18,8 @@ interface Props {
   canSave: boolean;
   onContinue: (identity: IngameIdentity) => void;
   onBack: () => void;
+  backLabel?: string;
+  continueLabel?: string;
 }
 
 /**
@@ -26,7 +28,15 @@ interface Props {
  * A signed-in customer picks from the accounts they already saved; a guest
  * just fills the form, and the answer rides along on the order either way.
  */
-export function CheckoutIngameStep({ gameSlug, gameName, canSave, onContinue, onBack }: Props) {
+export function CheckoutIngameStep({
+  gameSlug,
+  gameName,
+  canSave,
+  onContinue,
+  onBack,
+  backLabel = "Back",
+  continueLabel = "Continue to payment",
+}: Props) {
   const roleOptions = getGameProfileConfig(gameSlug)?.roles;
   const regions = regionsForGame(gameSlug);
 
@@ -201,15 +211,15 @@ export function CheckoutIngameStep({ gameSlug, gameName, canSave, onContinue, on
 
       <div className="ingame-step__actions">
         <button type="button" className="btn btn--ghost" onClick={onBack} disabled={pending}>
-          Back
+          {backLabel}
         </button>
         {adding || saved.length === 0 ? (
           <button type="button" className="btn btn--vivid" onClick={continueWithForm} disabled={pending}>
-            {pending ? "Saving…" : "Continue to payment"}
+            {pending ? "Saving…" : continueLabel}
           </button>
         ) : (
           <button type="button" className="btn btn--vivid" onClick={continueWithSelected}>
-            Continue to payment
+            {continueLabel}
           </button>
         )}
       </div>

@@ -11302,3 +11302,17 @@ a.notification-panel__item:hover {
 
 .ingame-step__add:hover { text-decoration: underline; }
 .ingame-step__actions { display: flex; justify-content: flex-end; gap: 9px; }
+
+/* In-game info asked from the booking page, before checkout. */
+.modal-panel:has(.ingame-modal) { max-width: 560px; padding: 0; overflow: visible; }
+.ingame-modal {
+  max-height: min(760px, calc(100vh - 80px));
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.ingame-modal__title { margin: 0 38px 14px 0; font-size: 17px; font-weight: 800; }
+/* The step brings its own card chrome for the checkout page; inside the
+   modal the panel already provides it. */
+.ingame-modal .checkout-card { padding: 0; border: 0; background: transparent; }

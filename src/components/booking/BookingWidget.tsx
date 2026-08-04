@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
+import { Modal } from "@/components/ui/Modal";
+import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/CheckoutIngameStep";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
 import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
@@ -34,6 +37,8 @@ export function BookingWidget({ game }: Props) {
   const [selected, setSelected] = useState<BookingOption>(BOOKING_CATEGORIES[0].options[0]);
   const [groupSize, setGroupSize] = useState(1);
   const [pulsing, setPulsing] = useState(false);
+  const [ingameOpen, setIngameOpen] = useState(false);
+  const { status } = useSession();
   const firstRender = useRef(true);
 
   const total = useMemo(() => selected.price * groupSize, [selected, groupSize]);
@@ -50,13 +55,21 @@ export function BookingWidget({ game }: Props) {
     return () => clearTimeout(t);
   }, [total]);
 
-  function goToCheckout() {
+  // The in-game details are asked here rather than mid-checkout: it is the
+  // one thing the customer has to look up, and finding out about it after
+  // committing to a price is where people drop out.
+  function goToCheckout(ingame?: IngameIdentity) {
     const params = new URLSearchParams({
       game: game.slug,
       option: selected.name,
       teammates: String(groupSize),
       total: total.toFixed(2),
     });
+    if (ingame) {
+      params.set("ign", ingame.ign);
+      params.set("region", ingame.region);
+      if (ingame.roles.length > 0) params.set("roles", ingame.roles.join(","));
+    }
     router.push(`/checkout?${params.toString()}`);
   }
 
@@ -144,13 +157,33 @@ export function BookingWidget({ game }: Props) {
             <PriceTag amountEUR={total} />
           </div>
 
-          <button type="button" className="btn btn--vivid btn--block" onClick={goToCheckout}>
+          <button type="button" className="btn btn--vivid btn--block" onClick={() => setIngameOpen(true)}>
             Continue to checkout
           </button>
         </aside>
 
         <TrustPoints />
       </div>
+
+      <Modal open={ingameOpen} onClose={() => setIngameOpen(false)} labelledBy="booking-ingame-title">
+        <div className="ingame-modal">
+          <h2 id="booking-ingame-title" className="ingame-modal__title">
+            Enter in-game info
+          </h2>
+          <CheckoutIngameStep
+            gameSlug={game.slug}
+            gameName={game.name}
+            canSave={status === "authenticated"}
+            backLabel="Cancel"
+            continueLabel="Continue to checkout"
+            onBack={() => setIngameOpen(false)}
+            onContinue={(ingame) => {
+              setIngameOpen(false);
+              goToCheckout(ingame);
+            }}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }
