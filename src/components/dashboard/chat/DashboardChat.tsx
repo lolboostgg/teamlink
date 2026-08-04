@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChatConversation } from "@/lib/dashboard/chatData";
 import { useConversationMessages, sendChatMessage, getLastMessage } from "@/lib/matchmaking/chatStore";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
@@ -17,10 +17,18 @@ export function DashboardChat({ conversations, from }: Props) {
   const [activeId, setActiveId] = useState(conversations[0]?.id);
   const [draft, setDraft] = useState("");
   const { data: session } = useSession();
+  const messagesRef = useRef<HTMLDivElement>(null);
 
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
   const { messages, refresh } = useConversationMessages(active?.conversationKey);
   const readOnly = Boolean(active?.lockedAt && active.lockedAt <= Date.now());
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [active?.id, messages.length]);
 
   function sendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -70,7 +78,7 @@ export function DashboardChat({ conversations, from }: Props) {
           </div>
         </div>
 
-        <div className="chat-thread__messages">
+        <div className="chat-thread__messages" ref={messagesRef}>
           {messages.length === 0 && (
             <p className="chat-thread__empty">No messages yet — say hello to get the conversation started.</p>
           )}

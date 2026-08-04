@@ -9521,13 +9521,16 @@ a.notification-panel__item:hover {
   min-height: 420px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  width: 100%;
+  max-width: none;
+  background: var(--dash-surface);
   overflow: hidden;
 }
 
 .chat-list {
   border-right: 1px solid var(--border);
   overflow-y: auto;
+  background: rgba(255, 255, 255, .012);
 }
 
 .chat-list__item {
@@ -9643,6 +9646,8 @@ a.notification-panel__item:hover {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
+  background: rgba(0, 0, 0, .08);
   /* Default OS scrollbars render light/system-themed even on this dark
      panel — force a dark thumb/track so it doesn't stand out as a pale bar. */
   scrollbar-width: thin;
@@ -9765,7 +9770,7 @@ a.notification-panel__item:hover {
 .chat-thread__locked > i { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .05); }
 .chat-thread__locked span { display: flex; flex-direction: column; gap: 2px; }
 .chat-thread__locked strong { color: var(--text-muted); font-size: 12px; }
-.admin-chat-overview { grid-template-columns: minmax(330px, 38%) 1fr; height: calc(100vh - var(--header-h) - 205px); }
+.admin-chat-overview { grid-template-columns: minmax(300px, 34%) minmax(0, 1fr); width: 100%; height: calc(100dvh - var(--header-h) - 205px); }
 .admin-chat-overview .chat-list__item { align-items: flex-start; }
 .admin-chat-overview .chat-status-badge { margin-left: auto; }
 .admin-chat-search { display: flex; align-items: center; gap: 9px; margin: 10px; padding: 0 12px; height: 38px; border: 1px solid var(--border); border-radius: 10px; color: var(--text-faint); background: rgba(255, 255, 255, .025); }
