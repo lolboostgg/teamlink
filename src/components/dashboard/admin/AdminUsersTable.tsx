@@ -29,6 +29,8 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
     user: AdminUserRow;
     role: "ADMIN" | "TEAMMATE" | "CLIENT";
   } | null>(null);
+  const [openRoleMenu, setOpenRoleMenu] = useState<string | null>(null);
+  const roles = ["ADMIN", "TEAMMATE", "CLIENT"] as const;
 
   if (users.length === 0) {
     return (
@@ -69,9 +71,12 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
             </td>
             <td>{formatOrderDate(u.createdAt)}</td>
             <td>
-              <div className="admin-role-picker"><select value={u.role} disabled={pending} onChange={(event) => { const role = event.target.value as "ADMIN" | "TEAMMATE" | "CLIENT"; if (role !== u.role) setRoleChange({ user: u, role }); }}><option value="ADMIN">Admin</option><option value="TEAMMATE">Teammate</option><option value="CLIENT">Client</option></select></div>
+              <div className={`admin-role-select ${openRoleMenu === u.id ? "is-open" : ""}`}>
+                <button type="button" className="admin-role-select__trigger" disabled={pending} aria-haspopup="listbox" aria-expanded={openRoleMenu === u.id} onClick={() => setOpenRoleMenu((current) => current === u.id ? null : u.id)}><span className={`admin-role-select__dot admin-role-select__dot--${u.role.toLowerCase()}`} /><span>{u.role.toLowerCase()}</span><i className="fa-solid fa-chevron-down" aria-hidden="true" /></button>
+                {openRoleMenu === u.id ? <div className="admin-role-select__menu" role="listbox" aria-label={`Role for ${u.name ?? u.email}`}>{roles.map((role) => <button key={role} type="button" role="option" aria-selected={role === u.role} className={role === u.role ? "is-selected" : ""} onClick={() => { setOpenRoleMenu(null); if (role !== u.role) setRoleChange({ user: u, role }); }}><span className={`admin-role-select__dot admin-role-select__dot--${role.toLowerCase()}`} />{role.toLowerCase()}{role === u.role ? <i className="fa-solid fa-check" aria-hidden="true" /> : null}</button>)}</div> : null}
+              </div>
             </td>
-            <td><span className="admin-user-balance"><i className={`fa-solid ${u.role === "TEAMMATE" ? "fa-coins" : "fa-wallet"}`} />€{((u.role === "TEAMMATE" ? u.teammateBalanceEUR ?? 0 : (u.storeCreditCents ?? 0) / 100)).toFixed(2)}<small>{u.role === "TEAMMATE" ? "earned" : "store credit"}</small></span></td>
+            <td><span className={`admin-user-balance admin-user-balance--${u.role === "TEAMMATE" ? "earned" : "credit"}`}><span className="admin-user-balance__icon"><i className={`fa-solid ${u.role === "TEAMMATE" ? "fa-coins" : "fa-wallet"}`} /></span><span className="admin-user-balance__copy"><strong>€{((u.role === "TEAMMATE" ? u.teammateBalanceEUR ?? 0 : (u.storeCreditCents ?? 0) / 100)).toFixed(2)}</strong><small>{u.role === "TEAMMATE" ? "Earnings" : "Store credit"}</small></span></span></td>
             <td>
               <Link href={`/dashboard/admin/accounts/${u.accountNo}`} className="btn btn--ghost btn--sm">
                 <i className="fa-solid fa-eye" aria-hidden="true" /> View

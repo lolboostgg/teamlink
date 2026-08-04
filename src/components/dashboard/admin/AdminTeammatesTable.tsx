@@ -69,7 +69,7 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
                 "—"
               )}
             </td>
-            <td><span className="admin-user-balance"><i className="fa-solid fa-coins" />€{t.balanceEUR.toFixed(2)}<small>earned</small></span></td>
+            <td><span className="admin-user-balance admin-user-balance--earned"><span className="admin-user-balance__icon"><i className="fa-solid fa-coins" /></span><span className="admin-user-balance__copy"><strong>€{t.balanceEUR.toFixed(2)}</strong><small>Earnings</small></span></span></td>
             <td>
               <span className={`dashboard-pill ${t.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>
                 {t.available ? "available" : "unavailable"}
