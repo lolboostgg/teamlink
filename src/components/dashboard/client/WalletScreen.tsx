@@ -7,6 +7,9 @@ import { purchaseCredits } from "@/app/actions/credits";
 import { useToast } from "@/components/ui/ToastProvider";
 import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
 
+type TransactionFilter = "all" | "in" | "out";
+const PAGE_SIZE = 7;
+
 export interface WalletTransaction {
   id: string;
   type: string;
@@ -34,7 +37,13 @@ export function WalletScreen({
 }) {
   const { showToast } = useToast();
   const [topUpOpen, setTopUpOpen] = useState(false);
+  const [filter, setFilter] = useState<TransactionFilter>("all");
+  const [page, setPage] = useState(1);
   const [pending, startTransition] = useTransition();
+  const filtered = transactions.filter((transaction) => filter === "all" || (filter === "in" ? transaction.amountCents >= 0 : transaction.amountCents < 0));
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const visibleTransactions = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   function buy(packageId: string) {
     startTransition(async () => {
@@ -86,20 +95,26 @@ export function WalletScreen({
             <div className="dashboard-panel__title">Transactions</div>
             <div className="dashboard-panel__sub">Every change to your store credit</div>
           </div>
+          <div className="wallet-filter-pills" role="group" aria-label="Filter transactions">
+            {([ ["all", "All", "fa-solid fa-layer-group"], ["in", "Money in", "fa-solid fa-arrow-down"], ["out", "Money out", "fa-solid fa-arrow-up"] ] as const).map(([value, label, icon]) => (
+              <button key={value} type="button" className={`wallet-filter-pill wallet-filter-pill--${value}${filter === value ? " is-active" : ""}`} onClick={() => { setFilter(value); setPage(1); }}><i className={icon} aria-hidden="true" />{label}<span>{value === "all" ? transactions.length : transactions.filter((item) => value === "in" ? item.amountCents >= 0 : item.amountCents < 0).length}</span></button>
+            ))}
+          </div>
         </div>
 
-        {transactions.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="dashboard-empty">
             <i className="fa-solid fa-receipt" aria-hidden="true" />
             <p>No transactions yet — your history will appear here.</p>
           </div>
         ) : (
           <div className="dashboard-list">
-            {transactions.map((t) => {
+            {visibleTransactions.map((t) => {
               const meta = TYPE_META[t.type] ?? { label: t.type, icon: "fa-solid fa-circle", positive: true };
+              const positive = t.amountCents >= 0;
               return (
-                <div className="dashboard-list-item" key={t.id}>
-                  <span className={`wallet-tx__icon${meta.positive ? " is-in" : " is-out"}`}>
+                <div className={`dashboard-list-item wallet-tx wallet-tx--${positive ? "in" : "out"}`} key={t.id}>
+                  <span className={`wallet-tx__icon ${positive ? "is-in" : "is-out"}`}>
                     <i className={meta.icon} aria-hidden="true" />
                   </span>
                   <div className="dashboard-list-item__meta">
@@ -108,14 +123,20 @@ export function WalletScreen({
                       {t.note ?? "—"} · {formatOrderDate(t.createdAt)}
                     </div>
                   </div>
-                  <div className={`wallet-tx__amount${meta.positive ? " is-in" : " is-out"}`}>
-                    {meta.positive ? "+" : "−"}
+                  <div className={`wallet-tx__amount ${positive ? "is-in" : "is-out"}`}>
+                    {positive ? "+" : "−"}
                     <PriceTag amountEUR={Math.abs(t.amountCents) / 100} />
                   </div>
                 </div>
               );
             })}
           </div>
+        )}
+        {filtered.length > PAGE_SIZE && (
+          <nav className="orders-pagination wallet-pagination" aria-label="Transaction pagination">
+            <span>{(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} transactions</span>
+            <div className="orders-pagination__buttons"><button type="button" className="btn btn--ghost btn--sm" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}><i className="fa-solid fa-chevron-left" /> Previous</button><span className="orders-pagination__page">Page {currentPage} of {pageCount}</span><button type="button" className="btn btn--ghost btn--sm" disabled={currentPage === pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>Next <i className="fa-solid fa-chevron-right" /></button></div>
+          </nav>
         )}
       </div>
 

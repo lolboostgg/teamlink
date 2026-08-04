@@ -3,7 +3,6 @@ import { auth } from "@/auth";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
 import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
-import { NotificationProvider } from "@/components/dashboard/NotificationProvider";
 import { DispatchFlow } from "@/components/dashboard/teammate/DispatchFlow";
 import { prisma } from "@/lib/db";
 import { discordAvatarUrl } from "@/lib/discord";
@@ -61,7 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : null;
   return (
     <DashboardAuthGate initiallyAuthenticated={!!session}>
-      <NotificationProvider>
+      <>
         <DispatchFlow />
         <div className="dashboard-shell">
           <DashboardSidebar teammate={teammateProfile} />
@@ -76,7 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </ViewTransition>
           </div>
         </div>
-      </NotificationProvider>
+      </>
     </DashboardAuthGate>
   );
 }

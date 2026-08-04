@@ -44,7 +44,7 @@ export function useNotifications() {
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user?.id);
-  const { phase, order, refresh } = useDispatchState();
+  const { phase, order, refresh } = useDispatchState(session?.user?.role === "TEAMMATE");
   const [stored, setStored] = useState<FeedNotification[]>([]);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [announced, setAnnounced] = useState<string | null>(null);

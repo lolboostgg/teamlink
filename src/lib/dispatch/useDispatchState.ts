@@ -22,12 +22,13 @@ const EMPTY: DispatchStateView & { maxCandidates: number } = {
  * The countdown between polls is interpolated locally so the ring moves
  * smoothly without hammering the endpoint.
  */
-export function useDispatchState() {
+export function useDispatchState(enabled = true) {
   const [state, setState] = useState(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const lastFetch = useRef(Date.now());
 
   const load = useCallback(async () => {
+    if (!enabled) return;
     try {
       const res = await fetch("/api/dispatch/state", { cache: "no-store" });
       if (!res.ok) return;
@@ -37,16 +38,17 @@ export function useDispatchState() {
     } catch {
       // A dropped poll is not worth surfacing — the next tick retries.
     }
-  }, []);
+  }, [enabled]);
 
   const urgent =
     state.phase === "DISPATCH_INCOMING" || state.phase === "WAITING_FOR_CUSTOMER_SELECTION";
 
   useEffect(() => {
+    if (!enabled) return;
     load();
     const interval = setInterval(load, urgent ? 500 : 2000);
     return () => clearInterval(interval);
-  }, [load, urgent]);
+  }, [load, urgent, enabled]);
 
   // Local interpolation between polls.
   const [now, setNow] = useState(() => Date.now());
