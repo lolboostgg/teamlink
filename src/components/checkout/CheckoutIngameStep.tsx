@@ -4,7 +4,6 @@ import { useEffect, useState, useTransition } from "react";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
 import { regionsForGame, ignPlaceholder, ignHint } from "@/lib/gameRegions";
 import { DIVISIONS, ranksForGame, rankHasDivisions, formatRank } from "@/lib/gameRanks";
-import { IconSelect } from "@/components/ui/IconSelect";
 import { listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
 
 export interface IngameIdentity {
@@ -199,17 +198,29 @@ export function CheckoutIngameStep({
           {rankOptions.length > 0 && (
             <div className="form-row">
               <label>Current rank</label>
-              <IconSelect
-                label="Current rank"
-                value={rank}
-                options={rankOptions}
-                searchable={rankOptions.length > 12}
-                placeholder="Select your rank"
-                onChange={(next) => {
-                  setRank(next);
-                  if (!rankHasDivisions(next)) setDivision(null);
-                }}
-              />
+              {/* A grid rather than a dropdown: eleven icon-led options fit
+                  on screen at once, and an overlay list would be clipped by
+                  this dialog's own scrolling. */}
+              <div className="ingame-ranks" role="group" aria-label="Current rank">
+                {rankOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`ingame-rank${rank === option.value ? " is-active" : ""}`}
+                    aria-pressed={rank === option.value}
+                    onClick={() => {
+                      setRank(option.value);
+                      if (!rankHasDivisions(option.value)) setDivision(null);
+                    }}
+                  >
+                    {option.icon && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={option.icon} alt="" />
+                    )}
+                    <span>{option.label}</span>
+                  </button>
+                ))}
+              </div>
               {rankHasDivisions(rank) && (
                 <div className="ingame-divisions" role="group" aria-label="Division">
                   {DIVISIONS.map((entry) => (
