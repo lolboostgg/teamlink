@@ -16,6 +16,17 @@ export const MAX_CANDIDATES = 5;
 export const DISPATCH_WINDOW_MS = 60_000;
 export const SELECTION_WINDOW_MS = 60_000;
 
+/**
+ * How long an order may sit assigned with nothing happening before it's given
+ * up on.
+ *
+ * A teammate who accepts and then never shows leaves the customer waiting on a
+ * session that will not start, and leaves themselves counted as busy — so no
+ * later order can reach them either. Past this, the order is cancelled and the
+ * customer gets what they paid back as store credit.
+ */
+export const ABANDONED_ASSIGNMENT_MS = 2 * 60 * 60 * 1000;
+
 export class DispatchError extends Error {}
 
 /**
@@ -59,6 +70,40 @@ async function publishOrderChange(orderId: string) {
   }
 }
 
+/**
+ * Gives up on an assignment nobody ever turned into a session: the order is
+ * cancelled and the customer's money comes back as store credit.
+ *
+ * Credit rather than a card refund because it is the same balance every
+ * payment method already settles into, and it lets the customer rebook
+ * immediately — which is what they wanted in the first place. A guest order
+ * has no account to credit, so it is only cancelled and left to an admin.
+ */
+async function abandonAssignment(
+  tx: Prisma.TransactionClient,
+  order: { id: string; orderNo: number; clientUserId: string | null; priceEUR: unknown },
+) {
+  const cents = Math.round(Number(order.priceEUR) * 100);
+  if (order.clientUserId && cents > 0) {
+    await tx.user.update({
+      where: { id: order.clientUserId },
+      data: { creditBalanceCents: { increment: cents } },
+    });
+    await tx.creditTransaction.create({
+      data: {
+        userId: order.clientUserId,
+        type: "REFUND",
+        amountCents: cents,
+        note: `Order #${order.orderNo} — the session never started`,
+      },
+    });
+  }
+  return tx.order.update({
+    where: { id: order.id },
+    data: { status: "CANCELLED", sessionStatus: null },
+  });
+}
+
 export async function reconcileOrder(orderId: string) {
   const now = new Date();
 
@@ -66,11 +111,30 @@ export async function reconcileOrder(orderId: string) {
   // can be announced without paying for a second query on every reconcile —
   // and this runs on every order read.
   let previousStatus: string | null = null;
+  let abandoned: { orderNo: number; gameName: string; clientUserId: string | null; priceEUR: number } | null = null;
 
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
     if (!order) return null;
     previousStatus = order.status;
+
+    // Assigned, but the session never started and no game was ever submitted.
+    // Only ASSIGNED: once a teammate is in-game there is real work in flight,
+    // and that is not something a clock should throw away.
+    if (
+      order.status === "ASSIGNED" &&
+      order.assignedAt &&
+      order.assignedAt.getTime() + ABANDONED_ASSIGNMENT_MS <= now.getTime() &&
+      (await tx.sessionGame.count({ where: { orderId } })) === 0
+    ) {
+      abandoned = {
+        orderNo: order.orderNo,
+        gameName: order.gameName,
+        clientUserId: order.clientUserId,
+        priceEUR: Number(order.priceEUR),
+      };
+      return abandonAssignment(tx, order);
+    }
 
     // AWAITING_PAYMENT has no dispatch window running yet — the clock only
     // starts when the payment releases it, so it must not age out here.
@@ -120,10 +184,34 @@ export async function reconcileOrder(orderId: string) {
     return order;
   });
 
+  if (abandoned) await announceAbandonedOrder(orderId, abandoned);
+
   if (result && previousStatus !== null && result.status !== previousStatus) {
     await publishOrderChange(orderId);
   }
   return result;
+}
+
+/** Tells the customer where their money went, and the admins that it happened. */
+async function announceAbandonedOrder(
+  orderId: string,
+  order: { orderNo: number; gameName: string; clientUserId: string | null; priceEUR: number },
+) {
+  const amount = `€${order.priceEUR.toFixed(2)}`;
+  if (order.clientUserId) {
+    await notifyUser(order.clientUserId, {
+      type: "order.abandoned",
+      title: "Your session never started",
+      body: `Order #${order.orderNo} was cancelled and ${amount} is back in your balance as credit.`,
+      href: "/dashboard/client/wallet",
+    });
+  }
+  await notifyAdmins({
+    type: "order.abandoned",
+    title: `Order abandoned · ${order.gameName}`,
+    body: `#${order.orderNo} sat assigned without a session${order.clientUserId ? ` — ${amount} credited` : " — guest order, nothing credited"}.`,
+    href: `/dashboard/admin/orders/${orderId}`,
+  });
 }
 
 /** Tells the picked teammates the order is theirs. */
