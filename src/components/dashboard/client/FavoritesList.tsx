@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { setFavorite } from "@/lib/favorites";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { GameMark } from "@/components/dashboard/GameMark";
@@ -8,6 +11,9 @@ export interface FavoriteTeammate {
   id: string;
   name: string;
   avatarUrl?: string | null;
+  avatarFocusX?: number | null;
+  avatarFocusY?: number | null;
+  avatarZoom?: number | null;
   tagline: string;
   languages: LanguageCode[];
   timezone: string;
@@ -29,8 +35,20 @@ export function FavoritesList({ favorites }: { favorites: FavoriteTeammate[] }) 
     <div className="favorite-teammate-grid">
       {favorites.map((favorite) => (
         <article className="favorite-teammate-card" key={favorite.id}>
+          {/* Unfavoriting is the same call the heart on Session Complete makes,
+              so the list updates itself without a reload. */}
+          <button
+            type="button"
+            className="favorite-teammate-card__remove"
+            title={`Remove ${favorite.name} from favorites`}
+            aria-label={`Remove ${favorite.name} from favorites`}
+            onClick={() => void setFavorite(favorite.id, false)}
+          >
+            <i className="fa-solid fa-heart-crack" aria-hidden="true" />
+          </button>
+
           <span className="favorite-teammate__avatar">
-            <SafeAvatarImage src={favorite.avatarUrl} alt={`${favorite.name} profile`} />
+            <SafeAvatarImage src={favorite.avatarUrl} alt={`${favorite.name} profile`} frame={favorite} />
           </span>
 
           <div className="favorite-teammate-card__meta">

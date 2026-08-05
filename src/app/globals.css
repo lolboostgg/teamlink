@@ -4770,6 +4770,10 @@ ul {
   touch-action: none;
 }
 
+.avatar-frame__stage--square {
+  aspect-ratio: 1 / 1;
+}
+
 .avatar-frame__stage.is-draggable {
   cursor: grab;
 }
@@ -9511,37 +9515,159 @@ a.notification-panel__item:hover {
 .order-room__proof-upload .file-drop__preview { width: 48px; height: 46px; }
 .order-room__session-panel { padding-block: 13px; }
 .order-room__session-panel .dashboard-panel__head { margin-bottom: 6px; padding-bottom: 7px; }
-.order-room__session-panel .profile-tabs { min-height: 32px; }
-.order-room__session-panel .profile-tab { padding-block: 6px; font-size: 10px; }
+.order-room__session-panel .dashboard-panel__sub i { margin-right: 5px; color: var(--accent); }
 
-.session-complete-modal { max-width: 590px; border-radius: 22px; }
-.session-complete-modal__proofs { display: flex; gap: 8px; margin: 16px 0; overflow-x: auto; }
-.session-complete-modal__proof { min-width: 112px; display: grid; grid-template-columns: 44px 1fr 26px; align-items: center; gap: 7px; padding: 7px; border: 1px solid var(--border); border-radius: 11px; background: var(--dash-surface-2); }
-.session-complete-modal__proof .private-image { width: 44px; height: 44px; overflow: hidden; border-radius: 8px; }
-.session-complete-modal__proof .private-image img { width: 100%; height: 100%; object-fit: cover; }
-.session-complete-modal__proof strong { font-size: 10px; }
-.session-complete-modal__proof > button { width: 26px; height: 26px; }
-.session-complete-modal__facts {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin: 14px 0 4px;
+/* The status strip reads as a route the session travels, not a tab bar: the
+   steps already passed stay ticked, so it's obvious the customer is watching
+   progress rather than a setting being flipped. */
+.session-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 4px;
 }
-.session-complete-modal__facts > div {
-  min-height: 62px;
-  padding: 10px;
+
+.session-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--dash-line);
+  border-radius: 999px;
+  background: var(--dash-surface-2);
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.session-step:hover:not(:disabled) {
+  border-color: rgba(79, 112, 255, .45);
+  color: var(--text);
+}
+
+.session-step:disabled {
+  cursor: default;
+  opacity: .6;
+}
+
+.session-step__dot {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--dash-surface);
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.session-step.is-done {
+  color: var(--text-muted);
+}
+
+.session-step.is-done .session-step__dot {
+  background: rgba(53, 211, 145, .14);
+  color: #35d391;
+}
+
+.session-step.is-active {
+  border-color: var(--accent);
+  background: rgba(79, 112, 255, .14);
+  color: var(--text);
+}
+
+.session-step.is-active .session-step__dot {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* The customer's copy of the strip — the same shape, nothing to click. */
+.session-steps--readonly {
+  margin: 12px 0 2px;
+}
+
+.session-steps--readonly .session-step {
+  cursor: default;
+}
+
+.session-complete-modal { max-width: 620px; padding: 0; border-radius: 22px; overflow: hidden; }
+
+/* Banded layout: a header that carries the money, a body that carries the
+   decision. The old version put four equal stat tiles in the middle, which
+   gave the payout the same weight as "proofs uploaded". */
+.session-complete-modal__hero {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(53, 211, 145, .13), transparent 58%),
+    linear-gradient(135deg, rgba(79, 112, 255, .1), transparent 60%);
+}
+
+.session-complete-modal__seal {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  border: 1px solid rgba(53, 211, 145, .3);
+  background: rgba(53, 211, 145, .12);
+  color: #35d391;
+  font-size: 18px;
+}
+
+.session-complete-modal__hero .dispatch-modal__title { margin: 2px 0 0; font-size: 20px; }
+.session-complete-modal__lead { margin: 7px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+
+.session-complete-modal__payout {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  background: var(--dash-surface-2);
+  align-items: flex-end;
+  gap: 3px;
+  padding: 9px 13px;
+  border: 1px solid rgba(53, 211, 145, .28);
+  border-radius: 13px;
+  background: rgba(53, 211, 145, .09);
+  color: #35d391;
+  font-size: 17px;
+  font-weight: 800;
+  white-space: nowrap;
 }
-.session-complete-modal__facts dt { font-size: 9px; line-height: 1.2; }
-.session-complete-modal__facts dd { font-size: 13px; font-weight: 800; }
-.session-complete-modal .session-confirm-check { position: relative; padding: 13px; border-radius: 14px; background: var(--dash-surface-2); }
+
+.session-complete-modal__payout small { color: var(--text-faint); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+
+.session-complete-modal__body { display: grid; gap: 16px; padding: 20px 24px 22px; }
+.session-complete-modal__section { display: grid; gap: 9px; }
+
+.session-complete-modal__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.session-complete-modal__section-head strong { color: var(--text); font-size: 12px; }
+.session-complete-modal__section-head span { display: inline-flex; align-items: center; gap: 5px; color: var(--text-faint); font-size: 10.5px; font-weight: 700; }
+.session-complete-modal__section-head .is-complete { color: #35d391; }
+.session-complete-modal__section-head .is-short { color: var(--hue-gold, #e0a52b); }
+
+.session-complete-modal__proofs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.session-complete-modal__proof { min-width: 168px; display: grid; grid-template-columns: 52px minmax(0, 1fr) 28px; align-items: center; gap: 9px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--dash-surface-2); }
+.session-complete-modal__proof .private-image { width: 52px; height: 52px; overflow: hidden; border-radius: 9px; }
+.session-complete-modal__proof .private-image img { width: 100%; height: 100%; object-fit: cover; }
+.session-complete-modal__proof > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.session-complete-modal__proof strong { font-size: 11px; }
+.session-complete-modal__proof small { color: var(--text-faint); font-size: 9.5px; }
+.session-complete-modal__proof > button { width: 28px; height: 28px; }
+.session-complete-modal .session-confirm-check { position: relative; margin-top: 0; padding: 13px; border-radius: 14px; background: var(--dash-surface-2); }
 .session-complete-modal .session-confirm-check input { position: absolute; opacity: 0; pointer-events: none; }
 .session-confirm-check__box { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 10px; color: transparent; background: var(--dash-surface); transition: .16s ease; }
 .session-confirm-check input:checked + .session-confirm-check__box { color: #fff; border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 3px rgba(79,112,255,.14); }
@@ -9550,10 +9676,21 @@ a.notification-panel__item:hover {
 .session-confirm-check > span:last-child small { color: var(--text-faint); font-size: 10px; }
 .session-complete-modal .session-farewell-pills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .session-complete-modal .session-farewell-pills button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 11px; }
-.session-complete-modal__message { margin-top: 22px; }
+
+/* Sticky, because the proof strip can push the modal past its max height and
+   "Complete order" must never be the thing you have to scroll to find. */
+.session-complete-modal .dispatch-modal__actions {
+  position: sticky;
+  bottom: 0;
+  margin: 0;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--dash-surface);
+}
 
 @media (max-width: 620px) {
-  .session-complete-modal__facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .session-complete-modal__hero { grid-template-columns: 46px minmax(0, 1fr); }
+  .session-complete-modal__payout { grid-column: 2; align-items: flex-start; }
 }
 
 .security-logins { overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--dash-surface-2); }
@@ -10406,6 +10543,30 @@ a.notification-panel__item:hover {
 .favorite-teammate-card__rating { align-self: start; display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px; color: var(--warning); font-size: 11px; font-weight: 800; white-space: nowrap; }
 .favorite-teammate-card__rating small { color: var(--text-faint); font-size: 9px; font-weight: 600; }
 .favorite-teammate-card__play { grid-column: 2 / 4; justify-self: start; }
+
+/* Bottom-right, clear of the rating block in the top-right corner. */
+.favorite-teammate-card__remove {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--dash-line);
+  border-radius: 10px;
+  background: var(--dash-surface);
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.favorite-teammate-card__remove:hover {
+  border-color: rgba(239, 83, 100, .45);
+  background: rgba(239, 83, 100, .1);
+  color: #ef5364;
+}
 
 @media (max-width: 520px) {
   .favorite-teammate-grid { grid-template-columns: 1fr; }

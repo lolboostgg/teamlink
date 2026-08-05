@@ -20,7 +20,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/ToastProvider";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { PrivateImage } from "@/components/ui/PrivateImage";
-import { SESSION_STATUS_LABELS, GAME_RESULT_LABELS, type SessionStatus, type GameResult } from "@/lib/dispatch/sessionTypes";
+import { SESSION_STATUS_LABELS, GAME_RESULT_LABELS, REPORTABLE_STATUSES, sessionStepIndex, type SessionStatus, type GameResult } from "@/lib/dispatch/sessionTypes";
 
 interface Props {
   orderId: string;
@@ -622,11 +622,35 @@ export function SessionScreen({ orderId }: Props) {
             <div className="session-screen__progress-head">
               <div>
                 <div className="dashboard-panel__title">Session</div>
-                <div className="dashboard-panel__sub">{sessionStatusLabel}</div>
+                <div className="dashboard-panel__sub">
+                  {teammate.name} is <strong>{sessionStatusLabel.toLowerCase()}</strong>
+                </div>
               </div>
               <span className="session-screen__progress-count">
                 {games.length}/{gamesBooked} games
               </span>
+            </div>
+
+            {/* The same steps the teammate ticks off in their order room, so
+                "waiting for invite" reads as a stage of the session rather
+                than a status word with no context around it. */}
+            <div className="session-steps session-steps--readonly" aria-label={`${teammate.name}'s progress`}>
+              {REPORTABLE_STATUSES.map((step, index) => {
+                const reached = sessionStepIndex(sessionStatus);
+                return (
+                  <span
+                    key={step}
+                    className={`session-step${sessionStatus === step ? " is-active" : ""}${
+                      reached > index ? " is-done" : ""
+                    }`}
+                  >
+                    <span className="session-step__dot" aria-hidden="true">
+                      {reached > index ? <i className="fa-solid fa-check" /> : index + 1}
+                    </span>
+                    {SESSION_STATUS_LABELS[step]}
+                  </span>
+                );
+              })}
             </div>
 
             {games.length > 0 ? (

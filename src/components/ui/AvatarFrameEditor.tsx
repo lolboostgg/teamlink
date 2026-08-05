@@ -14,6 +14,12 @@ interface Props {
   value: AvatarFrameValue;
   onChange: (value: AvatarFrameValue) => void;
   label?: string;
+  /**
+   * Zoom is for teammates, whose picture also fills a tall roster card. A
+   * customer's only ever shows as a small round avatar, where moving the
+   * picture is the whole job and a zoom slider is one control too many.
+   */
+  allowZoom?: boolean;
 }
 
 // Pictures are uploaded at display resolution rather than as the old 192px
@@ -66,7 +72,7 @@ function prepareImage(file: File): Promise<Blob> {
  * both the tall roster card and the round dashboard avatar without either one
  * lopping someone's head off.
  */
-export function AvatarFrameEditor({ value, onChange, label = "Profile picture" }: Props) {
+export function AvatarFrameEditor({ value, onChange, label = "Profile picture", allowZoom = true }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -136,7 +142,9 @@ export function AvatarFrameEditor({ value, onChange, label = "Profile picture" }
       <div className="avatar-frame">
         <div
           ref={frameRef}
-          className={`avatar-frame__stage${hasPicture ? " is-draggable" : ""}`}
+          // Without zoom the picture is only ever an avatar, so the stage is
+          // the shape it will actually be seen in rather than a roster card.
+          className={`avatar-frame__stage${allowZoom ? "" : " avatar-frame__stage--square"}${hasPicture ? " is-draggable" : ""}`}
           onPointerDown={(event) => {
             if (!hasPicture) return;
             event.currentTarget.setPointerCapture(event.pointerId);
@@ -173,18 +181,20 @@ export function AvatarFrameEditor({ value, onChange, label = "Profile picture" }
             <span>Avatar</span>
           </div>
 
-          <label className="avatar-frame__zoom">
-            <span>Zoom</span>
-            <input
-              type="range"
-              min={MIN_ZOOM}
-              max={MAX_ZOOM}
-              step={5}
-              value={value.avatarZoom}
-              disabled={!hasPicture}
-              onChange={(event) => onChange({ ...value, avatarZoom: Number(event.target.value) })}
-            />
-          </label>
+          {allowZoom && (
+            <label className="avatar-frame__zoom">
+              <span>Zoom</span>
+              <input
+                type="range"
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+                step={5}
+                value={value.avatarZoom}
+                disabled={!hasPicture}
+                onChange={(event) => onChange({ ...value, avatarZoom: Number(event.target.value) })}
+              />
+            </label>
+          )}
 
           <div
             className={`avatar-frame__drop${dragOver ? " is-dragover" : ""}`}

@@ -78,7 +78,7 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
           <label htmlFor="cp-email">Email</label>
           <input id="cp-email" value={initial.email} disabled />
         </div>
-        <AvatarFrameEditor value={avatar} onChange={setAvatar} />
+        <AvatarFrameEditor value={avatar} onChange={setAvatar} allowZoom={false} />
         {profileError && (
           <p className="form-row__error">
             <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {profileError}

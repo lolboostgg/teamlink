@@ -22,6 +22,7 @@ import {
   REPORTABLE_STATUSES,
   GAME_RESULT_LABELS,
   RESULTS_REQUIRING_PROOF,
+  sessionStepIndex,
   type GameResult,
   type SessionStatus,
 } from "@/lib/dispatch/sessionTypes";
@@ -334,29 +335,43 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           <div className="dashboard-panel__head">
             <div>
               <div className="dashboard-panel__title">Session</div>
-              <div className="dashboard-panel__sub">{SESSION_STATUS_LABELS[status]}</div>
+              {/* Spelling out who this is for: the customer's own order screen
+                  shows whatever is picked here, live. Without that sentence the
+                  strip reads like bookkeeping nobody asked for. */}
+              <div className="dashboard-panel__sub">
+                <i className="fa-solid fa-eye" aria-hidden="true" /> {order.customerLabel} sees this live — keep it
+                current so they know you haven&rsquo;t gone quiet
+              </div>
             </div>
             <span className="order-room__proof-count">{played}/{booked} games submitted</span>
           </div>
 
-          <div className="profile-tabs">
-            {REPORTABLE_STATUSES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={`profile-tab${status === s ? " is-active" : ""}`}
-                disabled={isClosed}
-                onClick={() =>
-                  startTransition(async () => {
-                    const res = await setSessionStatusAction(orderId, s);
-                    if (!res.ok) showToast(res.error, "error");
-                    load();
-                  })
-                }
-              >
-                {SESSION_STATUS_LABELS[s]}
-              </button>
-            ))}
+          <div className="session-steps" role="group" aria-label="What you're doing right now">
+            {REPORTABLE_STATUSES.map((s, index) => {
+              const reached = sessionStepIndex(status);
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  className={`session-step${status === s ? " is-active" : ""}${
+                    reached > index ? " is-done" : ""
+                  }`}
+                  disabled={isClosed}
+                  onClick={() =>
+                    startTransition(async () => {
+                      const res = await setSessionStatusAction(orderId, s);
+                      if (!res.ok) showToast(res.error, "error");
+                      load();
+                    })
+                  }
+                >
+                  <span className="session-step__dot" aria-hidden="true">
+                    {reached > index ? <i className="fa-solid fa-check" /> : index + 1}
+                  </span>
+                  {SESSION_STATUS_LABELS[s]}
+                </button>
+              );
+            })}
           </div>
 
           <div className="order-room__proofs">
@@ -422,51 +437,61 @@ export function OrderRoom({ orderId }: { orderId: string }) {
       {confirming && (
         <div className="dispatch-modal__backdrop" role="dialog" aria-modal="true">
           <div className="dispatch-modal dispatch-modal--form session-complete-modal">
-            <div className="session-modal__hero session-modal__hero--success">
-              <span><i className="fa-solid fa-circle-check" aria-hidden="true" /></span>
-              <div><div className="dispatch-modal__eyebrow">Final confirmation</div><h2 className="dispatch-modal__title">Complete this order?</h2></div>
+            <div className="session-complete-modal__hero">
+              <span className="session-complete-modal__seal" aria-hidden="true">
+                <i className="fa-solid fa-flag-checkered" />
+              </span>
+              <div>
+                <div className="dispatch-modal__eyebrow">Order #{order.orderNo} · {order.gameName}</div>
+                <h2 className="dispatch-modal__title">Complete this order?</h2>
+                <p className="session-complete-modal__lead">
+                  This closes the session for {order.customerLabel} and releases your payout for review. It can&rsquo;t
+                  be undone.
+                </p>
+              </div>
+              <span className="session-complete-modal__payout">
+                <small>Your payout</small>
+                <PriceTag amountEUR={order.payoutEUR} />
+              </span>
             </div>
-            <p className="dispatch-modal__lead">Review the session summary before releasing it for payout.</p>
-            <div className="session-complete-modal__proofs">
-              {order.games.map((game) => (
-                <div key={game.gameNumber} className="session-complete-modal__proof">
-                  {game.proofPath ? <PrivateImage src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`} name={game.proofName ?? `Game ${game.gameNumber}`} alt={`Game ${game.gameNumber}`} /> : <span className="order-room__proof-placeholder"><i className="fa-solid fa-image" /></span>}
-                  <strong>Game {game.gameNumber}</strong>
-                  <button type="button" onClick={() => removeGame(game.gameNumber)} aria-label={`Delete game ${game.gameNumber}`}><i className="fa-solid fa-trash-can" /></button>
+
+            <div className="session-complete-modal__body">
+              <div className="session-complete-modal__section">
+                <div className="session-complete-modal__section-head">
+                  <strong>Games</strong>
+                  <span className={played >= booked ? "is-complete" : "is-short"}>
+                    <i className={`fa-solid ${played >= booked ? "fa-circle-check" : "fa-circle-exclamation"}`} aria-hidden="true" />
+                    {played} of {booked} submitted
+                  </span>
                 </div>
-              ))}
-            </div>
-            <dl className="account-facts session-complete-modal__facts">
-              <div>
-                <dt>Games booked</dt>
-                <dd>{booked}</dd>
+                <div className="session-complete-modal__proofs">
+                  {order.games.map((game) => (
+                    <div key={game.gameNumber} className="session-complete-modal__proof">
+                      {game.proofPath ? <PrivateImage src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`} name={game.proofName ?? `Game ${game.gameNumber}`} alt={`Game ${game.gameNumber}`} /> : <span className="order-room__proof-placeholder"><i className="fa-solid fa-image" /></span>}
+                      <span>
+                        <strong>Game {game.gameNumber}</strong>
+                        <small>{game.proofPath ? "Screenshot attached" : "No screenshot"}</small>
+                      </span>
+                      <button type="button" onClick={() => removeGame(game.gameNumber)} aria-label={`Delete game ${game.gameNumber}`}><i className="fa-solid fa-trash-can" /></button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <dt>Games completed</dt>
-                <dd>{played}</dd>
-              </div>
-              <div>
-                <dt>Proofs uploaded</dt>
-                <dd>{order.games.filter((g) => g.proofPath).length}</dd>
-              </div>
-              <div>
-                <dt>Payout</dt>
-                <dd>
-                  <PriceTag amountEUR={order.payoutEUR} />
-                </dd>
-              </div>
-            </dl>
 
-            <label className="session-confirm-check">
-              <input type="checkbox" checked={confirmed} onChange={() => setConfirmed((v) => !v)} />
-              <span className="session-confirm-check__box"><i className="fa-solid fa-check" aria-hidden="true" /></span>
-              <span><strong>Games played in full</strong><small>I confirm that every booked game was completed.</small></span>
-            </label>
+              <label className="session-confirm-check">
+                <input type="checkbox" checked={confirmed} onChange={() => setConfirmed((v) => !v)} />
+                <span className="session-confirm-check__box"><i className="fa-solid fa-check" aria-hidden="true" /></span>
+                <span><strong>Games played in full</strong><small>I confirm that every booked game was completed.</small></span>
+              </label>
 
-            <div className="form-row session-complete-modal__message">
-              <label>Message to the customer</label>
-              <div className="session-farewell-pills">
-                {["GG!", "Nice!", "See ya next time!"].map((message) => <button key={message} type="button" className={farewell === message ? "is-active" : ""} onClick={() => setFarewell(message)}><i className="fa-regular fa-message" aria-hidden="true" />{message}</button>)}
+              <div className="session-complete-modal__section session-complete-modal__message">
+                <div className="session-complete-modal__section-head">
+                  <strong>Sign off in the chat</strong>
+                  <span>{order.customerLabel} gets this as your last message</span>
+                </div>
+                <div className="session-farewell-pills">
+                  {["GG!", "Nice!", "See ya next time!"].map((message) => <button key={message} type="button" className={farewell === message ? "is-active" : ""} onClick={() => setFarewell(message)}><i className="fa-regular fa-message" aria-hidden="true" />{message}</button>)}
+                </div>
               </div>
             </div>
 

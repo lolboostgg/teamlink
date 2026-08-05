@@ -35,6 +35,24 @@ export const REPORTABLE_STATUSES: SessionStatus[] = [
   "IN_GAME",
 ];
 
+/**
+ * How far along REPORTABLE_STATUSES a session has got, for the step strip both
+ * sides draw. Everything after a game has been played counts as past the last
+ * step — otherwise submitting a result empties the strip, which reads as the
+ * session having gone backwards.
+ */
+export function sessionStepIndex(status: SessionStatus): number {
+  const index = REPORTABLE_STATUSES.indexOf(status);
+  if (index >= 0) return index;
+  const afterPlaying: SessionStatus[] = [
+    "GAME_FINISHED",
+    "WAITING_FOR_NEXT_GAME",
+    "ORDER_COMPLETION_PENDING",
+    "ORDER_COMPLETED",
+  ];
+  return afterPlaying.includes(status) ? REPORTABLE_STATUSES.length : 0;
+}
+
 export type GameResult = "WIN" | "LOSS" | "REMAKE" | "ABORTED" | "CUSTOMER_NO_SHOW" | "TECHNICAL_ISSUE";
 
 export const GAME_RESULT_LABELS: Record<GameResult, string> = {
