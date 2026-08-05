@@ -1,3 +1,5 @@
+import type { AvatarFrame } from "@/lib/avatarFrame";
+
 export type CandidateStatus = "pending" | "accepted" | "declined" | "timed_out";
 
 export interface DispatchCandidate {
@@ -84,6 +86,7 @@ export interface DispatchOrder {
   cancelApprovedAt: number | null;
   customerLabel: string;
   customerAvatarUrl?: string | null;
+  customerAvatarFrame?: AvatarFrame | null;
   createdAt: number;
 }
 

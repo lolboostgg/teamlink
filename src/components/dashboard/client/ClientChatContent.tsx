@@ -25,6 +25,7 @@ export function ClientChatContent() {
             id: `${order.id}-${teammateId}`,
             withName: getTeammateById(teammateId)?.name ?? "Teammate",
             withAvatarUrl: getTeammateById(teammateId)?.avatarUrl ?? null,
+            withAvatarFrame: getTeammateById(teammateId) ?? null,
             gameName: order.gameName,
             conversationKey: conversationKey(order.id, teammateId),
             orderNo: order.orderNo,

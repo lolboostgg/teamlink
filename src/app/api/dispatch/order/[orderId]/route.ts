@@ -3,8 +3,14 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { assertAssignedTeammate, DispatchError } from "@/lib/dispatch/service";
 import { payoutForOrder } from "@/lib/payoutSplit";
+import type { AvatarFrame } from "@/lib/avatarFrame";
 
 export const dynamic = "force-dynamic";
+
+/** Just the framing, off a row that also holds things this response must not carry. */
+function frameOf(row: AvatarFrame): AvatarFrame {
+  return { avatarFocusX: row.avatarFocusX, avatarFocusY: row.avatarFocusY, avatarZoom: row.avatarZoom };
+}
 
 /** One order, readable only by the teammate it was assigned to (or an admin). */
 export async function GET(_request: Request, { params }: { params: Promise<{ orderId: string }> }) {
@@ -25,9 +31,21 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { games: { orderBy: { gameNumber: "asc" } }, candidates: { include: { teammate: { select: { name: true, sessionsCount: true, avatarUrl: true } } } }, clientUser: true },
+    include: {
+      games: { orderBy: { gameNumber: "asc" } },
+      candidates: {
+        include: {
+          teammate: {
+            select: { name: true, sessionsCount: true, avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true },
+          },
+        },
+      },
+      clientUser: true,
+    },
   });
   if (!order) return NextResponse.json({ error: "Unknown order." }, { status: 404 });
+
+  const selected = order.candidates.find((candidate) => candidate.selected);
 
   return NextResponse.json(
     {
@@ -52,8 +70,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
       sessionStatus: order.sessionStatus,
       assignedAt: order.assignedAt?.getTime() ?? null,
       teammateCompletedSessions: order.candidates.find((c) => c.selected)?.teammate.sessionsCount ?? 0,
-      teammateAvatarUrl: order.candidates.find((c) => c.selected)?.teammate.avatarUrl ?? null,
+      teammateAvatarUrl: selected?.teammate.avatarUrl ?? null,
+      // Only the three framing values — the rows behind these hold an email
+      // and a password hash, and this response goes to the other party.
+      teammateAvatarFrame: selected ? frameOf(selected.teammate) : null,
       customerAvatarUrl: order.clientUser?.avatarUrl ?? null,
+      customerAvatarFrame: order.clientUser ? frameOf(order.clientUser) : null,
       games: order.games.map((g) => ({
         gameNumber: g.gameNumber,
         result: g.result,

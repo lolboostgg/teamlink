@@ -409,6 +409,8 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             customerName={order.customerLabel}
             teammateAvatarUrl={order.teammateAvatarUrl}
             customerAvatarUrl={order.customerAvatarUrl}
+            teammateAvatarFrame={order.teammateAvatarFrame}
+            customerAvatarFrame={order.customerAvatarFrame}
             viewer="teammate"
             vibe={order.vibe}
             conversationPref={order.conversationPref}

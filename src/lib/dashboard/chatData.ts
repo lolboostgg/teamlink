@@ -1,7 +1,10 @@
+import type { AvatarFrame } from "@/lib/avatarFrame";
+
 export interface ChatConversation {
   id: string;
   withName: string;
   withAvatarUrl?: string | null;
+  withAvatarFrame?: AvatarFrame | null;
   gameName: string;
   // Real messages live in lib/matchmaking/chatStore.ts, keyed by this —
   // see conversationKey() there. Conversations on both sides are derived

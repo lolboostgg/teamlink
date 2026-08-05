@@ -22,6 +22,11 @@ model User {
   email              String   @unique
   name               String?
   avatarUrl          String?  @db.Text
+  // Where the picture sits in its frame, same as on Teammate — see
+  // lib/avatarFrame.ts.
+  avatarFocusX       Int      @default(50)
+  avatarFocusY       Int      @default(50)
+  avatarZoom         Int      @default(100)
   passwordHash       String?
   // Discord link. discordId is the immutable snowflake we'd address a DM to;
   // the username/avatar are only a display cache, so a rename on Discord's

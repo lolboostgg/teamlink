@@ -686,6 +686,10 @@ export function SessionScreen({ orderId }: Props) {
               conversationKey={conversationKey(order.id, teammate.id)}
               teammateName={teammate.name}
               customerName={order.customerLabel}
+              teammateAvatarUrl={teammate.avatarUrl}
+              teammateAvatarFrame={teammate}
+              customerAvatarUrl={order.customerAvatarUrl}
+              customerAvatarFrame={order.customerAvatarFrame}
               vibe={order.vibe}
               conversationPref={order.conversationPref}
               playStylePref={order.playStylePref}

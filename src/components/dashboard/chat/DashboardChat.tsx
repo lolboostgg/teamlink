@@ -56,7 +56,7 @@ export function DashboardChat({ conversations, from }: Props) {
               onClick={() => setActiveId(c.id)}
             >
               <span className="chat-list__avatar">
-                <SafeAvatarImage src={c.withAvatarUrl} />
+                <SafeAvatarImage src={c.withAvatarUrl} frame={c.withAvatarFrame} />
               </span>
               <span className="chat-list__meta">
                 <span className="chat-list__name">{c.withName}{c.status === "completed" && <span className="chat-status-badge">Completed</span>}</span>
@@ -70,7 +70,7 @@ export function DashboardChat({ conversations, from }: Props) {
       <div className="chat-thread">
         <div className="chat-thread__head">
           <span className="chat-list__avatar">
-            <SafeAvatarImage src={active.withAvatarUrl} />
+            <SafeAvatarImage src={active.withAvatarUrl} frame={active.withAvatarFrame} />
           </span>
           <div className="chat-thread__identity">
             <div className="chat-thread__name">{active.withName}{active.status === "completed" && <span className="chat-status-badge">Completed</span>}</div>
@@ -86,14 +86,17 @@ export function DashboardChat({ conversations, from }: Props) {
             const isAdmin = m.from === "admin";
             const mine = m.from === from;
             const avatarUrl = mine ? session?.user?.image : active.withAvatarUrl;
+            // Only the other side's framing is known here — one's own picture
+            // comes from the session, which carries the URL and nothing else.
+            const avatarFrame = mine ? null : active.withAvatarFrame;
             return <div key={m.id} className={`chat-message-row chat-message-row--${isAdmin ? "admin" : mine ? "me" : "them"}`}>
-              {!mine && (isAdmin ? <span className="chat-message-row__avatar chat-message-row__avatar--admin"><i className="fa-solid fa-shield-halved" /></span> : <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} /></span>)}
+              {!mine && (isAdmin ? <span className="chat-message-row__avatar chat-message-row__avatar--admin"><i className="fa-solid fa-shield-halved" /></span> : <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} frame={avatarFrame} /></span>)}
               <div className={`chat-bubble chat-bubble--${mine ? "me" : "them"}`}>
                 <strong className="chat-bubble__sender">{isAdmin ? "Admin" : mine ? (session?.user?.name || "You") : active.withName}</strong>
                 <p>{m.text}</p>
                 <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
               </div>
-              {mine && <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} /></span>}
+              {mine && <span className="chat-message-row__avatar"><SafeAvatarImage src={avatarUrl} frame={avatarFrame} /></span>}
             </div>
           })}
         </div>

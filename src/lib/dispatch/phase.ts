@@ -1,4 +1,5 @@
 import { payoutForOrder } from "@/lib/payoutSplit";
+import type { AvatarFrame } from "@/lib/avatarFrame";
 
 // The teammate's position in the dispatch flow. Accepting makes you a
 // candidate, not the assignee — see lib/dispatch/service.ts.
@@ -37,6 +38,9 @@ export interface DispatchOrderView {
   teammateCompletedSessions?: number;
   teammateAvatarUrl?: string | null;
   customerAvatarUrl?: string | null;
+  // How each side framed their picture — see lib/avatarFrame.ts.
+  teammateAvatarFrame?: AvatarFrame | null;
+  customerAvatarFrame?: AvatarFrame | null;
   games: { gameNumber: number; result: string; note: string | null; proofPath: string | null; proofName: string | null }[];
 }
 

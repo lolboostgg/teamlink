@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { useSession } from "next-auth/react";
 import { updateProfile, changePassword } from "@/app/(marketing)/dashboard/client/profile/actions";
 import { useToast } from "@/components/ui/ToastProvider";
-import { AvatarUpload } from "@/components/ui/AvatarUpload";
+import { AvatarFrameEditor } from "@/components/ui/AvatarFrameEditor";
 
 interface Props {
-  initial: { name: string; email: string; avatarUrl: string };
+  initial: { name: string; email: string; avatarUrl: string; avatarFocusX: number; avatarFocusY: number; avatarZoom: number };
   /** Settings splits these across two sections; "both" keeps the old page. */
   section?: "both" | "profile" | "password";
 }
@@ -16,7 +16,12 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
   const { showToast } = useToast();
   const { update: updateSession } = useSession();
   const [name, setName] = useState(initial.name);
-  const [avatarUrl, setAvatarUrl] = useState(initial.avatarUrl);
+  const [avatar, setAvatar] = useState({
+    avatarUrl: initial.avatarUrl,
+    avatarFocusX: initial.avatarFocusX,
+    avatarFocusY: initial.avatarFocusY,
+    avatarZoom: initial.avatarZoom,
+  });
   const [profilePending, startProfileTransition] = useTransition();
   const [profileError, setProfileError] = useState<string | null>(null);
 
@@ -30,7 +35,7 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
     setProfileError(null);
     startProfileTransition(async () => {
       try {
-        await updateProfile({ name, avatarUrl });
+        await updateProfile({ name, ...avatar });
         // Re-syncs the JWT so the header avatar/name reflect the change
         // immediately, without needing to log out and back in — see the
         // trigger:"update" branch in auth.ts's jwt() callback. Must pass
@@ -73,7 +78,7 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
           <label htmlFor="cp-email">Email</label>
           <input id="cp-email" value={initial.email} disabled />
         </div>
-        <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
+        <AvatarFrameEditor value={avatar} onChange={setAvatar} />
         {profileError && (
           <p className="form-row__error">
             <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {profileError}

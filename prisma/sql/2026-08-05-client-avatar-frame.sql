@@ -1,0 +1,4 @@
+-- Customers frame their own picture too, same three values as Teammate.
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatarFocusX" INTEGER NOT NULL DEFAULT 50;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatarFocusY" INTEGER NOT NULL DEFAULT 50;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatarZoom" INTEGER NOT NULL DEFAULT 100;

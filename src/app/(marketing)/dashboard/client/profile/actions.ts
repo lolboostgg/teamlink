@@ -4,8 +4,15 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { DEFAULT_FRAME, MAX_ZOOM, MIN_ZOOM, clampPercent } from "@/lib/avatarFrame";
 
-export async function updateProfile(input: { name: string; avatarUrl: string }) {
+export async function updateProfile(input: {
+  name: string;
+  avatarUrl: string;
+  avatarFocusX?: number;
+  avatarFocusY?: number;
+  avatarZoom?: number;
+}) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Not signed in.");
 
@@ -14,7 +21,13 @@ export async function updateProfile(input: { name: string; avatarUrl: string }) 
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { name, avatarUrl: input.avatarUrl.trim() || null },
+    data: {
+      name,
+      avatarUrl: input.avatarUrl.trim() || null,
+      avatarFocusX: clampPercent(input.avatarFocusX ?? DEFAULT_FRAME.focusX),
+      avatarFocusY: clampPercent(input.avatarFocusY ?? DEFAULT_FRAME.focusY),
+      avatarZoom: clampPercent(input.avatarZoom ?? DEFAULT_FRAME.zoom, MIN_ZOOM, MAX_ZOOM),
+    },
   });
 
   revalidatePath("/dashboard/client/profile");

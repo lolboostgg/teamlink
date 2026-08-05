@@ -28,6 +28,9 @@ export interface SettingsProps {
   name: string;
   email: string;
   avatarUrl: string;
+  avatarFocusX: number;
+  avatarFocusY: number;
+  avatarZoom: number;
   discordId: string | null;
   discordUsername: string | null;
   discordAvatar: string | null;
@@ -89,7 +92,14 @@ function ProfileSection({ account }: { account: SettingsProps }) {
       </div>
 
       <ClientProfileForm
-        initial={{ name: account.name, email: account.email, avatarUrl: account.avatarUrl }}
+        initial={{
+          name: account.name,
+          email: account.email,
+          avatarUrl: account.avatarUrl,
+          avatarFocusX: account.avatarFocusX,
+          avatarFocusY: account.avatarFocusY,
+          avatarZoom: account.avatarZoom,
+        }}
         section="both"
       />
     </>

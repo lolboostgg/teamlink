@@ -12,6 +12,6 @@ export default async function AdminProfilePage() {
   if (!user) return null;
   return <div className="dashboard-panel">
     <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">My profile</div><div className="dashboard-panel__sub">Update your admin name and profile picture</div></div></div>
-    <ClientProfileForm initial={{ name: user.name || "Admin", email: user.email, avatarUrl: user.avatarUrl || "" }} section="profile" />
+    <ClientProfileForm initial={{ name: user.name || "Admin", email: user.email, avatarUrl: user.avatarUrl || "", avatarFocusX: user.avatarFocusX, avatarFocusY: user.avatarFocusY, avatarZoom: user.avatarZoom }} section="profile" />
   </div>;
 }

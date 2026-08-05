@@ -8,6 +8,7 @@ import {
   useChatTyping,
   useConversationMessages,
 } from "@/lib/matchmaking/chatStore";
+import type { AvatarFrame } from "@/lib/avatarFrame";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
@@ -22,6 +23,8 @@ interface Props {
   customerName?: string;
   teammateAvatarUrl?: string | null;
   customerAvatarUrl?: string | null;
+  teammateAvatarFrame?: AvatarFrame | null;
+  customerAvatarFrame?: AvatarFrame | null;
   viewer?: "client" | "teammate";
   vibe?: string | null;
   conversationPref?: string | null;
@@ -42,6 +45,8 @@ export function SessionChat({
   customerName = "Customer",
   teammateAvatarUrl,
   customerAvatarUrl,
+  teammateAvatarFrame,
+  customerAvatarFrame,
   viewer = "client",
   vibe,
   conversationPref,
@@ -60,7 +65,8 @@ export function SessionChat({
       return <span className="session-chat__admin-icon"><i className="fa-solid fa-shield-halved" /></span>;
     }
     const avatarUrl = sender === "teammate" ? teammateAvatarUrl : customerAvatarUrl;
-    return avatarUrl ? <span className="avatar-icon"><SafeAvatarImage src={avatarUrl} /></span> : <AvatarIcon seed={`${conversationKey}-${sender}`} />;
+    const frame = sender === "teammate" ? teammateAvatarFrame : customerAvatarFrame;
+    return avatarUrl ? <span className="avatar-icon"><SafeAvatarImage src={avatarUrl} frame={frame} /></span> : <AvatarIcon seed={`${conversationKey}-${sender}`} />;
   };
 
   useLayoutEffect(() => {

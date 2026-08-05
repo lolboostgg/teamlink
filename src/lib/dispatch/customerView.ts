@@ -49,7 +49,7 @@ type Row = {
   playStylePref: string | null;
   cancelApprovedAt: Date | null;
   customerLabel: string;
-  clientUser?: { avatarUrl: string | null } | null;
+  clientUser?: { avatarUrl: string | null; avatarFocusX: number; avatarFocusY: number; avatarZoom: number } | null;
   createdAt: Date;
   candidates: {
     teammateId: string;
@@ -125,6 +125,13 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     cancelApprovedAt: row.cancelApprovedAt?.getTime() ?? null,
     customerLabel: row.customerLabel,
     customerAvatarUrl: row.clientUser?.avatarUrl ?? null,
+    customerAvatarFrame: row.clientUser
+      ? {
+          avatarFocusX: row.clientUser.avatarFocusX,
+          avatarFocusY: row.clientUser.avatarFocusY,
+          avatarZoom: row.clientUser.avatarZoom,
+        }
+      : null,
     createdAt: row.createdAt.getTime(),
   };
 }
