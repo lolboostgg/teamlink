@@ -7,42 +7,30 @@ import { conversationKey } from "@/lib/matchmaking/chatStore";
 import { DashboardChat } from "@/components/dashboard/chat/DashboardChat";
 import type { ChatConversation } from "@/lib/dashboard/chatData";
 
-// Inverse of ClientChatContent — one conversation per real client this
-// teammate has actually been matched with, most recent first. Same real,
-// shared message store (lib/matchmaking/chatStore.ts) as the in-session
-// chat and the client's own dashboard chat tab.
+// Inverse of ClientChatContent — one conversation per order this teammate
+// played, newest first. Same real, shared message store
+// (lib/matchmaking/chatStore.ts) as the in-session chat and the client's own
+// dashboard chat tab. Orders are listed separately rather than merged per
+// client: each booking is its own session, so its thread starts empty.
 export function TeammateChatContent() {
   const orders = useAllOrders();
   const teammateId = useCurrentTeammateId();
 
   const conversations: ChatConversation[] = useMemo(() => {
-    const byClient = new Map<string, { orderNo: number; gameName: string; createdAt: number; avatarUrl: string | null; status: "active" | "completed"; lockedAt: number | null }>();
-    orders.forEach((order) => {
-      if (!teammateId || !order.selectedTeammateIds.includes(teammateId)) return;
-      const existing = byClient.get(order.customerLabel);
-      if (!existing || order.createdAt > existing.createdAt) {
-        byClient.set(order.customerLabel, {
-          gameName: order.gameName,
-          orderNo: order.orderNo,
-          createdAt: order.createdAt,
-          avatarUrl: order.customerAvatarUrl ?? null,
-          status: order.status === "completed" ? "completed" : "active",
-          lockedAt: order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
-        });
-      }
-    });
-
-    return Array.from(byClient.entries())
-      .sort((a, b) => b[1].createdAt - a[1].createdAt)
-      .map(([client, info], i) => ({
-        id: `${client}-${i}`,
-        withName: client,
-        withAvatarUrl: info.avatarUrl,
-        gameName: info.gameName,
-        conversationKey: teammateId ? conversationKey(teammateId, client) : "",
-        orderNo: info.orderNo,
-        status: info.status,
-        lockedAt: info.lockedAt,
+    if (!teammateId) return [];
+    return orders
+      .filter((order) => order.selectedTeammateIds.includes(teammateId))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((order) => ({
+        id: order.id,
+        withName: order.customerLabel,
+        withAvatarUrl: order.customerAvatarUrl ?? null,
+        gameName: order.gameName,
+        conversationKey: conversationKey(order.id, teammateId),
+        orderNo: order.orderNo,
+        status: order.status === "completed" ? "completed" : "active",
+        lockedAt:
+          order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
       }));
   }, [orders, teammateId]);
 

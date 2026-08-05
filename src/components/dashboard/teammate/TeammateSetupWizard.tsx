@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/components/ui/ToastProvider";
-import { AvatarUpload } from "@/components/ui/AvatarUpload";
+import { AvatarFrameEditor } from "@/components/ui/AvatarFrameEditor";
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { IconSelect } from "@/components/ui/IconSelect";
 import { IconMultiSelect } from "@/components/ui/IconMultiSelect";
@@ -21,6 +21,9 @@ import type { VerificationView } from "@/components/dashboard/teammate/Verificat
 
 export interface SetupInitial {
   avatarUrl: string;
+  avatarFocusX: number;
+  avatarFocusY: number;
+  avatarZoom: number;
   tagline: string;
   timezone: string;
   languages: LanguageCode[];
@@ -54,7 +57,12 @@ export function TeammateSetupWizard({ initial, verification, storageReady, disco
   const { update: updateSession } = useSession();
   const [pending, startTransition] = useTransition();
 
-  const [avatarUrl, setAvatarUrl] = useState(initial.avatarUrl);
+  const [avatar, setAvatar] = useState({
+    avatarUrl: initial.avatarUrl,
+    avatarFocusX: initial.avatarFocusX,
+    avatarFocusY: initial.avatarFocusY,
+    avatarZoom: initial.avatarZoom,
+  });
   const [timezone, setTimezone] = useState(initial.timezone);
   const [languages, setLanguages] = useState<LanguageCode[]>(initial.languages);
   const [gameSlugs, setGameSlugs] = useState<string[]>(initial.gameSlugs);
@@ -84,7 +92,7 @@ export function TeammateSetupWizard({ initial, verification, storageReady, disco
     });
 
   const doneMap: Record<StepKey, boolean> = {
-    avatar: Boolean(avatarUrl),
+    avatar: Boolean(avatar.avatarUrl),
     languages: languages.length > 0,
     timezone: Boolean(timezone),
     games: gameSlugs.length > 0,
@@ -106,7 +114,7 @@ export function TeammateSetupWizard({ initial, verification, storageReady, disco
   function saveProfile(successMessage: string, advanceFrom: StepKey) {
     startTransition(async () => {
       try {
-        await updateOwnProfile({ tagline: initial.tagline, timezone, avatarUrl, languages, gameSlugs, gameProfiles });
+        await updateOwnProfile({ tagline: initial.tagline, timezone, ...avatar, languages, gameSlugs, gameProfiles });
         // Keeps the header avatar in step — see trigger:"update" in auth.ts.
         await updateSession({});
         showToast(successMessage, "success");
@@ -126,9 +134,9 @@ export function TeammateSetupWizard({ initial, verification, storageReady, disco
       description: "Clients pick who they play with by face — an empty avatar gets skipped.",
       body: (
         <>
-          <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} label="" />
+          <AvatarFrameEditor value={avatar} onChange={setAvatar} label="" />
           <StepActions
-            disabled={pending || !avatarUrl}
+            disabled={pending || !avatar.avatarUrl}
             onSave={() => saveProfile("Profile picture saved.", "avatar")}
           />
         </>

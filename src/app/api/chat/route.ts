@@ -9,44 +9,74 @@ type ChatSide = "client" | "teammate" | "admin";
 const globalPresence = globalThis as typeof globalThis & { teamlinkChatTyping?: Map<string, Partial<Record<ChatSide, number>>> };
 const typingPresence = globalPresence.teamlinkChatTyping ??= new Map();
 
-async function conversationAccess(userId: string, role: string, key: string) {
-  if (role === "ADMIN") return { allowed: true, locked: false };
+interface ConversationAccess {
+  /** Which side the reader is *on this order* — null when they aren't on it at all. */
+  side: ChatSide | null;
+  locked: boolean;
+  orderId: string;
+  teammateId: string;
+}
+
+const NO_ACCESS: ConversationAccess = { side: null, locked: false, orderId: "", teammateId: "" };
+
+/**
+ * Resolves who the caller is in this conversation.
+ *
+ * The side is derived from the order's own rows, never from the account's
+ * global role: a teammate can also book sessions as a customer, and reading
+ * `user.role` meant their own bookings were rejected as "not your chat" —
+ * their messages stayed in their browser and never reached the other side.
+ * Being the order's client wins, so a teammate booking someone else writes
+ * as the customer they are on that order.
+ */
+async function conversationAccess(userId: string, role: string, key: string): Promise<ConversationAccess> {
   const separator = key.indexOf("::");
-  const teammateId = separator > 0 ? key.slice(0, separator) : "";
-  const customerLabel = separator > 0 ? key.slice(separator + 2) : "";
-  if (!teammateId || !customerLabel) return { allowed: false, locked: false };
-  const order = await prisma.order.findFirst({
-    where: {
-      customerLabel,
-      ...(role === "TEAMMATE"
-        ? { candidates: { some: { teammateId, selected: true, teammate: { userId } } } }
-        : { clientUserId: userId, candidates: { some: { teammateId, selected: true } } }),
+  const orderId = separator > 0 ? key.slice(0, separator) : "";
+  const teammateId = separator > 0 ? key.slice(separator + 2) : "";
+  if (!orderId || !teammateId) return NO_ACCESS;
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      clientUserId: true,
+      status: true,
+      sessionCompleteAt: true,
+      createdAt: true,
+      candidates: {
+        where: { selected: true },
+        select: { teammateId: true, teammate: { select: { userId: true } } },
+      },
     },
-    orderBy: { createdAt: "desc" },
-    select: { status: true, sessionCompleteAt: true, createdAt: true },
   });
-  const lockedAt = order?.status === "COMPLETED"
-    ? (order.sessionCompleteAt ?? order.createdAt).getTime() + 60 * 60 * 1000
-    : null;
-  return { allowed: Boolean(order), locked: Boolean(lockedAt && lockedAt <= Date.now()) };
+  const candidate = order?.candidates.find((c) => c.teammateId === teammateId);
+  if (!order || !candidate) return NO_ACCESS;
+
+  const side: ChatSide | null =
+    order.clientUserId && order.clientUserId === userId
+      ? "client"
+      : candidate.teammate.userId === userId
+        ? "teammate"
+        : role === "ADMIN"
+          ? "admin"
+          : null;
+
+  const lockedAt =
+    order.status === "COMPLETED" ? (order.sessionCompleteAt ?? order.createdAt).getTime() + 60 * 60 * 1000 : null;
+  return { side, locked: Boolean(lockedAt && lockedAt <= Date.now()), orderId, teammateId };
 }
 
 /**
  * Everyone allowed to see a conversation: the client, the teammates actually
  * on the order, and every admin. Used to address change events — a chat
  * signal must not fan out to unrelated accounts, since the key itself
- * identifies a customer.
+ * identifies an order.
  */
-async function conversationAudience(key: string): Promise<string[]> {
-  const separator = key.indexOf("::");
-  const teammateId = separator > 0 ? key.slice(0, separator) : "";
-  const customerLabel = separator > 0 ? key.slice(separator + 2) : "";
-  if (!teammateId || !customerLabel) return [];
+async function conversationAudience(orderId: string): Promise<string[]> {
+  if (!orderId) return [];
 
   const [order, admins] = await Promise.all([
-    prisma.order.findFirst({
-      where: { customerLabel, candidates: { some: { teammateId, selected: true } } },
-      orderBy: { createdAt: "desc" },
+    prisma.order.findUnique({
+      where: { id: orderId },
       select: {
         clientUserId: true,
         candidates: { where: { selected: true }, select: { teammate: { select: { userId: true } } } },
@@ -67,8 +97,8 @@ export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const key = request.nextUrl.searchParams.get("key")?.slice(0, 300) ?? "";
-  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : { allowed: false };
-  if (!key || !access.allowed) {
+  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : NO_ACCESS;
+  if (!access.side) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const messages = await prisma.conversationMessage.findMany({
@@ -92,12 +122,11 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const body = await request.json().catch(() => null) as { key?: string; action?: "typing" | "read"; side?: ChatSide; typing?: boolean } | null;
+  const body = await request.json().catch(() => null) as { key?: string; action?: "typing" | "read"; typing?: boolean } | null;
   const key = body?.key?.slice(0, 300) ?? "";
-  const side: ChatSide = body?.side === "admin" ? "admin" : body?.side === "teammate" ? "teammate" : "client";
-  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : { allowed: false };
-  const correctSide = (session.user.role === "CLIENT" && side === "client") || (session.user.role === "TEAMMATE" && side === "teammate") || (session.user.role === "ADMIN" && side === "admin");
-  if (!key || !access.allowed || !correctSide) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : NO_ACCESS;
+  const side = access.side;
+  if (!side) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   if (body?.action === "typing") {
     typingPresence.set(key, { ...typingPresence.get(key), [side]: body.typing ? Date.now() + 3_500 : 0 });
@@ -117,13 +146,12 @@ export async function PATCH(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const body = (await request.json().catch(() => null)) as { id?: string; key?: string; from?: string; text?: string; createdAt?: number } | null;
+  const body = (await request.json().catch(() => null)) as { id?: string; key?: string; text?: string; createdAt?: number } | null;
   const key = body?.key?.slice(0, 300) ?? "";
   const text = body?.text?.trim().slice(0, 4000) ?? "";
-  const sender = body?.from === "admin" ? "admin" : body?.from === "teammate" ? "teammate" : "client";
-  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : { allowed: false, locked: false };
-  const correctSender = (session.user.role === "CLIENT" && sender === "client") || (session.user.role === "TEAMMATE" && sender === "teammate") || (session.user.role === "ADMIN" && sender === "admin");
-  if (!key || !text || !access.allowed || !correctSender) {
+  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : NO_ACCESS;
+  const sender = access.side;
+  if (!text || !sender) {
     return NextResponse.json({ error: "Invalid message" }, { status: 400 });
   }
   if (access.locked) return NextResponse.json({ error: "This conversation is read only." }, { status: 423 });
@@ -143,6 +171,6 @@ export async function POST(request: NextRequest) {
       })
     : await prisma.conversationMessage.create({ data });
   // Everyone with this conversation open gets it now, not on the next poll.
-  await publish({ topic: "chat", key, userIds: await conversationAudience(key) });
+  await publish({ topic: "chat", key, userIds: await conversationAudience(access.orderId) });
   return NextResponse.json({ id: message.id, createdAt: message.createdAt.getTime() });
 }

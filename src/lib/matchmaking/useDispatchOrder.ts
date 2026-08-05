@@ -79,7 +79,12 @@ export function useDispatchOrder(orderId: string | null) {
     order?.selectionDeadline != null ? Math.max(0, Math.ceil((order.selectionDeadline - now) / 1000)) : 0;
   const sessionElapsedSeconds =
     order?.assignedAt != null ? Math.max(0, Math.floor((now - order.assignedAt) / 1000)) : 0;
-  const searchElapsedSeconds = order ? Math.max(0, Math.floor((now - order.createdAt) / 1000)) : 0;
+  // Counted from the dispatch, not the order row: the order is written when
+  // checkout opens, so counting from createdAt meant the search bar was
+  // already half spent by the time the card went through. Both ends of this
+  // are server timestamps, so the clock keeps running with the tab closed.
+  const searchStartedAt = order ? (order.dispatchedAt ?? order.createdAt) : 0;
+  const searchElapsedSeconds = order ? Math.max(0, Math.floor((now - searchStartedAt) / 1000)) : 0;
 
   return {
     order,

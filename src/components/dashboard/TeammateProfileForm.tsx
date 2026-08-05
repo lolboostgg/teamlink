@@ -15,7 +15,7 @@ import {
 import { FlagIcon } from "@/components/ui/FlagIcon";
 import { IconSelect } from "@/components/ui/IconSelect";
 import { IconMultiSelect } from "@/components/ui/IconMultiSelect";
-import { AvatarUpload } from "@/components/ui/AvatarUpload";
+import { AvatarFrameEditor } from "@/components/ui/AvatarFrameEditor";
 import { TIMEZONE_OPTIONS } from "@/lib/timezones";
 import type { TeammateProfileInput } from "@/lib/teammateProfile";
 
@@ -97,7 +97,12 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
   const [name, setName] = useState(initial.name);
   const [tagline, setTagline] = useState(initial.tagline);
   const [timezone, setTimezone] = useState(initial.timezone);
-  const [avatarUrl, setAvatarUrl] = useState(initial.avatarUrl);
+  const [avatar, setAvatar] = useState({
+    avatarUrl: initial.avatarUrl,
+    avatarFocusX: initial.avatarFocusX,
+    avatarFocusY: initial.avatarFocusY,
+    avatarZoom: initial.avatarZoom,
+  });
   const [languages, setLanguages] = useState<LanguageCode[]>(initial.languages);
   const [gameSlugs, setGameSlugs] = useState<string[]>(initial.gameSlugs);
   const [gameProfiles, setGameProfiles] = useState<GameProfileMap>(initial.gameProfiles);
@@ -125,7 +130,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
     setError(null);
     startTransition(async () => {
       try {
-        await onSave({ name, tagline, timezone, avatarUrl, languages, gameSlugs, gameProfiles });
+        await onSave({ name, tagline, timezone, ...avatar, languages, gameSlugs, gameProfiles });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Couldn't save — try again.");
       }
@@ -175,7 +180,7 @@ export function TeammateProfileForm({ initial, showAdminFields, onSave, onCancel
             </div>
           )}
 
-          <AvatarUpload value={avatarUrl} onChange={setAvatarUrl} />
+          <AvatarFrameEditor value={avatar} onChange={setAvatar} />
 
           <div className="form-row">
             <label>Timezone</label>

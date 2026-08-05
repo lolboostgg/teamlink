@@ -34,6 +34,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         select: {
           name: true,
           avatarUrl: true,
+          avatarFocusX: true,
+          avatarFocusY: true,
+          avatarZoom: true,
           rating: true,
           available: true,
           user: { select: { avatarUrl: true, discordId: true, discordAvatar: true } },
@@ -64,6 +67,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           usableStoredAvatar ||
           discordAvatarUrl(teammate.user?.discordId ?? null, teammate.user?.discordAvatar ?? null) ||
           "/avatars/default.webp",
+        avatarFocusX: teammate.avatarFocusX,
+        avatarFocusY: teammate.avatarFocusY,
+        avatarZoom: teammate.avatarZoom,
         rating: teammate.rating,
         sessionsCount: teammate._count.candidacies,
         available: teammate.available,

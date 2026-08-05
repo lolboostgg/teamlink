@@ -34,6 +34,9 @@ export async function updateTeammateProfile(
       tagline: clean.tagline || null,
       timezone: clean.timezone || null,
       avatarUrl: clean.avatarUrl || null,
+      avatarFocusX: clean.avatarFocusX,
+      avatarFocusY: clean.avatarFocusY,
+      avatarZoom: clean.avatarZoom,
       languages: clean.languages,
       gameSlugs,
       // Prisma's Json input type doesn't accept a Record<string, …> of

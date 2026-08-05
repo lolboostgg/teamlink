@@ -56,6 +56,10 @@ export interface DispatchOrder {
   selectedTeammateId: string | null;
   selectedTeammateIds: string[];
   dispatchDeadline: number;
+  // When the order was actually fanned out to teammates. This — not
+  // createdAt — is when the search started: an order is created at the top of
+  // checkout and can sit there for minutes while the customer types a card in.
+  dispatchedAt: number | null;
   selectionDeadline: number | null;
   // Set once, the moment the order first reaches "assigned" — everything
   // below is computed from this single timestamp (see reconcile() in

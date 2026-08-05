@@ -1,4 +1,5 @@
 import { LANGUAGES, type LanguageCode } from "@/lib/i18n";
+import { DEFAULT_FRAME, MAX_ZOOM, MIN_ZOOM, clampPercent } from "@/lib/avatarFrame";
 import {
   sanitizeGameProfiles,
   EMPTY_GAME_PROFILE,
@@ -25,6 +26,10 @@ export interface TeammateProfileInput {
   tagline: string;
   timezone: string;
   avatarUrl: string;
+  /** Where the picture sits in its frame — see lib/avatarFrame.ts. */
+  avatarFocusX: number;
+  avatarFocusY: number;
+  avatarZoom: number;
   languages: LanguageCode[];
   /** Which games this teammate is listed for. */
   gameSlugs: string[];
@@ -48,6 +53,9 @@ export function sanitizeTeammateProfileInput(raw: {
   tagline?: string;
   timezone?: string;
   avatarUrl?: string;
+  avatarFocusX?: number;
+  avatarFocusY?: number;
+  avatarZoom?: number;
   languages?: string[];
   gameSlugs?: string[];
   gameProfiles?: unknown;
@@ -63,6 +71,9 @@ export function sanitizeTeammateProfileInput(raw: {
     tagline: (raw.tagline ?? "").trim().slice(0, 240),
     timezone: (raw.timezone ?? "").trim().slice(0, 60),
     avatarUrl: sanitizeAvatarUrl(raw.avatarUrl),
+    avatarFocusX: clampPercent(raw.avatarFocusX ?? DEFAULT_FRAME.focusX),
+    avatarFocusY: clampPercent(raw.avatarFocusY ?? DEFAULT_FRAME.focusY),
+    avatarZoom: clampPercent(raw.avatarZoom ?? DEFAULT_FRAME.zoom, MIN_ZOOM, MAX_ZOOM),
     languages,
     gameSlugs,
     gameProfiles,

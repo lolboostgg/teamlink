@@ -21,7 +21,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   if (!order) notFound();
 
   const selected = order.candidates.find((candidate) => candidate.selected);
-  const conversationKey = selected ? `${selected.teammateId}::${order.customerLabel}` : null;
+  const conversationKey = selected ? `${order.id}::${selected.teammateId}` : null;
   const messages = conversationKey ? await prisma.conversationMessage.findMany({
     where: { conversationKey }, orderBy: { createdAt: "asc" }, take: 500,
   }) : [];

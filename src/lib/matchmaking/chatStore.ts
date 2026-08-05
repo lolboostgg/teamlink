@@ -31,11 +31,16 @@ function getChannel(): BroadcastChannel | null {
   return channel;
 }
 
-// One conversation per teammate<->client pair — every order between the
-// same two keeps landing in the same thread, matching how the dashboard
-// chat lists already group by teammate/client.
-export function conversationKey(teammateId: string, customerLabel: string): string {
-  return `${teammateId}::${customerLabel}`;
+// One conversation per order, per teammate on it. A booking is a session
+// with a start and an end, so the next order between the same two people
+// opens an empty thread rather than reopening the last one — and a teammate
+// joining an order never sees what was said on the previous booking.
+//
+// The order id is also what the API resolves both the reader's side and
+// their access from (see app/api/chat/route.ts), which is why the key leads
+// with it.
+export function conversationKey(orderId: string, teammateId: string): string {
+  return `${orderId}::${teammateId}`;
 }
 
 function readAll(): ChatMessage[] {
@@ -58,6 +63,10 @@ function writeConversation(key: string, messages: ChatMessage[]): void {
   writeAll([...otherMessages, ...messages]);
 }
 
+// `from` deliberately isn't sent: which side a message came from is decided
+// by the server off this order's own client/teammate rows, not by whatever
+// the browser claims. The local value is only the optimistic echo, and the
+// next sync replaces it with the stored row either way.
 async function persistMessage(message: ChatMessage): Promise<void> {
   await fetch("/api/chat", {
     method: "POST",
@@ -65,7 +74,6 @@ async function persistMessage(message: ChatMessage): Promise<void> {
     body: JSON.stringify({
       id: message.id,
       key: message.conversationKey,
-      from: message.from,
       text: message.text,
       createdAt: message.createdAt,
     }),
@@ -107,7 +115,7 @@ export function setChatTyping(key: string, side: ChatSide, typing: boolean): voi
   presence[key] = { ...presence[key], [side]: typing ? Date.now() + 1800 : 0 };
   window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
   getChannel()?.postMessage({ type: "chat-presence" });
-  void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, side, action: "typing", typing }) }).catch(() => undefined);
+  void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, action: "typing", typing }) }).catch(() => undefined);
 }
 
 export function isChatTyping(key: string, side: ChatSide): boolean {
@@ -124,7 +132,7 @@ export function markConversationRead(key: string, side: ChatSide): void {
   });
   if (changed) {
     writeAll(next);
-    void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, side, action: "read" }) }).catch(() => undefined);
+    void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, action: "read" }) }).catch(() => undefined);
   }
 }
 

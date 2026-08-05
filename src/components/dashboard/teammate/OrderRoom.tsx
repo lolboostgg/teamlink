@@ -404,8 +404,8 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </div>
           </div>
           <SessionChat
-            conversationKey={conversationKey(order.teammateId ?? order.id, order.customerKey ?? order.customerLabel)}
-            teammateName="You"
+            conversationKey={conversationKey(order.id, order.teammateId ?? "")}
+            teammateName={order.teammateName || "You"}
             customerName={order.customerLabel}
             teammateAvatarUrl={order.teammateAvatarUrl}
             customerAvatarUrl={order.customerAvatarUrl}
@@ -479,7 +479,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                 onClick={() =>
                   startTransition(async () => {
                     sendChatMessage(
-                      conversationKey(order.teammateId ?? order.id, order.customerKey ?? order.customerLabel),
+                      conversationKey(order.id, order.teammateId ?? ""),
                       "teammate",
                       farewell,
                     );

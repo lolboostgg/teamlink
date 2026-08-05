@@ -1,11 +1,15 @@
-// Private Supabase Storage bucket for identity documents. Talked to over its
-// REST API with fetch rather than @supabase/supabase-js — the only calls we
-// need are upload / sign / delete, and that keeps the dependency out.
+// Supabase Storage. Talked to over its REST API with fetch rather than
+// @supabase/supabase-js — the only calls we need are upload / sign / delete,
+// and that keeps the dependency out.
+//
+// "kyc" and "proofs" are private and only ever readable through a signed URL;
+// "avatars" is public, because a profile picture is shown to anyone browsing
+// the roster and a URL that expires would break the moment it was cached.
 //
 // The service-role key bypasses every row-level policy, so nothing in here
 // may ever be imported from a client component — server actions and route
 // handlers only.
-export type StorageBucket = "kyc" | "proofs";
+export type StorageBucket = "kyc" | "proofs" | "avatars";
 const BUCKET: StorageBucket = "kyc";
 
 function config() {
@@ -45,6 +49,48 @@ export async function uploadPrivateFile(path: string, file: File, bucket: Storag
 
   if (!res.ok) throw new Error(`Upload failed (${res.status}).`);
   return path;
+}
+
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Stores a profile picture and hands back the URL it is served from.
+ *
+ * Pictures used to be canvas-shrunk to a 192px square and kept as a data URL
+ * in the avatarUrl column, which put a hard ceiling on quality: the roster
+ * card draws the picture nearly full height, and a 192px thumbnail stretched
+ * that far looks exactly as bad as it sounds. Real files go to the bucket at
+ * full display resolution instead, and the row keeps only the URL.
+ *
+ * The path is the account id, so re-uploading replaces the old picture rather
+ * than leaving it orphaned in the bucket. Callers get a cache-busting query
+ * on the URL for that reason.
+ */
+export async function uploadPublicImage(
+  path: string,
+  data: ArrayBuffer,
+  contentType: string,
+  bucket: StorageBucket = "avatars",
+): Promise<string> {
+  const { base, key } = config();
+
+  if (!IMAGE_TYPES.has(contentType)) throw new Error("Only JPG, PNG or WEBP images are accepted.");
+  if (data.byteLength > MAX_IMAGE_BYTES) throw new Error("That image is larger than 4 MB.");
+
+  const res = await fetch(`${base}/object/${bucket}/${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=31536000",
+      "x-upsert": "true",
+    },
+    body: data,
+  });
+
+  if (!res.ok) throw new Error(`Upload failed (${res.status}).`);
+  return `${base}/object/public/${bucket}/${path}`;
 }
 
 /** Short-lived read URL. Defaults to a minute — long enough to render, too short to share. */

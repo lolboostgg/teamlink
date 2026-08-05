@@ -53,6 +53,9 @@ export default async function TeammateOnboardingPage({
     <TeammateSetupWizard
       initial={{
         avatarUrl: teammate.avatarUrl ?? "",
+        avatarFocusX: teammate.avatarFocusX,
+        avatarFocusY: teammate.avatarFocusY,
+        avatarZoom: teammate.avatarZoom,
         tagline: teammate.tagline ?? "",
         timezone: teammate.timezone ?? "",
         languages: ((teammate.languages as LanguageCode[] | null) ?? []),

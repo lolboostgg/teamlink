@@ -54,7 +54,7 @@ export function SessionScreen({ orderId }: Props) {
   const { showToast } = useToast();
   const { order, now, sessionElapsedSeconds, requestCancelSession } = useDispatchOrder(orderId);
   const completionConversationKey = order?.selectedTeammateId
-    ? conversationKey(order.selectedTeammateId, order.customerLabel)
+    ? conversationKey(order.id, order.selectedTeammateId)
     : undefined;
   const { messages: completionMessages } = useConversationMessages(completionConversationKey);
   const favoriteIds = useFavoriteIds();
@@ -683,7 +683,7 @@ export function SessionScreen({ orderId }: Props) {
               </button>
             </div>
             <SessionChat
-              conversationKey={conversationKey(teammate.id, order.customerLabel)}
+              conversationKey={conversationKey(order.id, teammate.id)}
               teammateName={teammate.name}
               customerName={order.customerLabel}
               vibe={order.vibe}

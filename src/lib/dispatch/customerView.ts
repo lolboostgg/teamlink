@@ -37,6 +37,7 @@ type Row = {
   requestedTeammateId: string | null;
   status: string;
   dispatchDeadline: Date;
+  dispatchedAt: Date | null;
   selectionDeadline: Date | null;
   assignedAt: Date | null;
   rerollDeadline: Date | null;
@@ -111,6 +112,7 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     selectedTeammateId: primary?.teammateId ?? null,
     selectedTeammateIds: selected.map((c) => c.teammateId),
     dispatchDeadline: row.dispatchDeadline.getTime(),
+    dispatchedAt: row.dispatchedAt?.getTime() ?? null,
     selectionDeadline: row.selectionDeadline?.getTime() ?? null,
     assignedAt: row.assignedAt?.getTime() ?? null,
     rerollDeadline: row.rerollDeadline?.getTime() ?? null,

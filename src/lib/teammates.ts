@@ -6,6 +6,11 @@ export interface Teammate {
   name: string;
   avatarInitials: string;
   avatarUrl?: string | null;
+  // How the picture is framed — see lib/avatarFrame.ts. Absent on the seed
+  // roster below, which falls back to the centred default.
+  avatarFocusX?: number | null;
+  avatarFocusY?: number | null;
+  avatarZoom?: number | null;
   tagline: string;
   languages: LanguageCode[];
   timezone: string;

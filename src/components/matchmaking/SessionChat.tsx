@@ -97,15 +97,20 @@ export function SessionChat({
   // Seeds the teammate's opening line into the real store once per
   // conversation (not on every mount) so it's part of the same persisted
   // thread the dashboard chat reads, instead of purely decorative.
+  //
+  // Only from the teammate's own screen: the server stamps every message
+  // with the side the sender is actually on this order, so seeding it from
+  // the customer's browser would file the teammate's greeting under the
+  // customer's name.
   useEffect(() => {
-    if (seededRef.current || messages.length > 0) return;
+    if (viewer !== "teammate" || seededRef.current || messages.length > 0) return;
     seededRef.current = true;
     sendChatMessage(conversationKey, "teammate", `Hi! This is ${teammateName} — ready when you are.`);
     // BroadcastChannel never delivers a message back to the tab that sent
     // it, so this tab's own subscription won't fire on its own write —
     // refresh() closes that gap for the sender specifically.
     refresh();
-  }, [conversationKey, teammateName, messages.length, refresh]);
+  }, [conversationKey, teammateName, messages.length, refresh, viewer]);
 
   const systemLines: SystemLine[] = [];
   if (vibe) systemLines.push({ id: "sys-vibe", text: `Vibe set: ${vibe.charAt(0).toUpperCase()}${vibe.slice(1)}` });

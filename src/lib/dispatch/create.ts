@@ -106,6 +106,9 @@ async function dispatchOrder(orderId: string) {
       data: {
         status: invitees.length > 0 ? "CANDIDATES_READY" : "NO_MATCH",
         dispatchDeadline: deadline,
+        // The search clock starts here — at the payment, not at the top of
+        // checkout where the order row was written.
+        dispatchedAt: now,
         candidates: {
           create: invitees.map((teammate) => ({
             teammateId: teammate.id,
@@ -135,8 +138,19 @@ async function dispatchOrder(orderId: string) {
   return dispatched;
 }
 
+/**
+ * How stale a teammate's last panel read may be and still count as online.
+ *
+ * The panel beats every 20s (lib/dispatch/useDispatchState.ts); this allows
+ * several missed beats, because a browser throttles timers in a background
+ * tab and a teammate waiting for work usually has the dashboard behind
+ * whatever they're doing meanwhile. Anyone who actually closed it drops out
+ * of the pool two minutes later.
+ */
+const HEARTBEAT_MAX_AGE_MS = 120_000;
+
 async function eligibleTeammates(gameSlug: string, clientUserId: string | null) {
-  const heartbeatCutoff = new Date(Date.now() - 45_000);
+  const heartbeatCutoff = new Date(Date.now() - HEARTBEAT_MAX_AGE_MS);
   const available = await prisma.teammate.findMany({
     where: { available: true, lastSeenAt: { gte: heartbeatCutoff } },
   });

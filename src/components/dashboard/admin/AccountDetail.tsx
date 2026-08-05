@@ -44,6 +44,9 @@ export interface TeammateSummary {
   tagline: string;
   timezone: string;
   avatarUrl: string;
+  avatarFocusX: number;
+  avatarFocusY: number;
+  avatarZoom: number;
   rating: number;
   sessionsCount: number;
   available: boolean;
@@ -250,6 +253,9 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
                 tagline: teammate.tagline,
                 timezone: teammate.timezone,
                 avatarUrl: teammate.avatarUrl,
+                avatarFocusX: teammate.avatarFocusX,
+                avatarFocusY: teammate.avatarFocusY,
+                avatarZoom: teammate.avatarZoom,
                 languages: teammate.languages,
                 gameSlugs: teammate.gameSlugs,
                 gameProfiles: teammate.gameProfiles,

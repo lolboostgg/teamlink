@@ -1,3 +1,4 @@
+import { avatarFrameStyle } from "@/lib/avatarFrame";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
@@ -40,7 +41,7 @@ export function TeammateCard({ teammate, gameSlug, isCenter, isFirstAccepted, is
 
       <span className="pick-card__art" aria-hidden="true">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={teammate.avatarUrl || "/avatars/default.webp"} alt="" />
+        <img src={teammate.avatarUrl || "/avatars/default.webp"} alt="" style={avatarFrameStyle(teammate)} />
       </span>
 
       <span className="pick-card__rating">

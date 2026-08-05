@@ -264,6 +264,14 @@ model Teammate {
   lolChampions   Json?
   lolLanes       Json?
   avatarUrl      String?  @db.Text
+  // How the uploaded picture sits inside whatever frame it is drawn in — the
+  // focal point as a percentage of the image, plus a zoom in percent. Set in
+  // the profile editor by dragging the picture around, the way every social
+  // network lets you place your own photo, and applied as object-position /
+  // scale wherever an avatar is rendered.
+  avatarFocusX   Int      @default(50)
+  avatarFocusY   Int      @default(50)
+  avatarZoom     Int      @default(100)
   available      Boolean  @default(true)
   availableSince DateTime?
   lastSeenAt     DateTime?
@@ -458,6 +466,10 @@ model Order {
   requestedTeammateId String?
   status              OrderStatus @default(SEARCHING)
   dispatchDeadline    DateTime
+  // When the order was actually fanned out to teammates — i.e. when the
+  // payment cleared. The row itself is written at the top of checkout, so
+  // createdAt is not when the search started.
+  dispatchedAt        DateTime?
   selectionDeadline   DateTime?
   assignedAt          DateTime?
   rerollDeadline      DateTime?

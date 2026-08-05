@@ -7,46 +7,34 @@ import { conversationKey } from "@/lib/matchmaking/chatStore";
 import { DashboardChat } from "@/components/dashboard/chat/DashboardChat";
 import type { ChatConversation } from "@/lib/dashboard/chatData";
 
-// One conversation per real matched teammate (any order with a
-// selectedTeammateId), most recently matched first — not a static mock
-// list. Messages themselves are real too now (see lib/matchmaking/
-// chatStore.ts): the same conversation the in-session chat writes to.
+// One conversation per booked session — every order that reached a teammate,
+// newest first, and one thread per teammate on a multi-teammate order. Two
+// bookings with the same teammate stay two separate threads: a session ends,
+// and the next one starts from an empty chat. Messages themselves are real
+// (see lib/matchmaking/chatStore.ts): the same conversation the in-session
+// chat writes to.
 export function ClientChatContent() {
   const orders = useAllOrders();
 
-  const conversations: ChatConversation[] = useMemo(() => {
-    const byTeammate = new Map<string, { orderNo: number; gameName: string; createdAt: number; customerLabel: string; status: "active" | "completed"; lockedAt: number | null }>();
-    orders.forEach((order) => {
-      if (!order.selectedTeammateId) return;
-      const existing = byTeammate.get(order.selectedTeammateId);
-      if (!existing || order.createdAt > existing.createdAt) {
-        byTeammate.set(order.selectedTeammateId, {
-          gameName: order.gameName,
-          orderNo: order.orderNo,
-          createdAt: order.createdAt,
-          customerLabel: order.customerLabel,
-          status: order.status === "completed" ? "completed" : "active",
-          lockedAt: order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
-        });
-      }
-    });
-
-    return Array.from(byTeammate.entries())
-      .sort((a, b) => b[1].createdAt - a[1].createdAt)
-      .map(([teammateId, info]) => {
-        const name = getTeammateById(teammateId)?.name ?? "Teammate";
-        return {
-          id: teammateId,
-          withName: name,
-          withAvatarUrl: getTeammateById(teammateId)?.avatarUrl ?? null,
-          gameName: info.gameName,
-          conversationKey: conversationKey(teammateId, info.customerLabel),
-          orderNo: info.orderNo,
-          status: info.status,
-          lockedAt: info.lockedAt,
-        };
-      });
-  }, [orders]);
+  const conversations: ChatConversation[] = useMemo(
+    () =>
+      [...orders]
+        .sort((a, b) => b.createdAt - a.createdAt)
+        .flatMap((order) =>
+          order.selectedTeammateIds.map((teammateId) => ({
+            id: `${order.id}-${teammateId}`,
+            withName: getTeammateById(teammateId)?.name ?? "Teammate",
+            withAvatarUrl: getTeammateById(teammateId)?.avatarUrl ?? null,
+            gameName: order.gameName,
+            conversationKey: conversationKey(order.id, teammateId),
+            orderNo: order.orderNo,
+            status: (order.status === "completed" ? "completed" : "active") as "active" | "completed",
+            lockedAt:
+              order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
+          })),
+        ),
+    [orders],
+  );
 
   if (conversations.length === 0) {
     return (

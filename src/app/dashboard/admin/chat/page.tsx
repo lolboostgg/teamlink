@@ -15,7 +15,9 @@ export default async function AdminChatPage({ searchParams }: { searchParams: Pr
   const byKey = new Map<string, Omit<AdminConversation, "messages">>();
   for (const order of orders) {
     for (const candidate of order.candidates) {
-      const key = `${candidate.teammateId}::${order.customerLabel}`;
+      // One thread per order and teammate — same key the two sides write to
+      // (see lib/matchmaking/chatStore.ts).
+      const key = `${order.id}::${candidate.teammateId}`;
       if (!byKey.has(key)) byKey.set(key, {
         key,
         orderNo: order.orderNo,

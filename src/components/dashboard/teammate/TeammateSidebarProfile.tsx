@@ -9,6 +9,9 @@ import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 export type TeammateSidebarData = {
   name: string;
   avatarUrl: string | null;
+  avatarFocusX: number;
+  avatarFocusY: number;
+  avatarZoom: number;
   rating: number;
   sessionsCount: number;
   available: boolean;
@@ -36,7 +39,7 @@ export function TeammateSidebarProfile({ teammate }: { teammate: TeammateSidebar
     <section className={`teammate-sidebar-profile${online ? " is-online" : ""}`} aria-label="Teammate status">
       <Link href="/dashboard/teammate/profile" className="teammate-sidebar-profile__identity" title={teammate.name}>
         <span className="teammate-sidebar-profile__avatar">
-          <SafeAvatarImage src={teammate.avatarUrl} />
+          <SafeAvatarImage src={teammate.avatarUrl} frame={teammate} />
           <span className="teammate-sidebar-profile__presence" aria-hidden="true" />
         </span>
         <span className="teammate-sidebar-profile__name">{teammate.name}</span>

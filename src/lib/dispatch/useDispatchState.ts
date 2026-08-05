@@ -15,6 +15,13 @@ const EMPTY: DispatchStateView & { maxCandidates: number } = {
 };
 
 /**
+ * How often the open panel tells the server it's still there. Comfortably
+ * inside the freshness window dispatch requires (lib/dispatch/create.ts), with
+ * room for a background tab whose timers the browser has throttled.
+ */
+const HEARTBEAT_MS = 20_000;
+
+/**
  * Polls the server for the authoritative dispatch phase. Two seconds while
  * idle, half a second while a countdown is on screen — Supabase Realtime
  * would replace this, but that needs a public anon key and RLS policies the
@@ -45,6 +52,21 @@ export function useDispatchState(enabled = true) {
     state.phase === "DISPATCH_INCOMING" || state.phase === "WAITING_FOR_CUSTOMER_SELECTION";
 
   useLiveSync("dispatch", load, urgent ? 500 : 2000, { enabled });
+
+  // The panel heartbeat, deliberately not part of the poll above.
+  //
+  // Reading this endpoint is what marks the teammate as still at their desk
+  // (see app/api/dispatch/state/route.ts), and dispatch only invites teammates
+  // whose last read is recent. But useLiveSync drops to one poll a minute
+  // while the event stream is up, and usePoll stops entirely in a background
+  // tab — so a teammate sitting in their dashboard, online toggle on, went
+  // stale and orders passed them by with "no one was available". A plain
+  // interval keeps the beat going in both cases.
+  useEffect(() => {
+    if (!enabled) return;
+    const beat = setInterval(() => void load(), HEARTBEAT_MS);
+    return () => clearInterval(beat);
+  }, [enabled, load]);
 
   // Local interpolation between polls.
   const [now, setNow] = useState(() => Date.now());

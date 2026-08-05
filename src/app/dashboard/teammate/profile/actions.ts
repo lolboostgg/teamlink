@@ -28,6 +28,9 @@ export async function updateOwnProfile(input: TeammateProfileClientInput) {
         tagline: clean.tagline || null,
         timezone: clean.timezone || null,
         avatarUrl: clean.avatarUrl || null,
+        avatarFocusX: clean.avatarFocusX,
+        avatarFocusY: clean.avatarFocusY,
+        avatarZoom: clean.avatarZoom,
         languages: clean.languages,
         gameSlugs: clean.gameSlugs,
         // See the note in the admin action — Prisma's Json input type needs
