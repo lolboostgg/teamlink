@@ -12174,6 +12174,10 @@ a.notification-panel__item:hover {
    list. */
 .ingame-step__identity { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
 
+/* The grid's own gap already spaces these rows, so their default bottom
+   margin only pushed the Riot result away from the field it belongs to. */
+.ingame-step__identity .form-row { margin-bottom: 0; }
+
 @media (max-width: 480px) {
   .ingame-step__identity { grid-template-columns: 1fr; }
 }

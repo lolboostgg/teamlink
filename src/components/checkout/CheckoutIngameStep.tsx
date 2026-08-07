@@ -56,7 +56,7 @@ function RiotResultCard({
 
   const message =
     result.status === "wrong_server"
-      ? `This order is for ${region}, but this Riot ID is on ${result.actualRegionLabel} — contact support to change the order server.`
+      ? `This Riot ID is on ${result.actualRegionLabel}, not ${region} — pick ${result.actualRegionLabel} as your server above.`
       : "No Riot ID with that name and tag — check the spelling, e.g. Faker#1234.";
 
   return (
@@ -482,7 +482,7 @@ export function CheckoutIngameStep({
       return;
     }
     if (riotResult?.status === "wrong_server") {
-      setError("This Riot ID is on a different server — contact support to change the order server.");
+      setError("This Riot ID is on a different server — pick the correct one above.");
       return;
     }
 
@@ -522,6 +522,11 @@ export function CheckoutIngameStep({
         : riotResult
           ? "result"
           : null;
+
+  // A confirmed account settles the rank — including Unranked, which is a
+  // real answer rather than a missing one — so asking for it again would
+  // only invite a contradiction.
+  const rankFromRiot = riotResult?.status === "found";
 
   // Solo/Duo is what the lookup asks Riot for, so say so rather than
   // leaving an unqualified rank that could be read as flex.
@@ -615,7 +620,7 @@ export function CheckoutIngameStep({
             <RiotResultCard result={riotResult} region={region} rankLabel={riotRankLabel} />
           )}
 
-          {rankOptions.length > 0 && (
+          {rankOptions.length > 0 && !rankFromRiot && (
             <div className="form-row form-row--section">
               <label>Current rank</label>
               <RankSelect
