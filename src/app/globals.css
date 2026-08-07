@@ -5475,8 +5475,23 @@ ul {
 }
 
 .trust-points--compact {
+  position: relative;
   gap: 12px;
-  padding: 14px 16px;
+  padding: 16px 16px 14px;
+  overflow: hidden;
+}
+
+/* Thin top accent tying it to the option list/sidebar above instead of
+   reading as an unrelated, separately-styled card at the bottom. */
+.trust-points--compact::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--cat-color, var(--accent));
+  opacity: 0.6;
 }
 
 .trust-points__row {
@@ -5501,6 +5516,24 @@ ul {
   font-size: 11px;
 }
 
+/* Each point gets its own color instead of the same uniform green three
+   times in a row — flattest-reading part of the sidebar next to the
+   punchier list/summary above it. */
+.trust-points--compact .trust-points__row-item:nth-child(1) .trust-points__icon {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+.trust-points--compact .trust-points__row-item:nth-child(2) .trust-points__icon {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.trust-points--compact .trust-points__row-item:nth-child(3) .trust-points__icon {
+  background: color-mix(in srgb, var(--hue-gold) 16%, transparent);
+  color: var(--hue-gold);
+}
+
 .trust-points__row-label {
   font-size: 10.5px;
   font-weight: 700;
@@ -5513,8 +5546,18 @@ ul {
 }
 
 .trust-points--compact .trust-points__payment-icons {
-  font-size: 18px;
-  gap: 10px;
+  gap: 8px;
+}
+
+.trust-points--compact .trust-points__payment-icons i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
 }
 
 .trust-points__payments {
