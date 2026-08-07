@@ -1042,18 +1042,18 @@ ul {
    .games-full-grid, a CSS grid where those selectors would otherwise land
    on just the top-left/bottom-right cards and throw the grid off-balance. */
 .hero-carousel__track > .hero-card {
-  width: 300px;
+  width: 210px;
   z-index: 1;
-  margin-left: -34px;
+  margin-left: -24px;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease, z-index 0s;
 }
 
 .hero-carousel__track > .hero-card:first-child {
-  margin-left: 40px;
+  margin-left: 64px;
 }
 
 .hero-carousel__track > .hero-card:last-child {
-  margin-right: 40px;
+  margin-right: 64px;
 }
 
 .hero-carousel__track > .hero-card:nth-child(odd) {
