@@ -15,14 +15,7 @@ export function AvatarIcon({ avatarUrl, frame }: Props) {
   return (
     <span className="avatar-icon">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={safeSrc || "/avatars/default.webp"}
-        alt=""
-        style={frame ? avatarFrameStyle(frame) : undefined}
-        onError={(event) => {
-          if (!event.currentTarget.src.endsWith("/avatars/default.webp")) event.currentTarget.src = "/avatars/default.webp";
-        }}
-      />
+      <img src={safeSrc || "/avatars/default.webp"} alt="" style={frame ? avatarFrameStyle(frame) : undefined} />
     </span>
   );
 }

@@ -27,15 +27,16 @@ const CATEGORY_ICONS: Record<string, string> = {
 // Ranked 5s allows up to 4) are a future admin-dashboard setting, not
 // modeled yet.
 const MAX_TEAMMATES = 4;
-const GROUP_SIZES = Array.from({ length: MAX_TEAMMATES }, (_, i) => i + 1);
 
 // Which specific teammate you get is decided by the live dispatch/pick flow
 // after checkout (see MatchmakingScreen), not up front — this widget only
 // books the game, mode and group size.
 export function BookingWidget({ game }: Props) {
   const router = useRouter();
+  const [activeCategory, setActiveCategory] = useState(BOOKING_CATEGORIES[0].category);
   const [selected, setSelected] = useState<BookingOption>(BOOKING_CATEGORIES[0].options[0]);
   const [groupSize, setGroupSize] = useState(1);
+  const visibleCategory = BOOKING_CATEGORIES.find((cat) => cat.category === activeCategory) ?? BOOKING_CATEGORIES[0];
   const [pulsing, setPulsing] = useState(false);
   const [ingameOpen, setIngameOpen] = useState(false);
   const { status } = useSession();
@@ -84,55 +85,52 @@ export function BookingWidget({ game }: Props) {
           </span>
         </Reveal>
 
-        {BOOKING_CATEGORIES.map((cat, ci) => (
-          <Reveal key={cat.category} delay={ci * 70}>
-            <div className="booking-category">
-              <div className="booking-category__title">{cat.category}</div>
-              {cat.options.map((option) => (
-                <button
-                  key={option.name}
-                  type="button"
-                  className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
-                  onClick={() => setSelected(option)}
-                >
-                  <span className="booking-option__icon">
-                    <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
-                  </span>
-                  <span className="booking-option__main">
-                    <span className="booking-option__name">
-                      {option.name}
-                      <InfoTooltip text={option.description} />
-                    </span>
-                    <span className="booking-option__desc">{option.description}</span>
-                  </span>
-                  <span className="booking-option__price">
-                    <span className="booking-option__price-value">
-                      <PriceTag amountEUR={option.price} />
-                      <span className="booking-option__unit">{option.unit}</span>
-                    </span>
-                    <span className="booking-option__eta">{option.eta}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </Reveal>
-        ))}
+        <Reveal delay={20}>
+          <div className="booking-tabs" role="tablist">
+            {BOOKING_CATEGORIES.map((cat) => (
+              <button
+                key={cat.category}
+                type="button"
+                role="tab"
+                aria-selected={activeCategory === cat.category}
+                className={`booking-tabs__tab${activeCategory === cat.category ? " is-active" : ""}`}
+                onClick={() => setActiveCategory(cat.category)}
+              >
+                <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
+                {cat.category}
+              </button>
+            ))}
+          </div>
+        </Reveal>
 
-        <Reveal delay={90}>
+        <Reveal key={visibleCategory.category} delay={40}>
           <div className="booking-category">
-            <div className="booking-category__title">How many teammates</div>
-            <div className="booking-group-size">
-              {GROUP_SIZES.map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  className={`booking-group-size__pill${n === groupSize ? " is-selected" : ""}`}
-                  onClick={() => setGroupSize(n)}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
+            {visibleCategory.options.map((option) => (
+              <button
+                key={option.name}
+                type="button"
+                className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
+                onClick={() => setSelected(option)}
+              >
+                <span className="booking-option__icon">
+                  <i className={CATEGORY_ICONS[visibleCategory.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
+                </span>
+                <span className="booking-option__main">
+                  <span className="booking-option__name">
+                    {option.name}
+                    <InfoTooltip text={option.description} />
+                  </span>
+                  <span className="booking-option__desc">{option.description}</span>
+                </span>
+                <span className="booking-option__price">
+                  <span className="booking-option__price-value">
+                    <PriceTag amountEUR={option.price} />
+                    <span className="booking-option__unit">{option.unit}</span>
+                  </span>
+                  <span className="booking-option__eta">{option.eta}</span>
+                </span>
+              </button>
+            ))}
           </div>
         </Reveal>
       </div>
@@ -151,7 +149,25 @@ export function BookingWidget({ game }: Props) {
           </div>
           <div className="booking-sidebar__row booking-sidebar__row--last">
             <span>Teammates</span>
-            <span>{groupSize}</span>
+            <span className="booking-stepper">
+              <button
+                type="button"
+                onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
+                disabled={groupSize <= 1}
+                aria-label="Fewer teammates"
+              >
+                <i className="fa-solid fa-minus" aria-hidden="true" />
+              </button>
+              <span className="booking-stepper__value">{groupSize}</span>
+              <button
+                type="button"
+                onClick={() => setGroupSize((n) => Math.min(MAX_TEAMMATES, n + 1))}
+                disabled={groupSize >= MAX_TEAMMATES}
+                aria-label="More teammates"
+              >
+                <i className="fa-solid fa-plus" aria-hidden="true" />
+              </button>
+            </span>
           </div>
 
           <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>

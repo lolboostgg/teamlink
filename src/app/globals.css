@@ -67,6 +67,29 @@
 
 html {
   color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(132, 139, 166, 0.38) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(132, 139, 166, 0.34);
+  border: 2px solid var(--bg);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(132, 139, 166, 0.52);
+  background-clip: padding-box;
 }
 
 #how-it-works,
@@ -1834,33 +1857,48 @@ ul {
   margin-bottom: 12px;
 }
 
-.booking-group-size {
+/* One tab per category instead of every category stacked and fully
+   expanded — the option list below only ever shows one category's rows,
+   so picking a mode takes one tap instead of a long scroll. */
+.booking-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 20px;
 }
 
-.booking-group-size__pill {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
+.booking-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-elevated);
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
-.booking-group-size__pill:hover {
+.booking-tabs__tab i {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.booking-tabs__tab:hover {
   border-color: var(--border-strong);
   color: var(--text);
 }
 
-.booking-group-size__pill.is-selected {
+.booking-tabs__tab.is-active {
   border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.booking-tabs__tab.is-active i {
+  color: var(--accent);
 }
 
 /* Compact rows, not tiles — a full tile grid per category ran the page
@@ -2078,13 +2116,33 @@ ul {
 }
 
 .booking-stepper button {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: 10px;
   display: grid;
   place-items: center;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.booking-stepper button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.booking-stepper button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.booking-stepper__value {
+  min-width: 14px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .booking-sidebar__total {
@@ -8378,18 +8436,21 @@ ul {
 .profile-account-trigger__meta small { margin-top: 3px; color: var(--text-faint); font-size: 10px; }
 .profile-account-trigger__chevron { color: var(--text-faint); font-size: 9px; transition: transform 0.15s ease; }
 .profile-account-trigger[aria-expanded="true"] .profile-account-trigger__chevron { transform: rotate(180deg); }
-.account-dropdown { width: 270px; padding: 8px; }
+.account-dropdown { width: 300px; padding: 10px; }
 
 .dropdown-switcher__account {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px 10px;
-  margin-bottom: 4px;
+  gap: 12px;
+  padding: 8px 10px 14px;
+  margin-bottom: 6px;
   border-bottom: 1px solid var(--border);
 }
 
-.dropdown-switcher__account-avatar { width: 40px; height: 40px; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--border); border-radius: 11px; }
+.dropdown-switcher__account-avatar { width: 44px; height: 44px; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; }
+.account-dropdown .dropdown-switcher__item { padding: 10px 12px; font-size: 13.5px; }
+.account-dropdown .dropdown-switcher__item i { width: 16px; font-size: 13px; }
+.account-dropdown .account-dropdown__section-label { padding: 12px 12px 6px; }
 .dropdown-switcher__account-copy { min-width: 0; flex: 1; }
 .dropdown-switcher__account-name-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
 
@@ -8503,6 +8564,13 @@ ul {
   max-height: none;
   overflow: visible;
   padding: 0;
+}
+
+/* The account menu's content is a short, fixed list — it should never need
+   its own scrollbar, same as the settings panel next to it. */
+.dropdown-switcher__menu--account {
+  max-height: none;
+  overflow: visible;
 }
 
 .dropdown-switcher__item {
