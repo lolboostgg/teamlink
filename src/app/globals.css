@@ -7779,27 +7779,28 @@ ul {
   display: flex;
   align-items: center;
   gap: 10px;
-  /* --dash-surface-2 is a dashboard token; against this screen's much
-     darker ground it left the bubble all but invisible. Lifted and tinted
-     so it reads as a message rather than a patch of background. */
-  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border: 1px solid var(--border);
   border-radius: 16px;
   border-bottom-left-radius: 4px;
-  background: color-mix(in srgb, var(--accent) 9%, rgba(255, 255, 255, 0.055));
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  background: var(--dash-surface-2);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2);
 }
 
+/* The tail is a rotated square rather than a clipped one: clip-path cut the
+   borders off with the corner, leaving an unoutlined wedge that read as a
+   stray shape instead of part of the bubble. */
 .session-complete__farewell::after {
   content: "";
   position: absolute;
-  left: 10px;
-  bottom: -7px;
-  width: 14px;
-  height: 14px;
-  background: color-mix(in srgb, var(--accent) 9%, rgba(255, 255, 255, 0.055));
-  border-right: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
-  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  left: 14px;
+  bottom: -6px;
+  width: 11px;
+  height: 11px;
+  background: var(--dash-surface-2);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-bottom-right-radius: 2px;
+  transform: rotate(45deg);
 }
 .session-complete__farewell-avatar .avatar-icon { width: 34px; height: 34px; }
 .session-complete__farewell > span:last-child { display: flex; flex-direction: column; gap: 2px; }
@@ -9434,10 +9435,16 @@ ul {
    ══════════════════════════════════════════════════════════════════ */
 /* Opaque workspace background — the starfield and ambient glow stay on the
    marketing side; behind data they only add noise. */
+/* The shell owns the viewport and only the content column scrolls, so the
+   sidebar and topbar simply cannot travel with the page. This replaces a
+   position:sticky sidebar that kept scrolling away — sticky depends on no
+   ancestor ever establishing a scroll container or containing block, which
+   is a fragile contract to hold across a whole layout. */
 .dashboard-shell {
   position: relative;
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: var(--dash-bg);
 }
 
@@ -9448,10 +9455,17 @@ ul {
   padding: 20px 12px;
   border-right: 1px solid var(--dash-line);
   background: var(--dash-surface);
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow-y: auto;
+  /* Full height of the shell, which is now the viewport — the brand and the
+     utility box stay put and only the nav list scrolls if it outgrows the
+     space between them. */
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-sidebar__brand,
+.dashboard-sidebar .teammate-sidebar-profile,
+.dashboard-sidebar__utility {
+  flex: 0 0 auto;
 }
 
 .dashboard-sidebar__brand {
@@ -9463,6 +9477,8 @@ ul {
   flex-direction: column;
   gap: 2px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .dashboard-sidebar__nav-link {
@@ -9539,6 +9555,9 @@ ul {
 .dashboard-shell__main {
   flex: 1;
   min-width: 0;
+  /* Without min-height:0 a flex child refuses to shrink below its content,
+     so the scroll would land on the page instead of the content column. */
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -9679,6 +9698,64 @@ ul {
 .dashboard-sidebar__utility a { min-height: 38px; display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: var(--dash-radius-sm); color: var(--text-faint); font-size: 12px; font-weight: 600; }
 .dashboard-sidebar__utility a:hover { background: rgba(255, 255, 255, .04); color: var(--text); }
 .dashboard-sidebar__utility i { width: 16px; text-align: center; }
+
+/* Support as its own small card rather than a third grey text link. */
+.sidebar-support {
+  margin-bottom: 8px;
+  padding: 11px 12px;
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.022);
+}
+
+.sidebar-support__status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #21d391;
+}
+
+.sidebar-support__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #21d391;
+  box-shadow: 0 0 0 3px rgba(33, 211, 145, 0.16);
+}
+
+.sidebar-support__copy {
+  margin: 7px 0 9px;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+/* Matched to the shape of `.dashboard-sidebar__utility a` above rather than
+   forced with !important — that rule is more specific than a lone class. */
+.dashboard-sidebar__utility a.sidebar-support__cta {
+  justify-content: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--dash-line-strong);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dashboard-sidebar__utility a.sidebar-support__cta:hover {
+  border-color: rgba(79, 112, 255, 0.5);
+  background: rgba(79, 112, 255, 0.1);
+  color: var(--text);
+}
+
+.dashboard-sidebar__utility a.sidebar-support__cta i {
+  width: auto;
+  font-size: 11px;
+}
 .dashboard-sidebar.is-collapsed { flex-basis: 72px; padding-inline: 10px; }
 .dashboard-sidebar.is-collapsed .dashboard-sidebar__brand { flex-direction: column; padding-inline: 0; }
 .dashboard-sidebar.is-collapsed .teammate-sidebar-profile { padding: 7px 4px; border-color: transparent; background: transparent; }
@@ -9859,6 +9936,9 @@ a.notification-panel__item:hover {
 }
 
 .dashboard-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   padding: 28px;
 }
 

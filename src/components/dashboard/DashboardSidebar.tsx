@@ -116,9 +116,34 @@ export function DashboardSidebar({
       </nav>
 
       <div className="dashboard-sidebar__utility">
-        {role === "teammate" && <Link href="/dashboard/teammate/profile" title={collapsed ? "My profile" : undefined}><i className="fa-solid fa-user" /><span>My profile</span></Link>}
-        {role === "admin" && <Link href="/dashboard/admin/profile" title={collapsed ? "My profile" : undefined}><i className="fa-solid fa-user" /><span>My profile</span></Link>}
-        <a href="mailto:support@teamlink.gg" title={collapsed ? "Help & support" : undefined}><i className="fa-regular fa-circle-question" /><span>Help & support</span></a>
+        {/* Support sat between two navigation links as a third piece of grey
+            text, so the one thing someone looks for when stuck read as the
+            least important item on the panel. */}
+        {!collapsed && (
+          <div className="sidebar-support">
+            <span className="sidebar-support__status">
+              <span className="sidebar-support__dot" aria-hidden="true" />
+              All systems operational
+            </span>
+            <p className="sidebar-support__copy">Stuck on something? We usually reply within an hour.</p>
+            <a href="mailto:support@teamlink.gg" className="sidebar-support__cta">
+              <i className="fa-regular fa-life-ring" aria-hidden="true" /> Contact support
+            </a>
+          </div>
+        )}
+        {collapsed && (
+          <a href="mailto:support@teamlink.gg" title="Contact support">
+            <i className="fa-regular fa-life-ring" />
+            <span>Contact support</span>
+          </a>
+        )}
+        <Link
+          href={role === "admin" ? "/dashboard/admin/profile" : "/dashboard/teammate/profile"}
+          title={collapsed ? "My profile" : undefined}
+        >
+          <i className="fa-solid fa-user" />
+          <span>My profile</span>
+        </Link>
         <Link href="/" transitionTypes={["dashboard-exit"]} title={collapsed ? "Back to site" : undefined}><i className="fa-solid fa-arrow-left" /><span>Back to site</span></Link>
       </div>
     </aside>
