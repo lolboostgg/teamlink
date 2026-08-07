@@ -16,6 +16,7 @@ import {
   recordGameAction,
   deleteGameAction,
   completeOrderAction,
+  respondToCancelAction,
 } from "@/app/dashboard/teammate/dispatchActions";
 import {
   SESSION_STATUS_LABELS,
@@ -167,6 +168,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   const completionPromptedFor = useRef<number | null>(null);
   const previousGamesBooked = useRef<number | null>(null);
   const [, startTransition] = useTransition();
+  const [cancelPending, setCancelPending] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/dispatch/order/${orderId}`, { cache: "no-store" });
@@ -255,13 +257,63 @@ export function OrderRoom({ orderId }: { orderId: string }) {
     );
   }
 
+  async function respondToCancel(approve: boolean) {
+    setCancelPending(true);
+    const res = await respondToCancelAction(orderId, approve);
+    setCancelPending(false);
+    if (!res.ok) {
+      showToast(res.error, "error");
+      return;
+    }
+    if (approve) {
+      showToast("Session cancelled.", "success");
+      router.replace("/dashboard/teammate");
+      return;
+    }
+    showToast("Cancellation declined — the session continues.", "info");
+    void load();
+  }
+
   const played = order.games.length;
   const booked = Math.max(1, order.gamesBooked);
   const isClosed = order.status === "COMPLETED";
   const status = (order.sessionStatus ?? "WAITING_FOR_INVITE") as SessionStatus;
 
   return (
-    <div className="order-room">
+    <>
+      {/* The customer's request used to land in the database and stop there:
+          nothing here surfaced it, so the order sat in CANCEL_PENDING and
+          they waited on a confirmation no one could give. Sits above the
+          room's grid, which has a fixed height and only two columns. */}
+      {order.status === "CANCEL_PENDING" && (
+        <div className="cancel-request">
+          <i className="fa-solid fa-circle-exclamation cancel-request__icon" aria-hidden="true" />
+          <div className="cancel-request__body">
+            <strong>{order.customerLabel} asked to cancel this session</strong>
+            <span>Approving ends the session and refunds them. Declining carries on where you left off.</span>
+          </div>
+          <div className="cancel-request__actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              disabled={cancelPending}
+              onClick={() => respondToCancel(false)}
+            >
+              Decline
+            </button>
+            <button
+              type="button"
+              className="btn btn--danger btn--sm"
+              disabled={cancelPending}
+              onClick={() => respondToCancel(true)}
+            >
+              {cancelPending ? "Saving…" : "Approve cancellation"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="order-room">
       <aside className="order-room__side">
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">
@@ -583,6 +635,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

@@ -4020,6 +4020,52 @@ ul {
 /* The customer's stated wishes, kept apart from the order's own facts —
    as one flat list they read as six equally weighted rows, half of them
    saying "No preference". */
+/* A customer's cancellation request, which previously had nowhere at all to
+   appear on the teammate's side. Spans the room's full width because it
+   blocks the session until it is answered. */
+.cancel-request {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--dash-line));
+  border-radius: var(--dash-radius-sm);
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+}
+
+.cancel-request__icon {
+  flex: 0 0 auto;
+  color: var(--danger);
+  font-size: 17px;
+}
+
+.cancel-request__body {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cancel-request__body strong {
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+.cancel-request__body span {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.cancel-request__actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .dispatch-prefs {
   margin-top: 14px;
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { publish } from "@/lib/events/bus";
 import {
   respondToDispatch,
   setSessionStatus,
@@ -92,6 +93,45 @@ export async function completeOrderAction(orderId: string, farewell?: string): P
   try {
     const teammate = await requireTeammate();
     await completeOrder(orderId, teammate.id, farewell);
+    revalidatePath("/dashboard/teammate");
+    return { ok: true };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/**
+ * Answers a customer's cancellation request. Until this existed the request
+ * only ever moved the order to CANCEL_PENDING, which nothing could move it
+ * back out of — the customer sat on "waiting for your teammate to confirm"
+ * indefinitely and the session was stuck with it.
+ */
+export async function respondToCancelAction(orderId: string, approve: boolean): Promise<Result> {
+  try {
+    const teammate = await requireTeammate();
+    // Which teammate is "on" an order lives on the candidate rows, not the
+    // order itself — see the note above the Order model.
+    const order = await prisma.order.findFirst({
+      where: {
+        id: orderId,
+        status: "CANCEL_PENDING",
+        candidates: { some: { teammateId: teammate.id, selected: true } },
+      },
+    });
+    if (!order) return { ok: false, error: "No open cancellation request on this order." };
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: approve
+        ? { status: "CANCELLED", cancelApprovedAt: new Date() }
+        : // sessionStatus was never touched by the request, so declining
+          // simply hands the session back at the stage it was already at.
+          { status: "IN_PROGRESS" },
+    });
+
+    if (order.clientUserId) {
+      await publish({ topic: "orders", key: orderId, userIds: [order.clientUserId] });
+    }
     revalidatePath("/dashboard/teammate");
     return { ok: true };
   } catch (err) {

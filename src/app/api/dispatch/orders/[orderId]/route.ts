@@ -54,9 +54,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
         break;
       }
       case "request-cancel": {
+        // sessionStatus is deliberately left alone: it used to be
+        // overwritten with CANCEL_REQUESTED, which threw away the stage the
+        // session was actually at, so a declined request had nothing to
+        // return to. CANCEL_PENDING on the order says everything needed.
         await prisma.order.update({
           where: { id: orderId },
-          data: { status: "CANCEL_PENDING", sessionStatus: "CANCEL_REQUESTED" },
+          data: { status: "CANCEL_PENDING" },
         });
         break;
       }
