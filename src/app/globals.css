@@ -3145,65 +3145,111 @@ ul {
   border-color: var(--danger);
 }
 
-/* Riot ID field + inline "Verify" button — trial Riot API integration
-   (see app/actions/riot.ts), so a customer's rank can be pulled in
-   automatically instead of only ever picked by hand. */
-.ingame-riot-verify-row {
-  display: flex;
-  gap: 8px;
-}
-
-.ingame-riot-verify-row input {
-  flex: 1;
-  min-width: 0;
-}
-
-.ingame-riot-verify-btn {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-muted);
-  font-size: 12.5px;
-  font-weight: 700;
-  white-space: nowrap;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.ingame-riot-verify-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--text);
-  background: var(--accent-soft);
-}
-
-.ingame-riot-verify-btn:disabled {
-  opacity: 0.7;
-  cursor: default;
-}
-
-.ingame-riot-verify-btn i {
-  font-size: 11px;
-  color: var(--accent);
-}
-
-.ingame-riot-note.is-verified {
-  color: var(--success);
-}
-
-.ingame-riot-note.is-verified i {
-  color: var(--success);
-}
-
+/* Riot ID auto-verify — trial Riot API integration (see app/actions/riot.ts).
+   No manual button: typing a full Name#TAG (debounced) triggers a lookup,
+   and the result renders as one of three cards below the field. */
 .ingame-riot-note.is-error {
   color: var(--danger);
 }
 
 .ingame-riot-note.is-error i {
   color: var(--danger);
+}
+
+.riot-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.riot-card--found {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+}
+
+.riot-card--warning {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.riot-card__avatar {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.riot-card__icon {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--danger);
+  font-size: 15px;
+}
+
+.riot-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.riot-card__label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.riot-card--found .riot-card__label {
+  color: var(--success);
+}
+
+.riot-card--warning .riot-card__label {
+  color: var(--danger);
+}
+
+.riot-card__name {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.riot-card__meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.riot-card__badge {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.riot-card__badge i {
+  font-size: 10px;
 }
 
 .form-row__error {

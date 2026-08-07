@@ -1,9 +1,9 @@
 "use server";
 
-import { riotConfigured, verifyLeagueAccount, RiotApiError, type RiotVerifiedIdentity } from "@/lib/riotApi";
+import { riotConfigured, verifyLeagueAccount, RiotApiError, type RiotLookupResult } from "@/lib/riotApi";
 
 export type VerifyRiotResult =
-  | { ok: true; identity: RiotVerifiedIdentity }
+  | { ok: true; result: RiotLookupResult }
   | { ok: false; error: string };
 
 /**
@@ -18,8 +18,8 @@ export async function verifyRiotAccount(ign: string, region: string): Promise<Ve
     return { ok: false, error: "Riot verification isn't set up yet — pick your rank manually below." };
   }
   try {
-    const identity = await verifyLeagueAccount(ign, region);
-    return { ok: true, identity };
+    const result = await verifyLeagueAccount(ign, region);
+    return { ok: true, result };
   } catch (err) {
     const message = err instanceof RiotApiError ? err.message : "Couldn't verify that account right now.";
     return { ok: false, error: message };

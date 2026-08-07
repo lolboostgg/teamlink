@@ -27,6 +27,10 @@ const PLATFORM_BY_REGION: Record<string, string> = {
   KR: "kr",
 };
 
+const REGION_BY_PLATFORM: Record<string, string> = Object.fromEntries(
+  Object.entries(PLATFORM_BY_REGION).map(([region, platform]) => [platform, region]),
+);
+
 const CONTINENT_BY_REGION: Record<string, string> = {
   EUW: "europe",
   EUNE: "europe",
@@ -39,6 +43,16 @@ const CONTINENT_BY_REGION: Record<string, string> = {
   OCE: "sea",
   JP: "asia",
   KR: "asia",
+};
+
+// Every platform reachable under a continent's routing value — used to
+// find which server a Riot ID actually plays on when it isn't the one the
+// order was booked for (see "wrong server" in verifyLeagueAccount below).
+const PLATFORMS_BY_CONTINENT: Record<string, string[]> = {
+  europe: ["euw1", "eun1", "tr1", "ru"],
+  americas: ["na1", "br1", "la1", "la2"],
+  asia: ["kr", "jp1"],
+  sea: ["oc1"],
 };
 
 // Riot's tier names are upper-case ("GOLD", "GRANDMASTER") — our own rank
@@ -63,12 +77,13 @@ export function riotConfigured(): boolean {
 
 export class RiotApiError extends Error {}
 
-async function riotFetch(url: string): Promise<unknown> {
+/** null on a 404 specifically — every other non-2xx throws. */
+async function riotFetch(url: string): Promise<unknown | null> {
   const apiKey = process.env.RIOT_API_KEY;
   if (!apiKey) throw new RiotApiError("Riot API isn't configured yet.");
 
   const res = await fetch(url, { headers: { "X-Riot-Token": apiKey }, cache: "no-store" });
-  if (res.status === 404) throw new RiotApiError("That Riot ID couldn't be found.");
+  if (res.status === 404) return null;
   if (res.status === 403) throw new RiotApiError("Riot API key is invalid or expired.");
   if (res.status === 429) throw new RiotApiError("Too many lookups right now — try again in a moment.");
   if (!res.ok) throw new RiotApiError(`Riot API error (${res.status}).`);
@@ -83,6 +98,8 @@ interface RiotAccount {
 
 interface RiotSummoner {
   id: string; // encrypted summoner id — what League-V4 keys entries on
+  profileIconId: number;
+  summonerLevel: number;
 }
 
 interface RiotLeagueEntry {
@@ -91,22 +108,56 @@ interface RiotLeagueEntry {
   rank: string; // "I" | "II" | "III" | "IV"
 }
 
-export interface RiotVerifiedIdentity {
+export interface RiotLookupFound {
+  status: "found";
   gameName: string;
   tagLine: string;
+  profileIconId: number;
+  summonerLevel: number;
+  regionLabel: string;
   rank: string | null;
   division: string | null;
 }
 
+export interface RiotLookupNotFound {
+  status: "not_found";
+}
+
+export interface RiotLookupWrongServer {
+  status: "wrong_server";
+  actualRegionLabel: string;
+}
+
+export type RiotLookupResult = RiotLookupFound | RiotLookupNotFound | RiotLookupWrongServer;
+
+async function fetchRankEntry(platform: string, summonerId: string): Promise<RiotLeagueEntry | undefined> {
+  const entries = (await riotFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`)) as
+    | RiotLeagueEntry[]
+    | null;
+  return entries?.find((entry) => entry.queueType === "RANKED_SOLO_5x5");
+}
+
+function toRankFields(entry: RiotLeagueEntry | undefined): { rank: string | null; division: string | null } {
+  const rankValue = entry ? (TIER_TO_RANK_VALUE[entry.tier] ?? null) : null;
+  // Master and above have no division — same rule as rankHasDivisions()
+  // in lib/gameRanks.ts.
+  const hasDivision = rankValue && !["master", "grandmaster", "challenger"].includes(rankValue);
+  return { rank: rankValue, division: hasDivision ? (entry!.rank ?? null) : null };
+}
+
 /**
- * Resolves a Riot ID + region to their Ranked Solo/Duo rank. Returns
- * rank: null (not division: null too) for an unranked account — that's a
- * real, valid result, not a failure.
+ * Resolves a Riot ID + the region the order was booked for. Three outcomes,
+ * not just success/failure:
+ * - found: plays on that exact region — rank comes along with it.
+ * - wrong_server: the Riot ID is real, just not on the booked region (a
+ *   teammate on the wrong server literally cannot add them) — points at
+ *   which region it actually is.
+ * - not_found: no such Riot ID at all (or a typo).
  */
-export async function verifyLeagueAccount(ign: string, region: string): Promise<RiotVerifiedIdentity> {
+export async function verifyLeagueAccount(ign: string, region: string): Promise<RiotLookupResult> {
   const [gameName, tagLine] = ign.split("#").map((part) => part.trim());
   if (!gameName || !tagLine) {
-    throw new RiotApiError("Enter your Riot ID as Name#TAG.");
+    throw new RiotApiError("Please enter the full Riot ID with #tag, e.g. Faker#1234.");
   }
 
   const continent = CONTINENT_BY_REGION[region];
@@ -115,26 +166,40 @@ export async function verifyLeagueAccount(ign: string, region: string): Promise<
 
   const account = (await riotFetch(
     `https://${continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`,
-  )) as RiotAccount;
+  )) as RiotAccount | null;
+  if (!account) return { status: "not_found" };
 
   const summoner = (await riotFetch(
     `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`,
-  )) as RiotSummoner;
+  )) as RiotSummoner | null;
 
-  const entries = (await riotFetch(
-    `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`,
-  )) as RiotLeagueEntry[];
+  if (summoner) {
+    const entry = await fetchRankEntry(platform, summoner.id);
+    const { rank, division } = toRankFields(entry);
+    return {
+      status: "found",
+      gameName: account.gameName,
+      tagLine: account.tagLine,
+      profileIconId: summoner.profileIconId,
+      summonerLevel: summoner.summonerLevel,
+      regionLabel: region,
+      rank,
+      division,
+    };
+  }
 
-  const solo = entries.find((entry) => entry.queueType === "RANKED_SOLO_5x5");
-  const rankValue = solo ? (TIER_TO_RANK_VALUE[solo.tier] ?? null) : null;
-  // Master and above have no division — same rule as rankHasDivisions()
-  // in lib/gameRanks.ts.
-  const hasDivision = rankValue && !["master", "grandmaster", "challenger"].includes(rankValue);
+  // Not on the booked platform — check the account's real one before
+  // giving up, so a customer who just picked the wrong region in the
+  // dropdown gets told exactly what's wrong instead of "not found".
+  const otherPlatforms = (PLATFORMS_BY_CONTINENT[continent] ?? []).filter((p) => p !== platform);
+  for (const otherPlatform of otherPlatforms) {
+    const otherSummoner = (await riotFetch(
+      `https://${otherPlatform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`,
+    )) as RiotSummoner | null;
+    if (otherSummoner) {
+      return { status: "wrong_server", actualRegionLabel: REGION_BY_PLATFORM[otherPlatform] ?? otherPlatform };
+    }
+  }
 
-  return {
-    gameName: account.gameName,
-    tagLine: account.tagLine,
-    rank: rankValue,
-    division: hasDivision ? (solo!.rank ?? null) : null,
-  };
+  return { status: "not_found" };
 }
