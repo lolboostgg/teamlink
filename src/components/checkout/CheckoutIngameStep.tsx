@@ -197,81 +197,85 @@ export function CheckoutIngameStep({
             </div>
           </div>
 
-          {rankOptions.length > 0 && (
-            <div className="form-row form-row--section">
-              <label>Current rank</label>
-              {/* A grid rather than a dropdown: eleven icon-led options fit
-                  on screen at once, and an overlay list would be clipped by
-                  this dialog's own scrolling. */}
-              <div className="ingame-ranks" role="group" aria-label="Current rank">
-                {rankOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`ingame-rank${rank === option.value ? " is-active" : ""}`}
-                    aria-pressed={rank === option.value}
-                    onClick={() => {
-                      setRank(option.value);
-                      if (!rankHasDivisions(option.value)) setDivision(null);
-                    }}
-                  >
-                    {option.icon && (
-                      <span className="ingame-rank__icon">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={option.icon} alt="" />
-                      </span>
-                    )}
-                    <span>{option.label}</span>
-                  </button>
-                ))}
-              </div>
-              {rankHasDivisions(rank) && (
-                <div className="ingame-divisions" role="group" aria-label="Division">
-                  {DIVISIONS.map((entry) => (
+          <div className="ingame-step__columns">
+            {rankOptions.length > 0 && (
+              <div className="form-row ingame-step__col-main">
+                <label>Current rank</label>
+                {/* A grid rather than a dropdown: eleven icon-led options fit
+                    on screen at once, and an overlay list would be clipped by
+                    this dialog's own scrolling. */}
+                <div className="ingame-ranks" role="group" aria-label="Current rank">
+                  {rankOptions.map((option) => (
                     <button
-                      key={entry}
+                      key={option.value}
                       type="button"
-                      className={`ingame-division${division === entry ? " is-active" : ""}`}
-                      onClick={() => setDivision(entry)}
+                      className={`ingame-rank${rank === option.value ? " is-active" : ""}`}
+                      aria-pressed={rank === option.value}
+                      onClick={() => {
+                        setRank(option.value);
+                        if (!rankHasDivisions(option.value)) setDivision(null);
+                      }}
                     >
-                      {entry}
+                      {option.icon && (
+                        <span className="ingame-rank__icon">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={option.icon} alt="" />
+                        </span>
+                      )}
+                      <span>{option.label}</span>
                     </button>
                   ))}
                 </div>
+                {rankHasDivisions(rank) && (
+                  <div className="ingame-divisions" role="group" aria-label="Division">
+                    {DIVISIONS.map((entry) => (
+                      <button
+                        key={entry}
+                        type="button"
+                        className={`ingame-division${division === entry ? " is-active" : ""}`}
+                        onClick={() => setDivision(entry)}
+                      >
+                        {entry}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="ingame-step__col-side">
+              {roleOptions && (
+                <div className="form-row">
+                  <label>Preferred {roleOptions.label.toLowerCase()} (optional)</label>
+                  <div className="chip-check-group ingame-step__lanes">
+                    {roleOptions.options.map((option) => (
+                      <label key={option.value} className={`chip-check${option.icon ? " chip-check--avatar" : ""}`}>
+                        <input
+                          type="checkbox"
+                          checked={roles.includes(option.value)}
+                          onChange={() => toggleRole(option.value)}
+                        />
+                        {option.icon ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={option.icon} alt="" className="chip-check__icon" />
+                        ) : option.glyph ? (
+                          <i className={`${option.glyph} chip-check__glyph`} aria-hidden="true" />
+                        ) : null}
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!canSave && (
+                <p className="ingame-step__guest">
+                  <i className="fa-regular fa-circle-user" aria-hidden="true" />
+                  Checking out as a guest &mdash; create an account afterwards to keep this for next time.
+                </p>
               )}
             </div>
-          )}
-
-          {roleOptions && (
-            <div className="form-row form-row--section">
-              <label>Preferred {roleOptions.label.toLowerCase()} (optional)</label>
-              <div className="chip-check-group">
-                {roleOptions.options.map((option) => (
-                  <label key={option.value} className={`chip-check${option.icon ? " chip-check--avatar" : ""}`}>
-                    <input
-                      type="checkbox"
-                      checked={roles.includes(option.value)}
-                      onChange={() => toggleRole(option.value)}
-                    />
-                    {option.icon ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={option.icon} alt="" className="chip-check__icon" />
-                    ) : option.glyph ? (
-                      <i className={`${option.glyph} chip-check__glyph`} aria-hidden="true" />
-                    ) : null}
-                    <span>{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!canSave && (
-            <p className="ingame-step__guest">
-              <i className="fa-regular fa-circle-user" aria-hidden="true" />
-              Checking out as a guest &mdash; create an account afterwards to keep this for next time.
-            </p>
-          )}
+          </div>
         </>
       )}
 

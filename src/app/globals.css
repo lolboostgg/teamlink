@@ -12050,13 +12050,40 @@ a.notification-panel__item:hover {
 .ingame-step__actions { display: flex; justify-content: flex-end; gap: 9px; }
 
 /* In-game info asked from the booking page, before checkout. */
-.modal-panel:has(.ingame-modal) { max-width: 520px; padding: 0; overflow: visible; }
+/* Wide instead of tall — rank grid and lanes used to stack full-width one
+   under the other, which is what made this need to scroll on desktop.
+   Side by side, the whole form fits without a scrollbar down to normal
+   laptop heights. */
+.modal-panel:has(.ingame-modal) { max-width: 760px; padding: 0; overflow: visible; }
 .ingame-modal {
-  max-height: min(760px, calc(100vh - 80px));
-  padding: 26px;
+  max-height: min(680px, calc(100vh - 80px));
+  padding: 28px 30px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
+}
+
+.ingame-step__columns {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 26px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.ingame-step__col-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ingame-step__lanes { gap: 6px; }
+
+@media (max-width: 640px) {
+  .ingame-step__columns {
+    grid-template-columns: 1fr;
+  }
 }
 /* The step brings its own card chrome for the checkout page; inside the
    modal the panel already provides it, and the step's own heading is the
