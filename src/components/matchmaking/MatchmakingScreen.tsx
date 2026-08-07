@@ -15,7 +15,7 @@ import { TeammateCard } from "@/components/matchmaking/TeammateCard";
 import { SearchingCard } from "@/components/matchmaking/SearchingCard";
 import { TeammateDetailsPanel } from "@/components/matchmaking/TeammateDetailsPanel";
 import { SessionScreen } from "@/components/matchmaking/SessionScreen";
-import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
+import { CONVERSATION_OPTIONS, PLAY_STYLE_OPTIONS } from "@/components/matchmaking/PreferencesModal";
 import { Modal } from "@/components/ui/Modal";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { avatarFrameStyle } from "@/lib/avatarFrame";
@@ -119,7 +119,6 @@ export function MatchmakingScreen({ orderId }: Props) {
     updatePreferences,
   } = useDispatchOrder(orderId);
 
-  const [prefsModalOpen, setPrefsModalOpen] = useState(false);
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [confirmTarget, setConfirmTarget] = useState<{ teammateId: string; action: PickAction } | null>(null);
   const [selectedAnimIds, setSelectedAnimIds] = useState<string[]>([]);
@@ -226,42 +225,66 @@ export function MatchmakingScreen({ orderId }: Props) {
               </div>
             </div>
 
-            <div className="matching-screen__prefs-rows">
-              <button type="button" className="matching-screen__prefs-row" onClick={() => setPrefsModalOpen(true)}>
-                <span>
+            {/* Set right here rather than behind a modal: while the search
+                runs there is nothing else to do, and every one of these was
+                two taps and a Confirm away for a single-word choice. */}
+            <div className="matching-screen__prefs">
+              <div className="matching-screen__pref-group">
+                <span className="matching-screen__pref-label">
                   <i className="fa-solid fa-comments" aria-hidden="true" /> Conversation
                 </span>
-                <span>
-                  {order.conversationPref ?? "Not set"} <i className="fa-solid fa-chevron-right" aria-hidden="true" />
-                </span>
-              </button>
-              <button type="button" className="matching-screen__prefs-row" onClick={() => setPrefsModalOpen(true)}>
-                <span>
+                <div className="matching-screen__pref-pills">
+                  {CONVERSATION_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`matching-screen__pref-pill${order.conversationPref === opt ? " is-selected" : ""}`}
+                      onClick={() => updatePreferences({ conversationPref: opt })}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="matching-screen__pref-group">
+                <span className="matching-screen__pref-label">
                   <i className="fa-solid fa-gamepad" aria-hidden="true" /> Play style
                 </span>
-                <span>
-                  {order.playStylePref ?? "Not set"} <i className="fa-solid fa-chevron-right" aria-hidden="true" />
-                </span>
-              </button>
-            </div>
+                <div className="matching-screen__pref-pills">
+                  {PLAY_STYLE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`matching-screen__pref-pill${order.playStylePref === opt ? " is-selected" : ""}`}
+                      onClick={() => updatePreferences({ playStylePref: opt })}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            <div className="matching-screen__vibe">
-              <span className="matching-screen__vibe-label">What&rsquo;s your vibe?</span>
-              <div className="matching-screen__vibe-options">
-                {VIBE_OPTIONS.map((v) => (
-                  <button
-                    key={v.value}
-                    type="button"
-                    className={`matching-screen__vibe-btn${order.vibe === v.value ? " is-selected" : ""}`}
-                    style={{ "--vibe-color": v.color } as CSSProperties}
-                    onClick={() => updatePreferences({ vibe: v.value })}
-                  >
-                    <span className="matching-screen__vibe-icon">
-                      <i className={v.icon} aria-hidden="true" />
-                    </span>
-                    {v.label}
-                  </button>
-                ))}
+              <div className="matching-screen__pref-group">
+                <span className="matching-screen__pref-label">
+                  <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" /> Vibe
+                </span>
+                <div className="matching-screen__vibe-options">
+                  {VIBE_OPTIONS.map((v) => (
+                    <button
+                      key={v.value}
+                      type="button"
+                      className={`matching-screen__vibe-btn${order.vibe === v.value ? " is-selected" : ""}`}
+                      style={{ "--vibe-color": v.color } as CSSProperties}
+                      onClick={() => updatePreferences({ vibe: v.value })}
+                    >
+                      <span className="matching-screen__vibe-icon">
+                        <i className={v.icon} aria-hidden="true" />
+                      </span>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -273,13 +296,6 @@ export function MatchmakingScreen({ orderId }: Props) {
               Cancel request
             </button>
 
-            <PreferencesModal
-              open={prefsModalOpen}
-              onClose={() => setPrefsModalOpen(false)}
-              conversationPref={order.conversationPref}
-              playStylePref={order.playStylePref}
-              onSave={updatePreferences}
-            />
             <CancelRequestModal
               open={cancelConfirmOpen}
               onClose={() => setCancelConfirmOpen(false)}

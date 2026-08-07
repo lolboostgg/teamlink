@@ -11,8 +11,8 @@ interface Props {
   onSave: (prefs: { conversationPref: string; playStylePref: string }) => void;
 }
 
-const CONVERSATION_OPTIONS = ["Quiet or no voice chat", "Talkative", "Gameplay-related", "No preference"];
-const PLAY_STYLE_OPTIONS = ["Give me ganks", "Support me", "For fun", "Serious", "No preference"];
+export const CONVERSATION_OPTIONS = ["Quiet or no voice chat", "Talkative", "Gameplay-related", "No preference"];
+export const PLAY_STYLE_OPTIONS = ["Give me ganks", "Support me", "For fun", "Serious", "No preference"];
 
 // Both groups as pills on one flat panel — the old version buried each
 // choice behind its own sub-screen, which meant two taps and a "Save" just
