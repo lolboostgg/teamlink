@@ -9,7 +9,7 @@ import { getTeammateById } from "@/lib/teammates";
 import { setFavorite, useFavoriteIds } from "@/lib/favorites";
 import { submitTeammateReview } from "@/app/actions/reviews";
 import { addGames, sendTip, loadTip } from "@/app/actions/sessionExtras";
-import { conversationKey, useConversationMessages } from "@/lib/matchmaking/chatStore";
+import { conversationKey, sendChatMessage, useConversationMessages } from "@/lib/matchmaking/chatStore";
 import { getLanguageMeta } from "@/lib/i18n";
 import { getRankMeta } from "@/lib/lolAssets";
 import { FlagIcon } from "@/components/ui/FlagIcon";
@@ -218,16 +218,23 @@ export function SessionScreen({ orderId }: Props) {
     showToast(`Added ${buyMoreQty} more game${buyMoreQty > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
   }
 
+  // Both of these only raised a toast at the customer and stopped there —
+  // nothing was sent and the teammate never learned anything had happened,
+  // while the toast claimed otherwise. They now post to the same thread the
+  // teammate is already reading.
+  function sendQuickMessage(text: string, toast: string) {
+    // Same key SessionChat renders below, so the message lands in the thread
+    // that is actually on screen rather than a parallel one.
+    sendChatMessage(conversationKey(order!.id, teammate!.id), "client", text);
+    showToast(toast, "info");
+  }
+
   function handlePoke() {
-    showToast(`You poked ${teammate!.name}.`, "info");
+    sendQuickMessage("👋 You there?", `Poked ${teammate!.name}.`);
   }
 
   function handleGG() {
-    showToast(`Sent "GG" to ${teammate!.name}.`, "info");
-  }
-
-  function handleStartVoice() {
-    showToast(`Voice invite sent to ${teammate!.name}.`, "info");
+    sendQuickMessage("GG!", `Sent "GG" to ${teammate!.name}.`);
   }
 
   if (order.status === "completed") {
@@ -703,15 +710,9 @@ export function SessionScreen({ orderId }: Props) {
                 </button>
               </div>
             </div>
-            <div className="session-screen__voice-bar">
-              <i className="fa-solid fa-headset" aria-hidden="true" />
-              <span>
-                <strong>Voice chat</strong> — talk instead of typing. {teammate.name} sees the moment you join.
-              </span>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={handleStartVoice}>
-                Start voice
-              </button>
-            </div>
+            {/* The voice bar is gone until there is voice behind it: "Start
+                voice" only raised a toast saying an invite had been sent,
+                and nothing was. */}
             <SessionChat
               conversationKey={conversationKey(order.id, teammate.id)}
               teammateName={teammate.name}
