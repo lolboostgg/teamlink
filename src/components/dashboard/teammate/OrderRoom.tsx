@@ -18,6 +18,7 @@ import {
   completeOrderAction,
   respondToCancelAction,
 } from "@/app/dashboard/teammate/dispatchActions";
+import { CancelRequestModal } from "@/components/dashboard/teammate/CancelRequestModal";
 import {
   SESSION_STATUS_LABELS,
   REPORTABLE_STATUSES,
@@ -286,31 +287,13 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           they waited on a confirmation no one could give. Sits above the
           room's grid, which has a fixed height and only two columns. */}
       {order.status === "CANCEL_PENDING" && (
-        <div className="cancel-request">
-          <i className="fa-solid fa-circle-exclamation cancel-request__icon" aria-hidden="true" />
-          <div className="cancel-request__body">
-            <strong>{order.customerLabel} asked to cancel this session</strong>
-            <span>Approving ends the session and refunds them. Declining carries on where you left off.</span>
-          </div>
-          <div className="cancel-request__actions">
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              disabled={cancelPending}
-              onClick={() => respondToCancel(false)}
-            >
-              Decline
-            </button>
-            <button
-              type="button"
-              className="btn btn--danger btn--sm"
-              disabled={cancelPending}
-              onClick={() => respondToCancel(true)}
-            >
-              {cancelPending ? "Saving…" : "Approve cancellation"}
-            </button>
-          </div>
-        </div>
+        <CancelRequestModal
+          customerName={order.customerLabel}
+          refundEUR={order.priceEUR}
+          pending={cancelPending}
+          onApprove={() => respondToCancel(true)}
+          onDecline={() => respondToCancel(false)}
+        />
       )}
 
       <div className="order-room">
