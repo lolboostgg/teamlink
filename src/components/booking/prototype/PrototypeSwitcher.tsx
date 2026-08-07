@@ -14,12 +14,13 @@ interface Props {
   paramName?: string;
 }
 
-// THROWAWAY — see .claude/skills/prototype/UI.md. Not for production;
-// gated on NODE_ENV so a stray merge can't ship this bar to users. Lets the
-// user flip between the booking-section variants on the real homepage
-// instead of three vague mockups in their head.
+// THROWAWAY — see .claude/skills/prototype/UI.md. Normally gated on
+// NODE_ENV so a stray merge can't ship this bar to real visitors, but left
+// on here since review is happening straight on the deployed site rather
+// than a local dev server — only shows once `?variant=` is in the URL, and
+// gets deleted along with the rest of this prototype once a direction is
+// picked, so it never needs to go live for real.
 export function PrototypeSwitcher({ variants, current, paramName = "variant" }: Props) {
-  if (process.env.NODE_ENV === "production") return null;
   return <PrototypeSwitcherInner variants={variants} current={current} paramName={paramName} />;
 }
 

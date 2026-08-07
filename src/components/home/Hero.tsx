@@ -132,11 +132,14 @@ export function Hero({ game: gameProp }: Props) {
 }
 
 function PrototypeVariantBar() {
-  const variant = useSearchParams().get("variant") ?? "current";
+  const params = useSearchParams();
+  // Only shows once ?variant= is actually in the URL — an ordinary visitor
+  // with no query param never sees this, only whoever's actively comparing.
+  if (!params.has("variant")) return null;
   return (
     <PrototypeSwitcher
       variants={[{ key: "current", name: "Live booking widget" }, ...PROTOTYPE_VARIANTS]}
-      current={variant}
+      current={params.get("variant") ?? "current"}
     />
   );
 }
