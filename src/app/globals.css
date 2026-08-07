@@ -11758,6 +11758,24 @@ a.notification-panel__item:hover {
 .ingame-step__head h2 > i { color: var(--accent); font-size: 14px; }
 .ingame-step__head p { margin: 0; color: var(--text-faint); font-size: 12px; }
 
+/* Username + region are one identity, so they sit in one row instead of
+   two full-width stacked fields — groups what belongs together and saves
+   the vertical space that made the whole form read as a long, undivided
+   list. */
+.ingame-step__identity { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+
+@media (max-width: 480px) {
+  .ingame-step__identity { grid-template-columns: 1fr; }
+}
+
+/* A visible break before rank/lanes — otherwise every field ran together
+   as one undifferentiated column with no sense of grouping. */
+.form-row--section {
+  padding-top: 18px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border);
+}
+
 .ingame-accounts { display: grid; gap: 8px; }
 
 .ingame-account {
@@ -11877,13 +11895,14 @@ a.notification-panel__item:hover {
 .ingame-division.is-active { border-color: var(--accent); background: var(--accent); color: #fff; }
 
 /* Rank picker in the in-game dialog. */
-.ingame-ranks { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.ingame-ranks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
 
 .ingame-rank {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 10px;
+  gap: 8px;
+  min-height: 40px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 9px;
   background: var(--bg-input);
@@ -11896,7 +11915,10 @@ a.notification-panel__item:hover {
   transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
 }
 
-.ingame-rank img { width: 22px; height: 22px; flex-shrink: 0; object-fit: contain; }
-.ingame-rank span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ingame-rank img { width: 20px; height: 20px; flex-shrink: 0; object-fit: contain; }
+/* No more ellipsis — "Grandmaster"/"Challenger" were getting cut down to
+   "Grandm…"/"Challen…", which defeats the point of a labeled grid over a
+   plain dropdown. Wrapping to two lines at this width reads fully instead. */
+.ingame-rank span { overflow: hidden; white-space: normal; line-height: 1.15; }
 .ingame-rank:hover { border-color: var(--border-strong); color: var(--text); }
 .ingame-rank.is-active { border-color: var(--accent); background: rgba(79, 112, 255, 0.12); color: var(--text); }

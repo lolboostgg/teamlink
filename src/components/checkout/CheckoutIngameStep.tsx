@@ -172,31 +172,33 @@ export function CheckoutIngameStep({
 
       {(adding || saved.length === 0) && (
         <>
-          <div className="form-row">
-            <label htmlFor="ingame-name">In-game username</label>
-            <input
-              id="ingame-name"
-              value={ign}
-              onChange={(event) => setIgn(event.target.value)}
-              placeholder={ignPlaceholder(gameSlug)}
-              autoComplete="off"
-            />
-            <small className="form-row__note">{ignHint(gameSlug)}</small>
-          </div>
+          <div className="ingame-step__identity">
+            <div className="form-row">
+              <label htmlFor="ingame-name">In-game username</label>
+              <input
+                id="ingame-name"
+                value={ign}
+                onChange={(event) => setIgn(event.target.value)}
+                placeholder={ignPlaceholder(gameSlug)}
+                autoComplete="off"
+              />
+              <small className="form-row__note">{ignHint(gameSlug)}</small>
+            </div>
 
-          <div className="form-row">
-            <label htmlFor="ingame-region">Server / region</label>
-            <select id="ingame-region" value={region} onChange={(event) => setRegion(event.target.value)}>
-              {regions.map((entry) => (
-                <option key={entry.value} value={entry.value}>
-                  {entry.label} ({entry.value})
-                </option>
-              ))}
-            </select>
+            <div className="form-row">
+              <label htmlFor="ingame-region">Server / region</label>
+              <select id="ingame-region" value={region} onChange={(event) => setRegion(event.target.value)}>
+                {regions.map((entry) => (
+                  <option key={entry.value} value={entry.value}>
+                    {entry.label} ({entry.value})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {rankOptions.length > 0 && (
-            <div className="form-row">
+            <div className="form-row form-row--section">
               <label>Current rank</label>
               {/* A grid rather than a dropdown: eleven icon-led options fit
                   on screen at once, and an overlay list would be clipped by
@@ -239,7 +241,7 @@ export function CheckoutIngameStep({
           )}
 
           {roleOptions && (
-            <div className="form-row">
+            <div className="form-row form-row--section">
               <label>Preferred {roleOptions.label.toLowerCase()} (optional)</label>
               <div className="chip-check-group">
                 {roleOptions.options.map((option) => (
