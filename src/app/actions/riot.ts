@@ -21,7 +21,12 @@ export async function verifyRiotAccount(ign: string, region: string): Promise<Ve
     const result = await verifyLeagueAccount(ign, region);
     return { ok: true, result };
   } catch (err) {
-    const message = err instanceof RiotApiError ? err.message : "Couldn't verify that account right now.";
-    return { ok: false, error: message };
+    if (err instanceof RiotApiError) {
+      return { ok: false, error: err.message };
+    }
+    // Anything landing here is a bug rather than a Riot-side answer, and
+    // the generic message alone left nothing to debug from.
+    console.error("[riot] lookup failed", { region, err });
+    return { ok: false, error: "Couldn't verify that account right now." };
   }
 }

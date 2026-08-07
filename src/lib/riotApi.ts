@@ -77,13 +77,30 @@ export function riotConfigured(): boolean {
 
 export class RiotApiError extends Error {}
 
+/**
+ * Pasted keys pick up stray quotes and trailing newlines distressingly
+ * often, and an invalid header *value* makes fetch throw a TypeError
+ * rather than return a status — which reads as a generic failure with
+ * nothing pointing at the actual cause. Strip that before it gets there.
+ */
+function apiKey(): string {
+  const raw = process.env.RIOT_API_KEY;
+  if (!raw) throw new RiotApiError("Riot API isn't configured yet.");
+  return raw.trim().replace(/^['"]|['"]$/g, "");
+}
+
 /** null on a 404 specifically — every other non-2xx throws. */
 async function riotFetch(url: string): Promise<unknown | null> {
-  const apiKey = process.env.RIOT_API_KEY;
-  if (!apiKey) throw new RiotApiError("Riot API isn't configured yet.");
-
-  const res = await fetch(url, { headers: { "X-Riot-Token": apiKey }, cache: "no-store" });
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { "X-Riot-Token": apiKey() }, cache: "no-store" });
+  } catch (err) {
+    if (err instanceof RiotApiError) throw err;
+    console.error("[riot] request failed", url.replace(/\/[^/]*$/, "/…"), err);
+    throw new RiotApiError("Couldn't reach the Riot API.");
+  }
   if (res.status === 404) return null;
+  if (res.status === 401) throw new RiotApiError("Riot API key is missing or malformed.");
   if (res.status === 403) throw new RiotApiError("Riot API key is invalid or expired.");
   if (res.status === 429) throw new RiotApiError("Too many lookups right now — try again in a moment.");
   if (!res.ok) throw new RiotApiError(`Riot API error (${res.status}).`);
@@ -97,7 +114,6 @@ interface RiotAccount {
 }
 
 interface RiotSummoner {
-  id: string; // encrypted summoner id — what League-V4 keys entries on
   profileIconId: number;
   summonerLevel: number;
 }
@@ -130,8 +146,13 @@ export interface RiotLookupWrongServer {
 
 export type RiotLookupResult = RiotLookupFound | RiotLookupNotFound | RiotLookupWrongServer;
 
-async function fetchRankEntry(platform: string, summonerId: string): Promise<RiotLeagueEntry | undefined> {
-  const entries = (await riotFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`)) as
+/**
+ * Keyed on PUUID, not the encrypted summoner id: Riot has been retiring
+ * `id` from Summoner-V4 responses, and a missing one silently turned every
+ * lookup into "Unranked" via a 404 on the by-summoner route.
+ */
+async function fetchRankEntry(platform: string, puuid: string): Promise<RiotLeagueEntry | undefined> {
+  const entries = (await riotFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`)) as
     | RiotLeagueEntry[]
     | null;
   return entries?.find((entry) => entry.queueType === "RANKED_SOLO_5x5");
@@ -174,7 +195,7 @@ export async function verifyLeagueAccount(ign: string, region: string): Promise<
   )) as RiotSummoner | null;
 
   if (summoner) {
-    const entry = await fetchRankEntry(platform, summoner.id);
+    const entry = await fetchRankEntry(platform, account.puuid);
     const { rank, division } = toRankFields(entry);
     return {
       status: "found",
@@ -191,14 +212,27 @@ export async function verifyLeagueAccount(ign: string, region: string): Promise<
   // Not on the booked platform — check the account's real one before
   // giving up, so a customer who just picked the wrong region in the
   // dropdown gets told exactly what's wrong instead of "not found".
+  // Fired together rather than in a loop: sequentially this is four more
+  // round-trips stacked on the two already made, which is enough to run
+  // past the caller's patience on a slow link.
   const otherPlatforms = (PLATFORMS_BY_CONTINENT[continent] ?? []).filter((p) => p !== platform);
-  for (const otherPlatform of otherPlatforms) {
-    const otherSummoner = (await riotFetch(
-      `https://${otherPlatform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`,
-    )) as RiotSummoner | null;
-    if (otherSummoner) {
-      return { status: "wrong_server", actualRegionLabel: REGION_BY_PLATFORM[otherPlatform] ?? otherPlatform };
-    }
+  const probes = await Promise.all(
+    otherPlatforms.map(async (otherPlatform) => {
+      try {
+        const found = await riotFetch(
+          `https://${otherPlatform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`,
+        );
+        return found ? otherPlatform : null;
+      } catch {
+        // One unreachable shard must not sink the whole lookup.
+        return null;
+      }
+    }),
+  );
+
+  const hit = probes.find(Boolean);
+  if (hit) {
+    return { status: "wrong_server", actualRegionLabel: REGION_BY_PLATFORM[hit] ?? hit };
   }
 
   return { status: "not_found" };
