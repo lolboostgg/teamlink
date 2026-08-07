@@ -3176,6 +3176,18 @@ ul {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--text);
   font-weight: 600;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent), 0 3px 10px color-mix(in srgb, var(--accent) 25%, transparent);
+  animation: chipCheckPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes chipCheckPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip-check:has(input:checked) { animation: none; }
 }
 
 .chip-check__icon {
@@ -5120,9 +5132,53 @@ ul {
   color: var(--text-muted);
 }
 
+/* Custom track/thumb instead of the bare OS slider — flat cyan-on-gray
+   default read as out of place next to everything else in the editor. */
 .avatar-frame__zoom input {
   flex: 1;
-  accent-color: var(--cta-vivid);
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cta-vivid) 0%, var(--cta-vivid) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.12) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.12) 100%);
+  cursor: pointer;
+}
+
+.avatar-frame__zoom input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cta-vivid);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--cta-vivid), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.avatar-frame__zoom input::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.avatar-frame__zoom input::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.avatar-frame__zoom input::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cta-vivid);
+}
+
+.avatar-frame__zoom input::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cta-vivid);
+  border: 3px solid var(--bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .avatar-frame__drop {
@@ -6573,7 +6629,26 @@ ul {
 }
 .pick-card:hover .pick-card__art img,
 .pick-card:focus-visible .pick-card__art img { transform: scale(1.04); }
-.pick-card__art::after { background: linear-gradient(180deg, transparent 20%, rgba(4,6,13,.18) 45%, rgba(4,6,13,.85) 78%, rgba(4,6,13,1) 100%); }
+.pick-card__art::after { background: linear-gradient(180deg, transparent 20%, rgba(4,6,13,.18) 45%, rgba(4,6,13,.85) 78%, rgba(4,6,13,1) 100%); transition: opacity 0.2s ease; }
+
+/* Hovering the card is "let me actually see this person's photo" — the
+   rating pill, name/lane footer and the bottom fade all fade out so
+   nothing but the picture is left, instead of competing with it. */
+.pick-card__rating,
+.pick-card__check,
+.pick-card__body,
+.pick-card__auto-label {
+  transition: opacity 0.2s ease;
+}
+
+.pick-card:hover .pick-card__art::after,
+.pick-card:hover .pick-card__rating,
+.pick-card:hover .pick-card__check,
+.pick-card:hover .pick-card__body,
+.pick-card:hover .pick-card__auto-label {
+  opacity: 0;
+  pointer-events: none;
+}
 
 .pick-card__rating {
   top: 12px;
@@ -9222,7 +9297,10 @@ ul {
 .dashboard-sidebar__collapse:hover { border-color: var(--dash-line-strong); color: var(--text); }
 .teammate-sidebar-profile { margin: 0 0 15px; padding: 12px; border: 1px solid var(--dash-line); border-radius: 14px; background: rgba(255, 255, 255, .018); }
 .teammate-sidebar-profile__identity { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--text); }
-.teammate-sidebar-profile__avatar { position: relative; width: 62px; height: 62px; border: 2px solid rgba(132, 139, 166, .28); border-radius: 50%; padding: 3px; background: var(--dash-bg); }
+/* overflow: hidden was missing here — a zoomed-in profile picture (see
+   avatarFrameStyle's transform: scale()) rendered past this circle's own
+   edge instead of being cropped to it, since nothing clipped the overflow. */
+.teammate-sidebar-profile__avatar { position: relative; overflow: hidden; width: 62px; height: 62px; border: 2px solid rgba(132, 139, 166, .28); border-radius: 50%; padding: 3px; background: var(--dash-bg); }
 .teammate-sidebar-profile__avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 .teammate-sidebar-profile__presence { position: absolute; right: 1px; bottom: 4px; width: 12px; height: 12px; border: 3px solid var(--dash-surface); border-radius: 50%; background: #737887; }
 .teammate-sidebar-profile.is-online .teammate-sidebar-profile__avatar { border-color: rgba(33, 211, 145, .55); }
@@ -12028,11 +12106,11 @@ a.notification-panel__item:hover {
 .ingame-rank {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 7px 10px;
+  gap: 9px;
+  min-height: 44px;
+  padding: 7px 11px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 10px;
   background: var(--bg-input);
   color: var(--text-muted);
   font: inherit;
@@ -12040,13 +12118,43 @@ a.notification-panel__item:hover {
   font-weight: 700;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease;
+  transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
 }
 
-.ingame-rank img { width: 20px; height: 20px; flex-shrink: 0; object-fit: contain; }
+/* Icon sits in its own tinted circle instead of floating loose next to the
+   label — same treatment the mode/category icons elsewhere already use,
+   so the rank grid doesn't read as a flatter, older part of the site. */
+.ingame-rank__icon {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.14s ease, transform 0.14s ease;
+}
+
+.ingame-rank img { width: 18px; height: 18px; flex-shrink: 0; object-fit: contain; }
 /* No more ellipsis — "Grandmaster"/"Challenger" were getting cut down to
    "Grandm…"/"Challen…", which defeats the point of a labeled grid over a
    plain dropdown. Wrapping to two lines at this width reads fully instead. */
 .ingame-rank span { overflow: hidden; white-space: normal; line-height: 1.15; }
-.ingame-rank:hover { border-color: var(--border-strong); color: var(--text); }
-.ingame-rank.is-active { border-color: var(--accent); background: rgba(79, 112, 255, 0.12); color: var(--text); }
+
+.ingame-rank:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.ingame-rank.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-input));
+  color: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.ingame-rank.is-active .ingame-rank__icon {
+  background: var(--accent);
+  transform: scale(1.06);
+}

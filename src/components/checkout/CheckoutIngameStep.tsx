@@ -216,8 +216,10 @@ export function CheckoutIngameStep({
                     }}
                   >
                     {option.icon && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={option.icon} alt="" />
+                      <span className="ingame-rank__icon">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={option.icon} alt="" />
+                      </span>
                     )}
                     <span>{option.label}</span>
                   </button>

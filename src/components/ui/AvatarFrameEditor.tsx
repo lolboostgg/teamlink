@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { MAX_ZOOM, MIN_ZOOM, avatarFrameStyle, clampPercent } from "@/lib/avatarFrame";
 
 export interface AvatarFrameValue {
@@ -192,6 +192,7 @@ export function AvatarFrameEditor({ value, onChange, label = "Profile picture", 
                 value={value.avatarZoom}
                 disabled={!hasPicture}
                 onChange={(event) => onChange({ ...value, avatarZoom: Number(event.target.value) })}
+                style={{ "--zoom-pct": `${((value.avatarZoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 100}%` } as CSSProperties}
               />
             </label>
           )}
