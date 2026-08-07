@@ -25,6 +25,28 @@ const CATEGORY_ICONS: Record<string, string> = {
   Coaching: "fa-solid fa-chalkboard-user",
 };
 
+// One extra, mode-relevant question on top of the general FAQ_ITEMS —
+// answers the thing someone picking *this specific* category is actually
+// wondering about, not just the generic booking questions everyone gets.
+const CATEGORY_FAQ: Record<string, { q: string; a: string }> = {
+  "Team Up": {
+    q: "What rank will my teammate be?",
+    a: "Diamond+ for Duo, Grandmaster+ for Duo Pro — you'll see their exact rank before the session starts.",
+  },
+  Ranked: {
+    q: "Does this affect my rank or get me banned?",
+    a: "Your teammate queues alongside you exactly like a friend would — nothing about how ranked matchmaking works is bypassed.",
+  },
+  Social: {
+    q: "Is there any rank requirement to join?",
+    a: "No — Hangout and ARAM sessions are just company for a relaxed game, any rank welcome.",
+  },
+  Coaching: {
+    q: "How does a coaching session work?",
+    a: "Your coach reviews your gameplay live on voice or text and helps you improve in real time, not just after the fact.",
+  },
+};
+
 // Each category gets its own accent instead of every option card looking
 // identical bar the price — same curated hue set already used for icon
 // badges elsewhere in the design system (see globals.css :root comment).
@@ -93,8 +115,11 @@ export function BookingWidget({ game }: Props) {
   }
 
   const catColor = CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)";
+  const categoryFaq = CATEGORY_FAQ[visibleCategory.category];
+  const faqItems = categoryFaq ? [categoryFaq, ...FAQ_ITEMS] : FAQ_ITEMS;
 
   return (
+    <>
     <div className="booking-layout" style={{ "--cat-color": catColor } as CSSProperties}>
       <div>
         <Reveal>
@@ -172,25 +197,9 @@ export function BookingWidget({ game }: Props) {
         </Reveal>
 
         <Reveal delay={50}>
-          <div className="booking-faq">
-            <div className="booking-faq__title">Questions before you book?</div>
-            <div className="faq">
-              {FAQ_ITEMS.map((item, i) => (
-                <div className={`faq-row${openFaq === i ? " is-open" : ""}`} key={item.q}>
-                  <button
-                    type="button"
-                    className="faq-row__btn"
-                    onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
-                    aria-expanded={openFaq === i}
-                  >
-                    <span>{item.q}</span>
-                    <i className="fa-solid fa-plus faq-row__icon" aria-hidden="true" />
-                  </button>
-                  {openFaq === i && <div className="faq-row__panel faq-row__panel--anim">{item.a}</div>}
-                </div>
-              ))}
-            </div>
-          </div>
+          <a href="#booking-faq" className="booking-faq-link">
+            <i className="fa-regular fa-circle-question" aria-hidden="true" /> Questions?
+          </a>
         </Reveal>
       </div>
 
@@ -264,5 +273,36 @@ export function BookingWidget({ game }: Props) {
         </div>
       </Modal>
     </div>
+
+    <section className="booking-faq-section" id="booking-faq">
+      <Reveal>
+        <div className="section__head section__head--center">
+          <span className="section__eyebrow">FAQ</span>
+          <h2 className="section__title">
+            Questions about {visibleCategory.category === "Team Up" ? "Team Up" : visibleCategory.category.toLowerCase()}
+          </h2>
+        </div>
+      </Reveal>
+
+      <Reveal delay={40}>
+        <div className="faq" key={visibleCategory.category}>
+          {faqItems.map((item, i) => (
+            <div className={`faq-row${openFaq === i ? " is-open" : ""}`} key={item.q}>
+              <button
+                type="button"
+                className="faq-row__btn"
+                onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                aria-expanded={openFaq === i}
+              >
+                <span>{item.q}</span>
+                <i className="fa-solid fa-plus faq-row__icon" aria-hidden="true" />
+              </button>
+              {openFaq === i && <div className="faq-row__panel faq-row__panel--anim">{item.a}</div>}
+            </div>
+          ))}
+        </div>
+      </Reveal>
+    </section>
+    </>
   );
 }

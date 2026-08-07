@@ -1953,27 +1953,32 @@ ul {
   margin-bottom: 28px;
 }
 
-.booking-faq {
+/* Points at the dedicated FAQ section below (#booking-faq) instead of
+   embedding the accordion in the middle of the picker form. */
+.booking-faq-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 8px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-}
-
-.booking-faq__title {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
   font-size: 13px;
-  font-weight: 700;
-  color: var(--text-faint);
-  margin-bottom: 8px;
+  font-weight: 600;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 
-.booking-faq .faq {
-  max-width: none;
-  margin: 0;
+.booking-faq-link:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.booking-faq .faq-row__btn {
-  padding: 14px 4px;
-  font-size: 13.5px;
+.booking-faq-section {
+  padding: 80px 0 40px;
+  scroll-margin-top: calc(var(--offset-h, var(--header-h)) + 16px);
 }
 
 .booking-category__title {
@@ -5540,15 +5545,14 @@ ul {
 /* Bleeds out to the card's own edges (negative margin = the card's own
    padding) so this reads as the card's footer band, not just another row
    of content inside it — rounded to match the card's own bottom corners;
-   .booking-sidebar's overflow: hidden clips it cleanly. */
-/* Recessed instead of a lighter overlay — sunk into the card via an inset
-   shadow rather than sitting on top of it, label and marks sharing one
-   row instead of a stacked label-then-wrapped-icons block. */
+   .booking-sidebar's overflow: hidden clips it cleanly. Recessed via an
+   inset shadow instead of a lighter overlay on top. No "We accept" label
+   here — just the icons, centered, since the band itself already reads as
+   a payment strip without needing the caption. */
 .trust-points--compact .trust-points__payments {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 14px;
+  justify-content: center;
   margin: 18px -22px -22px;
   padding: 14px 22px;
   background: color-mix(in srgb, var(--bg) 70%, transparent);
@@ -5556,36 +5560,11 @@ ul {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-.trust-points--compact .trust-points__payments-label {
-  flex: 0 0 auto;
-  margin-bottom: 0;
-}
-
-.trust-points--compact .trust-points__payment-logos {
-  flex: 1 1 auto;
-  justify-content: flex-end;
-}
-
-/* Real provider logos (see PAYMENT_LOGOS) forced to flat white — no chip,
-   no border, just the marks themselves sitting on the page. */
-.trust-points__payment-logos {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-}
-
-.trust-points__payment-logos img {
-  height: 15px;
-  width: auto;
-  object-fit: contain;
-  filter: brightness(0) invert(1);
-  opacity: 0.7;
-  transition: opacity 0.15s ease;
-}
-
-.trust-points__payment-logos img:hover {
-  opacity: 1;
+.trust-points--compact .trust-points__payment-icons {
+  flex-wrap: nowrap;
+  gap: 12px;
+  font-size: 18px;
+  color: var(--text-muted);
 }
 
 .trust-points__payments {
