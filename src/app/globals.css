@@ -1893,11 +1893,27 @@ ul {
   padding-top: 40px;
 }
 
+/* One shared light source behind the whole section instead of separate
+   glows on the list and the sidebar — two independent colored washes in
+   different corners was reading as scattered rather than as one picture. */
 .booking-layout {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 28px;
   align-items: start;
+}
+
+.booking-layout::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -60px;
+  left: 10%;
+  width: 60%;
+  height: 340px;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--cat-color, var(--accent)) 14%, transparent), transparent 72%);
+  pointer-events: none;
 }
 
 /* Same eyebrow + Bebas Neue title voice as the rest of the landing page
@@ -1939,23 +1955,7 @@ ul {
 }
 
 .booking-category {
-  position: relative;
   margin-bottom: 28px;
-}
-
-/* A soft wash of the active category's color behind the list — on its own
-   the list was flat, evenly-lit rows with nothing to catch the eye before
-   you start reading. */
-.booking-category::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  top: -40px;
-  left: -60px;
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--cat-color, var(--accent)) 16%, transparent), transparent 70%);
-  pointer-events: none;
 }
 
 .booking-category__title {
@@ -2047,23 +2047,25 @@ ul {
 /* Bigger, rounder and gradient-filled instead of a flat tinted square —
    the whole row list read as very "safe"/flat without a single point of
    color intensity to catch the eye. */
+/* White glyph on a fully saturated color instead of the color-on-its-own-
+   tint version — that read as low-contrast/muddy (a blue icon on a
+   translucent blue circle barely separates from its own background). */
 .booking-option__icon {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--cat-color, var(--accent)) 55%, transparent), color-mix(in srgb, var(--cat-color, var(--accent)) 14%, transparent));
-  color: var(--cat-color, var(--accent));
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--cat-color, var(--accent)) 92%, #fff 8%), var(--cat-color, var(--accent)));
+  color: #fff;
   display: grid;
   place-items: center;
-  font-size: 15px;
+  font-size: 16px;
   flex: 0 0 auto;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--cat-color, var(--accent)) 45%, transparent);
   transition: transform 0.15s ease;
 }
 
 .booking-option.is-selected .booking-option__icon {
-  background: var(--cat-color, var(--accent));
-  color: var(--bg);
-  transform: scale(1.06);
+  transform: scale(1.08);
 }
 
 .booking-option__check {
@@ -2159,26 +2161,6 @@ ul {
   padding: 22px;
 }
 
-/* A quiet glow in the same corner treatment as the option list, so the
-   card reads as part of the same picture instead of a plain, separately-
-   styled panel bolted on the side. */
-.booking-sidebar::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  top: -80px;
-  right: -80px;
-  width: 220px;
-  height: 220px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--cat-color, var(--accent)) 20%, transparent), transparent 70%);
-  pointer-events: none;
-}
-
-.booking-sidebar > * {
-  position: relative;
-  z-index: 1;
-}
-
 /* Game + option used to be two separate label/value rows — one line says
    the same thing and is most of why this card used to run so tall. */
 .booking-sidebar__summary {
@@ -2190,13 +2172,16 @@ ul {
   border-bottom: 1px solid var(--border);
 }
 
+/* Ring in the active category's color instead of a plain gray border —
+   the game's own logo colors (gold for LoL, etc.) are fixed, but the ring
+   ties it to the section's accent instead of the two just clashing. */
 .booking-sidebar__summary-icon {
   width: 38px;
   height: 38px;
   border-radius: 10px;
   object-fit: cover;
   flex: 0 0 auto;
-  box-shadow: 0 0 0 1px var(--border-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cat-color, var(--accent)) 55%, var(--border-strong));
 }
 
 .booking-sidebar__summary-copy {
@@ -5549,15 +5534,19 @@ ul {
   gap: 8px;
 }
 
+/* Faint gray glyphs at 13px in a near-invisible chip were reading as
+   blank boxes — a light chip with a near-black glyph is how every real
+   "we accept" strip does it, dark theme or not, precisely so the brand
+   marks stay legible. */
 .trust-points--compact .trust-points__payment-icons i {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 22px;
+  width: 32px;
+  height: 24px;
   border-radius: 5px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
-  font-size: 13px;
+  background: #f3f4f8;
+  color: #0d1120;
+  font-size: 15px;
 }
 
 .trust-points__payments {
