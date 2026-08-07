@@ -1783,7 +1783,18 @@ ul {
 }
 
 /* ── Footer ─────────────────────────────────────────────────── */
+/* A short page (an empty state, a spinner) left the footer sitting wherever
+   the content happened to end, with bare background below it. The shell
+   fills the viewport and the footer's auto top margin takes up the slack —
+   plain column flex, so the sticky header is unaffected. */
+.site-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .site-footer {
+  margin-top: auto;
   border-top: 1px solid var(--border);
   background: var(--bg-elevated);
   padding: 48px 0 28px;

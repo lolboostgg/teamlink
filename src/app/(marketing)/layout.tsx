@@ -13,7 +13,7 @@ import { RouteTracker } from "@/components/layout/RouteTracker";
 // visually anchor between the two shells.
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="site-shell">
       <RouteTracker />
       <SiteTopbar />
       <ViewTransition
@@ -24,6 +24,6 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         {children}
       </ViewTransition>
       <Footer />
-    </>
+    </div>
   );
 }
