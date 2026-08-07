@@ -433,10 +433,15 @@ export function CheckoutIngameStep({
         }
         setRiotChecking(false);
         setRiotResult(result);
-      }).catch(() => {
+      }).catch((err: unknown) => {
         lastRiotKeyRef.current = key;
         setRiotChecking(false);
-        setRiotError("Couldn't verify that account right now.");
+        // Deliberately distinct from the server's own failure text: the two
+        // used to share one string, so there was no telling which side had
+        // actually given up.
+        const reason = err instanceof Error && err.message === "timeout" ? "timed out" : "couldn't be reached";
+        console.error("[riot] client lookup failed", err);
+        setRiotError(`Lookup ${reason}. (client)`);
         setRiotResult(null);
       });
     }, 650);

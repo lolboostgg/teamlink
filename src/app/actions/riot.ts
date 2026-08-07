@@ -24,9 +24,12 @@ export async function verifyRiotAccount(ign: string, region: string): Promise<Ve
     if (err instanceof RiotApiError) {
       return { ok: false, error: err.message };
     }
-    // Anything landing here is a bug rather than a Riot-side answer, and
-    // the generic message alone left nothing to debug from.
+    // Anything landing here is a bug rather than a Riot-side answer. The
+    // detail rides back to the form because this host's runtime logs
+    // aren't readable in practice, and a generic string left the actual
+    // cause invisible through several rounds of debugging.
     console.error("[riot] lookup failed", { region, err });
-    return { ok: false, error: "Couldn't verify that account right now." };
+    const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    return { ok: false, error: `Lookup failed — ${detail}` };
   }
 }
