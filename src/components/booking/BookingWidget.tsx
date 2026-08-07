@@ -12,6 +12,7 @@ import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { TrustPoints } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
+import { FAQ_ITEMS } from "@/lib/content";
 
 interface Props {
   game: Game;
@@ -34,11 +35,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   Coaching: "var(--hue-purple)",
 };
 
-// Flat cap for now — per-game-mode limits (e.g. Duo Normal maxes at 1,
-// Ranked 5s allows up to 4) are a future admin-dashboard setting, not
-// modeled yet.
-const MAX_TEAMMATES = 4;
-
 // Which specific teammate you get is decided by the live dispatch/pick flow
 // after checkout (see MatchmakingScreen), not up front — this widget only
 // books the game, mode and group size.
@@ -50,8 +46,17 @@ export function BookingWidget({ game }: Props) {
   const visibleCategory = BOOKING_CATEGORIES.find((cat) => cat.category === activeCategory) ?? BOOKING_CATEGORIES[0];
   const [pulsing, setPulsing] = useState(false);
   const [ingameOpen, setIngameOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState(-1);
   const { status } = useSession();
   const firstRender = useRef(true);
+
+  // Picking a 1-on-1 mode (Duo, Coach, ...) after having raised the group
+  // size on a Flex-style mode must not silently keep booking (and pricing)
+  // the old, higher count.
+  function selectOption(option: BookingOption) {
+    setSelected(option);
+    setGroupSize((n) => Math.min(n, option.maxTeammates));
+  }
 
   const total = useMemo(() => selected.price * groupSize, [selected, groupSize]);
 
@@ -134,7 +139,7 @@ export function BookingWidget({ game }: Props) {
                 key={option.name}
                 type="button"
                 className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
-                onClick={() => setSelected(option)}
+                onClick={() => selectOption(option)}
               >
                 {selected.name === option.name && (
                   <span className="booking-option__check" aria-hidden="true">
@@ -165,6 +170,28 @@ export function BookingWidget({ game }: Props) {
             ))}
           </div>
         </Reveal>
+
+        <Reveal delay={50}>
+          <div className="booking-faq">
+            <div className="booking-faq__title">Questions before you book?</div>
+            <div className="faq">
+              {FAQ_ITEMS.map((item, i) => (
+                <div className={`faq-row${openFaq === i ? " is-open" : ""}`} key={item.q}>
+                  <button
+                    type="button"
+                    className="faq-row__btn"
+                    onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                    aria-expanded={openFaq === i}
+                  >
+                    <span>{item.q}</span>
+                    <i className="fa-solid fa-plus faq-row__icon" aria-hidden="true" />
+                  </button>
+                  {openFaq === i && <div className="faq-row__panel faq-row__panel--anim">{item.a}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
       </div>
 
       <div className="booking-sidebar-wrap">
@@ -178,28 +205,33 @@ export function BookingWidget({ game }: Props) {
             </span>
           </div>
 
-          <div className="booking-sidebar__row booking-sidebar__row--last">
-            <span>Teammates</span>
-            <span className="booking-stepper">
-              <button
-                type="button"
-                onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
-                disabled={groupSize <= 1}
-                aria-label="Fewer teammates"
-              >
-                <i className="fa-solid fa-minus" aria-hidden="true" />
-              </button>
-              <span className="booking-stepper__value">{groupSize}</span>
-              <button
-                type="button"
-                onClick={() => setGroupSize((n) => Math.min(MAX_TEAMMATES, n + 1))}
-                disabled={groupSize >= MAX_TEAMMATES}
-                aria-label="More teammates"
-              >
-                <i className="fa-solid fa-plus" aria-hidden="true" />
-              </button>
-            </span>
-          </div>
+          {/* A 1-on-1 mode has nothing to pick — showing a stepper stuck at
+              "1" with both buttons disabled reads as broken, not as "this
+              mode doesn't take extra teammates". */}
+          {selected.maxTeammates > 1 && (
+            <div className="booking-sidebar__row booking-sidebar__row--last">
+              <span>Teammates</span>
+              <span className="booking-stepper">
+                <button
+                  type="button"
+                  onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
+                  disabled={groupSize <= 1}
+                  aria-label="Fewer teammates"
+                >
+                  <i className="fa-solid fa-minus" aria-hidden="true" />
+                </button>
+                <span className="booking-stepper__value">{groupSize}</span>
+                <button
+                  type="button"
+                  onClick={() => setGroupSize((n) => Math.min(selected.maxTeammates, n + 1))}
+                  disabled={groupSize >= selected.maxTeammates}
+                  aria-label="More teammates"
+                >
+                  <i className="fa-solid fa-plus" aria-hidden="true" />
+                </button>
+              </span>
+            </div>
+          )}
 
           <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
             <span>Total</span>

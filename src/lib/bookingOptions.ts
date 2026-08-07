@@ -5,6 +5,10 @@ export interface BookingOption {
   originalPrice?: number;
   eta: string;
   unit: string; // e.g. "/game", "/hour"
+  /** How many teammates this mode can be booked with. A 1-on-1 mode
+   * (Duo, Coach) has nothing to pick, so the group-size stepper hides
+   * entirely instead of offering a choice of exactly one. */
+  maxTeammates: number;
 }
 
 export interface BookingCategory {
@@ -18,30 +22,30 @@ export const BOOKING_CATEGORIES: BookingCategory[] = [
   {
     category: "Team Up",
     options: [
-      { name: "Duo", description: "Play with a Diamond+ teammate", price: 4.99, eta: "1 min away", unit: "/game" },
-      { name: "Duo Pro", description: "Play with a Grandmaster+ teammate", price: 7.5, eta: "2 min away", unit: "/game" },
-      { name: "Flex", description: "Bring friends and play with multiple teammates", price: 5.49, eta: "1 min away", unit: "/game" },
+      { name: "Duo", description: "Play with a Diamond+ teammate", price: 4.99, eta: "1 min away", unit: "/game", maxTeammates: 1 },
+      { name: "Duo Pro", description: "Play with a Grandmaster+ teammate", price: 7.5, eta: "2 min away", unit: "/game", maxTeammates: 1 },
+      { name: "Flex", description: "Bring friends and play with multiple teammates", price: 5.49, eta: "1 min away", unit: "/game", maxTeammates: 4 },
     ],
   },
   {
     category: "Ranked",
     options: [
-      { name: "Ranked 5s", description: "Play ranked with a full premade squad", price: 6.99, eta: "4 min away", unit: "/game" },
-      { name: "Duo Normal", description: "Play a normal game with a Master+ teammate", price: 5.99, eta: "1 min away", unit: "/game" },
+      { name: "Ranked 5s", description: "Play ranked with a full premade squad", price: 6.99, eta: "4 min away", unit: "/game", maxTeammates: 4 },
+      { name: "Duo Normal", description: "Play a normal game with a Master+ teammate", price: 5.99, eta: "1 min away", unit: "/game", maxTeammates: 4 },
     ],
   },
   {
     category: "Social",
     options: [
-      { name: "Hangout", description: "Meet and vibe with our best game buddies", price: 6.49, eta: "1 min away", unit: "/hour" },
-      { name: "ARAM", description: "Play for fun with our teammates", price: 4.99, eta: "1 min away", unit: "/game" },
+      { name: "Hangout", description: "Meet and vibe with our best game buddies", price: 6.49, eta: "1 min away", unit: "/hour", maxTeammates: 4 },
+      { name: "ARAM", description: "Play for fun with our teammates", price: 4.99, eta: "1 min away", unit: "/game", maxTeammates: 4 },
     ],
   },
   {
     category: "Coaching",
     options: [
-      { name: "Coach Duo", description: "Get coached and play a practice game at 100% off", price: 15.99, eta: "3 min away", unit: "/45min" },
-      { name: "Coach", description: "Get coached by a Grandmaster+ player", price: 11.99, eta: "2 min away", unit: "/hour" },
+      { name: "Coach Duo", description: "Get coached and play a practice game at 100% off", price: 15.99, eta: "3 min away", unit: "/45min", maxTeammates: 1 },
+      { name: "Coach", description: "Get coached by a Grandmaster+ player", price: 11.99, eta: "2 min away", unit: "/hour", maxTeammates: 1 },
     ],
   },
 ];
@@ -63,7 +67,7 @@ export function getBookingOption(name: string): BookingOption | undefined {
 export function quoteBookingEUR(optionName: string, teammates: number): number | null {
   const option = getBookingOption(optionName);
   if (!option) return null;
-  const size = Math.max(1, Math.min(5, Math.round(teammates)));
+  const size = Math.max(1, Math.min(option.maxTeammates, Math.round(teammates)));
   return Math.round(option.price * size * 100) / 100;
 }
 
