@@ -89,22 +89,74 @@ function apiKey(): string {
   return raw.trim().replace(/^['"]|['"]$/g, "");
 }
 
-/** null on a 404 specifically — every other non-2xx throws. */
+const ATTEMPT_TIMEOUT_MS = 8000;
+const MAX_RETRIES = 2;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * null on a 404 specifically — every other non-2xx throws.
+ *
+ * Retries rate limits and Riot's own 5xx/network blips rather than failing
+ * the lookup outright: both are routine against this API. Waits stay short
+ * and bounded on purpose — a customer is sitting in front of the form, so
+ * giving up quickly beats honouring a 30s Retry-After.
+ */
 async function riotFetch(url: string): Promise<unknown | null> {
-  let res: Response;
-  try {
-    res = await fetch(url, { headers: { "X-Riot-Token": apiKey() }, cache: "no-store" });
-  } catch (err) {
-    if (err instanceof RiotApiError) throw err;
-    console.error("[riot] request failed", url.replace(/\/[^/]*$/, "/…"), err);
-    throw new RiotApiError("Couldn't reach the Riot API.");
+  const token = apiKey();
+  let lastStatus = 0;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { "X-Riot-Token": token },
+        cache: "no-store",
+        signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
+      });
+    } catch (err) {
+      // Timeout or transport failure — worth one more try before giving up.
+      if (attempt < MAX_RETRIES) {
+        await sleep(400 * (attempt + 1));
+        continue;
+      }
+      console.error("[riot] request failed", safeUrl(url), err);
+      throw new RiotApiError("Couldn't reach the Riot API.");
+    }
+
+    if (res.status === 404) return null;
+    if (res.status === 401) throw new RiotApiError("Riot API key is missing or malformed.");
+    if (res.status === 403) throw new RiotApiError("Riot API key is invalid or expired.");
+
+    if (res.status === 429 || res.status >= 500) {
+      lastStatus = res.status;
+      if (attempt < MAX_RETRIES) {
+        const retryAfter = Number(res.headers.get("retry-after")) || 0;
+        await sleep(Math.min(2000, Math.max(500, retryAfter * 1000 || 500 * (attempt + 1))));
+        continue;
+      }
+      throw new RiotApiError(
+        res.status === 429
+          ? "Too many lookups right now — try again in a moment."
+          : "Riot API is temporarily unavailable. Try again shortly.",
+      );
+    }
+
+    if (!res.ok) throw new RiotApiError(`Riot API error (${res.status}).`);
+
+    try {
+      return await res.json();
+    } catch {
+      throw new RiotApiError("Riot API returned an invalid response.");
+    }
   }
-  if (res.status === 404) return null;
-  if (res.status === 401) throw new RiotApiError("Riot API key is missing or malformed.");
-  if (res.status === 403) throw new RiotApiError("Riot API key is invalid or expired.");
-  if (res.status === 429) throw new RiotApiError("Too many lookups right now — try again in a moment.");
-  if (!res.ok) throw new RiotApiError(`Riot API error (${res.status}).`);
-  return res.json();
+
+  throw new RiotApiError(`Riot API unavailable after retries (${lastStatus}).`);
+}
+
+/** Drops the trailing path segment so a Riot ID/PUUID never lands in a log. */
+function safeUrl(url: string): string {
+  return url.replace(/\/[^/]*$/, "/…");
 }
 
 interface RiotAccount {
@@ -195,7 +247,14 @@ export async function verifyLeagueAccount(ign: string, region: string): Promise<
   )) as RiotSummoner | null;
 
   if (summoner) {
-    const entry = await fetchRankEntry(platform, account.puuid);
+    // The account is already confirmed at this point — a rate-limited or
+    // failing rank call should cost the rank, not the whole result.
+    let entry: RiotLeagueEntry | undefined;
+    try {
+      entry = await fetchRankEntry(platform, account.puuid);
+    } catch (err) {
+      console.error("[riot] rank lookup failed", err);
+    }
     const { rank, division } = toRankFields(entry);
     return {
       status: "found",

@@ -18,7 +18,7 @@ const RIOT_VERIFY_GAMES = new Set(["league-of-legends"]);
 // Pinned rather than fetched from Data Dragon's versions.json each time —
 // this is only for a profile icon thumbnail, and a slightly stale patch
 // number still resolves to a valid (if not the very newest) icon set.
-const DDRAGON_VERSION = "14.23.1";
+const DDRAGON_VERSION = "15.10.1";
 function profileIconUrl(profileIconId: number): string {
   return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${profileIconId}.png`;
 }
@@ -409,7 +409,9 @@ export function CheckoutIngameStep({
       setRiotChecking(true);
       setRiotError(null);
       const timedOut = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("timeout")), 10000);
+        // Generous, because the lookup chains several Riot calls and each
+        // one retries — the server gives up well before this does.
+        setTimeout(() => reject(new Error("timeout")), 30000);
       });
       Promise.race([verifyRiotAccount(trimmed, region), timedOut]).then((response) => {
         if (!response.ok) {
