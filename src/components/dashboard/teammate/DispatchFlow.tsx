@@ -55,24 +55,45 @@ function CountdownRing({ msLeft, totalMs }: { msLeft: number; totalMs: number })
 }
 
 function OrderFacts({ order }: { order: DispatchOrderView }) {
+  // "Service" lived here too, repeating the game row directly above it.
   const facts: [string, string][] = [
-    ["Service", order.option],
     ["Customer", order.customerLabel],
     ["Team size", `${order.teammatesRequested} teammate${order.teammatesRequested === 1 ? "" : "s"}`],
-    ["Conversation", order.conversationPref ?? "No preference"],
-    ["Play style", order.playStylePref ?? "No preference"],
-    ["Vibe", order.vibe ?? "No preference"],
   ];
 
+  // Only what the customer actually stated — three rows of "No preference"
+  // filled the card without telling the teammate anything.
+  const prefs = ([
+    ["Conversation", order.conversationPref],
+    ["Play style", order.playStylePref],
+    ["Vibe", order.vibe],
+  ] as [string, string | null][]).filter(([, value]) => value);
+
   return (
-    <dl className="dispatch-facts">
-      {facts.map(([label, value]) => (
-        <div key={label}>
-          <dt>{label}</dt>
-          <dd>{value}</dd>
+    <>
+      <dl className="dispatch-facts">
+        {facts.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {prefs.length > 0 && (
+        <div className="dispatch-prefs">
+          <span className="dispatch-prefs__label">What they asked for</span>
+          <div className="dispatch-prefs__pills">
+            {prefs.map(([label, value]) => (
+              <span key={label} className="dispatch-prefs__pill">
+                <small>{label}</small>
+                {value}
+              </span>
+            ))}
+          </div>
         </div>
-      ))}
-    </dl>
+      )}
+    </>
   );
 }
 
