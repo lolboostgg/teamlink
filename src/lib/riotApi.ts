@@ -89,6 +89,22 @@ function apiKey(): string {
   return raw.trim().replace(/^['"]|['"]$/g, "");
 }
 
+/**
+ * Describes the configured key's *shape* for a 401 — never its value.
+ * A well-formed key is "RGAPI-" plus a 36-character UUID, so length and
+ * prefix alone are enough to spot a truncated, quoted, or mis-pasted
+ * value, which is what a 401 (as opposed to a 403) points at.
+ */
+function keyShape(): string {
+  const raw = process.env.RIOT_API_KEY ?? "";
+  const clean = apiKey();
+  const notes: string[] = [`len ${clean.length}/42`];
+  if (!clean.startsWith("RGAPI-")) notes.push(`prefix "${clean.slice(0, 6)}"`);
+  if (raw !== clean) notes.push("had surrounding quotes/whitespace");
+  if (/\s/.test(clean)) notes.push("contains a space or newline");
+  return notes.join(", ");
+}
+
 const ATTEMPT_TIMEOUT_MS = 8000;
 const MAX_RETRIES = 2;
 
@@ -125,8 +141,8 @@ async function riotFetch(url: string): Promise<unknown | null> {
     }
 
     if (res.status === 404) return null;
-    if (res.status === 401) throw new RiotApiError("Riot API key is missing or malformed.");
-    if (res.status === 403) throw new RiotApiError("Riot API key is invalid or expired.");
+    if (res.status === 401) throw new RiotApiError(`Riot rejected the key as malformed (${keyShape()}).`);
+    if (res.status === 403) throw new RiotApiError("Riot API key is invalid or expired — generate a new one.");
 
     if (res.status === 429 || res.status >= 500) {
       lastStatus = res.status;
