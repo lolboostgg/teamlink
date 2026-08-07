@@ -981,16 +981,15 @@ ul {
 
 .hero-carousel__track {
   display: flex;
-  gap: 14px;
+  gap: 0;
   overflow-x: auto;
+  overflow-y: visible;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
-  /* Vertical-only padding for the active card's glow-ring room — the
-     matching horizontal padding this used to have doesn't survive on the
-     scrolling axis (see the .hero-card comment below), so that part moved
-     to first/last-child margin instead. */
-  padding: 20px 0;
-  margin: -16px 0 -12px;
+  /* Extra top room for the deck's lift-on-hover travel, and for the fanned
+     cards' own rotation not to clip against the track's scroll box. */
+  padding: 34px 0 20px;
+  margin: -30px 0 -12px;
 }
 
 .hero-carousel__track::-webkit-scrollbar {
@@ -1019,10 +1018,31 @@ ul {
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Scoped to the scrolling carousel track specifically — .hero-card is also
-   reused (via GameShowcaseCard) inside .games-full-grid, a CSS grid where
-   :first-child/:last-child would otherwise land on just the top-left and
-   bottom-right cards and throw the grid off-balance. */
+.hero-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-lg);
+}
+
+.hero-card.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), 0 0 26px rgba(64, 102, 255, 0.35);
+}
+
+/* Fanned card-deck look, scoped to the hero carousel only — every other
+   place .hero-card is reused (the /games grid, the "one platform" slider)
+   keeps the plain upright card. Cards overlap and alternate a slight tilt
+   like a hand of cards; hovering/activating one straightens and lifts it
+   above its neighbors instead of just nudging it up in place.
+   :first-child/:last-child stay scoped to this track specifically — the
+   same .hero-card is also reused (via GameShowcaseCard) inside
+   .games-full-grid, a CSS grid where those selectors would otherwise land
+   on just the top-left/bottom-right cards and throw the grid off-balance. */
+.hero-carousel__track > .hero-card {
+  z-index: 1;
+  margin-left: -26px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease, z-index 0s;
+}
+
 .hero-carousel__track > .hero-card:first-child {
   margin-left: 28px;
 }
@@ -1031,15 +1051,19 @@ ul {
   margin-right: 28px;
 }
 
-.hero-card:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+.hero-carousel__track > .hero-card:nth-child(odd) {
+  transform: rotate(-3.5deg) translateY(10px);
 }
 
-.hero-card.is-active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent), 0 0 26px rgba(64, 102, 255, 0.35);
+.hero-carousel__track > .hero-card:nth-child(even) {
+  transform: rotate(3.5deg) translateY(4px);
+}
+
+.hero-carousel__track > .hero-card:hover,
+.hero-carousel__track > .hero-card:focus-visible,
+.hero-carousel__track > .hero-card.is-active {
+  z-index: 5;
+  transform: rotate(0deg) translateY(-14px) scale(1.04);
 }
 
 .hero-card__bg {
