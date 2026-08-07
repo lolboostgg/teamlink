@@ -10297,6 +10297,19 @@ a.notification-panel__item:hover {
    the rule above, this just needs to out-rank the modal overlay (z-index
    200) it now renders as a sibling of. */
 .payout-select__popover--portal { z-index: 500; }
+
+/* Rank's own popover doesn't match the trigger's width (see
+   matchTriggerWidth in DropdownShell) — it sizes to its content (icon +
+   one short word) instead of stretching as wide as the field, which was
+   reading as a dropdown with far too much empty space on the right.
+   Two classes to out-rank .payout-select__popover's own width: 100% —
+   on a position: fixed element with no inline width left to win, that
+   100% resolves against the viewport, not the trigger. */
+.payout-select__popover.rank-select__popover {
+  width: auto;
+  min-width: 200px;
+  max-width: 260px;
+}
 .payout-select__search { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--dash-surface-2); }
 .payout-select__search i { color: var(--text-faint); font-size: 10px; }
 .payout-select__search input { min-width: 0; min-height: 37px; padding: 0; border: 0; outline: 0; background: transparent; box-shadow: none; font-size: 11px; }

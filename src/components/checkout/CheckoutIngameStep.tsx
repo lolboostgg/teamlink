@@ -28,6 +28,8 @@ function DropdownShell({
   trigger,
   listId,
   children,
+  popoverClassName,
+  matchTriggerWidth = true,
 }: {
   id: string;
   openId: string | null;
@@ -35,6 +37,11 @@ function DropdownShell({
   trigger: (open: boolean) => ReactNode;
   listId: string;
   children: ReactNode;
+  popoverClassName?: string;
+  /** Rank's own content (an icon + one short word) doesn't need to stretch
+   * to the field's full width the way region names do — false lets the
+   * popover size to its content instead of matching the trigger. */
+  matchTriggerWidth?: boolean;
 }) {
   const open = openId === id;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -44,13 +51,13 @@ function DropdownShell({
   // as "outside" and close the dropdown on mousedown, before the option
   // button's click even gets to fire.
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number | undefined } | null>(null);
 
   useLayoutEffect(() => {
     if (!open) return;
     function place() {
       const box = rootRef.current?.getBoundingClientRect();
-      if (box) setRect({ top: box.bottom + 6, left: box.left, width: box.width });
+      if (box) setRect({ top: box.bottom + 6, left: box.left, width: matchTriggerWidth ? box.width : undefined });
     }
     place();
     window.addEventListener("resize", place);
@@ -59,7 +66,7 @@ function DropdownShell({
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
     };
-  }, [open]);
+  }, [open, matchTriggerWidth]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,7 +97,7 @@ function DropdownShell({
         createPortal(
           <div
             ref={popoverRef}
-            className="payout-select__popover payout-select__popover--portal"
+            className={`payout-select__popover payout-select__popover--portal${popoverClassName ? ` ${popoverClassName}` : ""}`}
             style={{ position: "fixed", top: rect.top, left: rect.left, width: rect.width }}
           >
             <ul id={listId} role="listbox">
@@ -180,6 +187,8 @@ function RankSelect({
       openId={openId}
       onOpenChange={onOpenChange}
       listId={listId}
+      popoverClassName="rank-select__popover"
+      matchTriggerWidth={false}
       trigger={() => (
         <span className="rank-select__current">
           {selected?.icon && (
