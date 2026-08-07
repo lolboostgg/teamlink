@@ -3145,6 +3145,67 @@ ul {
   border-color: var(--danger);
 }
 
+/* Riot ID field + inline "Verify" button — trial Riot API integration
+   (see app/actions/riot.ts), so a customer's rank can be pulled in
+   automatically instead of only ever picked by hand. */
+.ingame-riot-verify-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ingame-riot-verify-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.ingame-riot-verify-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.ingame-riot-verify-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.ingame-riot-verify-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.ingame-riot-verify-btn i {
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.ingame-riot-note.is-verified {
+  color: var(--success);
+}
+
+.ingame-riot-note.is-verified i {
+  color: var(--success);
+}
+
+.ingame-riot-note.is-error {
+  color: var(--danger);
+}
+
+.ingame-riot-note.is-error i {
+  color: var(--danger);
+}
+
 .form-row__error {
   display: flex;
   align-items: center;
@@ -3357,6 +3418,12 @@ ul {
   color: var(--text-faint);
   font-size: 11px;
   line-height: 1.4;
+}
+
+/* Riot verify result carries its own icon (check / warning) — the generic
+   dot would just be a second, redundant marker next to it. */
+.ingame-riot-note::before {
+  display: none;
 }
 
 .form-row__note::before {

@@ -6,6 +6,13 @@ import { getGameProfileConfig } from "@/lib/gameProfiles";
 import { regionsForGame, ignPlaceholder, ignHint, type RegionOption } from "@/lib/gameRegions";
 import { DIVISIONS, ranksForGame, rankHasDivisions, formatRank } from "@/lib/gameRanks";
 import { listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
+import { verifyRiotAccount } from "@/app/actions/riot";
+
+// Riot verification is a trial integration for League of Legends only —
+// Valorant/TFT share the same Name#TAG account but League-V4 (the rank
+// lookup) is LoL-specific, so this stays scoped until there's a reason to
+// widen it.
+const RIOT_VERIFY_GAMES = new Set(["league-of-legends"]);
 
 /**
  * Shared shell behind RegionSelect/RankSelect below.
@@ -296,6 +303,9 @@ export function CheckoutIngameStep({
   const [rank, setRank] = useState<string | null>(null);
   const [division, setDivision] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [riotStatus, setRiotStatus] = useState<"idle" | "checking" | "verified" | "error">("idle");
+  const [riotMessage, setRiotMessage] = useState<string | null>(null);
+  const [riotPending, startRiotTransition] = useTransition();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -315,6 +325,43 @@ export function CheckoutIngameStep({
       cancelled = true;
     };
   }, [canSave, gameSlug]);
+
+  // Explicit resets (in the ign/region change handlers below) rather than
+  // an effect keyed on [ign, region] — verifying itself rewrites `ign` to
+  // its canonical Name#TAG form, which would immediately re-trigger an
+  // effect-based reset and wipe out the "verified" result it just set.
+  function clearRiotStatus() {
+    if (riotStatus !== "idle") {
+      setRiotStatus("idle");
+      setRiotMessage(null);
+    }
+  }
+
+  function verifyWithRiot() {
+    if (!ign.trim()) {
+      setRiotStatus("error");
+      setRiotMessage("Enter your Riot ID first.");
+      return;
+    }
+    setRiotStatus("checking");
+    setRiotMessage(null);
+    startRiotTransition(async () => {
+      const result = await verifyRiotAccount(ign.trim(), region);
+      if (!result.ok) {
+        setRiotStatus("error");
+        setRiotMessage(result.error);
+        return;
+      }
+      const { identity } = result;
+      setIgn(`${identity.gameName}#${identity.tagLine}`);
+      setRank(identity.rank);
+      setDivision(identity.division);
+      setRiotStatus("verified");
+      setRiotMessage(
+        identity.rank ? formatRank(gameSlug, identity.rank, identity.division) : "Unranked",
+      );
+    });
+  }
 
   function toggleRole(value: string) {
     setRoles((current) => (current.includes(value) ? current.filter((entry) => entry !== value) : [...current, value]));
@@ -418,14 +465,41 @@ export function CheckoutIngameStep({
           <div className="ingame-step__identity">
             <div className="form-row">
               <label htmlFor="ingame-name">In-game username</label>
-              <input
-                id="ingame-name"
-                value={ign}
-                onChange={(event) => setIgn(event.target.value)}
-                placeholder={ignPlaceholder(gameSlug)}
-                autoComplete="off"
-              />
-              <small className="form-row__note">{ignHint(gameSlug)}</small>
+              <div className="ingame-riot-verify-row">
+                <input
+                  id="ingame-name"
+                  value={ign}
+                  onChange={(event) => {
+                    setIgn(event.target.value);
+                    clearRiotStatus();
+                  }}
+                  placeholder={ignPlaceholder(gameSlug)}
+                  autoComplete="off"
+                />
+                {RIOT_VERIFY_GAMES.has(gameSlug) && (
+                  <button
+                    type="button"
+                    className="ingame-riot-verify-btn"
+                    onClick={verifyWithRiot}
+                    disabled={riotPending}
+                  >
+                    {riotStatus === "verified" ? (
+                      <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                    ) : (
+                      <i className={`fa-solid ${riotPending ? "fa-spinner fa-spin" : "fa-magnifying-glass"}`} aria-hidden="true" />
+                    )}
+                    {riotPending ? "Checking…" : riotStatus === "verified" ? "Verified" : "Verify"}
+                  </button>
+                )}
+              </div>
+              {riotMessage ? (
+                <small className={`form-row__note ingame-riot-note${riotStatus === "error" ? " is-error" : " is-verified"}`}>
+                  <i className={`fa-solid ${riotStatus === "error" ? "fa-circle-exclamation" : "fa-shield-check"}`} aria-hidden="true" />
+                  {riotStatus === "error" ? riotMessage : `Verified with Riot — ${riotMessage}`}
+                </small>
+              ) : (
+                <small className="form-row__note">{ignHint(gameSlug)}</small>
+              )}
             </div>
 
             <div className="form-row">
@@ -433,7 +507,10 @@ export function CheckoutIngameStep({
               <RegionSelect
                 value={region}
                 options={regions}
-                onChange={setRegion}
+                onChange={(value) => {
+                  setRegion(value);
+                  clearRiotStatus();
+                }}
                 openId={openDropdown}
                 onOpenChange={setOpenDropdown}
               />
