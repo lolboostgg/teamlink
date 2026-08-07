@@ -1154,7 +1154,9 @@ ul {
 
 .games-slider__card {
   width: 300px;
-  aspect-ratio: 4 / 3.3;
+  /* No aspect-ratio override — same 3/4 portrait as the hero carousel's
+     cards (.hero-card), so key art shows identically everywhere it's
+     picked from instead of this section cropping it into a squarer frame. */
 }
 
 .games-slider__card .hero-card__wordmark {
