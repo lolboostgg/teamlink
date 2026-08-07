@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { dashboardHrefForRole } from "@/lib/roles";
 import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
 import { ClientDashboardNav } from "@/components/dashboard/client/ClientDashboardNav";
+import { ClientDashboardContent } from "@/components/dashboard/client/ClientDashboardContent";
 
 // Unlike the admin/teammate dashboards (src/app/dashboard/layout.tsx), the
 // client dashboard has no shell of its own — it lives inside the real
@@ -25,7 +26,7 @@ export default async function ClientDashboardLayout({ children }: { children: Re
     <DashboardAuthGate initiallyAuthenticated={!!session}>
       <div className="client-dashboard container">
         <ClientDashboardNav />
-        <div className="client-dashboard__content">{children}</div>
+        <ClientDashboardContent>{children}</ClientDashboardContent>
       </div>
     </DashboardAuthGate>
   );

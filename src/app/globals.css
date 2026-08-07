@@ -10146,6 +10146,31 @@ a.notification-panel__item:hover {
   overflow-x: auto;
 }
 
+/* Every tab is a separate route, so the swap read as a navigation. The
+   floor stops the page collapsing under a short tab (Favorites) after a
+   long one (Orders), which was most of what made it feel that way. */
+.client-dashboard__content {
+  min-height: 460px;
+  animation: clientTabIn 0.18s ease both;
+}
+
+@keyframes clientTabIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .client-dashboard__content {
+    animation: none;
+  }
+}
+
 .client-dashboard-nav__link {
   display: flex;
   align-items: center;

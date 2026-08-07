@@ -24,7 +24,14 @@ export function ClientDashboardNav() {
         const isOverview = s.href === "/dashboard/client";
         const active = isOverview ? pathname === s.href : pathname.startsWith(s.href);
         return (
-          <Link key={s.href} href={s.href} className={`client-dashboard-nav__link${active ? " is-active" : ""}`}>
+          // scroll={false}: the default jump to the top is what made
+          // switching tabs feel like leaving the page.
+          <Link
+            key={s.href}
+            href={s.href}
+            scroll={false}
+            className={`client-dashboard-nav__link${active ? " is-active" : ""}`}
+          >
             <i className={s.icon} aria-hidden="true" />
             {s.label}
           </Link>
