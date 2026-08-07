@@ -12218,11 +12218,12 @@ a.notification-panel__item:hover {
   transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
 }
 
-/* Icon sits in its own circle tinted with that specific rank's color
-   (--rank-color, set inline per button — see RANK_COLORS in
-   CheckoutIngameStep.tsx) instead of one flat neutral treatment for all
-   eleven tiers, so the grid reads as an actual ladder — bronze looks like
-   bronze, diamond looks like diamond — not a plain labeled list. */
+/* Neutral at rest — the rank artwork itself already carries its own color
+   (bronze is already brown, gold already golden), so tinting the circle
+   behind it too just muddied the icon instead of complementing it.
+   --rank-color is still used, just only once a tile is actually selected
+   (see .is-active below) — one clear highlight instead of eleven
+   simultaneous tinted circles. */
 .ingame-rank__icon {
   width: 28px;
   height: 28px;
@@ -12230,8 +12231,8 @@ a.notification-panel__item:hover {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--rank-color, var(--accent)) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 35%, transparent);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: background 0.14s ease, transform 0.14s ease;
 }
 
