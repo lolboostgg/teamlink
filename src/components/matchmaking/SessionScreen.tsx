@@ -481,7 +481,7 @@ export function SessionScreen({ orderId }: Props) {
       </Reveal>
 
       <div className="session-screen__grid">
-        <Reveal delay={60}>
+        <Reveal delay={60} className="session-screen__side">
           <div className="dashboard-panel session-screen__teammate">
             <h1 className="session-screen__title">
               {order.isReplay ? `You're locked in with ${teammate.name} again` : "Your teammate is inviting you now"}
@@ -616,15 +616,15 @@ export function SessionScreen({ orderId }: Props) {
         </Reveal>
 
         <Reveal delay={80} className="session-screen__progress-wrap">
-          {/* The teammate's side of the session, read-only: what they're
-              currently doing and the result screenshots they submitted. */}
+          {/* Sits above the chat rather than under the teammate card: this is
+              the one thing a waiting customer keeps checking, so it belongs
+              at the top of the column their eyes are already on. Trimmed to
+              the status strip — the stages carry the state on their own. */}
           <div className="dashboard-panel session-screen__progress">
             <div className="session-screen__progress-head">
-              <div>
-                <div className="dashboard-panel__title">Session</div>
-                <div className="dashboard-panel__sub">
-                  {teammate.name} is <strong>{sessionStatusLabel.toLowerCase()}</strong>
-                </div>
+              <div className="session-screen__progress-status">
+                <span className="session-screen__progress-dot" aria-hidden="true" />
+                {teammate.name} is <strong>{sessionStatusLabel.toLowerCase()}</strong>
               </div>
               <span className="session-screen__progress-count">
                 {games.length}/{gamesBooked} games
@@ -653,7 +653,7 @@ export function SessionScreen({ orderId }: Props) {
               })}
             </div>
 
-            {games.length > 0 ? (
+            {games.length > 0 && (
               <div className="session-screen__proofs">
                 {games.map((game) => (
                   <div className="session-screen__proof" key={game.gameNumber}>
@@ -675,11 +675,6 @@ export function SessionScreen({ orderId }: Props) {
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className="session-screen__progress-empty">
-                <i className="fa-solid fa-camera" aria-hidden="true" /> {teammate.name} posts a result screenshot here after
-                each game.
-              </p>
             )}
           </div>
         </Reveal>

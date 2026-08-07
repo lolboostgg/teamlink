@@ -7119,11 +7119,64 @@ ul {
   align-items: start;
 }
 
-/* The chat keeps the whole right column; the teammate card and the session
-   progress panel stack down the left one. */
+/* The teammate card owns the left column; the right one carries the status
+   strip with the chat directly beneath it, so the thing a waiting customer
+   keeps checking sits at the top of the column they're already reading. */
+.session-screen__side {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
+.session-screen__progress-wrap {
+  grid-column: 2;
+  grid-row: 1;
+}
+
 .session-screen__chat-wrap {
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 2;
+}
+
+.session-screen__progress-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.session-screen__progress-status strong {
+  color: var(--text);
+}
+
+.session-screen__progress-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* One line, scrolled rather than wrapped: a strip that reflows to two rows
+   stops reading as a sequence of stages. */
+.session-screen__progress .session-steps {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 12px 0 0;
+}
+
+.session-screen__progress .session-steps::-webkit-scrollbar {
+  display: none;
+}
+
+.session-screen__progress .session-step {
+  flex: 0 0 auto;
+}
+
+/* Stages still ahead recede so the current one carries the eye. */
+.session-screen__progress .session-step:not(.is-active):not(.is-done) {
+  opacity: 0.5;
 }
 
 .session-screen__progress-head {
@@ -7194,13 +7247,6 @@ ul {
 .session-screen__proof > span small {
   color: var(--hue-green);
   font-size: 9px;
-}
-
-.session-screen__progress-empty {
-  margin: 12px 0 0;
-  color: var(--text-faint);
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .session-screen__title {
@@ -7527,6 +7573,8 @@ ul {
     grid-template-columns: 1fr;
   }
 
+  .session-screen__side,
+  .session-screen__progress-wrap,
   .session-screen__chat-wrap {
     grid-column: auto;
     grid-row: auto;

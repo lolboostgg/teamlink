@@ -329,22 +329,23 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                   <dd>{order.ignRegion}</dd>
                 </div>
               )}
-              {formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) && (
-                <div>
-                  <dt>Rank</dt>
-                  <dd>{formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null)}</dd>
-                </div>
-              )}
-              {order.ignRoles && order.ignRoles.length > 0 && (
-                <div>
-                  <dt>{getGameProfileConfig(order.gameSlug)?.roles?.label ?? "Roles"}</dt>
-                  <dd>
-                    {order.ignRoles
-                      .map((value) => getGameProfileConfig(order.gameSlug)?.roles?.options.find((o) => o.value === value)?.label ?? value)
-                      .join(", ")}
-                  </dd>
-                </div>
-              )}
+              {/* Both rows stay put even when empty: "Unranked" and "Any" are
+                  answers the teammate needs, and hiding the row instead read
+                  as the customer never having been asked. */}
+              <div>
+                <dt>Rank</dt>
+                <dd>{formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) || "Unranked"}</dd>
+              </div>
+              <div>
+                <dt>{getGameProfileConfig(order.gameSlug)?.roles?.label ?? "Roles"}</dt>
+                <dd>
+                  {order.ignRoles && order.ignRoles.length > 0
+                    ? order.ignRoles
+                        .map((value) => getGameProfileConfig(order.gameSlug)?.roles?.options.find((o) => o.value === value)?.label ?? value)
+                        .join(", ")
+                    : "Any"}
+                </dd>
+              </div>
             </dl>
           </div>
         )}
