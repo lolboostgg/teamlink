@@ -3259,9 +3259,9 @@ ul {
   background: rgba(0, 0, 0, 0.35);
 }
 
-.chip-check--avatar:has(input:checked) .chip-check__icon {
-  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
-}
+/* Selection already shows on the chip's own border/glow (see
+   .chip-check:has(input:checked) above) — tinting the icon's own border
+   too was two highlights competing for the same "this is selected" job. */
 
 .chip-check .flag-icon {
   width: 18px;
@@ -10291,6 +10291,12 @@ a.notification-panel__item:hover {
 .payout-select__trigger i { color: var(--text-faint); font-size: 10px; transition: transform .16s ease; }
 .payout-select.is-open .payout-select__trigger > i { transform: rotate(180deg); }
 .payout-select__popover { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: 100%; min-width: 240px; padding: 7px; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 11px; background: #151925; box-shadow: 0 18px 45px rgba(0, 0, 0, .38); }
+/* Portaled to document.body (see DropdownShell in CheckoutIngameStep.tsx)
+   so it can never be clipped by, or add scroll height to, the modal it
+   opens from — position/top/left come from the inline style instead of
+   the rule above, this just needs to out-rank the modal overlay (z-index
+   200) it now renders as a sibling of. */
+.payout-select__popover--portal { z-index: 500; }
 .payout-select__search { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--dash-surface-2); }
 .payout-select__search i { color: var(--text-faint); font-size: 10px; }
 .payout-select__search input { min-width: 0; min-height: 37px; padding: 0; border: 0; outline: 0; background: transparent; box-shadow: none; font-size: 11px; }
@@ -12149,7 +12155,7 @@ a.notification-panel__item:hover {
 .ingame-modal .ingame-step__head h2 { font-size: 18px; }
 /* Full-width buttons: at this width the pair reads as one decision rather
    than two small controls pushed into a corner. */
-.ingame-modal .ingame-step__actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+.ingame-modal .ingame-step__actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
 .ingame-modal .ingame-step__actions .btn--vivid {
   background: var(--rank-color, var(--accent));
   color: #05070d;
@@ -12210,6 +12216,17 @@ a.notification-panel__item:hover {
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+/* .payout-select__popover li button > span sets justify-content: space-
+   between + flex: 1 for the payout-select's own label/value pairs — that
+   rule's selector (class + 3 elements) outranks .rank-select__current
+   alone, which is what was pushing the icon and label to opposite ends
+   of the row instead of sitting together. Matching its own shape here
+   beats it on specificity without needing !important. */
+.rank-select__popover li button > .rank-select__current {
+  justify-content: flex-start;
+  flex: 0 1 auto;
 }
 
 .rank-select__current img {

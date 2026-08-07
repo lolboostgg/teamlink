@@ -6,7 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/CheckoutIngameStep";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
-import { BOOKING_CATEGORIES, type BookingOption } from "@/lib/bookingOptions";
+import { getBookingCategories, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
@@ -62,16 +62,29 @@ const CATEGORY_COLORS: Record<string, string> = {
 // books the game, mode and group size.
 export function BookingWidget({ game }: Props) {
   const router = useRouter();
-  const [activeCategory, setActiveCategory] = useState(BOOKING_CATEGORIES[0].category);
-  const [selected, setSelected] = useState<BookingOption>(BOOKING_CATEGORIES[0].options[0]);
+  const bookingCategories = useMemo(() => getBookingCategories(game.slug), [game.slug]);
+  const [activeCategory, setActiveCategory] = useState(bookingCategories[0].category);
+  const [selected, setSelected] = useState<BookingOption>(bookingCategories[0].options[0]);
   const [groupSize, setGroupSize] = useState(1);
-  const visibleCategory = BOOKING_CATEGORIES.find((cat) => cat.category === activeCategory) ?? BOOKING_CATEGORIES[0];
+  const visibleCategory = bookingCategories.find((cat) => cat.category === activeCategory) ?? bookingCategories[0];
   const [pulsing, setPulsing] = useState(false);
   const [ingameOpen, setIngameOpen] = useState(false);
   const [editAccountOpen, setEditAccountOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(-1);
   const { status } = useSession();
   const firstRender = useRef(true);
+
+  // This widget can stay mounted across a game switch (see games/[slug]/
+  // layout.tsx) rather than remounting, so the category/mode picked for
+  // the previous game has to be reset here — otherwise switching from LoL
+  // to a game without a "Ranked" category could leave `selected` pointing
+  // at an option that's no longer in the visible list at all.
+  useEffect(() => {
+    setActiveCategory(bookingCategories[0].category);
+    setSelected(bookingCategories[0].options[0]);
+    setGroupSize(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.slug]);
 
   // Picking a 1-on-1 mode (Duo, Coach, ...) after having raised the group
   // size on a Flex-style mode must not silently keep booking (and pricing)
@@ -150,7 +163,7 @@ export function BookingWidget({ game }: Props) {
 
         <Reveal delay={30}>
           <div className="booking-tabs" role="tablist">
-            {BOOKING_CATEGORIES.map((cat) => (
+            {bookingCategories.map((cat) => (
               <button
                 key={cat.category}
                 type="button"

@@ -186,7 +186,7 @@ export function MatchmakingScreen({ orderId }: Props) {
   // real "actively searching" phase once the order is in — same visual
   // either way, just with real details (and preferences) once available.
   if (!loaded || order?.status === "candidates_ready") {
-    const optionDescription = order ? getBookingOptionDescription(order.option) : undefined;
+    const optionDescription = order ? getBookingOptionDescription(order.gameSlug, order.option) : undefined;
     const dispatchWindowSeconds = Math.max(1, Math.ceil(dispatchWindowMs / 1000));
     const progressPct = order ? Math.min(100, (searchElapsedSeconds / dispatchWindowSeconds) * 100) : 0;
     return (

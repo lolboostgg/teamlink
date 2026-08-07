@@ -1,28 +1,75 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, useTransition, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
 import { regionsForGame, ignPlaceholder, ignHint, type RegionOption } from "@/lib/gameRegions";
 import { DIVISIONS, ranksForGame, rankHasDivisions, formatRank } from "@/lib/gameRanks";
 import { listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
 
-// Same dropdown shape as SearchablePayoutSelect (VerificationEditor.tsx) —
-// a native <select> can't be themed to match the dark popover the rest of
-// this modal uses, and its open-state rendering is whatever the OS gives it.
-// No search box here: the region list per game tops out around ten entries.
-function RegionSelect({ value, options, onChange }: { value: string; options: RegionOption[]; onChange: (value: string) => void }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Shared shell behind RegionSelect/RankSelect below.
+ *
+ * The popover portals to document.body instead of rendering inline: inline,
+ * it was an absolutely-positioned child inside .ingame-modal's own
+ * scrollable box, and an absolutely-positioned element still counts toward
+ * its scroll-container's content size — an 11-row list popping open was
+ * what made the whole modal grow a scrollbar. Portaling it out, positioned
+ * from the trigger's own screen rect, also means it can never be clipped
+ * by the modal or sit under it.
+ *
+ * `openId`/`onOpenChange` (rather than each dropdown owning its own `open`
+ * state) is what makes opening one close the other — they share one slot.
+ */
+function DropdownShell({
+  id,
+  openId,
+  onOpenChange,
+  trigger,
+  listId,
+  children,
+}: {
+  id: string;
+  openId: string | null;
+  onOpenChange: (id: string | null) => void;
+  trigger: (open: boolean) => ReactNode;
+  listId: string;
+  children: ReactNode;
+}) {
+  const open = openId === id;
   const rootRef = useRef<HTMLDivElement>(null);
-  const listId = useId();
-  const selected = options.find((option) => option.value === value);
+  // The popover portals out to document.body, so it's no longer a DOM
+  // descendant of rootRef — the outside-click check below needs its own
+  // ref for it, or every click inside the (now detached) list would count
+  // as "outside" and close the dropdown on mousedown, before the option
+  // button's click even gets to fire.
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    function place() {
+      const box = rootRef.current?.getBoundingClientRect();
+      if (box) setRect({ top: box.bottom + 6, left: box.left, width: box.width });
+    }
+    place();
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
+    return () => {
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const close = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !popoverRef.current?.contains(target)) onOpenChange(null);
     };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   return (
@@ -33,37 +80,77 @@ function RegionSelect({ value, options, onChange }: { value: string; options: Re
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => onOpenChange(open ? null : id)}
       >
-        <span>{selected ? `${selected.label} (${selected.value})` : "Select a region"}</span>
+        {trigger(open)}
         <i className="fa-solid fa-chevron-down" aria-hidden="true" />
       </button>
-      {open && (
-        <div className="payout-select__popover">
-          <ul id={listId} role="listbox">
-            {options.map((option) => (
-              <li key={option.value}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={option.value === value}
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  <span>
-                    <strong>{option.label}</strong>
-                    <small>{option.value}</small>
-                  </span>
-                  {option.value === value && <i className="fa-solid fa-check" aria-hidden="true" />}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {open &&
+        rect &&
+        createPortal(
+          <div
+            ref={popoverRef}
+            className="payout-select__popover payout-select__popover--portal"
+            style={{ position: "fixed", top: rect.top, left: rect.left, width: rect.width }}
+          >
+            <ul id={listId} role="listbox">
+              {children}
+            </ul>
+          </div>,
+          document.body,
+        )}
     </div>
+  );
+}
+
+// A native <select> can't be themed to match the dark popover the rest of
+// this modal uses, and its open-state rendering is whatever the OS gives
+// it. No search box here: the region list per game tops out around ten
+// entries.
+function RegionSelect({
+  value,
+  options,
+  onChange,
+  openId,
+  onOpenChange,
+}: {
+  value: string;
+  options: RegionOption[];
+  onChange: (value: string) => void;
+  openId: string | null;
+  onOpenChange: (id: string | null) => void;
+}) {
+  const listId = useId();
+  const selected = options.find((option) => option.value === value);
+
+  return (
+    <DropdownShell
+      id="region"
+      openId={openId}
+      onOpenChange={onOpenChange}
+      listId={listId}
+      trigger={() => <span>{selected ? `${selected.label} (${selected.value})` : "Select a region"}</span>}
+    >
+      {options.map((option) => (
+        <li key={option.value}>
+          <button
+            type="button"
+            role="option"
+            aria-selected={option.value === value}
+            onClick={() => {
+              onChange(option.value);
+              onOpenChange(null);
+            }}
+          >
+            <span>
+              <strong>{option.label}</strong>
+              <small>{option.value}</small>
+            </span>
+            {option.value === value && <i className="fa-solid fa-check" aria-hidden="true" />}
+          </button>
+        </li>
+      ))}
+    </DropdownShell>
   );
 }
 
@@ -75,35 +162,25 @@ function RankSelect({
   value,
   options,
   onChange,
+  openId,
+  onOpenChange,
 }: {
   value: string | null;
   options: { value: string; label: string; icon?: string }[];
   onChange: (value: string) => void;
+  openId: string | null;
+  onOpenChange: (id: string | null) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const selected = options.find((option) => option.value === value);
 
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
   return (
-    <div className={`payout-select rank-select${open ? " is-open" : ""}`} ref={rootRef}>
-      <button
-        type="button"
-        className="payout-select__trigger"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listId}
-        onClick={() => setOpen((current) => !current)}
-      >
+    <DropdownShell
+      id="rank"
+      openId={openId}
+      onOpenChange={onOpenChange}
+      listId={listId}
+      trigger={() => (
         <span className="rank-select__current">
           {selected?.icon && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -111,37 +188,31 @@ function RankSelect({
           )}
           <span className={selected ? "" : "is-placeholder"}>{selected?.label ?? "Select your rank"}</span>
         </span>
-        <i className="fa-solid fa-chevron-down" aria-hidden="true" />
-      </button>
-      {open && (
-        <div className="payout-select__popover rank-select__popover">
-          <ul id={listId} role="listbox">
-            {options.map((option) => (
-              <li key={option.value} style={{ "--rank-color": RANK_COLORS[option.value] ?? "var(--accent)" } as CSSProperties}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={option.value === value}
-                  onClick={() => {
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  <span className="rank-select__current">
-                    {option.icon && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={option.icon} alt="" />
-                    )}
-                    <strong>{option.label}</strong>
-                  </span>
-                  {option.value === value && <i className="fa-solid fa-check" aria-hidden="true" />}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
       )}
-    </div>
+    >
+      {options.map((option) => (
+        <li key={option.value} style={{ "--rank-color": RANK_COLORS[option.value] ?? "var(--accent)" } as CSSProperties}>
+          <button
+            type="button"
+            role="option"
+            aria-selected={option.value === value}
+            onClick={() => {
+              onChange(option.value);
+              onOpenChange(null);
+            }}
+          >
+            <span className="rank-select__current">
+              {option.icon && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={option.icon} alt="" />
+              )}
+              <strong>{option.label}</strong>
+            </span>
+            {option.value === value && <i className="fa-solid fa-check" aria-hidden="true" />}
+          </button>
+        </li>
+      ))}
+    </DropdownShell>
   );
 }
 
@@ -216,6 +287,7 @@ export function CheckoutIngameStep({
   const [rank, setRank] = useState<string | null>(null);
   const [division, setDivision] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -349,7 +421,13 @@ export function CheckoutIngameStep({
 
             <div className="form-row">
               <label>Server / region</label>
-              <RegionSelect value={region} options={regions} onChange={setRegion} />
+              <RegionSelect
+                value={region}
+                options={regions}
+                onChange={setRegion}
+                openId={openDropdown}
+                onOpenChange={setOpenDropdown}
+              />
             </div>
           </div>
 
@@ -363,6 +441,8 @@ export function CheckoutIngameStep({
                   setRank(value);
                   if (!rankHasDivisions(value)) setDivision(null);
                 }}
+                openId={openDropdown}
+                onOpenChange={setOpenDropdown}
               />
               {rankHasDivisions(rank) && (
                 <div className="ingame-divisions" role="group" aria-label="Division">

@@ -63,7 +63,7 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
   const game = getGameBySlug(input.gameSlug);
   if (!game) return { ok: false, error: "Unknown game." };
 
-  const subtotalEUR = quoteBookingEUR(input.option, input.teammates);
+  const subtotalEUR = quoteBookingEUR(input.gameSlug, input.option, input.teammates);
   if (subtotalEUR === null) return { ok: false, error: "Unknown booking option." };
 
   const guestEmail = input.guestEmail?.trim().toLowerCase() || null;
