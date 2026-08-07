@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { getCreditPackage } from "@/lib/credits";
 import { startCheckout } from "@/lib/stripeCheckout";
+import { publish } from "@/lib/events/bus";
 import type { PaymentMethodKey } from "@/lib/payments";
 
 /**
@@ -69,6 +70,10 @@ export async function spendCredits(amountEUR: number, note: string): Promise<{ o
     throw err;
   }
 
+  // Every credit spend funnels through here — tips, replays, extra games —
+  // so one signal from this point keeps the header's balance honest without
+  // each caller having to remember to send it.
+  await publish({ topic: "orders", key: "credits", userIds: [session.user.id] });
   revalidatePath("/", "layout");
   return { ok: true };
 }

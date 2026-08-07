@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { CREDIT_PACKAGES, type CreditPackage } from "@/lib/credits";
 import { purchaseCredits } from "@/app/actions/credits";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useLiveSync } from "@/lib/events/useLiveSync";
 
 const BADGE_LABEL: Record<NonNullable<CreditPackage["badge"]>, string> = {
   popular: "Popular",
@@ -26,18 +27,26 @@ export function CreditsWidget() {
   const [pending, startTransition] = useTransition();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/me/credits")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { balanceCents: number } | null) => {
-        if (!cancelled && data) setBalanceCents(data.balanceCents);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
+  const loadBalance = useCallback(async () => {
+    try {
+      const res = await fetch("/api/me/credits", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { balanceCents: number } | null;
+      if (data) setBalanceCents(data.balanceCents);
+    } catch {
+      // Keep whatever is on screen; the next signal or the fallback retries.
+    }
   }, []);
+
+  // The balance used to be read once on mount and never again, so spending
+  // it — a booking, a tip, a replay — or being refunded left the header
+  // showing a stale figure until the next full reload. Orders are what move
+  // it, and the fallback poll covers the changes that publish nothing.
+  useLiveSync("orders", loadBalance, 20_000);
+
+  useEffect(() => {
+    void loadBalance();
+  }, [loadBalance]);
 
   useEffect(() => {
     if (!open) return;
