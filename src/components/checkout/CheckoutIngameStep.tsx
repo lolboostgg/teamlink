@@ -15,59 +15,62 @@ import type { RiotLookupResult } from "@/lib/riotApi";
 // widen it.
 const RIOT_VERIFY_GAMES = new Set(["league-of-legends"]);
 
-// Pinned rather than fetched from Data Dragon's versions.json each time —
-// this is only for a profile icon thumbnail, and a slightly stale patch
-// number still resolves to a valid (if not the very newest) icon set.
-const DDRAGON_VERSION = "15.10.1";
+// Matches LOL_VERSION in the main site's config. Pinned rather than fetched
+// from versions.json each time, but it has to stay reasonably current: an
+// icon added in a later patch simply 404s on an older version.
+const DDRAGON_VERSION = "16.14.1";
 function profileIconUrl(profileIconId: number): string {
   return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/profileicon/${profileIconId}.png`;
 }
 
 /** Renders the found / not_found / wrong_server outcome of an auto-verify lookup. */
-function RiotResultCard({ result, region }: { result: RiotLookupResult; region: string }) {
+function RiotResultCard({
+  result,
+  region,
+  rankLabel,
+}: {
+  result: RiotLookupResult;
+  region: string;
+  rankLabel: string | null;
+}) {
   if (result.status === "found") {
     return (
       <div className="riot-card riot-card--found">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={profileIconUrl(result.profileIconId)} alt="" className="riot-card__avatar" />
-        <div className="riot-card__body">
-          <span className="riot-card__label">Account found</span>
+        <img src={profileIconUrl(result.profileIconId)} alt="" className="riot-card__avatar" loading="lazy" />
+        <span className="riot-card__body">
           <strong className="riot-card__name">
             {result.gameName}#{result.tagLine}
           </strong>
           <span className="riot-card__meta">
             Level {result.summonerLevel} · {result.regionLabel}
+            {rankLabel && ` · ${rankLabel}`}
           </span>
-        </div>
+        </span>
         <span className="riot-card__badge">
-          <i className="fa-solid fa-circle-check" aria-hidden="true" /> Account verified
+          <i className="fa-solid fa-circle-check" aria-hidden="true" /> Verified
         </span>
       </div>
     );
   }
 
-  if (result.status === "wrong_server") {
-    return (
-      <div className="riot-card riot-card--warning">
-        <i className="fa-solid fa-triangle-exclamation riot-card__icon" aria-hidden="true" />
-        <div className="riot-card__body">
-          <span className="riot-card__label">Wrong server</span>
-          <span className="riot-card__meta">
-            This order is for {region}, but this Riot ID was found on {result.actualRegionLabel}. Please
-            contact support to change the order server. Saving is disabled.
-          </span>
-        </div>
-      </div>
-    );
-  }
+  const message =
+    result.status === "wrong_server"
+      ? `This order is for ${region}, but this Riot ID is on ${result.actualRegionLabel} — contact support to change the order server.`
+      : "No Riot ID with that name and tag — check the spelling, e.g. Faker#1234.";
 
   return (
     <div className="riot-card riot-card--warning">
-      <i className="fa-solid fa-magnifying-glass riot-card__icon" aria-hidden="true" />
-      <div className="riot-card__body">
-        <span className="riot-card__label">Riot ID not found</span>
-        <span className="riot-card__meta">Please enter the full Riot ID with #tag, e.g. Faker#1234.</span>
-      </div>
+      <i
+        className={`fa-solid ${result.status === "wrong_server" ? "fa-triangle-exclamation" : "fa-magnifying-glass"} riot-card__icon`}
+        aria-hidden="true"
+      />
+      <span className="riot-card__body">
+        <strong className="riot-card__name">
+          {result.status === "wrong_server" ? "Wrong server" : "Riot ID not found"}
+        </strong>
+        <span className="riot-card__meta">{message}</span>
+      </span>
     </div>
   );
 }
@@ -510,6 +513,25 @@ export function CheckoutIngameStep({
 
   const accentColor = (rank && RANK_COLORS[rank]) || "var(--accent)";
 
+  const riotFeedback = !RIOT_VERIFY_GAMES.has(gameSlug)
+    ? null
+    : riotChecking
+      ? "checking"
+      : riotError
+        ? "error"
+        : riotResult
+          ? "result"
+          : null;
+
+  // Solo/Duo is what the lookup asks Riot for, so say so rather than
+  // leaving an unqualified rank that could be read as flex.
+  const riotRankLabel =
+    riotResult?.status === "found"
+      ? riotResult.rank
+        ? `${formatRank(gameSlug, riotResult.rank, riotResult.division)} · Solo/Duo`
+        : "Unranked · Solo/Duo"
+      : null;
+
   return (
     <div className="checkout-card ingame-step" style={{ "--rank-color": accentColor } as CSSProperties}>
       <div className="ingame-step__head">
@@ -562,23 +584,7 @@ export function CheckoutIngameStep({
                 placeholder={ignPlaceholder(gameSlug)}
                 autoComplete="off"
               />
-              {RIOT_VERIFY_GAMES.has(gameSlug) ? (
-                riotChecking ? (
-                  <small className="form-row__note ingame-riot-note">
-                    <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> Looking up your account…
-                  </small>
-                ) : riotError ? (
-                  <small className="form-row__note ingame-riot-note is-error">
-                    <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {riotError}
-                  </small>
-                ) : riotResult ? (
-                  <RiotResultCard result={riotResult} region={region} />
-                ) : (
-                  <small className="form-row__note">{ignHint(gameSlug)}</small>
-                )
-              ) : (
-                <small className="form-row__note">{ignHint(gameSlug)}</small>
-              )}
+              {!riotFeedback && <small className="form-row__note">{ignHint(gameSlug)}</small>}
             </div>
 
             <div className="form-row">
@@ -592,6 +598,22 @@ export function CheckoutIngameStep({
               />
             </div>
           </div>
+
+          {/* Outside the two-column grid above: cramped into one column the
+              name, level and badge all wrapped onto their own lines. */}
+          {riotFeedback === "checking" && (
+            <p className="riot-line">
+              <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> Looking up your account…
+            </p>
+          )}
+          {riotFeedback === "error" && (
+            <p className="riot-line is-error">
+              <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {riotError}
+            </p>
+          )}
+          {riotFeedback === "result" && riotResult && (
+            <RiotResultCard result={riotResult} region={region} rankLabel={riotRankLabel} />
+          )}
 
           {rankOptions.length > 0 && (
             <div className="form-row form-row--section">

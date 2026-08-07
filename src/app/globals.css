@@ -3148,11 +3148,17 @@ ul {
 /* Riot ID auto-verify — trial Riot API integration (see app/actions/riot.ts).
    No manual button: typing a full Name#TAG (debounced) triggers a lookup,
    and the result renders as one of three cards below the field. */
-.ingame-riot-note.is-error {
-  color: var(--danger);
+.riot-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
 
-.ingame-riot-note.is-error i {
+.riot-line.is-error,
+.riot-line.is-error i {
   color: var(--danger);
 }
 
@@ -3160,8 +3166,8 @@ ul {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
-  padding: 10px 12px;
+  margin-top: 10px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.03);
@@ -3179,58 +3185,47 @@ ul {
 
 .riot-card__avatar {
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .riot-card__icon {
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.06);
   color: var(--danger);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .riot-card__body {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
-.riot-card__label {
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.riot-card--found .riot-card__label {
-  color: var(--success);
-}
-
-.riot-card--warning .riot-card__label {
-  color: var(--danger);
-}
-
 .riot-card__name {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .riot-card__meta {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .riot-card__badge {
@@ -3239,17 +3234,17 @@ ul {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 9px;
+  padding: 3px 8px;
   border-radius: 999px;
   background: color-mix(in srgb, var(--success) 18%, transparent);
   color: var(--success);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .riot-card__badge i {
-  font-size: 10px;
+  font-size: 9.5px;
 }
 
 .form-row__error {
@@ -3464,12 +3459,6 @@ ul {
   color: var(--text-faint);
   font-size: 11px;
   line-height: 1.4;
-}
-
-/* Riot verify result carries its own icon (check / warning) — the generic
-   dot would just be a second, redundant marker next to it. */
-.ingame-riot-note::before {
-  display: none;
 }
 
 .form-row__note::before {
