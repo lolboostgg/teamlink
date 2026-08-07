@@ -76,6 +76,13 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
       teammateAvatarFrame: selected ? frameOf(selected.teammate) : null,
       customerAvatarUrl: order.clientUser?.avatarUrl ?? null,
       customerAvatarFrame: order.clientUser ? frameOf(order.clientUser) : null,
+      // The in-game identity snapshotted at checkout (CheckoutIngameStep) —
+      // who the teammate actually needs to add and what to expect from them.
+      ign: order.ign,
+      ignRegion: order.ignRegion,
+      ignRank: order.ignRank,
+      ignDivision: order.ignDivision,
+      ignRoles: (order.ignRoles as string[] | null) ?? [],
       games: order.games.map((g) => ({
         gameNumber: g.gameNumber,
         result: g.result,

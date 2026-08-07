@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { updateProfile, changePassword } from "@/app/(marketing)/dashboard/client/profile/actions";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -15,6 +16,7 @@ interface Props {
 export function ClientProfileForm({ initial, section = "both" }: Props) {
   const { showToast } = useToast();
   const { update: updateSession } = useSession();
+  const router = useRouter();
   const [name, setName] = useState(initial.name);
   const [avatar, setAvatar] = useState({
     avatarUrl: initial.avatarUrl,
@@ -44,6 +46,10 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
         // update() with no arguments does a plain GET that re-reads the
         // unchanged session.
         await updateSession({});
+        // The identity strip above this form (ProfileSection in
+        // SettingsScreen.tsx) is a Server Component prop, not state — it
+        // doesn't see this save at all unless the server render is redone.
+        router.refresh();
         showToast("Profile updated.", "success");
       } catch (err) {
         setProfileError(err instanceof Error ? err.message : "Couldn't save — try again.");

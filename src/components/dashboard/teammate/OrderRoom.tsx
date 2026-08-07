@@ -27,6 +27,8 @@ import {
   type SessionStatus,
 } from "@/lib/dispatch/sessionTypes";
 import type { DispatchOrderView } from "@/lib/dispatch/phase";
+import { formatRank } from "@/lib/gameRanks";
+import { getGameProfileConfig } from "@/lib/gameProfiles";
 
 function GameCompletionModal({
   orderId,
@@ -305,6 +307,47 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </div>
           </dl>
         </div>
+
+        {(order.ign || order.ignRank || (order.ignRoles && order.ignRoles.length > 0)) && (
+          <div className="dashboard-panel">
+            <div className="dashboard-panel__head">
+              <div>
+                <div className="dashboard-panel__title">Account</div>
+                <div className="dashboard-panel__sub">Who to add in {order.gameName}</div>
+              </div>
+            </div>
+            <dl className="account-facts">
+              {order.ign && (
+                <div>
+                  <dt>In-game name</dt>
+                  <dd>{order.ign}</dd>
+                </div>
+              )}
+              {order.ignRegion && (
+                <div>
+                  <dt>Region</dt>
+                  <dd>{order.ignRegion}</dd>
+                </div>
+              )}
+              {formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) && (
+                <div>
+                  <dt>Rank</dt>
+                  <dd>{formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null)}</dd>
+                </div>
+              )}
+              {order.ignRoles && order.ignRoles.length > 0 && (
+                <div>
+                  <dt>{getGameProfileConfig(order.gameSlug)?.roles?.label ?? "Roles"}</dt>
+                  <dd>
+                    {order.ignRoles
+                      .map((value) => getGameProfileConfig(order.gameSlug)?.roles?.options.find((o) => o.value === value)?.label ?? value)
+                      .join(", ")}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        )}
 
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">

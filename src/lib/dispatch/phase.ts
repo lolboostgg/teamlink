@@ -42,6 +42,13 @@ export interface DispatchOrderView {
   teammateAvatarFrame?: AvatarFrame | null;
   customerAvatarFrame?: AvatarFrame | null;
   games: { gameNumber: number; result: string; note: string | null; proofPath: string | null; proofName: string | null }[];
+  // The in-game identity snapshotted at checkout (CheckoutIngameStep) — who
+  // the teammate actually needs to add and what to expect from them.
+  ign?: string | null;
+  ignRegion?: string | null;
+  ignRank?: string | null;
+  ignDivision?: string | null;
+  ignRoles?: string[];
 }
 
 export interface DispatchStateView {
