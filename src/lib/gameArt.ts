@@ -16,16 +16,32 @@ export function gameIcon(slug: string): string {
 }
 
 const BACKGROUND_EXTENSIONS: Record<string, string> = {
-  "apex-legends": "avif",
   "league-of-legends": "avif",
   "marvel-rivals": "avif",
   "rocket-league": "avif",
 };
 
 // Wide ambient art for the full-page backdrop that shifts with the
-// hovered/selected game (see AmbientGameBackground).
+// hovered/selected game (see AmbientGameBackground). Doubles as the
+// <video> poster for games that have a background clip instead.
 export function gameBackground(slug: string): string {
   return `/games/backgrounds/${slug}.${BACKGROUND_EXTENSIONS[slug] ?? "webp"}`;
+}
+
+const BACKGROUND_VIDEO_EXTENSIONS: Record<string, string> = {
+  "league-of-legends": "webm",
+  "teamfight-tactics": "webm",
+  "marvel-rivals": "mp4",
+  valorant: "mp4",
+};
+
+// A handful of games get a looping ambient clip instead of a still — same
+// blitz.gg-style hero treatment, muted/no controls (see AmbientGameBackground).
+// Null means "no clip for this game", not "no background" — gameBackground()
+// still covers every game.
+export function gameBackgroundVideo(slug: string): string | null {
+  const ext = BACKGROUND_VIDEO_EXTENSIONS[slug];
+  return ext ? `/games/backgrounds/${slug}.${ext}` : null;
 }
 
 // Art for every "choose game" card (hero carousel, /games grid, teammate

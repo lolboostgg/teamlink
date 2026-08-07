@@ -1,6 +1,6 @@
 "use client";
 
-import { gameBackground } from "@/lib/gameArt";
+import { gameBackground, gameBackgroundVideo } from "@/lib/gameArt";
 
 // Ambient backdrop scoped to whichever section renders it (see .hero and
 // .games-page-hero — both are `position: relative; overflow: hidden`, so
@@ -11,10 +11,30 @@ import { gameBackground } from "@/lib/gameArt";
 // to fill the height, which read as distorted/over-cropped.
 // key={slug} forces a remount on change so the fade-in animation replays.
 export function AmbientGameBackground({ slug }: { slug: string | null }) {
+  const videoSrc = slug ? gameBackgroundVideo(slug) : null;
   return (
     <div className="ambient-bg" aria-hidden="true">
       {slug && (
-        <div key={slug} className="ambient-bg__layer" style={{ backgroundImage: `url(${gameBackground(slug)})` }} />
+        <div
+          key={slug}
+          className="ambient-bg__layer"
+          style={videoSrc ? undefined : { backgroundImage: `url(${gameBackground(slug)})` }}
+        >
+          {videoSrc && (
+            // Same blitz.gg-style ambient clip, minus sound — muted is also
+            // what lets it autoplay at all in every browser.
+            <video
+              className="ambient-bg__video"
+              src={videoSrc}
+              poster={gameBackground(slug)}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+            />
+          )}
+        </div>
       )}
     </div>
   );

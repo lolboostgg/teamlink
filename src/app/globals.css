@@ -270,6 +270,14 @@ body::before {
   animation: ambientBgIn 1s ease forwards;
 }
 
+.ambient-bg__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+}
+
 @keyframes ambientBgIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -1911,46 +1919,22 @@ ul {
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 14px 16px 14px 20px;
+  padding: 14px 16px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   text-align: left;
   margin-bottom: 8px;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-}
-
-/* Left accent bar in the active category's color — hidden until hover/
-   selection so the resting list still reads as one calm set of rows. */
-.booking-option::before {
-  content: "";
-  position: absolute;
-  left: 8px;
-  top: 10px;
-  bottom: 10px;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--cat-color, var(--accent));
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .booking-option:hover {
   border-color: var(--border-strong);
-  transform: translateX(2px);
-}
-
-.booking-option:hover::before {
-  opacity: 0.5;
 }
 
 .booking-option.is-selected {
   border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 55%, var(--border-strong));
   background: color-mix(in srgb, var(--cat-color, var(--accent)) 8%, var(--bg-elevated));
-}
-
-.booking-option.is-selected::before {
-  opacity: 1;
 }
 
 .booking-option__icon {
