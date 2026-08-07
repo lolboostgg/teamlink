@@ -21,11 +21,18 @@ const BACKGROUND_EXTENSIONS: Record<string, string> = {
   "rocket-league": "avif",
 };
 
+// Games whose background file isn't just `${slug}.${ext}` — used once here
+// for Fortnite so the replaced art gets a genuinely new URL instead of
+// reusing fortnite.webp's old one, which browsers/CDNs had already cached.
+const BACKGROUND_FILE_OVERRIDES: Record<string, string> = {
+  fortnite: "fortnite-key-art.webp",
+};
+
 // Wide ambient art for the full-page backdrop that shifts with the
 // hovered/selected game (see AmbientGameBackground). Doubles as the
 // <video> poster for games that have a background clip instead.
 export function gameBackground(slug: string): string {
-  return `/games/backgrounds/${slug}.${BACKGROUND_EXTENSIONS[slug] ?? "webp"}`;
+  return `/games/backgrounds/${BACKGROUND_FILE_OVERRIDES[slug] ?? `${slug}.${BACKGROUND_EXTENSIONS[slug] ?? "webp"}`}`;
 }
 
 const BACKGROUND_VIDEO_EXTENSIONS: Record<string, string> = {
