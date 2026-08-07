@@ -1911,30 +1911,54 @@ ul {
   align-items: center;
   gap: 14px;
   width: 100%;
-  padding: 13px 16px;
-  border-radius: var(--radius-md);
+  padding: 14px 16px 14px 20px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   text-align: left;
   margin-bottom: 8px;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+/* Left accent bar in the active category's color — hidden until hover/
+   selection so the resting list still reads as one calm set of rows. */
+.booking-option::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--cat-color, var(--accent));
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
 
 .booking-option:hover {
   border-color: var(--border-strong);
+  transform: translateX(2px);
+}
+
+.booking-option:hover::before {
+  opacity: 0.5;
 }
 
 .booking-option.is-selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 55%, var(--border-strong));
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 8%, var(--bg-elevated));
+}
+
+.booking-option.is-selected::before {
+  opacity: 1;
 }
 
 .booking-option__icon {
   width: 34px;
   height: 34px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--accent);
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 16%, transparent);
+  color: var(--cat-color, var(--accent));
   display: grid;
   place-items: center;
   font-size: 13px;
@@ -1942,8 +1966,8 @@ ul {
 }
 
 .booking-option.is-selected .booking-option__icon {
-  background: var(--accent);
-  color: #fff;
+  background: var(--cat-color, var(--accent));
+  color: var(--bg);
 }
 
 .booking-option__main {
@@ -2009,13 +2033,34 @@ ul {
   padding: 22px;
 }
 
-.booking-sidebar__title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+/* Game + option used to be two separate label/value rows — one line says
+   the same thing and is most of why this card used to run so tall. */
+.booking-sidebar__summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.booking-sidebar__summary-game {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.booking-sidebar__summary-option {
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--text-faint);
-  margin-bottom: 14px;
+}
+
+.booking-sidebar__summary-option::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--text-faint);
 }
 
 .booking-sidebar__row {
@@ -5258,6 +5303,49 @@ ul {
   font-size: 12px;
   color: var(--text-faint);
   margin-top: 1px;
+}
+
+.trust-points--compact {
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.trust-points__row {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.trust-points__row-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.trust-points--compact .trust-points__icon {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+
+.trust-points__row-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+.trust-points--compact .trust-points__payments {
+  padding-top: 12px;
+}
+
+.trust-points--compact .trust-points__payment-icons {
+  font-size: 18px;
+  gap: 10px;
 }
 
 .trust-points__payments {

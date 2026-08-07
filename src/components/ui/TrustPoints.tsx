@@ -6,24 +6,43 @@ const TRUST_POINTS = [
   { icon: "fa-solid fa-headset", label: "24/7 human support", desc: "Real people, no bots" },
 ];
 
+interface Props {
+  /** One slim icon row instead of three stacked description rows — used
+   * where the full version reads as too tall (e.g. the booking sidebar). */
+  compact?: boolean;
+}
+
 // Reused on both checkout and the booking sidebar — the moment right
 // before paying/booking is exactly where purchase anxiety peaks, so this
 // is deliberately concrete (specific guarantees, not just a generic
 // "secure" badge) rather than decorative.
-export function TrustPoints() {
+export function TrustPoints({ compact = false }: Props) {
   return (
-    <div className="trust-points">
-      {TRUST_POINTS.map((point) => (
-        <div key={point.label} className="trust-points__point">
-          <span className="trust-points__icon">
-            <i className={point.icon} aria-hidden="true" />
-          </span>
-          <div>
-            <div className="trust-points__label">{point.label}</div>
-            <div className="trust-points__desc">{point.desc}</div>
-          </div>
+    <div className={`trust-points${compact ? " trust-points--compact" : ""}`}>
+      {compact ? (
+        <div className="trust-points__row">
+          {TRUST_POINTS.map((point) => (
+            <div key={point.label} className="trust-points__row-item" title={point.desc}>
+              <span className="trust-points__icon">
+                <i className={point.icon} aria-hidden="true" />
+              </span>
+              <span className="trust-points__row-label">{point.label}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      ) : (
+        TRUST_POINTS.map((point) => (
+          <div key={point.label} className="trust-points__point">
+            <span className="trust-points__icon">
+              <i className={point.icon} aria-hidden="true" />
+            </span>
+            <div>
+              <div className="trust-points__label">{point.label}</div>
+              <div className="trust-points__desc">{point.desc}</div>
+            </div>
+          </div>
+        ))
+      )}
 
       <div className="trust-points__payments">
         <span className="trust-points__payments-label">We accept</span>

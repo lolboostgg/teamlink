@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useSession } from "next-auth/react";
 import { Modal } from "@/components/ui/Modal";
 import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/CheckoutIngameStep";
@@ -21,6 +21,16 @@ const CATEGORY_ICONS: Record<string, string> = {
   Ranked: "fa-solid fa-trophy",
   Social: "fa-solid fa-comments",
   Coaching: "fa-solid fa-chalkboard-user",
+};
+
+// Each category gets its own accent instead of every option card looking
+// identical bar the price — same curated hue set already used for icon
+// badges elsewhere in the design system (see globals.css :root comment).
+const CATEGORY_COLORS: Record<string, string> = {
+  "Team Up": "var(--accent)",
+  Ranked: "var(--hue-gold)",
+  Social: "var(--hue-pink)",
+  Coaching: "var(--hue-purple)",
 };
 
 // Flat cap for now — per-game-mode limits (e.g. Duo Normal maxes at 1,
@@ -104,7 +114,10 @@ export function BookingWidget({ game }: Props) {
         </Reveal>
 
         <Reveal key={visibleCategory.category} delay={40}>
-          <div className="booking-category">
+          <div
+            className="booking-category"
+            style={{ "--cat-color": CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)" } as CSSProperties}
+          >
             {visibleCategory.options.map((option) => (
               <button
                 key={option.name}
@@ -137,16 +150,11 @@ export function BookingWidget({ game }: Props) {
 
       <div className="booking-sidebar-wrap">
         <aside className="booking-sidebar">
-          <div className="booking-sidebar__title">Your session</div>
+          <div className="booking-sidebar__summary">
+            <span className="booking-sidebar__summary-game">{game.name}</span>
+            <span className="booking-sidebar__summary-option">{selected.name}</span>
+          </div>
 
-          <div className="booking-sidebar__row">
-            <span>Game</span>
-            <span>{game.name}</span>
-          </div>
-          <div className="booking-sidebar__row">
-            <span>Option</span>
-            <span>{selected.name}</span>
-          </div>
           <div className="booking-sidebar__row booking-sidebar__row--last">
             <span>Teammates</span>
             <span className="booking-stepper">
@@ -180,7 +188,7 @@ export function BookingWidget({ game }: Props) {
           </button>
         </aside>
 
-        <TrustPoints />
+        <TrustPoints compact />
       </div>
 
       <Modal open={ingameOpen} onClose={() => setIngameOpen(false)} labelledBy="booking-ingame-title">
