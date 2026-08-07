@@ -1981,6 +1981,32 @@ ul {
   scroll-margin-top: calc(var(--offset-h, var(--header-h)) + 16px);
 }
 
+.booking-edit-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.booking-edit-account:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.booking-edit-account i {
+  color: var(--accent);
+  font-size: 11px;
+}
+
 .booking-category__title {
   font-size: 12px;
   font-weight: 700;

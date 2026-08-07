@@ -1,10 +1,71 @@
 "use client";
 
-import { useEffect, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, useTransition, type CSSProperties } from "react";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
-import { regionsForGame, ignPlaceholder, ignHint } from "@/lib/gameRegions";
+import { regionsForGame, ignPlaceholder, ignHint, type RegionOption } from "@/lib/gameRegions";
 import { DIVISIONS, ranksForGame, rankHasDivisions, formatRank } from "@/lib/gameRanks";
 import { listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
+
+// Same dropdown shape as SearchablePayoutSelect (VerificationEditor.tsx) —
+// a native <select> can't be themed to match the dark popover the rest of
+// this modal uses, and its open-state rendering is whatever the OS gives it.
+// No search box here: the region list per game tops out around ten entries.
+function RegionSelect({ value, options, onChange }: { value: string; options: RegionOption[]; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div className={`payout-select${open ? " is-open" : ""}`} ref={rootRef}>
+      <button
+        type="button"
+        className="payout-select__trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{selected ? `${selected.label} (${selected.value})` : "Select a region"}</span>
+        <i className="fa-solid fa-chevron-down" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="payout-select__popover">
+          <ul id={listId} role="listbox">
+            {options.map((option) => (
+              <li key={option.value}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={option.value === value}
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <span>
+                    <strong>{option.label}</strong>
+                    <small>{option.value}</small>
+                  </span>
+                  {option.value === value && <i className="fa-solid fa-check" aria-hidden="true" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Each tier gets its own color instead of one flat neutral tile for all
 // eleven ranks — matches the metal/gem each rank is actually named after,
@@ -209,14 +270,8 @@ export function CheckoutIngameStep({
             </div>
 
             <div className="form-row">
-              <label htmlFor="ingame-region">Server / region</label>
-              <select id="ingame-region" value={region} onChange={(event) => setRegion(event.target.value)}>
-                {regions.map((entry) => (
-                  <option key={entry.value} value={entry.value}>
-                    {entry.label} ({entry.value})
-                  </option>
-                ))}
-              </select>
+              <label>Server / region</label>
+              <RegionSelect value={region} options={regions} onChange={setRegion} />
             </div>
           </div>
 

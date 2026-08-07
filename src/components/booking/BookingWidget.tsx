@@ -68,6 +68,7 @@ export function BookingWidget({ game }: Props) {
   const visibleCategory = BOOKING_CATEGORIES.find((cat) => cat.category === activeCategory) ?? BOOKING_CATEGORIES[0];
   const [pulsing, setPulsing] = useState(false);
   const [ingameOpen, setIngameOpen] = useState(false);
+  const [editAccountOpen, setEditAccountOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(-1);
   const { status } = useSession();
   const firstRender = useRef(true);
@@ -122,6 +123,14 @@ export function BookingWidget({ game }: Props) {
     <>
     <div className="booking-layout" style={{ "--cat-color": catColor } as CSSProperties}>
       <div>
+        {status === "authenticated" && (
+          <Reveal>
+            <button type="button" className="booking-edit-account" onClick={() => setEditAccountOpen(true)}>
+              <i className="fa-solid fa-user-pen" aria-hidden="true" /> Edit account
+            </button>
+          </Reveal>
+        )}
+
         <Reveal>
           <span className="section__eyebrow booking-heading__eyebrow">Book a session</span>
         </Reveal>
@@ -272,6 +281,21 @@ export function BookingWidget({ game }: Props) {
               setIngameOpen(false);
               goToCheckout(ingame);
             }}
+          />
+        </div>
+      </Modal>
+
+      <Modal open={editAccountOpen} onClose={() => setEditAccountOpen(false)} labelledBy="booking-edit-account-title">
+        <div className="ingame-modal">
+          <CheckoutIngameStep
+            headingId="booking-edit-account-title"
+            gameSlug={game.slug}
+            gameName={game.name}
+            canSave
+            backLabel="Close"
+            continueLabel="Save account"
+            onBack={() => setEditAccountOpen(false)}
+            onContinue={() => setEditAccountOpen(false)}
           />
         </div>
       </Modal>
