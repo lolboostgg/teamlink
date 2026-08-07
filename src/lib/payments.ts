@@ -64,10 +64,10 @@ export const PAYMENT_METHODS: PaymentMethodMeta[] = [
 export const PAYMENT_ICONS = [
   "fa-brands fa-cc-visa",
   "fa-brands fa-cc-mastercard",
-  "fa-brands fa-cc-paypal",
-  "fa-brands fa-cc-apple-pay",
+  "fa-brands fa-paypal",
+  "fa-brands fa-apple-pay",
   "fa-brands fa-google-pay",
-  "fa-brands fa-cc-stripe",
+  "fa-brands fa-stripe",
   "fa-brands fa-bitcoin",
 ];
 

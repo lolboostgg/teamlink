@@ -1885,12 +1885,12 @@ ul {
 
 /* ── Booking widget (game/service page) ────────────────────── */
 .booking-page {
-  padding-bottom: 60px;
+  padding-bottom: 100px;
   scroll-margin-top: calc(var(--offset-h, var(--header-h)) + 16px);
 }
 
 .booking-widget-wrap {
-  padding-top: 40px;
+  padding-top: 72px;
 }
 
 /* One shared light source behind the whole section instead of separate
@@ -5526,27 +5526,17 @@ ul {
   line-height: 1.25;
 }
 
+/* No divider — the card already ends the icon row above with enough
+   spacing; a hairline right under it read as an extra, unnecessary seam. */
 .trust-points--compact .trust-points__payments {
-  padding-top: 12px;
+  padding-top: 14px;
+  border-top: none;
 }
 
 .trust-points--compact .trust-points__payment-icons {
-  gap: 8px;
-}
-
-/* Faint gray glyphs at 13px in a near-invisible chip were reading as
-   blank boxes — a light chip with a near-black glyph is how every real
-   "we accept" strip does it, dark theme or not, precisely so the brand
-   marks stay legible. */
-.trust-points--compact .trust-points__payment-icons i {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 24px;
-  border-radius: 5px;
-  background: #f3f4f8;
-  color: #0d1120;
-  font-size: 15px;
+  gap: 14px;
+  font-size: 20px;
+  color: var(--text-muted);
 }
 
 .trust-points__payments {
