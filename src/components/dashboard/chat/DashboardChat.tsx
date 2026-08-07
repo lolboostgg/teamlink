@@ -23,11 +23,29 @@ export function DashboardChat({ conversations, from }: Props) {
   const { messages, refresh } = useConversationMessages(active?.conversationKey);
   const readOnly = Boolean(active?.lockedAt && active.lockedAt <= Date.now());
 
+  // Two rAFs (not one) so this runs after the browser has actually laid out
+  // the new message, not just after React committed it — one frame is often
+  // still mid-layout and scrolls to the previous, shorter height. The
+  // ResizeObserver catches everything else that changes the thread's height
+  // late, e.g. an avatar image finishing its own load.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    const element = messagesRef.current;
+    if (!element) return;
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        element.scrollTop = element.scrollHeight;
+      });
     });
-    return () => cancelAnimationFrame(frame);
+    const observer = new ResizeObserver(() => {
+      element.scrollTop = element.scrollHeight;
+    });
+    observer.observe(element);
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+      observer.disconnect();
+    };
   }, [active?.id, messages.length]);
 
   function sendMessage(e: React.FormEvent) {

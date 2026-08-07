@@ -31,11 +31,27 @@ export function AdminChatOverview({ conversations, initialKey }: { conversations
   const active = conversations.find((item) => item.key === activeKey) ?? filtered[0] ?? conversations[0];
   const { messages, refresh } = useConversationMessages(active?.key);
 
+  // Same two-rAF-plus-ResizeObserver approach as the in-session chat (see
+  // SessionChat.tsx) — a single rAF still lands mid-layout for a freshly
+  // added message and scrolls to the previous, shorter height.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      if (messagesRef.current) messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
+    const element = messagesRef.current;
+    if (!element) return;
+    let secondFrame = 0;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        element.scrollTop = element.scrollHeight;
+      });
     });
-    return () => cancelAnimationFrame(frame);
+    const observer = new ResizeObserver(() => {
+      element.scrollTop = element.scrollHeight;
+    });
+    observer.observe(element);
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+      observer.disconnect();
+    };
   }, [active?.key, messages.length]);
 
   function sendMessage(event: React.FormEvent) {
