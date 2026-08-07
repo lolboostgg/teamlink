@@ -120,14 +120,38 @@ export async function respondToCancelAction(orderId: string, approve: boolean): 
     });
     if (!order) return { ok: false, error: "No open cancellation request on this order." };
 
-    await prisma.order.update({
-      where: { id: orderId },
-      data: approve
-        ? { status: "CANCELLED", cancelApprovedAt: new Date() }
-        : // sessionStatus was never touched by the request, so declining
-          // simply hands the session back at the stage it was already at.
-          { status: "IN_PROGRESS" },
-    });
+    if (!approve) {
+      // sessionStatus was never touched by the request, so declining simply
+      // hands the session back at the stage it was already at.
+      await prisma.order.update({ where: { id: orderId }, data: { status: "IN_PROGRESS" } });
+    } else {
+      // Cancelling and crediting are one transaction: a cancelled order the
+      // customer was never refunded for is the worst of the failure modes.
+      // Store credit rather than a card refund, matching abandonAssignment()
+      // in lib/dispatch/service.ts — a guest order has no account to credit
+      // and is left to an admin.
+      const cents = Math.round(Number(order.priceEUR) * 100);
+      await prisma.$transaction(async (tx) => {
+        await tx.order.update({
+          where: { id: orderId },
+          data: { status: "CANCELLED", cancelApprovedAt: new Date() },
+        });
+        if (order.clientUserId && cents > 0) {
+          await tx.user.update({
+            where: { id: order.clientUserId },
+            data: { creditBalanceCents: { increment: cents } },
+          });
+          await tx.creditTransaction.create({
+            data: {
+              userId: order.clientUserId,
+              type: "REFUND",
+              amountCents: cents,
+              note: `Order #${order.orderNo} — session cancelled`,
+            },
+          });
+        }
+      });
+    }
 
     if (order.clientUserId) {
       await publish({ topic: "orders", key: orderId, userIds: [order.clientUserId] });

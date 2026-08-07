@@ -21,6 +21,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { PrivateImage } from "@/components/ui/PrivateImage";
 import { PaymentMethodPicker } from "@/components/ui/PaymentMethodPicker";
+import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
 import type { PaymentMethodKey } from "@/lib/payments";
 import { SESSION_STATUS_LABELS, GAME_RESULT_LABELS, REPORTABLE_STATUSES, sessionStepIndex, type SessionStatus, type GameResult } from "@/lib/dispatch/sessionTypes";
 
@@ -122,9 +123,14 @@ export function SessionScreen({ orderId }: Props) {
   if (order.status === "cancel_pending") {
     return (
       <div className="matching-screen">
-        <span className="matching-screen__spinner" aria-hidden="true" />
-        <h1 className="matching-screen__title">Cancelling your session...</h1>
-        <p className="matching-screen__sub">Waiting for your teammate to confirm.</p>
+        {/* Looked up here rather than reusing `teammate` below — that const
+            is declared after this branch. */}
+        <CancelPendingCard
+          teammateName={
+            order.selectedTeammateId ? getTeammateById(order.selectedTeammateId)?.name : null
+          }
+          refundEUR={order.priceEUR}
+        />
       </div>
     );
   }

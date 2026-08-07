@@ -4023,6 +4023,147 @@ ul {
 /* A customer's cancellation request, which previously had nowhere at all to
    appear on the teammate's side. Spans the room's full width because it
    blocks the session until it is answered. */
+/* Waiting on a teammate to confirm a cancellation — previously a bare
+   spinner and one line, for a screen that asks someone to wait on another
+   person and never mentioned their money. */
+.cancel-pending {
+  width: min(100%, 460px);
+  margin: 0 auto;
+  padding: 30px 28px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 18px);
+  background: var(--bg-elevated);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.cancel-pending__icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-size: 20px;
+  animation: cancelPendingPulse 2s ease-in-out infinite;
+}
+
+@keyframes cancelPendingPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 34%, transparent); }
+  50% { box-shadow: 0 0 0 12px transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cancel-pending__icon { animation: none; }
+}
+
+.cancel-pending__title {
+  margin: 0 0 6px;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  letter-spacing: 0.01em;
+}
+
+.cancel-pending__sub {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cancel-pending__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.cancel-pending__steps li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 9px 0;
+}
+
+/* Connector between the marks, stopping short of the last one. */
+.cancel-pending__steps li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 30px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--border);
+}
+
+.cancel-pending__step-mark {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  margin-top: 1px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text-faint);
+  font-size: 9px;
+}
+
+.cancel-pending__steps li.is-done .cancel-pending__step-mark {
+  border-color: transparent;
+  background: var(--success);
+  color: #06120c;
+}
+
+.cancel-pending__steps li.is-active .cancel-pending__step-mark {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.cancel-pending__steps li span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cancel-pending__steps strong {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cancel-pending__steps li.is-done strong,
+.cancel-pending__steps li.is-active strong {
+  color: var(--text);
+}
+
+.cancel-pending__steps small {
+  color: var(--text-faint);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.cancel-pending__foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
+
 .cancel-request {
   display: flex;
   align-items: center;

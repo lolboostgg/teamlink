@@ -16,6 +16,7 @@ import { SearchingCard } from "@/components/matchmaking/SearchingCard";
 import { TeammateDetailsPanel } from "@/components/matchmaking/TeammateDetailsPanel";
 import { SessionScreen } from "@/components/matchmaking/SessionScreen";
 import { CONVERSATION_OPTIONS, PLAY_STYLE_OPTIONS } from "@/components/matchmaking/PreferencesModal";
+import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
 import { Modal } from "@/components/ui/Modal";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { avatarFrameStyle } from "@/lib/avatarFrame";
@@ -335,9 +336,7 @@ export function MatchmakingScreen({ orderId }: Props) {
   if (order.status === "cancel_pending") {
     return (
       <div className="matching-screen">
-        <span className="matching-screen__spinner" aria-hidden="true" />
-        <h1 className="matching-screen__title">Cancelling your session...</h1>
-        <p className="matching-screen__sub">Waiting for your teammate to confirm.</p>
+        <CancelPendingCard refundEUR={order.priceEUR} />
       </div>
     );
   }
