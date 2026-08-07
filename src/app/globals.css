@@ -1909,8 +1909,19 @@ ul {
 }
 
 .booking-heading__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: clamp(24px, 2.6vw, 32px);
   margin-bottom: 20px;
+}
+
+.booking-heading__game-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px var(--border-strong), 0 6px 18px rgba(0, 0, 0, 0.35);
 }
 
 .booking-live-badge {
@@ -1928,7 +1939,23 @@ ul {
 }
 
 .booking-category {
+  position: relative;
   margin-bottom: 28px;
+}
+
+/* A soft wash of the active category's color behind the list — on its own
+   the list was flat, evenly-lit rows with nothing to catch the eye before
+   you start reading. */
+.booking-category::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -40px;
+  left: -60px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--cat-color, var(--accent)) 16%, transparent), transparent 70%);
+  pointer-events: none;
 }
 
 .booking-category__title {
@@ -2017,21 +2044,55 @@ ul {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat-color, var(--accent)) 45%, transparent), 0 0 20px color-mix(in srgb, var(--cat-color, var(--accent)) 22%, transparent);
 }
 
+/* Bigger, rounder and gradient-filled instead of a flat tinted square —
+   the whole row list read as very "safe"/flat without a single point of
+   color intensity to catch the eye. */
 .booking-option__icon {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--cat-color, var(--accent)) 16%, transparent);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--cat-color, var(--accent)) 55%, transparent), color-mix(in srgb, var(--cat-color, var(--accent)) 14%, transparent));
   color: var(--cat-color, var(--accent));
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-size: 15px;
   flex: 0 0 auto;
+  transition: transform 0.15s ease;
 }
 
 .booking-option.is-selected .booking-option__icon {
   background: var(--cat-color, var(--accent));
   color: var(--bg);
+  transform: scale(1.06);
+}
+
+.booking-option__check {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--cat-color, var(--accent));
+  color: var(--bg);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  box-shadow: 0 0 0 3px var(--bg-elevated);
+}
+
+.booking-option__eta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.booking-option__eta-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
 }
 
 .booking-option__main {
@@ -2076,7 +2137,6 @@ ul {
 }
 
 .booking-option__eta {
-  display: block;
   font-size: 11px;
   color: var(--text-faint);
   margin-top: 2px;

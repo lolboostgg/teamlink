@@ -11,6 +11,7 @@ import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { TrustPoints } from "@/components/ui/TrustPoints";
+import { gameIcon } from "@/lib/gameArt";
 
 interface Props {
   game: Game;
@@ -93,7 +94,11 @@ export function BookingWidget({ game }: Props) {
           <span className="section__eyebrow booking-heading__eyebrow">Book a session</span>
         </Reveal>
         <Reveal delay={10}>
-          <h2 className="section__title booking-heading__title">Choose your mode</h2>
+          <h2 className="section__title booking-heading__title">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={gameIcon(game.slug)} alt="" className="booking-heading__game-icon" />
+            Choose your mode
+          </h2>
         </Reveal>
 
         <Reveal delay={20}>
@@ -132,6 +137,11 @@ export function BookingWidget({ game }: Props) {
                 className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
                 onClick={() => setSelected(option)}
               >
+                {selected.name === option.name && (
+                  <span className="booking-option__check" aria-hidden="true">
+                    <i className="fa-solid fa-check" />
+                  </span>
+                )}
                 <span className="booking-option__icon">
                   <i className={CATEGORY_ICONS[visibleCategory.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
                 </span>
@@ -147,7 +157,10 @@ export function BookingWidget({ game }: Props) {
                     <PriceTag amountEUR={option.price} />
                     <span className="booking-option__unit">{option.unit}</span>
                   </span>
-                  <span className="booking-option__eta">{option.eta}</span>
+                  <span className="booking-option__eta">
+                    <span className="booking-option__eta-dot" aria-hidden="true" />
+                    {option.eta}
+                  </span>
                 </span>
               </button>
             ))}
