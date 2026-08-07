@@ -430,6 +430,12 @@ ul {
   font-size: 13px;
 }
 
+.btn--lg {
+  padding: 15px 28px;
+  font-size: 15px;
+  border-radius: var(--radius-md);
+}
+
 .btn--primary {
   background: var(--accent);
   color: #fff;
@@ -795,6 +801,19 @@ ul {
   pointer-events: none;
 }
 
+/* A soft run-out into the page background instead of the hero's ambient
+   art cutting off on a hard edge right where the booking panel starts. */
+.hero__fade-out {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 220px;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(6, 8, 15, 0) 0%, var(--bg) 100%);
+  pointer-events: none;
+}
+
 .hero__eyebrow {
   display: inline-flex;
   align-items: center;
@@ -844,6 +863,25 @@ ul {
   .hero__sub {
     white-space: normal;
     max-width: 480px;
+  }
+}
+
+.hero__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.hero__cta .btn--vivid {
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+@media (max-width: 480px) {
+  .hero__cta {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

@@ -44,7 +44,10 @@ export function Hero({ game: gameProp }: Props) {
       <section className="hero">
         <AmbientGameBackground slug={hoverSlug ?? game.slug} />
         <span className="hero__scrim" aria-hidden="true" />
+        <span className="hero__fade-out" aria-hidden="true" />
         <span className="bg-glow bg-glow--blue" style={{ width: 560, height: 560, left: "50%", top: "-220px", transform: "translateX(-50%)" }} aria-hidden="true" />
+        <span className="bg-glow bg-glow--teal" style={{ width: 420, height: 420, left: "12%", top: "30%" }} aria-hidden="true" />
+        <span className="bg-glow bg-glow--blue" style={{ width: 380, height: 380, right: "8%", top: "6%" }} aria-hidden="true" />
 
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <span className="hero__eyebrow">
@@ -58,6 +61,19 @@ export function Hero({ game: gameProp }: Props) {
           <p className="hero__sub">
             Pick a game, pick a mode, and get matched in under two minutes. No downloads, no waiting rooms.
           </p>
+
+          <div className="hero__cta">
+            <button
+              type="button"
+              className="btn btn--vivid btn--lg"
+              onClick={() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            >
+              <i className="fa-solid fa-bolt" aria-hidden="true" /> Play now
+            </button>
+            <a href="#how-it-works" className="btn btn--ghost btn--lg">
+              How it works
+            </a>
+          </div>
 
           <div className="hero__trust">
             <TrustBadge />
