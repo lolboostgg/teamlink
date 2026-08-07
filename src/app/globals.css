@@ -587,25 +587,33 @@ ul {
   height: var(--header-h);
   display: flex;
   align-items: center;
-  background: transparent;
-  border-bottom: 1px solid transparent;
-  transition: background 0.2s ease, border-color 0.2s ease;
+  padding: 0 16px;
 }
 
-.site-header.is-scrolled {
-  background: rgba(6, 8, 15, 0.75);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
+/* A floating pill bar instead of a full-bleed strip that just fades into
+   whatever hero art sits behind it — it reads clearly over anything now,
+   not just once .is-scrolled darkens it, and inset margins make it feel
+   like a distinct piece of chrome rather than the page's own edge. */
 .site-header__inner {
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
-  gap: 36px;
+  gap: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(9, 12, 22, 0.55);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.site-header.is-scrolled .site-header__inner {
+  background: rgba(8, 10, 20, 0.88);
+  border-color: var(--border-strong);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.4);
 }
 
 .site-header__search {
@@ -616,13 +624,17 @@ ul {
 
 .site-header__search input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 9px 14px 9px 36px;
+  border-radius: 999px;
+  padding: 9px 16px 9px 38px;
   color: var(--text);
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
   font-size: 13px;
+}
+
+.site-header__search input:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .site-header__search input::placeholder {
