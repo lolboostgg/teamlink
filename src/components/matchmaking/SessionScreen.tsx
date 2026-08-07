@@ -20,6 +20,8 @@ import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/ToastProvider";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { PrivateImage } from "@/components/ui/PrivateImage";
+import { PaymentMethodPicker } from "@/components/ui/PaymentMethodPicker";
+import type { PaymentMethodKey } from "@/lib/payments";
 import { SESSION_STATUS_LABELS, GAME_RESULT_LABELS, REPORTABLE_STATUSES, sessionStepIndex, type SessionStatus, type GameResult } from "@/lib/dispatch/sessionTypes";
 
 interface Props {
@@ -64,6 +66,10 @@ export function SessionScreen({ orderId }: Props) {
   const [tipTarget, setTipTarget] = useState<number | null>(null);
   const [tipCustom, setTipCustom] = useState("");
   const [sendingTip, setSendingTip] = useState(false);
+  // Both charges used to be hardwired to "card", which ignored a customer
+  // sitting on a credits balance.
+  const [tipMethod, setTipMethod] = useState<PaymentMethodKey>("card");
+  const [replayMethod, setReplayMethod] = useState<PaymentMethodKey>("credits");
   const [tipSent, setTipSent] = useState<number | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -176,7 +182,7 @@ export function SessionScreen({ orderId }: Props) {
   // priced from the original order server-side and paid for like any other.
   async function handleKeepPlaying() {
     setStartingReplay(true);
-    const result = await placeReplayCheckout(order!.id, "card");
+    const result = await placeReplayCheckout(order!.id, replayMethod);
     if (!result.ok) {
       setStartingReplay(false);
       showToast(result.error, "error");
@@ -367,12 +373,13 @@ export function SessionScreen({ orderId }: Props) {
           <div className="dashboard-panel session-complete__keep-playing">
             <div className="dashboard-panel__title">Keep playing</div>
             <p className="dashboard-panel__sub">
-              Would you like to continue playing with {teammate.name}? Charged from your credits balance.
+              Would you like to continue playing with {teammate.name}?
             </p>
             <div className="session-complete__keep-playing-row">
+              <PaymentMethodPicker value={replayMethod} onChange={setReplayMethod} disabled={startingReplay} />
               <button type="button" className="btn btn--vivid" onClick={handleKeepPlaying} disabled={startingReplay}>
                 {startingReplay ? (
-                  "Charging credits..."
+                  "Starting…"
                 ) : (
                   <>
                     Play again with {teammate.name} · <PriceTag amountEUR={order.priceEUR} />
@@ -414,8 +421,12 @@ export function SessionScreen({ orderId }: Props) {
                 Confirm a <strong>€{tipTarget}</strong> tip — 100% goes to {teammate.name}.
               </p>
             )}
+            <div className="pay-picker-row">
+              <span>Pay with</span>
+              <PaymentMethodPicker value={tipMethod} onChange={setTipMethod} disabled={sendingTip} />
+            </div>
             <p className="cancel-confirm__sub tip-confirm__note">
-              Charged to your saved card and credited to {teammate.name} straight away.
+              Credited to {teammate.name} straight away.
             </p>
             <div className="cancel-confirm__actions">
               <button type="button" className="btn btn--ghost btn--block" onClick={() => setTipTarget(null)} disabled={sendingTip}>
@@ -429,7 +440,7 @@ export function SessionScreen({ orderId }: Props) {
                   const amount = tipTarget === -1 ? Number(tipCustom) : tipTarget!;
                   if (!(amount > 0)) return;
                   setSendingTip(true);
-                  const result = await sendTip(order.id, amount, "card");
+                  const result = await sendTip(order.id, amount, tipMethod);
                   if (!result.ok) {
                     setSendingTip(false);
                     showToast(result.error, "error");
