@@ -1042,7 +1042,15 @@ ul {
    .games-full-grid, a CSS grid where those selectors would otherwise land
    on just the top-left/bottom-right cards and throw the grid off-balance. */
 .hero-carousel__track > .hero-card {
-  width: 160px;
+  /* Flexible, not a fixed width: with today's roster this shrinks just
+     enough for all of them to sit side by side with no scrolling and no
+     arrows — flex-basis 0 splits the track's width evenly. min-width is
+     the floor; once enough games are added that it's hit, the row can no
+     longer shrink further and .hero-carousel__track's existing
+     overflow-x: auto takes over as a real slider, arrows included. */
+  flex: 1 1 0;
+  min-width: 130px;
+  max-width: 175px;
   z-index: 1;
   margin-left: -18px;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease, z-index 0s;
@@ -1209,12 +1217,13 @@ ul {
     width: 168px;
   }
 
-  /* Same specificity as .hero-carousel__track > .hero-card's own 300px
-     rule above, so it only wins here because it comes later in the file —
-     the full-width breakout has no room to spare for 300px cards on a
-     phone screen. */
+  /* A phone screen can't fit the whole roster shrunk down and legible, so
+     this overrides the desktop rule's flex-basis back to a fixed size —
+     always a real slider here, regardless of how many games there are. */
   .hero-carousel__track > .hero-card {
-    width: 168px;
+    flex: 0 0 150px;
+    min-width: 0;
+    max-width: none;
     margin-left: -18px;
   }
 
