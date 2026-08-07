@@ -5454,9 +5454,9 @@ ul {
   margin-top: 1px;
 }
 
-/* No card at all — no border, no background, no accent bar. It sits as a
-   plain section inside the sidebar's own card, separated by a divider,
-   instead of a second card stacked underneath the first. */
+/* No card of its own — sits inside the sidebar's card. Trust points keep
+   the card's own padding; the payment row breaks out into a true footer
+   band below (see .trust-points--compact .trust-points__payments). */
 .trust-points--compact {
   gap: 16px;
   padding: 0;
@@ -5514,9 +5514,16 @@ ul {
   line-height: 1.25;
 }
 
+/* Bleeds out to the card's own edges (negative margin = the card's own
+   padding) so this reads as the card's footer band, not just another row
+   of content inside it — rounded to match the card's own bottom corners;
+   .booking-sidebar's overflow: hidden clips it cleanly. */
 .trust-points--compact .trust-points__payments {
-  padding-top: 4px;
-  border-top: none;
+  margin: 18px -22px -22px;
+  padding: 14px 22px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 /* Real provider logos (see PAYMENT_LOGOS) forced to flat white — no chip,
