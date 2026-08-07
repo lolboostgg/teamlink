@@ -64,7 +64,13 @@ export function Footer() {
                 <ul>
                   {col.links.map((link) => (
                     <li key={link.href + link.label}>
-                      <Link href={link.href}>{link.label}</Link>
+                      {/* prefetch={false}: most of these routes don't exist
+                          yet, and the footer sits in the viewport on every
+                          page — Next prefetched all of them on sight, so
+                          each load fired a burst of 404s. */}
+                      <Link href={link.href} prefetch={false}>
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>

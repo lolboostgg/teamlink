@@ -1793,6 +1793,14 @@ ul {
   min-height: 100vh;
 }
 
+/* An auto margin on the cross axis switches off a flex item's stretch, and
+   .container carries `margin: 0 auto` — so every page here collapsed to its
+   own content width, making Favorites narrower than Orders. Being explicit
+   restores full width and lets the container centre inside it as before. */
+.site-shell > * {
+  width: 100%;
+}
+
 .site-footer {
   margin-top: auto;
   border-top: 1px solid var(--border);
