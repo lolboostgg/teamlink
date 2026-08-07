@@ -87,8 +87,10 @@ export function BookingWidget({ game }: Props) {
     router.push(`/checkout?${params.toString()}`);
   }
 
+  const catColor = CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)";
+
   return (
-    <div className="booking-layout">
+    <div className="booking-layout" style={{ "--cat-color": catColor } as CSSProperties}>
       <div>
         <Reveal>
           <span className="section__eyebrow booking-heading__eyebrow">Book a session</span>
@@ -126,10 +128,7 @@ export function BookingWidget({ game }: Props) {
         </Reveal>
 
         <Reveal key={visibleCategory.category} delay={40}>
-          <div
-            className="booking-category"
-            style={{ "--cat-color": CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)" } as CSSProperties}
-          >
+          <div className="booking-category">
             {visibleCategory.options.map((option) => (
               <button
                 key={option.name}
@@ -171,8 +170,12 @@ export function BookingWidget({ game }: Props) {
       <div className="booking-sidebar-wrap">
         <aside className="booking-sidebar">
           <div className="booking-sidebar__summary">
-            <span className="booking-sidebar__summary-game">{game.name}</span>
-            <span className="booking-sidebar__summary-option">{selected.name}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={gameIcon(game.slug)} alt="" className="booking-sidebar__summary-icon" />
+            <span className="booking-sidebar__summary-copy">
+              <span className="booking-sidebar__summary-game">{game.name}</span>
+              <span className="booking-sidebar__summary-option">{selected.name}</span>
+            </span>
           </div>
 
           <div className="booking-sidebar__row booking-sidebar__row--last">
@@ -203,8 +206,8 @@ export function BookingWidget({ game }: Props) {
             <PriceTag amountEUR={total} />
           </div>
 
-          <button type="button" className="btn btn--vivid btn--block" onClick={() => setIngameOpen(true)}>
-            Continue to checkout
+          <button type="button" className="btn btn--vivid btn--block booking-sidebar__cta" onClick={() => setIngameOpen(true)}>
+            <i className="fa-solid fa-bolt" aria-hidden="true" /> Continue to checkout
           </button>
         </aside>
 
