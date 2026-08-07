@@ -7779,11 +7779,14 @@ ul {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--border);
+  /* --dash-surface-2 is a dashboard token; against this screen's much
+     darker ground it left the bubble all but invisible. Lifted and tinted
+     so it reads as a message rather than a patch of background. */
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
   border-radius: 16px;
   border-bottom-left-radius: 4px;
-  background: var(--dash-surface-2);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2);
+  background: color-mix(in srgb, var(--accent) 9%, rgba(255, 255, 255, 0.055));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 
 .session-complete__farewell::after {
@@ -7793,9 +7796,9 @@ ul {
   bottom: -7px;
   width: 14px;
   height: 14px;
-  background: var(--dash-surface-2);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--accent) 9%, rgba(255, 255, 255, 0.055));
+  border-right: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
   clip-path: polygon(0 0, 100% 100%, 0 100%);
 }
 .session-complete__farewell-avatar .avatar-icon { width: 34px; height: 34px; }
@@ -10261,6 +10264,65 @@ a.notification-panel__item:hover {
 .session-confirm-check > span:last-child small { color: var(--text-faint); font-size: 10px; }
 .session-complete-modal .session-farewell-pills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .session-complete-modal .session-farewell-pills button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 11px; }
+
+/* The custom message box had no styling at all, so it rendered as a raw
+   browser input directly under a row of styled pills. */
+.session-farewell-field {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 8px;
+  padding: 0 12px;
+  min-height: 42px;
+  border: 1px solid var(--dash-line);
+  border-radius: 11px;
+  background: var(--dash-surface-2);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.session-farewell-field:focus-within {
+  border-color: rgba(79, 112, 255, 0.55);
+  background: rgba(79, 112, 255, 0.06);
+}
+
+.session-farewell-field > i {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.session-farewell-field:focus-within > i {
+  color: var(--accent);
+}
+
+.session-farewell-field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.session-farewell-field input:focus {
+  outline: none;
+}
+
+.session-farewell-field input::placeholder {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.session-farewell-field__count {
+  flex: 0 0 auto;
+  color: var(--text-faint);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 
 /* Sticky, because the proof strip can push the modal past its max height and
    "Complete order" must never be the thing you have to scroll to find. */

@@ -536,14 +536,18 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                 <div className="session-farewell-pills">
                   {["GG!", "Nice!", "See ya next time!"].map((message) => <button key={message} type="button" className={farewell === message ? "is-active" : ""} onClick={() => setFarewell(message)}><i className="fa-regular fa-message" aria-hidden="true" />{message}</button>)}
                 </div>
-                <input
-                  type="text"
-                  className="session-farewell-custom"
-                  value={farewell}
-                  onChange={(event) => setFarewell(event.target.value.slice(0, 18))}
-                  maxLength={18}
-                  placeholder="Or type your own..."
-                />
+                <div className="session-farewell-field">
+                  <i className="fa-solid fa-pen" aria-hidden="true" />
+                  <input
+                    type="text"
+                    value={farewell}
+                    onChange={(event) => setFarewell(event.target.value.slice(0, 18))}
+                    maxLength={18}
+                    placeholder="Write custom message…"
+                    aria-label="Custom sign-off message"
+                  />
+                  <span className="session-farewell-field__count">{farewell.length}/18</span>
+                </div>
               </div>
             </div>
 
