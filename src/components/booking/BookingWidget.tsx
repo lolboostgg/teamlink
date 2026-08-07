@@ -90,12 +90,19 @@ export function BookingWidget({ game }: Props) {
     <div className="booking-layout">
       <div>
         <Reveal>
+          <span className="section__eyebrow booking-heading__eyebrow">Book a session</span>
+        </Reveal>
+        <Reveal delay={10}>
+          <h2 className="section__title booking-heading__title">Choose your mode</h2>
+        </Reveal>
+
+        <Reveal delay={20}>
           <span className="booking-live-badge">
             <span className="pulse-dot" aria-hidden="true" /> ~1 min average wait right now
           </span>
         </Reveal>
 
-        <Reveal delay={20}>
+        <Reveal delay={30}>
           <div className="booking-tabs" role="tablist">
             {BOOKING_CATEGORIES.map((cat) => (
               <button
