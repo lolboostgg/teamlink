@@ -60,8 +60,17 @@ function closeStream() {
   setConnected(false);
 }
 
-/** How often to poll anyway, as a safety net behind the stream. */
-const CONNECTED_FALLBACK_MS = 60_000;
+/**
+ * How often to poll anyway, as a safety net behind the stream.
+ *
+ * A stream reporting "open" only means the browser's HTTP connection to
+ * `/api/events` succeeded — it says nothing about whether server→server
+ * delivery (Postgres LISTEN/NOTIFY across instances) is actually working.
+ * When it silently isn't, this is what keeps chat and dashboards from going
+ * up to a full minute of silence between two people on different instances,
+ * so it stays close to the disconnected interval rather than far above it.
+ */
+const CONNECTED_FALLBACK_MS = 4_000;
 
 /**
  * Keeps a view in sync with the server.

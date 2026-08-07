@@ -18,6 +18,7 @@ import { SessionScreen } from "@/components/matchmaking/SessionScreen";
 import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
 import { Modal } from "@/components/ui/Modal";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
+import { avatarFrameStyle } from "@/lib/avatarFrame";
 import { PriceTag } from "@/components/currency/PriceTag";
 import type { DispatchCandidate } from "@/lib/matchmaking/types";
 
@@ -376,7 +377,7 @@ export function MatchmakingScreen({ orderId }: Props) {
                     <i className="fa-solid fa-check" />
                   </span>
                   <span className="selected-anim__avatar">
-                    <AvatarIcon seed={id} />
+                    <AvatarIcon seed={id} avatarUrl={teammate?.avatarUrl} frame={teammate ?? undefined} />
                   </span>
                   {teammate && (
                     <>
@@ -521,7 +522,11 @@ export function MatchmakingScreen({ orderId }: Props) {
         <div className="pick-confirm">
           <span className="pick-confirm__avatar">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/avatars/default.webp" alt="" />
+            <img
+              src={confirmTeammate?.avatarUrl || "/avatars/default.webp"}
+              alt=""
+              style={confirmTeammate ? avatarFrameStyle(confirmTeammate) : undefined}
+            />
           </span>
           <h2 id="pick-confirm-title" className="pick-confirm__title">
             {confirmTarget?.action === "remove" ? "Remove teammate" : "Select teammate"}

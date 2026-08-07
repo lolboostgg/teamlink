@@ -240,7 +240,7 @@ export function SessionScreen({ orderId }: Props) {
         {farewellMessage && (
           <Reveal delay={40}>
             <div className="session-complete__farewell">
-              <span className="session-complete__farewell-avatar"><AvatarIcon seed={teammate.id} /></span>
+              <span className="session-complete__farewell-avatar"><AvatarIcon seed={teammate.id} avatarUrl={teammate.avatarUrl} frame={teammate} /></span>
               <span><small>{teammate.name}</small><strong>{farewellMessage.text}</strong></span>
             </div>
           </Reveal>
@@ -252,7 +252,7 @@ export function SessionScreen({ orderId }: Props) {
               <div className="session-complete__review-label">Review your teammate</div>
               <div className="session-complete__teammate-hero">
                 <span className="session-complete__hero-avatar">
-                  <AvatarIcon seed={teammate.id} />
+                  <AvatarIcon seed={teammate.id} avatarUrl={teammate.avatarUrl} frame={teammate} />
                 </span>
                 <div className="session-complete__teammate-name">{teammate.name}</div>
                 <div className="session-complete__teammate-rating">
@@ -489,7 +489,7 @@ export function SessionScreen({ orderId }: Props) {
 
             <div className="session-screen__profile">
               <span className="session-screen__avatar">
-                <AvatarIcon seed={teammate.id} />
+                <AvatarIcon seed={teammate.id} avatarUrl={teammate.avatarUrl} frame={teammate} />
               </span>
               <div className="session-screen__name">{teammate.name}</div>
               <span className="session-screen__badge">
@@ -550,7 +550,7 @@ export function SessionScreen({ orderId }: Props) {
                     return (
                       <span className="session-screen__team-chip" key={id}>
                         <span className="session-screen__team-chip-avatar">
-                          <AvatarIcon seed={id} />
+                          <AvatarIcon seed={id} avatarUrl={t?.avatarUrl} frame={t ?? undefined} />
                         </span>
                         {t?.name ?? "Teammate"}
                       </span>

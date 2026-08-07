@@ -6089,7 +6089,7 @@ ul {
 
 .pick-card--center {
   height: 236px;
-  border-color: color-mix(in srgb, var(--hue-purple) 35%, var(--border-strong));
+  border-color: transparent;
   box-shadow: 0 0 30px color-mix(in srgb, var(--hue-purple) 22%, transparent);
 }
 
@@ -6280,7 +6280,7 @@ ul {
 .pick-card {
   height: 258px;
   border-radius: 20px;
-  border-color: rgba(255,255,255,.1);
+  border-color: transparent;
   background:
     radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--cta-vivid) 16%, transparent), transparent 42%),
     linear-gradient(165deg, rgba(25,29,44,.98), rgba(11,14,25,.98));
@@ -6289,7 +6289,7 @@ ul {
 
 .pick-card--center {
   height: 282px;
-  border-color: color-mix(in srgb, var(--hue-purple) 62%, var(--border));
+  border-color: transparent;
   box-shadow: 0 18px 46px rgba(0,0,0,.32), 0 0 36px color-mix(in srgb, var(--hue-purple) 20%, transparent);
 }
 
@@ -6318,7 +6318,7 @@ ul {
 }
 .pick-card:hover .pick-card__art img,
 .pick-card:focus-visible .pick-card__art img { transform: scale(1.04); }
-.pick-card__art::after { background: linear-gradient(180deg, transparent 28%, rgba(4,6,13,.22) 52%, rgba(4,6,13,.9) 82%, rgba(4,6,13,.98) 100%); }
+.pick-card__art::after { background: linear-gradient(180deg, transparent 20%, rgba(4,6,13,.18) 45%, rgba(4,6,13,.85) 78%, rgba(4,6,13,1) 100%); }
 
 .pick-card__rating {
   top: 12px;

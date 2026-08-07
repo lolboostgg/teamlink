@@ -29,7 +29,7 @@ const NO_ACCESS: ConversationAccess = { side: null, locked: false, orderId: "", 
  * Being the order's client wins, so a teammate booking someone else writes
  * as the customer they are on that order.
  */
-async function conversationAccess(userId: string, role: string, key: string): Promise<ConversationAccess> {
+async function conversationAccess(userId: string | null, role: string | undefined, key: string): Promise<ConversationAccess> {
   const separator = key.indexOf("::");
   const orderId = separator > 0 ? key.slice(0, separator) : "";
   const teammateId = separator > 0 ? key.slice(separator + 2) : "";
@@ -51,14 +51,27 @@ async function conversationAccess(userId: string, role: string, key: string): Pr
   const candidate = order?.candidates.find((c) => c.teammateId === teammateId);
   if (!order || !candidate) return NO_ACCESS;
 
+  // A guest order (no account) has no session to match against — the order
+  // id half of the key is the capability instead, same as the rest of the
+  // guest checkout flow. Only reachable when the request itself is
+  // unauthenticated, so a signed-in admin/teammate/client still resolves
+  // through the branches below rather than accidentally posing as the guest.
   const side: ChatSide | null =
-    order.clientUserId && order.clientUserId === userId
-      ? "client"
-      : candidate.teammate.userId === userId
-        ? "teammate"
-        : role === "ADMIN"
-          ? "admin"
-          : null;
+    order.clientUserId
+      ? order.clientUserId === userId
+        ? "client"
+        : candidate.teammate.userId === userId
+          ? "teammate"
+          : role === "ADMIN"
+            ? "admin"
+            : null
+      : !userId
+        ? "client"
+        : candidate.teammate.userId === userId
+          ? "teammate"
+          : role === "ADMIN"
+            ? "admin"
+            : null;
 
   const lockedAt =
     order.status === "COMPLETED" ? (order.sessionCompleteAt ?? order.createdAt).getTime() + 60 * 60 * 1000 : null;
@@ -95,9 +108,8 @@ async function conversationAudience(orderId: string): Promise<string[]> {
 
 export async function GET(request: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const key = request.nextUrl.searchParams.get("key")?.slice(0, 300) ?? "";
-  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : NO_ACCESS;
+  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key) : NO_ACCESS;
   if (!access.side) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -121,10 +133,9 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json().catch(() => null) as { key?: string; action?: "typing" | "read"; typing?: boolean } | null;
   const key = body?.key?.slice(0, 300) ?? "";
-  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : NO_ACCESS;
+  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key) : NO_ACCESS;
   const side = access.side;
   if (!side) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -145,11 +156,10 @@ export async function PATCH(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await request.json().catch(() => null)) as { id?: string; key?: string; text?: string; createdAt?: number } | null;
   const key = body?.key?.slice(0, 300) ?? "";
   const text = body?.text?.trim().slice(0, 4000) ?? "";
-  const access = key ? await conversationAccess(session.user.id, session.user.role, key) : NO_ACCESS;
+  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key) : NO_ACCESS;
   const sender = access.side;
   if (!text || !sender) {
     return NextResponse.json({ error: "Invalid message" }, { status: 400 });

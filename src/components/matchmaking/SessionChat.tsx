@@ -146,7 +146,7 @@ export function SessionChat({
       <div ref={messagesRef} className="chat-thread__messages session-chat__messages">
         <div className="chat-bubble chat-bubble--system">
           <p>
-            You&rsquo;ll receive a message from {teammateName} now, so please don&rsquo;t close this chat. Let them know how
+            You&rsquo;ll now receive a message from {teammateName}, so please don&rsquo;t close this chat. Let them know how
             you&rsquo;d like to play and your goals (default is to win).
           </p>
         </div>
