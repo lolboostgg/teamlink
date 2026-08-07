@@ -110,7 +110,7 @@ export function DashboardTrigger() {
       </button>
 
       {open && (
-        <div className="dropdown-switcher__menu dropdown-switcher__menu--right account-dropdown" role="menu">
+        <div className="dropdown-switcher__menu dropdown-switcher__menu--right dropdown-switcher__menu--account account-dropdown" role="menu">
           <div className="dropdown-switcher__account">
             <span className="dropdown-switcher__account-avatar">
               {/* eslint-disable-next-line @next/next/no-img-element */}
