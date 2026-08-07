@@ -408,7 +408,10 @@ export function CheckoutIngameStep({
     const timer = setTimeout(() => {
       setRiotChecking(true);
       setRiotError(null);
-      verifyRiotAccount(trimmed, region).then((response) => {
+      const timedOut = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("timeout")), 10000);
+      });
+      Promise.race([verifyRiotAccount(trimmed, region), timedOut]).then((response) => {
         if (!response.ok) {
           lastRiotKeyRef.current = key;
           setRiotChecking(false);
@@ -428,6 +431,11 @@ export function CheckoutIngameStep({
         }
         setRiotChecking(false);
         setRiotResult(result);
+      }).catch(() => {
+        lastRiotKeyRef.current = key;
+        setRiotChecking(false);
+        setRiotError("Couldn't verify that account right now.");
+        setRiotResult(null);
       });
     }, 650);
 
