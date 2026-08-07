@@ -209,9 +209,9 @@ export function BookingWidget({ game }: Props) {
           <button type="button" className="btn btn--vivid btn--block booking-sidebar__cta" onClick={() => setIngameOpen(true)}>
             <i className="fa-solid fa-bolt" aria-hidden="true" /> Continue to checkout
           </button>
-        </aside>
 
-        <TrustPoints compact />
+          <TrustPoints compact />
+        </aside>
       </div>
 
       <Modal open={ingameOpen} onClose={() => setIngameOpen(false)} labelledBy="booking-ingame-title">
