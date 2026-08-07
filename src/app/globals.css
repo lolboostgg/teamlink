@@ -12118,12 +12118,12 @@ a.notification-panel__item:hover {
 .ingame-step__add:hover { text-decoration: underline; }
 .ingame-step__actions { display: flex; justify-content: flex-end; gap: 9px; }
 
-/* In-game info asked from the booking page, before checkout. */
-/* Wide instead of tall — rank grid and lanes used to stack full-width one
-   under the other, which is what made this need to scroll on desktop.
-   Side by side, the whole form fits without a scrollbar down to normal
-   laptop heights. */
-.modal-panel:has(.ingame-modal) { max-width: 760px; padding: 0; overflow: visible; }
+/* In-game info asked from the booking page, before checkout. Rank used to
+   be an always-open 11-tile grid, which is what made this need a wide
+   two-column layout to avoid scrolling — now that it's a single collapsed
+   dropdown (see RankSelect), the form is short enough for one normal-width
+   column again. */
+.modal-panel:has(.ingame-modal) { max-width: 560px; padding: 0; overflow: visible; }
 .ingame-modal {
   max-height: min(680px, calc(100vh - 80px));
   padding: 28px 30px;
@@ -12132,28 +12132,6 @@ a.notification-panel__item:hover {
   scrollbar-color: var(--border-strong) transparent;
 }
 
-.ingame-step__columns {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 26px;
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
-}
-
-.ingame-step__col-side {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.ingame-step__lanes { gap: 6px; }
-
-@media (max-width: 640px) {
-  .ingame-step__columns {
-    grid-template-columns: 1fr;
-  }
-}
 /* The step brings its own card chrome for the checkout page; inside the
    modal the panel already provides it, and the step's own heading is the
    dialog title — a second one above it just read as a duplicate.
@@ -12223,66 +12201,38 @@ a.notification-panel__item:hover {
   box-shadow: 0 0 16px color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
 }
 
-/* Rank picker in the in-game dialog. */
-.ingame-ranks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
-
-.ingame-rank {
+/* Rank picker in the in-game dialog — a collapsed dropdown (RankSelect)
+   instead of an always-open grid of eleven tiles. Reuses .payout-select's
+   trigger/popover chrome; these rules only add the icon + rank-color bits
+   that plain region/country rows don't need. */
+.rank-select__current {
   display: flex;
   align-items: center;
-  gap: 9px;
-  min-height: 44px;
-  padding: 7px 11px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-input);
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 11.5px;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
+  gap: 10px;
+  min-width: 0;
 }
 
-/* Neutral at rest — the rank artwork itself already carries its own color
-   (bronze is already brown, gold already golden), so tinting the circle
-   behind it too just muddied the icon instead of complementing it.
-   --rank-color is still used, just only once a tile is actually selected
-   (see .is-active below) — one clear highlight instead of eleven
-   simultaneous tinted circles. */
-.ingame-rank__icon {
-  width: 28px;
-  height: 28px;
+.rank-select__current img {
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: background 0.14s ease, transform 0.14s ease;
+  object-fit: contain;
 }
 
-.ingame-rank img { width: 18px; height: 18px; flex-shrink: 0; object-fit: contain; }
-/* No more ellipsis — "Grandmaster"/"Challenger" were getting cut down to
-   "Grandm…"/"Challen…", which defeats the point of a labeled grid over a
-   plain dropdown. Wrapping to two lines at this width reads fully instead. */
-.ingame-rank span { overflow: hidden; white-space: normal; line-height: 1.15; }
+.rank-select .payout-select__trigger .is-placeholder {
+  color: var(--text-faint);
+}
 
-.ingame-rank:hover {
-  border-color: color-mix(in srgb, var(--rank-color, var(--accent)) 50%, var(--border-strong));
+/* Each option row gets its own rank's color for the hover/selected tint
+   instead of the generic accent every other dropdown in the app uses —
+   same "bronze looks bronze, diamond looks diamond" idea as the old grid,
+   just condensed into a list instead of eleven simultaneous tiles. */
+.rank-select__popover li button:hover,
+.rank-select__popover li button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--rank-color, var(--accent)) 16%, transparent);
   color: var(--text);
-  transform: translateY(-1px);
 }
 
-.ingame-rank.is-active {
-  border-color: var(--rank-color, var(--accent));
-  background: color-mix(in srgb, var(--rank-color, var(--accent)) 22%, var(--bg-input));
-  color: #fff;
-  box-shadow: 0 0 0 1.5px var(--rank-color, var(--accent)), 0 0 24px color-mix(in srgb, var(--rank-color, var(--accent)) 60%, transparent);
-}
-
-.ingame-rank.is-active .ingame-rank__icon {
-  background: var(--rank-color, var(--accent));
-  border-color: transparent;
-  transform: scale(1.15);
+.rank-select__popover li button > i {
+  color: var(--rank-color, var(--accent));
 }

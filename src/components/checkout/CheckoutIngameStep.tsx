@@ -67,6 +67,84 @@ function RegionSelect({ value, options, onChange }: { value: string; options: Re
   );
 }
 
+// Same collapsed-until-needed idea as RegionSelect, now for rank — eleven
+// icon tiles sitting open on screen at all times was the single biggest
+// contributor to this modal feeling cluttered. Closed, it's one row that
+// shows exactly what a plain <select> couldn't: the rank's own icon.
+function RankSelect({
+  value,
+  options,
+  onChange,
+}: {
+  value: string | null;
+  options: { value: string; label: string; icon?: string }[];
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const listId = useId();
+  const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div className={`payout-select rank-select${open ? " is-open" : ""}`} ref={rootRef}>
+      <button
+        type="button"
+        className="payout-select__trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span className="rank-select__current">
+          {selected?.icon && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={selected.icon} alt="" />
+          )}
+          <span className={selected ? "" : "is-placeholder"}>{selected?.label ?? "Select your rank"}</span>
+        </span>
+        <i className="fa-solid fa-chevron-down" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="payout-select__popover rank-select__popover">
+          <ul id={listId} role="listbox">
+            {options.map((option) => (
+              <li key={option.value} style={{ "--rank-color": RANK_COLORS[option.value] ?? "var(--accent)" } as CSSProperties}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={option.value === value}
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <span className="rank-select__current">
+                    {option.icon && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={option.icon} alt="" />
+                    )}
+                    <strong>{option.label}</strong>
+                  </span>
+                  {option.value === value && <i className="fa-solid fa-check" aria-hidden="true" />}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Each tier gets its own color instead of one flat neutral tile for all
 // eleven ranks — matches the metal/gem each rank is actually named after,
 // so the grid reads as a real ladder instead of a plain list with icons.
@@ -275,86 +353,64 @@ export function CheckoutIngameStep({
             </div>
           </div>
 
-          <div className="ingame-step__columns">
-            {rankOptions.length > 0 && (
-              <div className="form-row ingame-step__col-main">
-                <label>Current rank</label>
-                {/* A grid rather than a dropdown: eleven icon-led options fit
-                    on screen at once, and an overlay list would be clipped by
-                    this dialog's own scrolling. */}
-                <div className="ingame-ranks" role="group" aria-label="Current rank">
-                  {rankOptions.map((option) => (
+          {rankOptions.length > 0 && (
+            <div className="form-row form-row--section">
+              <label>Current rank</label>
+              <RankSelect
+                value={rank}
+                options={rankOptions}
+                onChange={(value) => {
+                  setRank(value);
+                  if (!rankHasDivisions(value)) setDivision(null);
+                }}
+              />
+              {rankHasDivisions(rank) && (
+                <div className="ingame-divisions" role="group" aria-label="Division">
+                  {DIVISIONS.map((entry) => (
                     <button
-                      key={option.value}
+                      key={entry}
                       type="button"
-                      className={`ingame-rank${rank === option.value ? " is-active" : ""}`}
-                      style={{ "--rank-color": RANK_COLORS[option.value] ?? "var(--accent)" } as CSSProperties}
-                      aria-pressed={rank === option.value}
-                      onClick={() => {
-                        setRank(option.value);
-                        if (!rankHasDivisions(option.value)) setDivision(null);
-                      }}
+                      className={`ingame-division${division === entry ? " is-active" : ""}`}
+                      onClick={() => setDivision(entry)}
                     >
-                      {option.icon && (
-                        <span className="ingame-rank__icon">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={option.icon} alt="" />
-                        </span>
-                      )}
-                      <span>{option.label}</span>
+                      {entry}
                     </button>
                   ))}
                 </div>
-                {rankHasDivisions(rank) && (
-                  <div className="ingame-divisions" role="group" aria-label="Division">
-                    {DIVISIONS.map((entry) => (
-                      <button
-                        key={entry}
-                        type="button"
-                        className={`ingame-division${division === entry ? " is-active" : ""}`}
-                        onClick={() => setDivision(entry)}
-                      >
-                        {entry}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="ingame-step__col-side">
-              {roleOptions && (
-                <div className="form-row">
-                  <label>Preferred {roleOptions.label.toLowerCase()} (optional)</label>
-                  <div className="chip-check-group ingame-step__lanes">
-                    {roleOptions.options.map((option) => (
-                      <label key={option.value} className={`chip-check${option.icon ? " chip-check--avatar" : ""}`}>
-                        <input
-                          type="checkbox"
-                          checked={roles.includes(option.value)}
-                          onChange={() => toggleRole(option.value)}
-                        />
-                        {option.icon ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={option.icon} alt="" className="chip-check__icon" />
-                        ) : option.glyph ? (
-                          <i className={`${option.glyph} chip-check__glyph`} aria-hidden="true" />
-                        ) : null}
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {!canSave && (
-                <p className="ingame-step__guest">
-                  <i className="fa-regular fa-circle-user" aria-hidden="true" />
-                  Checking out as a guest &mdash; create an account afterwards to keep this for next time.
-                </p>
               )}
             </div>
-          </div>
+          )}
+
+          {roleOptions && (
+            <div className="form-row form-row--section">
+              <label>Preferred {roleOptions.label.toLowerCase()} (optional)</label>
+              <div className="chip-check-group">
+                {roleOptions.options.map((option) => (
+                  <label key={option.value} className={`chip-check${option.icon ? " chip-check--avatar" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={roles.includes(option.value)}
+                      onChange={() => toggleRole(option.value)}
+                    />
+                    {option.icon ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={option.icon} alt="" className="chip-check__icon" />
+                    ) : option.glyph ? (
+                      <i className={`${option.glyph} chip-check__glyph`} aria-hidden="true" />
+                    ) : null}
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!canSave && (
+            <p className="ingame-step__guest">
+              <i className="fa-regular fa-circle-user" aria-hidden="true" />
+              Checking out as a guest &mdash; create an account afterwards to keep this for next time.
+            </p>
+          )}
         </>
       )}
 
