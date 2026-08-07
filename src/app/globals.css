@@ -2323,6 +2323,16 @@ ul {
   gap: 10px;
 }
 
+/* Same row height as .booking-stepper (26px controls) so a 1-on-1 mode's
+   card doesn't end up shorter than a multi-teammate mode's. */
+.booking-sidebar__row-fixed {
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--text);
+}
+
 .booking-stepper button {
   width: 26px;
   height: 26px;
@@ -7557,18 +7567,36 @@ ul {
   margin-bottom: 24px;
 }
 
+/* A real chat-bubble shape (tail pointing at the avatar) instead of a
+   plain rounded rectangle — this is a message the teammate sent, so it
+   should read as one. */
 .session-complete__farewell {
+  position: relative;
   width: fit-content;
   max-width: min(100%, 420px);
-  margin: -6px auto 18px;
-  padding: 10px 14px 10px 10px;
+  margin: -6px auto 26px;
+  padding: 10px 16px 10px 10px;
   display: flex;
   align-items: center;
   gap: 10px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
+  border-bottom-left-radius: 4px;
   background: var(--dash-surface-2);
-  box-shadow: 0 10px 26px rgba(0,0,0,.2);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.2);
+}
+
+.session-complete__farewell::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--dash-surface-2);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
 }
 .session-complete__farewell-avatar .avatar-icon { width: 34px; height: 34px; }
 .session-complete__farewell > span:last-child { display: flex; flex-direction: column; gap: 2px; }

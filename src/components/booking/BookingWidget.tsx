@@ -214,12 +214,13 @@ export function BookingWidget({ game }: Props) {
             </span>
           </div>
 
-          {/* A 1-on-1 mode has nothing to pick — showing a stepper stuck at
-              "1" with both buttons disabled reads as broken, not as "this
-              mode doesn't take extra teammates". */}
-          {selected.maxTeammates > 1 && (
-            <div className="booking-sidebar__row booking-sidebar__row--last">
-              <span>Teammates</span>
+          {/* Row always renders — even for a 1-on-1 mode — so the card is
+              the same height regardless of which mode is selected. A
+              1-on-1 mode just shows a plain "1" instead of a stepper stuck
+              at 1 with both buttons disabled, which read as broken. */}
+          <div className="booking-sidebar__row booking-sidebar__row--last">
+            <span>Teammates</span>
+            {selected.maxTeammates > 1 ? (
               <span className="booking-stepper">
                 <button
                   type="button"
@@ -239,8 +240,10 @@ export function BookingWidget({ game }: Props) {
                   <i className="fa-solid fa-plus" aria-hidden="true" />
                 </button>
               </span>
-            </div>
-          )}
+            ) : (
+              <span className="booking-sidebar__row-fixed">1</span>
+            )}
+          </div>
 
           <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
             <span>Total</span>
