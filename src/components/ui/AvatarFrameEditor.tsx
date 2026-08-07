@@ -176,8 +176,10 @@ export function AvatarFrameEditor({ value, onChange, label = "Profile picture", 
 
         <div className="avatar-frame__side">
           <div className="avatar-frame__preview" aria-hidden="true">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value.avatarUrl || DEFAULT_AVATAR} alt="" style={frameStyle} />
+            <span className="avatar-frame__preview-clip">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={value.avatarUrl || DEFAULT_AVATAR} alt="" style={frameStyle} />
+            </span>
             <span>Avatar</span>
           </div>
 

@@ -5116,12 +5116,24 @@ ul {
   color: var(--text-faint);
 }
 
-.avatar-frame__preview img {
+/* Same bug as .teammate-sidebar-profile__avatar had: transform: scale()
+   from a zoomed frame renders past the <img>'s own box, and overflow on
+   the img itself doesn't clip that — only an ancestor's box can. This
+   wrapper is that ancestor. */
+.avatar-frame__preview-clip {
+  display: block;
   width: 56px;
   height: 56px;
+  flex: 0 0 auto;
   border-radius: 50%;
-  object-fit: cover;
+  overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
+}
+
+.avatar-frame__preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .avatar-frame__zoom {
@@ -5138,47 +5150,49 @@ ul {
   flex: 1;
   -webkit-appearance: none;
   appearance: none;
-  height: 4px;
+  height: 3px;
+  min-height: 3px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--cta-vivid) 0%, var(--cta-vivid) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.12) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.12) 100%);
+  background: linear-gradient(90deg, var(--cta-vivid) 0%, var(--cta-vivid) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.14) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.14) 100%);
   cursor: pointer;
 }
 
 .avatar-frame__zoom input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  background: var(--cta-vivid);
-  border: 3px solid var(--bg);
-  box-shadow: 0 0 0 1px var(--cta-vivid), 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: var(--text);
+  border: none;
+  box-shadow: 0 0 0 3px var(--bg), 0 1px 4px rgba(0, 0, 0, 0.5);
   transition: transform 0.15s ease;
+  margin-top: 0;
 }
 
 .avatar-frame__zoom input::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
+  transform: scale(1.2);
 }
 
 .avatar-frame__zoom input::-moz-range-track {
-  height: 4px;
+  height: 3px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .avatar-frame__zoom input::-moz-range-progress {
-  height: 4px;
+  height: 3px;
   border-radius: 999px;
   background: var(--cta-vivid);
 }
 
 .avatar-frame__zoom input::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  background: var(--cta-vivid);
+  background: var(--text);
   border: 3px solid var(--bg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .avatar-frame__drop {
@@ -12125,13 +12139,14 @@ a.notification-panel__item:hover {
    label — same treatment the mode/category icons elsewhere already use,
    so the rank grid doesn't read as a flatter, older part of the site. */
 .ingame-rank__icon {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: background 0.14s ease, transform 0.14s ease;
 }
 
@@ -12149,12 +12164,13 @@ a.notification-panel__item:hover {
 
 .ingame-rank.is-active {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, var(--bg-input));
-  color: var(--text);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg-input));
+  color: #fff;
+  box-shadow: 0 0 0 1.5px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .ingame-rank.is-active .ingame-rank__icon {
   background: var(--accent);
-  transform: scale(1.06);
+  border-color: transparent;
+  transform: scale(1.1);
 }
