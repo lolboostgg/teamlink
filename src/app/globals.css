@@ -6035,10 +6035,9 @@ ul {
 .matching-screen__prefs {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 15px;
   margin: 4px 0 14px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+  padding-top: 4px;
   text-align: left;
 }
 
@@ -6070,26 +6069,35 @@ ul {
   gap: 7px;
 }
 
+/* Solid chips on a recessed track rather than outlined capsules: the
+   outlines competed with the vibe cards directly below them, and an
+   unselected outline pill reads too much like a button to press. */
 .matching-screen__pref-pill {
-  padding: 7px 13px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.045);
   color: var(--text-muted);
   font-size: 12.5px;
-  font-weight: 600;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .matching-screen__pref-pill:hover {
-  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.085);
   color: var(--text);
 }
 
 .matching-screen__pref-pill.is-selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--text);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.matching-screen__pref-pill.is-selected:hover {
+  background: var(--accent-hover);
 }
 
 .matching-screen__vibe-options {
@@ -6105,9 +6113,9 @@ ul {
   gap: 8px;
   min-width: 78px;
   padding: 11px 12px 10px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.045);
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 700;
@@ -6160,8 +6168,7 @@ ul {
   flex-direction: column;
   gap: 2px;
   margin: 10px 0 4px;
-  padding: 2px 0 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 2px 0 6px;
   text-align: left;
 }
 
