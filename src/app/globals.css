@@ -622,56 +622,11 @@ ul {
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.4);
 }
 
-.site-header__search {
-  flex: 1 1 auto;
-  max-width: 420px;
-  position: relative;
-}
-
-.site-header__search input {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 9px 16px 9px 38px;
-  color: var(--text);
-  transition: border-color 0.15s ease, background 0.15s ease;
-  font-size: 13px;
-}
-
-.site-header__search input:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.site-header__search input::placeholder {
-  color: var(--text-faint);
-}
-
-.site-header__search input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.site-header__search i {
-  position: absolute;
-  left: 13px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-faint);
-  font-size: 12px;
-}
-
 .site-header__actions {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-left: auto;
-}
-
-@media (max-width: 640px) {
-  .site-header__search {
-    display: none;
-  }
 }
 
 /* ── Section heading pattern ────────────────────────────────── */
