@@ -5459,51 +5459,42 @@ ul {
   margin-top: 1px;
 }
 
+/* No card at all — no border, no background, no accent bar. It sits as a
+   plain continuation of the page under the sidebar instead of a second
+   boxed panel stacked directly under the first one. */
 .trust-points--compact {
-  position: relative;
-  gap: 12px;
-  padding: 16px 16px 14px;
-  overflow: hidden;
+  gap: 16px;
+  padding: 4px 2px 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+  margin-top: 24px;
 }
 
-/* Thin top accent tying it to the option list/sidebar above instead of
-   reading as an unrelated, separately-styled card at the bottom. */
-.trust-points--compact::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--cat-color, var(--accent));
-  opacity: 0.6;
-}
-
+/* Left-aligned icon+label rows stacked in a column instead of three
+   centered columns — reads as a short list, not a row of identical tiles. */
 .trust-points__row {
   display: flex;
-  align-items: stretch;
-  gap: 4px;
+  flex-direction: column;
+  gap: 11px;
 }
 
 .trust-points__row-item {
-  flex: 1;
-  min-width: 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 6px;
-  text-align: center;
+  gap: 11px;
+  text-align: left;
 }
 
 .trust-points--compact .trust-points__icon {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   font-size: 11px;
 }
 
 /* Each point gets its own color instead of the same uniform green three
-   times in a row — flattest-reading part of the sidebar next to the
-   punchier list/summary above it. */
+   times in a row. */
 .trust-points--compact .trust-points__row-item:nth-child(1) .trust-points__icon {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
@@ -5520,23 +5511,37 @@ ul {
 }
 
 .trust-points__row-label {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   line-height: 1.25;
 }
 
-/* No divider — the card already ends the icon row above with enough
-   spacing; a hairline right under it read as an extra, unnecessary seam. */
 .trust-points--compact .trust-points__payments {
-  padding-top: 14px;
+  padding-top: 4px;
   border-top: none;
 }
 
-.trust-points--compact .trust-points__payment-icons {
-  gap: 14px;
-  font-size: 20px;
-  color: var(--text-muted);
+/* Real provider logos (see PAYMENT_LOGOS) forced to flat white — no chip,
+   no border, just the marks themselves sitting on the page. */
+.trust-points__payment-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.trust-points__payment-logos img {
+  height: 15px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.trust-points__payment-logos img:hover {
+  opacity: 1;
 }
 
 .trust-points__payments {

@@ -1,4 +1,4 @@
-import { PAYMENT_ICONS } from "@/lib/payments";
+import { PAYMENT_ICONS, PAYMENT_LOGOS } from "@/lib/payments";
 
 const TRUST_POINTS = [
   { icon: "fa-solid fa-lock", label: "Secure & encrypted", desc: "256-bit SSL on every order" },
@@ -46,11 +46,20 @@ export function TrustPoints({ compact = false }: Props) {
 
       <div className="trust-points__payments">
         <span className="trust-points__payments-label">We accept</span>
-        <div className="trust-points__payment-icons">
-          {PAYMENT_ICONS.map((icon) => (
-            <i key={icon} className={icon} aria-hidden="true" />
-          ))}
-        </div>
+        {compact ? (
+          <div className="trust-points__payment-logos">
+            {PAYMENT_LOGOS.map((logo) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={logo.src} src={logo.src} alt={logo.label} title={logo.label} />
+            ))}
+          </div>
+        ) : (
+          <div className="trust-points__payment-icons">
+            {PAYMENT_ICONS.map((icon) => (
+              <i key={icon} className={icon} aria-hidden="true" />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

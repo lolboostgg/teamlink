@@ -71,6 +71,19 @@ export const PAYMENT_ICONS = [
   "fa-brands fa-bitcoin",
 ];
 
+// Real provider logos (public/payments/, from payment-gateways/) instead of
+// FontAwesome glyphs — used by the booking sidebar's compact trust card.
+export const PAYMENT_LOGOS = [
+  { src: "/payments/visa.webp", label: "Visa" },
+  { src: "/payments/mastercard.webp", label: "Mastercard" },
+  { src: "/payments/amex.webp", label: "American Express" },
+  { src: "/payments/paypal.webp", label: "PayPal" },
+  { src: "/payments/apple-pay.webp", label: "Apple Pay" },
+  { src: "/payments/gpay.webp", label: "Google Pay" },
+  { src: "/payments/bank-transfer.webp", label: "Bank transfer" },
+  { src: "/payments/bitcoin.webp", label: "Bitcoin" },
+];
+
 const METHOD_BY_KEY = new Map(PAYMENT_METHODS.map((m) => [m.key, m]));
 
 export function getPaymentMethod(key: PaymentMethodKey): PaymentMethodMeta {
