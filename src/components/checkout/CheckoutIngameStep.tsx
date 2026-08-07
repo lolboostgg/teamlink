@@ -1,10 +1,31 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type CSSProperties } from "react";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
 import { regionsForGame, ignPlaceholder, ignHint } from "@/lib/gameRegions";
 import { DIVISIONS, ranksForGame, rankHasDivisions, formatRank } from "@/lib/gameRanks";
 import { listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
+
+// Each tier gets its own color instead of one flat neutral tile for all
+// eleven ranks — matches the metal/gem each rank is actually named after,
+// so the grid reads as a real ladder instead of a plain list with icons.
+const RANK_COLORS: Record<string, string> = {
+  unranked: "#8b8fa3",
+  iron: "#8c7a6b",
+  bronze: "#c17a4d",
+  silver: "#adb7c4",
+  gold: "#e8b93f",
+  platinum: "#3fd6b8",
+  emerald: "#2ecc71",
+  diamond: "#4aa8ff",
+  master: "#b366ff",
+  grandmaster: "#ff4d6d",
+  challenger: "#ffd76a",
+  radiant: "#ffd76a",
+  immortal: "#ff4d6d",
+  predator: "#ff4d6d",
+  champion: "#b366ff",
+};
 
 export interface IngameIdentity {
   ign: string;
@@ -130,8 +151,10 @@ export function CheckoutIngameStep({
     });
   }
 
+  const accentColor = (rank && RANK_COLORS[rank]) || "var(--accent)";
+
   return (
-    <div className="checkout-card ingame-step">
+    <div className="checkout-card ingame-step" style={{ "--rank-color": accentColor } as CSSProperties}>
       <div className="ingame-step__head">
         <h2 id={headingId}>
           <i className="fa-solid fa-user-check" aria-hidden="true" /> In-game information
@@ -210,6 +233,7 @@ export function CheckoutIngameStep({
                       key={option.value}
                       type="button"
                       className={`ingame-rank${rank === option.value ? " is-active" : ""}`}
+                      style={{ "--rank-color": RANK_COLORS[option.value] ?? "var(--accent)" } as CSSProperties}
                       aria-pressed={rank === option.value}
                       onClick={() => {
                         setRank(option.value);

@@ -12002,8 +12002,23 @@ a.notification-panel__item:hover {
 /* ── Checkout: in-game account step ──────────────────────────────────── */
 
 .ingame-step { display: grid; gap: 16px; }
-.ingame-step__head h2 { display: flex; align-items: center; gap: 9px; margin: 0 0 4px; font-size: 16px; font-weight: 800; }
-.ingame-step__head h2 > i { color: var(--accent); font-size: 14px; }
+.ingame-step__head h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 4px; font-size: 16px; font-weight: 800; }
+/* Tracks the currently picked rank's color (--rank-color) instead of a
+   fixed accent — picking Diamond turns the whole dialog's accent blue,
+   Gold turns it gold, and so on, instead of the header staying static
+   while only the grid below it reacts. */
+.ingame-step__head h2 > i {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rank-color, var(--accent)) 18%, transparent);
+  color: var(--rank-color, var(--accent));
+  font-size: 13px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
 .ingame-step__head p { margin: 0; color: var(--text-faint); font-size: 12px; }
 
 /* Username + region are one identity, so they sit in one row instead of
@@ -12131,6 +12146,14 @@ a.notification-panel__item:hover {
 /* Full-width buttons: at this width the pair reads as one decision rather
    than two small controls pushed into a corner. */
 .ingame-modal .ingame-step__actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+.ingame-modal .ingame-step__actions .btn--vivid {
+  background: var(--rank-color, var(--accent));
+  color: #05070d;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--rank-color, var(--accent)) 40%, transparent);
+}
+.ingame-modal .ingame-step__actions .btn--vivid:hover {
+  background: color-mix(in srgb, var(--rank-color, var(--accent)) 88%, #fff);
+}
 
 .ingame-step__guest {
   display: flex;
@@ -12167,7 +12190,12 @@ a.notification-panel__item:hover {
 }
 
 .ingame-division:hover { border-color: var(--border-strong); color: var(--text); }
-.ingame-division.is-active { border-color: var(--accent); background: var(--accent); color: #fff; }
+.ingame-division.is-active {
+  border-color: var(--rank-color, var(--accent));
+  background: var(--rank-color, var(--accent));
+  color: #05070d;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--rank-color, var(--accent)) 45%, transparent);
+}
 
 /* Rank picker in the in-game dialog. */
 .ingame-ranks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
@@ -12190,9 +12218,11 @@ a.notification-panel__item:hover {
   transition: border-color 0.14s ease, background 0.14s ease, color 0.14s ease, transform 0.14s ease, box-shadow 0.14s ease;
 }
 
-/* Icon sits in its own tinted circle instead of floating loose next to the
-   label — same treatment the mode/category icons elsewhere already use,
-   so the rank grid doesn't read as a flatter, older part of the site. */
+/* Icon sits in its own circle tinted with that specific rank's color
+   (--rank-color, set inline per button — see RANK_COLORS in
+   CheckoutIngameStep.tsx) instead of one flat neutral treatment for all
+   eleven tiers, so the grid reads as an actual ladder — bronze looks like
+   bronze, diamond looks like diamond — not a plain labeled list. */
 .ingame-rank__icon {
   width: 28px;
   height: 28px;
@@ -12200,8 +12230,8 @@ a.notification-panel__item:hover {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--rank-color, var(--accent)) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rank-color, var(--accent)) 35%, transparent);
   transition: background 0.14s ease, transform 0.14s ease;
 }
 
@@ -12212,20 +12242,20 @@ a.notification-panel__item:hover {
 .ingame-rank span { overflow: hidden; white-space: normal; line-height: 1.15; }
 
 .ingame-rank:hover {
-  border-color: var(--border-strong);
+  border-color: color-mix(in srgb, var(--rank-color, var(--accent)) 50%, var(--border-strong));
   color: var(--text);
   transform: translateY(-1px);
 }
 
 .ingame-rank.is-active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 22%, var(--bg-input));
+  border-color: var(--rank-color, var(--accent));
+  background: color-mix(in srgb, var(--rank-color, var(--accent)) 22%, var(--bg-input));
   color: #fff;
-  box-shadow: 0 0 0 1.5px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 1.5px var(--rank-color, var(--accent)), 0 0 24px color-mix(in srgb, var(--rank-color, var(--accent)) 60%, transparent);
 }
 
 .ingame-rank.is-active .ingame-rank__icon {
-  background: var(--accent);
+  background: var(--rank-color, var(--accent));
   border-color: transparent;
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
