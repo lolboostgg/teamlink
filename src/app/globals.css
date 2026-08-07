@@ -973,14 +973,14 @@ ul {
    horizontally scrollable strip with a stylized wordmark overlay, instead
    of small icon tiles (which read fine small but wasted the real art we
    have for these games). */
-/* Breaks out of .container to the full viewport width (just the track's
-   own end gutters for margin) instead of being capped to the same column
-   as the headline — more cards show at once on desktop without shrinking
-   them. */
+/* Wider than the original 1000px cap so more cards show at once, but still
+   a centered column rather than the full-viewport breakout this had
+   briefly — that read as the deck hugging the left edge instead of sitting
+   centered under the headline above it. */
 .hero-carousel {
   position: relative;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
+  max-width: 1300px;
+  margin: 0 auto;
 }
 
 .hero-carousel__track {
@@ -1042,18 +1042,18 @@ ul {
    .games-full-grid, a CSS grid where those selectors would otherwise land
    on just the top-left/bottom-right cards and throw the grid off-balance. */
 .hero-carousel__track > .hero-card {
-  width: 210px;
+  width: 160px;
   z-index: 1;
-  margin-left: -24px;
+  margin-left: -18px;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease, z-index 0s;
 }
 
 .hero-carousel__track > .hero-card:first-child {
-  margin-left: 64px;
+  margin-left: 40px;
 }
 
 .hero-carousel__track > .hero-card:last-child {
-  margin-right: 64px;
+  margin-right: 40px;
 }
 
 .hero-carousel__track > .hero-card:nth-child(odd) {
