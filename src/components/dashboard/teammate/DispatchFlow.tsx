@@ -123,9 +123,24 @@ export function DispatchFlow() {
   // request twice over.
   const onRequestsPage = pathname === "/dashboard/teammate/requests";
 
+  // Inside an order, an alert is noise at best. A teammate in a session is
+  // reading a chat, watching a timer or writing up a game, and the one sound
+  // that is designed to cut through a voice call is the last thing that
+  // belongs there — least of all when it is announcing something they are
+  // not free to take.
+  const inOrder = pathname.startsWith("/dashboard/teammate/session/");
+
+  // The alert only ever means "there is something here you can accept". Not
+  // the phase alone: the phase is derived from the newest candidate row and
+  // can name an order that is no longer on offer, which is where the sound
+  // that seemed to arrive out of nowhere came from. An actionable invitation
+  // is one that is in the open-requests list.
+  const openRequestCount = state.requests.length;
+
   useEffect(() => {
-    if (onRequestsPage) return;
+    if (onRequestsPage || inOrder) return;
     if (state.phase !== "DISPATCH_INCOMING" || !stateOrderId) return;
+    if (openRequestCount === 0) return;
     if (announced.current === stateOrderId) return;
     announced.current = stateOrderId;
     ackDispatchAlert(stateOrderId);
@@ -133,7 +148,15 @@ export function DispatchFlow() {
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       new Notification("New order request", { body: `${stateOrderGameName} · ${stateOrderOption}` });
     }
-  }, [onRequestsPage, state.phase, stateOrderId, stateOrderGameName, stateOrderOption]);
+  }, [
+    onRequestsPage,
+    inOrder,
+    openRequestCount,
+    state.phase,
+    stateOrderId,
+    stateOrderGameName,
+    stateOrderOption,
+  ]);
 
   // Being picked takes the teammate to the session room — but only once. The
   // phase stays SELECTED for the whole time the order is ASSIGNED (it only
