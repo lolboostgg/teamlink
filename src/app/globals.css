@@ -15490,3 +15490,41 @@ a.notification-panel__item:hover {
     border-bottom: 1px solid var(--dash-line);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Notification feed: tone per event, and one time break instead of a
+   timestamp the eye has to compare row by row.
+   ------------------------------------------------------------------------- */
+
+/* The tile carried one blue for everything, so a payout, a refund owed and a
+   finished session were the same object until you read them. */
+.notification-panel__icon--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.notification-panel__icon--green {
+  background: rgba(47, 191, 113, 0.13);
+  color: var(--hue-green);
+}
+
+.notification-panel__icon--gold {
+  background: rgba(245, 165, 36, 0.14);
+  color: var(--hue-gold);
+}
+
+.notification-panel__icon--amber {
+  background: rgba(224, 168, 59, 0.14);
+  color: var(--warning);
+}
+
+/* Two lines, not one clipped one. A body that always ended in an ellipsis
+   was decoration — it never carried the detail it exists for. */
+.notification-panel__description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: initial;
+}
