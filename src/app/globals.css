@@ -14332,3 +14332,85 @@ a.notification-panel__item:hover {
 .dispatch-log__row.is-exhausted .dispatch-log__message { color: var(--warning, #f5a524); }
 
 .dispatch-log__empty { font-size: 12px; color: var(--text-faint); }
+
+/* ── Order not found ─────────────────────────────────────────
+   Mostly reached by guests following a link out of a confirmation mail:
+   no account to sign into, no order list to fall back on. One grey sentence
+   on an empty page reads as a crash, so this says what probably happened
+   and offers a way on. */
+.lost-card {
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: 36px 30px 30px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface-2, var(--surface));
+  text-align: center;
+}
+
+.lost-card__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+  font-size: 22px;
+}
+
+.lost-card__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  text-wrap: balance;
+}
+
+.lost-card__body {
+  max-width: 42ch;
+  margin: 10px auto 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.lost-card__hints {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 22px 0 24px;
+  text-align: left;
+}
+
+.lost-card__hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.lost-card__hint i {
+  margin-top: 2px;
+  color: var(--text-faint);
+}
+
+.lost-card__hint a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.lost-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}

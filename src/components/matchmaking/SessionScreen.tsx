@@ -24,6 +24,7 @@ import { PaymentMethodPicker } from "@/components/ui/PaymentMethodPicker";
 import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
 import type { PaymentMethodKey } from "@/lib/payments";
 import { SESSION_STATUS_LABELS, REPORTABLE_STATUSES, sessionStepIndex, type SessionStatus } from "@/lib/dispatch/sessionTypes";
+import { OrderNotFound } from "@/components/matchmaking/OrderNotFound";
 
 interface Props {
   orderId: string;
@@ -131,9 +132,7 @@ export function SessionScreen({ orderId }: Props) {
   if (!order) {
     return (
       <div className="matching-screen">
-        <p className="matching-screen__lost">
-          We couldn&rsquo;t find that session. <Link href="/games">Back to games</Link>
-        </p>
+        <OrderNotFound subject="session" />
       </div>
     );
   }

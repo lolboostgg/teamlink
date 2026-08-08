@@ -22,6 +22,7 @@ import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { avatarFrameStyle } from "@/lib/avatarFrame";
 import { PriceTag } from "@/components/currency/PriceTag";
 import type { DispatchCandidate } from "@/lib/matchmaking/types";
+import { OrderNotFound } from "@/components/matchmaking/OrderNotFound";
 
 type SlotPosition = "farLeft" | "nearLeft" | "center" | "nearRight" | "farRight";
 interface Slot {
@@ -319,9 +320,7 @@ export function MatchmakingScreen({ orderId }: Props) {
   if (!order) {
     return (
       <div className="matching-screen">
-        <p className="matching-screen__lost">
-          We couldn&rsquo;t find that order. <Link href="/games">Back to games</Link>
-        </p>
+        <OrderNotFound subject="order" />
       </div>
     );
   }
