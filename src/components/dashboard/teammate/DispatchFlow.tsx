@@ -141,11 +141,23 @@ export function DispatchFlow() {
   // so redirecting on every pathname change meant they could not open
   // Reviews, their profile, or anything else until the session started.
   useEffect(() => {
-    if (!isTeammate || state.phase !== "SELECTED" || !stateOrderId) return;
-    if (acknowledgedItems(SESSION_ROUTED_KEY).includes(stateOrderId)) return;
-    acknowledgeItem(SESSION_ROUTED_KEY, stateOrderId);
+    if (!isTeammate || !stateOrderId) return;
+    if (state.phase !== "SELECTED" && state.phase !== "ACTIVE_SESSION") return;
     const href = `/dashboard/teammate/session/${stateOrderId}`;
-    if (pathname !== href) router.replace(href);
+
+    // Marked as done only once we can see we actually got there. It used to
+    // be marked first and navigated second, which meant a single navigation
+    // that didn't take — a re-render landing on top of it, a route still
+    // loading — burned the one chance forever and left the teammate sitting
+    // on whatever page they were on, with an order waiting for them.
+    if (pathname === href) {
+      acknowledgeItem(SESSION_ROUTED_KEY, stateOrderId);
+      return;
+    }
+    // Only the first arrival is forced. After that they are free to open
+    // Reviews or their profile without being yanked back.
+    if (acknowledgedItems(SESSION_ROUTED_KEY).includes(stateOrderId)) return;
+    router.replace(href);
   }, [isTeammate, state.phase, stateOrderId, pathname, router]);
 
   useEffect(() => {
