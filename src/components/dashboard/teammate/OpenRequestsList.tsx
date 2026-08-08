@@ -277,4 +277,18 @@ function useRequestAlerts(requests: { order: { id: string; orderNo: number; game
 
     document.title = requests.length > 0 ? `(${requests.length}) ${baseTitle.current}` : baseTitle.current;
   }, [requests]);
+
+  // Keeps sounding while anything is open, not once on arrival.
+  //
+  // A wave is eight seconds long and the panel is meant to sit in a
+  // background tab — one chime at the exact moment the request lands is
+  // trivially missed, and then the alert expires in silence. The repeat
+  // stops on its own the moment the list empties, which is either because
+  // they answered or because it was taken.
+  const open = requests.length > 0;
+  useEffect(() => {
+    if (!open) return;
+    const nag = setInterval(() => playSound("request"), 3000);
+    return () => clearInterval(nag);
+  }, [open]);
 }

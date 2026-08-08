@@ -210,7 +210,12 @@ async function runReconcileTransaction(orderId: string, now: Date) {
   // A wave sent inside the transaction below. Waking the invited teammates
   // has to wait until it commits — publishing first would send them to read a
   // row that does not exist yet.
-  let waved: WaveResult | null = null;
+  //
+  // An array rather than a nullable `let`, because TypeScript's control-flow
+  // analysis doesn't follow assignments made inside a closure: it still
+  // believes the variable holds its initialiser afterwards, narrows it to
+  // null, and then types every property read as `never`.
+  const waved: WaveResult[] = [];
 
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
@@ -340,7 +345,7 @@ async function runReconcileTransaction(orderId: string, now: Date) {
             if (retry.exhausted) {
               await tx.order.update({ where: { id: orderId }, data: { poolExhaustedAt: now } });
             } else {
-              waved = retry;
+              waved.push(retry);
             }
           }
         } else if (waveOver) {
@@ -348,7 +353,7 @@ async function runReconcileTransaction(orderId: string, now: Date) {
           if (next.exhausted) {
             await tx.order.update({ where: { id: orderId }, data: { poolExhaustedAt: now } });
           } else {
-            waved = next;
+            waved.push(next);
           }
         }
 
@@ -373,8 +378,9 @@ async function runReconcileTransaction(orderId: string, now: Date) {
 
   // The one event where a poll interval is the difference between taking an
   // order and losing it: a wave is eight seconds long.
-  if (waved && waved.invited.length > 0) {
-    const userIds = waved.invited.map((t) => t.userId).filter((id): id is string => Boolean(id));
+  const sentWave = waved[0];
+  if (sentWave && sentWave.invited.length > 0) {
+    const userIds = sentWave.invited.map((t) => t.userId).filter((id): id is string => Boolean(id));
     await publish({ topic: "dispatch", key: orderId, userIds });
   }
 
