@@ -9,7 +9,11 @@ import { useRouter } from "next/navigation";
  * update without an F5. Pauses while the tab is hidden — a background tab
  * doesn't need to keep hitting the database.
  */
-export function LiveRefresh({ intervalMs = 5000 }: { intervalMs?: number }) {
+// 15s rather than 5s: router.refresh() re-runs every Prisma query on the
+// page, so an admin list left open was three full re-reads a minute against
+// a small connection pool. The visibility catch-up below means returning to
+// the tab is still instant.
+export function LiveRefresh({ intervalMs = 15_000 }: { intervalMs?: number }) {
   const router = useRouter();
 
   useEffect(() => {

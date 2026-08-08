@@ -33,6 +33,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   ],
   teammate: [
     { href: "/dashboard/teammate", label: "Overview", icon: "fa-solid fa-gauge" },
+    { href: "/dashboard/teammate/requests", label: "Open requests", icon: "fa-solid fa-inbox" },
     { href: "/dashboard/teammate/sessions", label: "Orders", icon: "fa-solid fa-receipt" },
     { href: "/dashboard/teammate/reviews", label: "Reviews", icon: "fa-solid fa-star" },
     { href: "/dashboard/teammate/payments", label: "Payments", icon: "fa-solid fa-wallet" },

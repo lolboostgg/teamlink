@@ -10,7 +10,13 @@ export function useAllOrders(): DispatchOrder[] {
   return useAllOrdersState().orders;
 }
 
-export function useAllOrdersState(): { orders: DispatchOrder[]; loading: boolean } {
+export function useAllOrdersState(): {
+  orders: DispatchOrder[];
+  loading: boolean;
+  /** Re-reads now, for a caller that just changed something and shouldn't
+   * have to wait out the poll interval to see it. */
+  refresh: () => Promise<void>;
+} {
   const [orders, setOrders] = useState<DispatchOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,5 +37,5 @@ export function useAllOrdersState(): { orders: DispatchOrder[]; loading: boolean
 
   useLiveSync("orders", refresh, 3000);
 
-  return { orders, loading };
+  return { orders, loading, refresh };
 }
