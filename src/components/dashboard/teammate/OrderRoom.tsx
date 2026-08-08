@@ -465,9 +465,16 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                     <OptionMarks
                       gameSlug={order.gameSlug}
                       section="ranks"
-                      values={order.ignRank ? [order.ignRank] : []}
-                      empty={formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) || "Unranked"}
-                      suffix={order.ignRank ? (formatRank(order.gameSlug, order.ignRank, order.ignDivision ?? null) ?? undefined) : undefined}
+                      // An unstated rank is Unranked, and Unranked is a real
+                      // rung on every ladder here with art of its own — left
+                      // as bare text it was the one row that looked like
+                      // missing data rather than an answer.
+                      values={[order.ignRank || "unranked"]}
+                      empty="Unranked"
+                      suffix={
+                        formatRank(order.gameSlug, order.ignRank ?? "unranked", order.ignDivision ?? null) ??
+                        undefined
+                      }
                     />
                   </dd>
                 </div>
@@ -504,24 +511,15 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           <ul className="order-room__rules">
             <li>
               <i className="fa-solid fa-user-plus" aria-hidden="true" />
-              <span>
-                Add them in-game and say hello in the chat. Keep everything in this chat — it&rsquo;s the only
-                record we can read back if there&rsquo;s a dispute.
-              </span>
+              <span>Add them in-game, then say hello here. Keep it in this chat — it&rsquo;s the record.</span>
             </li>
             <li>
               <i className="fa-solid fa-camera" aria-hidden="true" />
-              <span>
-                Submit a screenshot after every game. Payouts are released against those, and the customer never
-                sees them.
-              </span>
+              <span>Screenshot every game. Payouts are released against those.</span>
             </li>
             <li>
               <i className="fa-solid fa-hourglass-half" aria-hidden="true" />
-              <span>
-                No-show? Wait 15 minutes, message them, then contact support — don&rsquo;t cancel it yourself, or
-                the order counts against you.
-              </span>
+              <span>No-show? Message them, wait 15 minutes, then ask support — don&rsquo;t cancel it yourself.</span>
             </li>
           </ul>
 

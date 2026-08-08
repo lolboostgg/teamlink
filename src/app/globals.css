@@ -14558,3 +14558,18 @@ a.notification-panel__item:hover {
 .order-room__help {
   margin-top: auto;
 }
+
+/* The first section heading in a card.
+   This lived above .order-room__section in the file, and with the same
+   specificity the later rule simply won — which is why the border it turns
+   off was still drawn. Restated here, at the foot, where it lands last. */
+.order-room__brief .order-room__section--first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  /* A rule under the heading rather than over it: above, it drew a line
+     between the heading and the card edge and made the card look like it
+     started with something missing. */
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--dash-line);
+}
