@@ -7,7 +7,6 @@ import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/C
 import { CheckoutPaymentStep } from "@/components/checkout/CheckoutPaymentStep";
 import { CheckoutOrderSummary } from "@/components/checkout/CheckoutOrderSummary";
 import { CouponModal } from "@/components/checkout/CouponModal";
-import { TrustPoints } from "@/components/ui/TrustPoints";
 import { Reveal } from "@/components/ui/Reveal";
 import { calculateFee, getPaymentMethod, type PaymentMethodKey } from "@/lib/payments";
 import { placeCheckoutOrder } from "@/app/actions/checkout";
@@ -117,7 +116,14 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
               const done = index < position;
               return (
                 <Fragment key={entry.key}>
-                  {index > 0 && <span className="checkout-steps__line" aria-hidden="true" />}
+                  {index > 0 && (
+                    // Filled up to where you are, so the rail reads as a
+                    // progress bar rather than three dots on a hairline.
+                    <span
+                      className={`checkout-steps__line${index <= position ? " is-done" : ""}`}
+                      aria-hidden="true"
+                    />
+                  )}
                   <span
                     className={`checkout-steps__item${step === entry.key ? " is-active" : done ? " is-done" : ""}`}
                   >
@@ -152,33 +158,36 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
 
         {step === "payment" && (
           <>
+            {/* One recap card with a row per answered step — as separate
+                cards these two read as pending form sections rather than
+                as settled answers you can go back and correct. */}
             <Reveal delay={80}>
-              <div className="checkout-card checkout-card--identity">
-                <span className="checkout-card__identity-text">
-                  <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                  {identity?.mode === "guest"
-                    ? `Checking out as guest (${identity.email})`
-                    : "Checking out as logged-in user"}
-                </span>
-                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("identity")}>
-                  Change
-                </button>
-              </div>
-            </Reveal>
-
-            {ingame && (
-              <Reveal delay={100}>
-                <div className="checkout-card checkout-card--identity">
-                  <span className="checkout-card__identity-text">
-                    <i className="fa-solid fa-gamepad" aria-hidden="true" />
-                    Playing as {ingame.ign} ({ingame.region})
+              <div className="checkout-card checkout-recap">
+                <div className="checkout-recap__row">
+                  <span className="checkout-recap__text">
+                    <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                    {identity?.mode === "guest"
+                      ? `Checking out as guest (${identity.email})`
+                      : "Checking out as logged-in user"}
                   </span>
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("ingame")}>
+                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("identity")}>
                     Change
                   </button>
                 </div>
-              </Reveal>
-            )}
+
+                {ingame && (
+                  <div className="checkout-recap__row">
+                    <span className="checkout-recap__text">
+                      <i className="fa-solid fa-gamepad" aria-hidden="true" />
+                      Playing as {ingame.ign} ({ingame.region})
+                    </span>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("ingame")}>
+                      Change
+                    </button>
+                  </div>
+                )}
+              </div>
+            </Reveal>
             <Reveal delay={140}>
               <CheckoutPaymentStep
                 method={method}
@@ -194,7 +203,7 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
         )}
       </div>
 
-      <div>
+      <div className="checkout-side">
         <Reveal delay={80}>
           <CheckoutOrderSummary
             gameSlug={gameSlug}
@@ -210,9 +219,6 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
             onOpenCoupon={() => setCouponModalOpen(true)}
             onRemoveCoupon={() => setAppliedCoupon(null)}
           />
-        </Reveal>
-        <Reveal delay={140}>
-          <TrustPoints />
         </Reveal>
       </div>
 

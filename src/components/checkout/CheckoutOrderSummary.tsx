@@ -1,4 +1,5 @@
 import { PriceTag } from "@/components/currency/PriceTag";
+import { TrustPoints } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
 
 interface Props {
@@ -79,15 +80,24 @@ export function CheckoutOrderSummary({
       ) : (
         onOpenCoupon && (
           <button type="button" className="order-summary__coupon-trigger" onClick={onOpenCoupon}>
-            <i className="fa-solid fa-ticket" aria-hidden="true" /> Coupon?
+            <span>
+              <i className="fa-solid fa-ticket" aria-hidden="true" /> Add a coupon
+            </span>
+            <i className="fa-solid fa-chevron-right" aria-hidden="true" />
           </button>
         )
       )}
 
       <div className="order-summary__total">
-        <span>Total</span>
+        <span className="order-summary__total-label">Total</span>
         <PriceTag amountEUR={totalEUR} />
       </div>
+
+      {/* Guarantees live in the same card as the price rather than in a
+          second panel below it — this is the moment they answer a question
+          about, and two stacked cards made the column read as taller and
+          less resolved than the form beside it. */}
+      <TrustPoints />
     </aside>
   );
 }
