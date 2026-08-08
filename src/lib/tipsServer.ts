@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { notifyUser } from "@/lib/notifications/service";
 
 /**
  * Recording a tip.
@@ -17,7 +18,12 @@ export async function recordTip(input: {
 }) {
   const order = await prisma.order.findUnique({
     where: { id: input.orderId },
-    include: { candidates: { where: { selected: true, isPrimary: true } } },
+    include: {
+      candidates: {
+        where: { selected: true, isPrimary: true },
+        include: { teammate: { select: { userId: true } } },
+      },
+    },
   });
   const teammateId = order?.candidates[0]?.teammateId;
   if (!order || !teammateId) return null;
@@ -25,7 +31,9 @@ export async function recordTip(input: {
   const existing = await prisma.tip.findUnique({ where: { orderId: input.orderId } });
   if (existing) return existing;
 
-  return prisma.$transaction(async (tx) => {
+  const teammateUserId = order.candidates[0]?.teammate.userId ?? null;
+
+  const tip = await prisma.$transaction(async (tx) => {
     const tip = await tx.tip.create({
       data: {
         orderId: input.orderId,
@@ -53,6 +61,20 @@ export async function recordTip(input: {
 
     return tip;
   });
+
+  // Outside the transaction: the money is already booked, and a notification
+  // that fails must not roll a paid tip back. Routed through notifyUser, so
+  // the channel policy decides where it goes — see notify/channels.ts.
+  if (teammateUserId) {
+    await notifyUser(teammateUserId, {
+      type: "tip.received",
+      title: `You got a €${input.amountEUR.toFixed(2)} tip`,
+      body: `${order.customerLabel} tipped you for the ${order.gameName} session. It's already on your balance.`,
+      href: "/dashboard/teammate/payments",
+    });
+  }
+
+  return tip;
 }
 
 export async function getTipForOrder(orderId: string) {

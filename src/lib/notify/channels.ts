@@ -38,6 +38,10 @@ const POLICY: Record<string, ChannelPolicy> = {
   "order.unread_escalated": { discord: true, email: true, topic: "orders" },
   "order.reviewed": { discord: true, topic: "orders" },
 
+  // Money in, not money out — a tip is the customer saying thank you and is
+  // worth hearing about while the good mood is still there.
+  "tip.received": { discord: true, topic: "balance" },
+
   // Money: both channels, always.
   "payout.paid": { discord: true, email: true, topic: "balance" },
   "payout.rejected": { discord: true, email: true, topic: "balance" },
