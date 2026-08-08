@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { refundPaymentIntent, stripeConfigured, StripeError } from "@/lib/stripe";
 import { notifyAdmins } from "@/lib/notifications/service";
 import { notifyOrderCancelled } from "@/lib/notify/orderNotifications";
+import { releaseOrderAuthorization } from "@/lib/orderPayments";
 
 /**
  * Giving a cancelled order's money back.
@@ -50,7 +51,8 @@ export interface RefundableOrder {
 export interface RefundOutcome {
   /** How much was handed back, in cents. Zero when there was nothing to give. */
   cents: number;
-  method: "credit" | "stripe" | "none";
+  /** "released" is a hold let go — no money ever moved, and no fee lost. */
+  method: "credit" | "stripe" | "released" | "none";
   /** Set when the money could not be returned and an admin was asked to. */
   problem?: string;
 }
@@ -137,6 +139,19 @@ async function refundToStripe(
   order: RefundableOrder,
   charges: { id: string; amountEUR: Prisma.Decimal; stripePaymentIntentId: string | null }[],
 ): Promise<RefundOutcome> {
+  // Anything still only reserved is let go rather than refunded. Cheaper —
+  // Stripe keeps its fee on a refund but takes nothing for a hold that was
+  // never captured — and truer, since no money left the customer's account
+  // in the first place.
+  const released = await releaseOrderAuthorization(order);
+  if (released.releasedCents > 0 || released.problem) {
+    return {
+      cents: released.releasedCents,
+      method: released.releasedCents > 0 ? "released" : "none",
+      problem: released.problem,
+    };
+  }
+
   const payable = charges.filter((charge) => charge.stripePaymentIntentId);
   if (payable.length === 0) {
     // Nothing was taken through Stripe, so there is nothing to send back.
@@ -195,9 +210,15 @@ const REFUND_TEXT: Record<RefundReason, string> = {
 function moneyLine(outcome: RefundOutcome): string | null {
   if (outcome.cents <= 0) return null;
   const amount = `€${(outcome.cents / 100).toFixed(2)}`;
-  return outcome.method === "credit"
-    ? `${amount} is back in your balance as credit, ready for your next booking.`
-    : `${amount} has been refunded to your original payment method.`;
+  if (outcome.method === "credit") {
+    return `${amount} is back in your balance as credit, ready for your next booking.`;
+  }
+  // Never charged, only reserved — saying "refunded" would have the customer
+  // watching for money that is not coming, because it never left.
+  if (outcome.method === "released") {
+    return `The ${amount} hold on your card has been released — you were never charged.`;
+  }
+  return `${amount} has been refunded to your original payment method.`;
 }
 
 /**

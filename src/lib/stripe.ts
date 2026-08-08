@@ -118,6 +118,11 @@ export async function createCheckoutSession(input: {
    * cannot be charged off-session later, so it never asks to save anything.
    */
   methods?: ("card" | "paypal")[];
+  /**
+   * "manual" only reserves the money; it has to be captured later or it
+   * lapses on its own after seven days. Used for guests — see startCheckout.
+   */
+  captureMethod?: "automatic" | "manual";
   metadata: Record<string, string>;
   idempotencyKey?: string;
 }) {
@@ -154,6 +159,10 @@ export async function createCheckoutSession(input: {
       payment_intent_data: {
         metadata: input.metadata,
         ...(saveCard ? { setup_future_usage: "off_session" } : {}),
+        // Has to live in this block, not alongside it — a second
+        // payment_intent_data key would simply replace this one and the
+        // capture mode would be dropped without a word.
+        ...(input.captureMethod === "manual" ? { capture_method: "manual" } : {}),
       },
       metadata: input.metadata,
     },
@@ -217,6 +226,37 @@ export async function chargeSavedCard(input: {
       description: input.description,
       metadata: input.metadata,
     },
+    input.idempotencyKey,
+  );
+}
+
+/**
+ * Takes an authorised payment for real.
+ *
+ * Captures the full authorised amount. Stripe answers a second capture of the
+ * same intent with an error rather than charging twice, and the idempotency
+ * key makes a retried request a no-op besides — but callers still guard on
+ * the charge row, so neither has to be relied on.
+ */
+export async function capturePaymentIntent(input: { paymentIntentId: string; idempotencyKey: string }) {
+  return call<StripePaymentIntent>(
+    `/payment_intents/${input.paymentIntentId}/capture`,
+    {},
+    input.idempotencyKey,
+  );
+}
+
+/**
+ * Releases an authorisation without taking the money.
+ *
+ * The customer's bank drops the hold and nothing is ever charged, so unlike a
+ * refund this costs no processing fee. Only valid while the intent is still
+ * uncaptured; once captured it has to be refunded instead.
+ */
+export async function cancelPaymentIntent(input: { paymentIntentId: string; idempotencyKey: string }) {
+  return call<StripePaymentIntent>(
+    `/payment_intents/${input.paymentIntentId}/cancel`,
+    { cancellation_reason: "abandoned" },
     input.idempotencyKey,
   );
 }

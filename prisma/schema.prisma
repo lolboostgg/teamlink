@@ -86,9 +86,16 @@ model SavedCard {
 enum ChargeStatus {
   PENDING
   REQUIRES_ACTION
+  // Reserved on the card but not taken. A guest checkout stops here until
+  // the session actually starts — see captureOrderPayment in
+  // lib/orderPayments.ts. Accounts never enter this state.
+  AUTHORIZED
   SUCCEEDED
   FAILED
   REFUNDED
+  // An authorisation that was released instead of captured. No money ever
+  // moved, so unlike REFUNDED it costs no processing fee.
+  VOIDED
 }
 
 enum ChargeKind {

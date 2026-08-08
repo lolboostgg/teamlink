@@ -74,9 +74,21 @@ export async function startCheckout(input: StartCheckoutInput): Promise<{ url: s
     await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customer.id } });
   }
 
+  // A guest's order money is only reserved, and taken when the session
+  // actually starts (see captureOrderPayment). If the search finds nobody, or
+  // they cancel first, the reservation is released and no fee is ever paid —
+  // whereas a refund leaves Stripe's cut behind on money we handed straight
+  // back. An account is charged outright: their cancellations end in store
+  // credit, so no refund and no lost fee arises either way.
+  //
+  // Only the booking itself. Extra games and tips are bought mid-session, for
+  // something delivered immediately, and have nothing to wait for.
+  const authorizeOnly = !user && (input.kind ?? "ORDER") === "ORDER";
+
   const base = await origin();
   const checkout = await createCheckoutSession({
     amountEUR,
+    captureMethod: authorizeOnly ? "manual" : "automatic",
     description: input.description,
     successUrl: `${base}${input.returnPath}${input.returnPath.includes("?") ? "&" : "?"}checkout={CHECKOUT_SESSION_ID}`,
     cancelUrl: `${base}${input.returnPath}${input.returnPath.includes("?") ? "&" : "?"}checkout=cancelled`,

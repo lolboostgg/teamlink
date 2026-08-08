@@ -62,6 +62,28 @@ export async function fulfilClaimed(charge: ClaimedCharge, metadata: Record<stri
 }
 
 /**
+ * Whether a finished checkout has money behind it, and in what sense.
+ *
+ * "paid" is the ordinary answer. A guest's session authorises rather than
+ * charges, so it comes back "unpaid" with the intent sitting in
+ * `requires_capture` — the money is reserved and the order may go out to
+ * teammates, but nothing has been taken yet. Anything else is not settled.
+ *
+ * Returning null rather than false-y states keeps the caller from having to
+ * know which Stripe fields carry the distinction.
+ */
+async function settledStateOf(session: {
+  payment_status: string;
+  payment_intent: string | null;
+}): Promise<"SUCCEEDED" | "AUTHORIZED" | null> {
+  if (session.payment_status === "paid") return "SUCCEEDED";
+  if (!session.payment_intent) return null;
+
+  const intent = await getPaymentIntent(session.payment_intent).catch(() => null);
+  return intent?.status === "requires_capture" ? "AUTHORIZED" : null;
+}
+
+/**
  * Settles a hosted checkout by asking Stripe about it directly.
  *
  * The webhook is still the thing that guarantees delivery — it arrives even
@@ -74,11 +96,14 @@ export async function settleCheckoutSession(sessionId: string): Promise<boolean>
   if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId)) return false;
 
   const session = await getCheckoutSession(sessionId).catch(() => null);
-  if (!session || session.payment_status !== "paid") return false;
+  if (!session) return false;
+
+  const settled = await settledStateOf(session);
+  if (!settled) return false;
 
   await prisma.charge.updateMany({
-    where: { stripeSessionId: session.id, status: { not: "SUCCEEDED" } },
-    data: { status: "SUCCEEDED", stripePaymentIntentId: session.payment_intent ?? undefined },
+    where: { stripeSessionId: session.id, status: { notIn: ["SUCCEEDED", "AUTHORIZED"] } },
+    data: { status: settled, stripePaymentIntentId: session.payment_intent ?? undefined },
   });
 
   const metadata = session.metadata ?? {};
@@ -131,6 +156,45 @@ export async function settlePaymentIntent(intentId: string, metadata: Record<str
   await prisma.charge.update({
     where: { id: charge.id },
     data: { status: "SUCCEEDED", failureMessage: null },
+  });
+
+  await fulfilClaimed((await claimFulfilment(charge.id)) ? charge : null, metadata);
+}
+
+/**
+ * The same, for a payment that has only been authorised.
+ *
+ * `payment_intent.amount_capturable_updated` is the intent-level event for
+ * money going on hold, and it is what an endpoint subscribed to intent events
+ * alone would see instead of the session's. The order is released to
+ * teammates on this — the money is reserved, which is as much certainty as
+ * the search needs — and only captured once the session starts.
+ */
+export async function authorizePaymentIntent(intentId: string, metadata: Record<string, string>) {
+  const kind = metadata.kind;
+  if (!kind) return;
+
+  let charge = await prisma.charge.findFirst({ where: { stripePaymentIntentId: intentId } });
+
+  if (!charge) {
+    charge = await prisma.charge.findFirst({
+      where: {
+        stripePaymentIntentId: null,
+        status: { notIn: ["SUCCEEDED", "AUTHORIZED"] },
+        kind: kind as ChargeKindKey,
+        ...(metadata.orderId ? { orderId: metadata.orderId } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!charge) return;
+    await prisma.charge.update({ where: { id: charge.id }, data: { stripePaymentIntentId: intentId } });
+  }
+
+  // Never downgrade: if a capture has already landed, this is a late or
+  // redelivered authorisation event and must not undo it.
+  await prisma.charge.updateMany({
+    where: { id: charge.id, status: { notIn: ["SUCCEEDED", "REFUNDED"] } },
+    data: { status: "AUTHORIZED", failureMessage: null },
   });
 
   await fulfilClaimed((await claimFulfilment(charge.id)) ? charge : null, metadata);

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyWebhook, getPaymentIntent } from "@/lib/stripe";
 import { releaseCouponForOrder } from "@/lib/couponsServer";
 import { claimFulfilmentByStripeId } from "@/lib/chargeFulfilment";
-import { fulfilClaimed, settlePaymentIntent, storeCard } from "@/lib/fulfilment";
+import { fulfilClaimed, settlePaymentIntent, storeCard, authorizePaymentIntent } from "@/lib/fulfilment";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,15 +49,25 @@ export async function POST(request: Request) {
           payment_status: string;
           metadata?: Record<string, string>;
         };
-        if (session.payment_status !== "paid") break;
+        // A guest's checkout only authorises, so it reports back "unpaid"
+        // with its intent in requires_capture. That is still money reserved
+        // and still an order that should go out to teammates — it is simply
+        // not taken yet, and is captured when the session starts.
+        let state: "SUCCEEDED" | "AUTHORIZED" | null =
+          session.payment_status === "paid" ? "SUCCEEDED" : null;
+        if (!state && session.payment_intent) {
+          const intent = await getPaymentIntent(session.payment_intent).catch(() => null);
+          if (intent?.status === "requires_capture") state = "AUTHORIZED";
+        }
+        if (!state) break;
 
         // The count is the guard against a redelivered event: only the
-        // transition into SUCCEEDED may hand out what was bought, so a second
-        // delivery of the same event finds nothing to update and stops here.
+        // transition into a settled state may hand out what was bought, so a
+        // second delivery finds nothing to update and stops here.
         const settled = await prisma.charge.updateMany({
-          where: { stripeSessionId: session.id, status: { not: "SUCCEEDED" } },
+          where: { stripeSessionId: session.id, status: { notIn: ["SUCCEEDED", "AUTHORIZED"] } },
           data: {
-            status: "SUCCEEDED",
+            status: state,
             stripePaymentIntentId: session.payment_intent ?? undefined,
           },
         });
@@ -118,6 +128,35 @@ export async function POST(request: Request) {
         const userId = intent.metadata?.userId;
         if (userId && intent.payment_method) {
           await storeCard(userId, intent.payment_method).catch(() => undefined);
+        }
+        break;
+      }
+
+      // Money went on hold. The guest path's equivalent of succeeded: the
+      // order is released to teammates here, and the capture happens when the
+      // session starts.
+      case "payment_intent.amount_capturable_updated": {
+        const intent = event.data.object as { id: string; metadata?: Record<string, string> };
+        await authorizePaymentIntent(intent.id, intent.metadata ?? {});
+        break;
+      }
+
+      // An authorisation that was released rather than captured — normally
+      // our own doing when an order ends before it starts, but Stripe also
+      // expires an uncaptured intent by itself after seven days.
+      case "payment_intent.canceled": {
+        const intent = event.data.object as { id: string; metadata?: Record<string, string> };
+        await prisma.charge.updateMany({
+          where: { stripePaymentIntentId: intent.id, status: { in: ["AUTHORIZED", "PENDING"] } },
+          data: { status: "VOIDED" },
+        });
+        const orderId = intent.metadata?.orderId;
+        if (orderId && (intent.metadata?.kind ?? "ORDER") === "ORDER") {
+          await releaseCouponForOrder(orderId);
+          await prisma.order.updateMany({
+            where: { id: orderId, status: { in: ["AWAITING_PAYMENT", "SEARCHING", "CANDIDATES_READY", "SELECTING"] } },
+            data: { status: "CANCELLED" },
+          });
         }
         break;
       }

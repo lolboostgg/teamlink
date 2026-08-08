@@ -75,11 +75,14 @@ function formatMMSS(totalSeconds: number): string {
 }
 
 /**
- * Where the money actually went. Signed in it is store credit, as a guest it
- * goes back to the card — see settleCancelledOrder() in lib/orderRefunds.
- * Worth spelling out on screen: an account holder watching their card for a
- * refund that was never coming is a support ticket, and a guest wondering
- * whether "refunded" meant a voucher is another.
+ * Where the money actually went — the two paths differ enough that saying
+ * only "refunded" would mislead both.
+ *
+ * An account was charged at checkout and gets store credit back, so telling
+ * them to watch their card would have them waiting for money that is never
+ * coming. A guest was never charged at all: their card was authorised and the
+ * hold is released, which is not a refund and does not behave like one on a
+ * statement. See settleCancelledOrder() in lib/orderRefunds.
  */
 function RefundNote() {
   const { isAuthenticated, isLoading } = useAuthModal();
@@ -90,7 +93,7 @@ function RefundNote() {
       <i className="fa-solid fa-circle-info" aria-hidden="true" />{" "}
       {isAuthenticated
         ? "It's back in your balance as credit, ready for your next booking."
-        : "It's on its way back to your payment method — usually a few working days, depending on your bank."}
+        : "Your card was only ever put on hold for this, never charged — the hold drops off by itself, usually within a day or two."}
     </p>
   );
 }
@@ -110,8 +113,8 @@ function CancelRequestModal({ open, onClose, onConfirm }: { open: boolean; onClo
           Cancel this request?
         </h2>
         <p className="cancel-confirm__sub">
-          We&rsquo;ll stop searching for a teammate and refund what you paid &mdash; automatically, no need to ask. The
-          confirmation goes to your email.
+          We&rsquo;ll stop searching for a teammate. You won&rsquo;t pay for a session that doesn&rsquo;t happen
+          &mdash; whatever is owed comes straight back, automatically, and the confirmation goes to your email.
         </p>
         <div className="cancel-confirm__actions">
           <button type="button" className="btn btn--ghost btn--block" onClick={onClose}>

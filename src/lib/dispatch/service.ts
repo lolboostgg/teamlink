@@ -7,6 +7,7 @@ import { publish } from "@/lib/events/bus";
 import { issueSessionRewardCoupon } from "@/lib/couponsServer";
 import { notifyTeammateAssigned, notifyOrderCompleted } from "@/lib/notify/orderNotifications";
 import { settleCancelledOrder, type RefundOutcome } from "@/lib/orderRefunds";
+import { captureOrderPayment } from "@/lib/orderPayments";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
 import { candidateTarget, sendWave, resetForRetry, POOL_RETRY_MS, type WaveResult } from "@/lib/dispatch/waves";
 
@@ -104,7 +105,7 @@ interface EndedOrder {
  * cancelled and the customer's money comes back.
  *
  * The refund itself is refundOrder()'s job — store credit for an account, a
- * Stripe refund for a guest — and it deliberately happens *after* this
+ * released hold or a refund for a guest — and it deliberately happens *after* this
  * transaction commits, not inside it. Talking to Stripe with a database
  * transaction held open would keep a pooled connection busy for the length of
  * a network round trip, and a refund that succeeded at Stripe while the
@@ -711,6 +712,20 @@ export async function assertAssignedTeammate(orderId: string, teammateId: string
 
 export async function setSessionStatus(orderId: string, teammateId: string, status: string) {
   await assertAssignedTeammate(orderId, teammateId);
+
+  // Going in-game is the moment a guest's reserved money is actually taken —
+  // and the gate that stops a session starting on money we cannot get. The
+  // card authorised at checkout may have been cancelled or frozen since; a
+  // teammate who has to wait is a far better outcome than one who plays a
+  // session nobody ends up paying for. Everyone else captured at checkout and
+  // passes straight through.
+  if (status === "IN_GAME") {
+    const captured = await captureOrderPayment(orderId);
+    if (!captured.ok) {
+      throw new DispatchError(`The customer's payment couldn't be taken (${captured.error}). Don't start yet.`);
+    }
+  }
+
   const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
