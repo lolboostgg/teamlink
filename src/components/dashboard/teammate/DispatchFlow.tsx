@@ -116,7 +116,14 @@ export function DispatchFlow() {
   const stateOrderGameName = state.order?.gameName;
   const stateOrderOption = state.order?.option;
 
+  // The open-requests page is this modal, spread out and with every other
+  // invitation next to it. Laying a one-order dialog over the top hides the
+  // list the teammate went there to read, and both would announce the same
+  // request twice over.
+  const onRequestsPage = pathname === "/dashboard/teammate/requests";
+
   useEffect(() => {
+    if (onRequestsPage) return;
     if (state.phase !== "DISPATCH_INCOMING" || !stateOrderId) return;
     if (announced.current === stateOrderId) return;
     announced.current = stateOrderId;
@@ -124,7 +131,7 @@ export function DispatchFlow() {
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       new Notification("New order request", { body: `${stateOrderGameName} · ${stateOrderOption}` });
     }
-  }, [state.phase, stateOrderId, stateOrderGameName, stateOrderOption]);
+  }, [onRequestsPage, state.phase, stateOrderId, stateOrderGameName, stateOrderOption]);
 
   // Being picked takes the teammate to the session room — but only once. The
   // phase stays SELECTED for the whole time the order is ASSIGNED (it only
@@ -168,7 +175,7 @@ export function DispatchFlow() {
     });
   }
 
-  if (state.phase === "DISPATCH_INCOMING" && state.order) {
+  if (state.phase === "DISPATCH_INCOMING" && state.order && !onRequestsPage) {
     const order = state.order;
     return (
       <div className="dispatch-modal__backdrop" role="dialog" aria-modal="true" aria-labelledby="dispatch-title">
