@@ -386,6 +386,49 @@ export function orderCompletedMail(input: {
 }
 
 /**
+ * An order that ended without a session, and what happened to the money.
+ *
+ * The money line is the point of this mail. A cancellation that only says
+ * "cancelled" leaves the customer to work out whether they have been charged,
+ * and for a guest — who has no balance page to look at — there is nowhere to
+ * go and find out. So the refund is stated as its own row and repeated in the
+ * intro, in the words that match where it actually went.
+ */
+export function orderCancelledMail(input: {
+  name: string | null;
+  orderNo: number;
+  gameName: string;
+  option: string;
+  /** Why it ended, as a sentence. */
+  reason: string;
+  /** What happened to the money, as a sentence. Null when nothing was taken. */
+  refund: string | null;
+  url: string;
+}): MailBody {
+  const content: Shell = {
+    heading: "Your order was cancelled",
+    intro: input.refund ? `${input.reason} ${input.refund}` : input.reason,
+    preheader: `${input.gameName} · ${input.option} — cancelled`,
+    ...(input.refund ? { highlight: { label: "Your money", value: input.refund } } : {}),
+    rows: [
+      { label: "Order", value: `#${input.orderNo}` },
+      { label: "Game", value: input.gameName },
+      { label: "Mode", value: input.option },
+    ],
+    ctaLabel: "Book again",
+    ctaUrl: input.url,
+    footnote:
+      "Refunds to a card or PayPal usually show up within a few working days, depending on your bank. Reply to this mail if anything looks wrong and we'll sort it out.",
+  };
+
+  return {
+    subject: `Order #${input.orderNo} — cancelled`,
+    html: shell(content),
+    text: shellText(content),
+  };
+}
+
+/**
  * The generic body for anything routed through the notification channels (see
  * notify/channels.ts) — payouts, fines, cancellations. Those carry their own
  * wording already, so this only frames it.

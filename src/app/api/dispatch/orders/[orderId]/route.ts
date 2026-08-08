@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { reconcileOrder, selectTeammates, DispatchError } from "@/lib/dispatch/service";
 import { toCustomerOrder } from "@/lib/dispatch/customerView";
+import { settleCancelledOrder } from "@/lib/orderRefunds";
 import { publish } from "@/lib/events/bus";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ function tokenMatches(given: string, expected: string): boolean {
 async function authorizeOrder(orderId: string, request: Request) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { id: true, clientUserId: true, accessToken: true },
+    select: { id: true, clientUserId: true, accessToken: true, status: true },
   });
   if (!order) return null;
 
@@ -82,7 +83,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ orde
  */
 export async function POST(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
-  if (!(await authorizeOrder(orderId, request))) {
+  const authorized = await authorizeOrder(orderId, request);
+  if (!authorized) {
     return NextResponse.json({ error: "Unknown order." }, { status: 404 });
   }
   const body = await request.json();
@@ -106,7 +108,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
         break;
       }
       case "cancel": {
-        await prisma.order.update({ where: { id: orderId }, data: { status: "CANCELLED" } });
+        // Cancelling used to be a bare status write, which meant the most
+        // common way an order ends — the customer giving up while the search
+        // runs — returned nothing to anybody. Only orders that were actually
+        // paid for reach the refund; one still awaiting payment owes nothing.
+        const cancelled = await prisma.order.update({
+          where: { id: orderId },
+          data: { status: "CANCELLED" },
+          select: { id: true, orderNo: true, clientUserId: true, gameName: true, priceEUR: true, status: true },
+        });
+        if (authorized.status !== "AWAITING_PAYMENT" && authorized.status !== "CANCELLED") {
+          await settleCancelledOrder(cancelled, "cancelled_by_customer");
+        }
         break;
       }
       case "request-cancel": {

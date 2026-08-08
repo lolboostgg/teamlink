@@ -6,6 +6,7 @@ import { publish } from "@/lib/events/bus";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
 import { assignWinners, reconcileOrder } from "@/lib/dispatch/service";
 import { sendWave, resetForRetry } from "@/lib/dispatch/waves";
+import { settleCancelledOrder } from "@/lib/orderRefunds";
 
 /**
  * Manual controls over a live dispatch.
@@ -219,16 +220,26 @@ export async function correctOrderDetails(
 export async function cancelDispatch(orderId: string): Promise<Result> {
   try {
     const admin = await requireAdmin();
-    await prisma.$transaction(async (tx) => {
+    const cancelled = await prisma.$transaction(async (tx) => {
       await tx.dispatchCandidate.updateMany({
         where: { orderId, status: "PENDING" },
         // Superseded, not timed out: nobody here failed to answer, the order
         // was taken off the table under them.
         data: { status: "SUPERSEDED", respondedAt: new Date() },
       });
-      await tx.order.update({ where: { id: orderId }, data: { status: "CANCELLED", matchingPaused: false } });
+      const before = await tx.order.findUnique({ where: { id: orderId }, select: { status: true } });
+      const row = await tx.order.update({
+        where: { id: orderId },
+        data: { status: "CANCELLED", matchingPaused: false },
+        select: { id: true, orderNo: true, clientUserId: true, gameName: true, priceEUR: true },
+      });
       await logDispatch(tx, orderId, DISPATCH_EVENT.ENDED, `${admin} cancelled the order from the dispatch board.`);
+      // An order the admin pulls off the board is one the customer paid for
+      // and will not get. It used to end here with the money kept and nobody
+      // told; the refund now runs once this commits.
+      return before?.status === "AWAITING_PAYMENT" || before?.status === "CANCELLED" ? null : row;
     });
+    if (cancelled) await settleCancelledOrder(cancelled, "cancelled_by_admin");
     await publish({ topic: "orders", key: orderId, userIds: [] });
     await publish({ topic: "dispatch", key: orderId, userIds: [] });
     return { ok: true };

@@ -6,6 +6,7 @@ import { payoutForOrder } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
 import { issueSessionRewardCoupon } from "@/lib/couponsServer";
 import { notifyTeammateAssigned, notifyOrderCompleted } from "@/lib/notify/orderNotifications";
+import { settleCancelledOrder, type RefundOutcome } from "@/lib/orderRefunds";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
 import { candidateTarget, sendWave, resetForRetry, POOL_RETRY_MS, type WaveResult } from "@/lib/dispatch/waves";
 
@@ -90,34 +91,27 @@ async function publishOrderChange(orderId: string) {
   }
 }
 
+/** The bits of an ended order the refund and the notices need. */
+interface EndedOrder {
+  orderNo: number;
+  gameName: string;
+  clientUserId: string | null;
+  priceEUR: number;
+}
+
 /**
  * Gives up on an assignment nobody ever turned into a session: the order is
- * cancelled and the customer's money comes back as store credit.
+ * cancelled and the customer's money comes back.
  *
- * Credit rather than a card refund because it is the same balance every
- * payment method already settles into, and it lets the customer rebook
- * immediately — which is what they wanted in the first place. A guest order
- * has no account to credit, so it is only cancelled and left to an admin.
+ * The refund itself is refundOrder()'s job — store credit for an account, a
+ * Stripe refund for a guest — and it deliberately happens *after* this
+ * transaction commits, not inside it. Talking to Stripe with a database
+ * transaction held open would keep a pooled connection busy for the length of
+ * a network round trip, and a refund that succeeded at Stripe while the
+ * transaction later rolled back would be money returned that our own records
+ * say is still ours.
  */
-async function abandonAssignment(
-  tx: Prisma.TransactionClient,
-  order: { id: string; orderNo: number; clientUserId: string | null; priceEUR: unknown },
-) {
-  const cents = Math.round(Number(order.priceEUR) * 100);
-  if (order.clientUserId && cents > 0) {
-    await tx.user.update({
-      where: { id: order.clientUserId },
-      data: { creditBalanceCents: { increment: cents } },
-    });
-    await tx.creditTransaction.create({
-      data: {
-        userId: order.clientUserId,
-        type: "REFUND",
-        amountCents: cents,
-        note: `Order #${order.orderNo} — the session never started`,
-      },
-    });
-  }
+async function abandonAssignment(tx: Prisma.TransactionClient, order: { id: string }) {
   return tx.order.update({
     where: { id: order.id },
     data: { status: "CANCELLED", sessionStatus: null },
@@ -207,7 +201,19 @@ async function runReconcileTransaction(orderId: string, now: Date) {
   // can be announced without paying for a second query on every reconcile —
   // and this runs on every order read.
   let previousStatus: string | null = null;
-  let abandoned: { orderNo: number; gameName: string; clientUserId: string | null; priceEUR: number } | null = null;
+  // Two ways an order can end owing the customer their money: somebody
+  // accepted and never showed up, or nobody ever accepted at all. Both are
+  // settled after the transaction commits, so they are carried out of it.
+  //
+  // On a property of a held object rather than in plain `let`s: the compiler
+  // does not follow assignments made inside the transaction callback, so a
+  // `let` initialised to null narrows to `never` at every use down here.
+  // Nothing complained while these were only passed along — `never` is
+  // assignable to anything — but reading a field off one does not compile.
+  const ended: { abandoned: EndedOrder | null; noMatch: EndedOrder | null } = {
+    abandoned: null,
+    noMatch: null,
+  };
   // A wave sent inside the transaction below. Waking the invited teammates
   // has to wait until it commits — publishing first would send them to read a
   // row that does not exist yet.
@@ -232,7 +238,7 @@ async function runReconcileTransaction(orderId: string, now: Date) {
       order.assignedAt.getTime() + ABANDONED_ASSIGNMENT_MS <= now.getTime() &&
       (await tx.sessionGame.count({ where: { orderId } })) === 0
     ) {
-      abandoned = {
+      ended.abandoned = {
         orderNo: order.orderNo,
         gameName: order.gameName,
         clientUserId: order.clientUserId,
@@ -366,6 +372,15 @@ async function runReconcileTransaction(orderId: string, now: Date) {
     if (order.status === "SELECTING" && order.selectionDeadline && order.selectionDeadline <= now) {
       const winners = accepted.slice(0, Math.max(1, order.teammatesRequested));
       if (winners.length === 0) {
+        // Nobody took it and the window is gone. The customer paid for a
+        // session that will not happen, so the money goes back once this
+        // commits — see the settle call below.
+        ended.noMatch = {
+          orderNo: order.orderNo,
+          gameName: order.gameName,
+          clientUserId: order.clientUserId,
+          priceEUR: Number(order.priceEUR),
+        };
         return tx.order.update({ where: { id: orderId }, data: { status: "NO_MATCH" } });
       }
       await assignWinners(tx, orderId, winners.map((w) => w.id), now);
@@ -375,7 +390,16 @@ async function runReconcileTransaction(orderId: string, now: Date) {
     return order;
   });
 
-  if (abandoned) await announceAbandonedOrder(orderId, abandoned);
+  // Both of these give money back and mail the customer, so they run outside
+  // the transaction above — Stripe and the mail server have no business
+  // holding a database connection open.
+  if (ended.abandoned) {
+    const refund = await settleCancelledOrder({ id: orderId, ...ended.abandoned }, "never_started");
+    await announceAbandonedOrder(orderId, ended.abandoned, refund);
+  }
+  if (ended.noMatch) {
+    await settleCancelledOrder({ id: orderId, ...ended.noMatch }, "no_match");
+  }
 
   // The one event where a poll interval is the difference between taking an
   // order and losing it: a wave is eight seconds long.
@@ -401,12 +425,28 @@ async function runReconcileTransaction(orderId: string, now: Date) {
   return result;
 }
 
-/** Tells the customer where their money went, and the admins that it happened. */
+/**
+ * The bells for an abandoned assignment. The customer's mail is sent by
+ * settleCancelledOrder(); this is the in-app half, and the admin line.
+ *
+ * Both messages describe what the refund actually did rather than assuming
+ * it. The admin line used to read "guest order, nothing credited" — true at
+ * the time and the reason a guest's money went missing quietly.
+ */
 async function announceAbandonedOrder(
   orderId: string,
   order: { orderNo: number; gameName: string; clientUserId: string | null; priceEUR: number },
+  refund: RefundOutcome,
 ) {
-  const amount = `€${order.priceEUR.toFixed(2)}`;
+  const amount = `€${(refund.cents / 100).toFixed(2)}`;
+  const settled = refund.problem
+    ? "the refund failed and needs doing by hand"
+    : refund.method === "credit"
+      ? `${amount} credited`
+      : refund.method === "stripe"
+        ? `${amount} refunded to the customer`
+        : "nothing was owed";
+
   if (order.clientUserId) {
     await notifyUser(order.clientUserId, {
       type: "order.abandoned",
@@ -418,7 +458,7 @@ async function announceAbandonedOrder(
   await notifyAdmins({
     type: "order.abandoned",
     title: `Order abandoned · ${order.gameName}`,
-    body: `#${order.orderNo} sat assigned without a session${order.clientUserId ? ` — ${amount} credited` : " — guest order, nothing credited"}.`,
+    body: `#${order.orderNo} sat assigned without a session — ${settled}.`,
     href: `/dashboard/admin/orders/${orderId}`,
   });
 }

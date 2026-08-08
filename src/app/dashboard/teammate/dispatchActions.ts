@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
-import { notifyAdmins } from "@/lib/notifications/service";
+import { settleCancelledOrder } from "@/lib/orderRefunds";
 import {
   respondToDispatch,
   setSessionStatus,
@@ -126,49 +126,15 @@ export async function respondToCancelAction(orderId: string, approve: boolean): 
       // hands the session back at the stage it was already at.
       await prisma.order.update({ where: { id: orderId }, data: { status: "IN_PROGRESS" } });
     } else {
-      // Cancelling and crediting are one transaction: a cancelled order the
-      // customer was never refunded for is the worst of the failure modes.
-      // Store credit rather than a card refund, matching abandonAssignment()
-      // in lib/dispatch/service.ts.
-      //
-      // A guest has no account to credit, so their money has to go back the
-      // way it came — a Stripe refund, by hand. That was already true before
-      // and simply happened in silence: the order was cancelled, nothing was
-      // returned, and nobody was told there was anything to return. The
-      // admin notification below is what closes that.
-      const cents = Math.round(Number(order.priceEUR) * 100);
-      await prisma.$transaction(async (tx) => {
-        await tx.order.update({
-          where: { id: orderId },
-          data: { status: "CANCELLED", cancelApprovedAt: new Date() },
-        });
-        if (order.clientUserId && cents > 0) {
-          await tx.user.update({
-            where: { id: order.clientUserId },
-            data: { creditBalanceCents: { increment: cents } },
-          });
-          await tx.creditTransaction.create({
-            data: {
-              userId: order.clientUserId,
-              type: "REFUND",
-              amountCents: cents,
-              note: `Order #${order.orderNo} — session cancelled`,
-            },
-          });
-        }
+      // The status change stands on its own; the money follows once it has
+      // committed. A guest used to need an admin to move theirs by hand —
+      // settleCancelledOrder() raises the Stripe refund itself now, and only
+      // falls back to asking a person when that fails.
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: "CANCELLED", cancelApprovedAt: new Date() },
       });
-    }
-
-    // A guest's money cannot be moved automatically, so someone has to be
-    // asked to move it. Raised loudly rather than logged: this is money the
-    // customer has already paid for a session that will not happen.
-    if (approve && !order.clientUserId && Number(order.priceEUR) > 0) {
-      await notifyAdmins({
-        type: "order.refund_due",
-        title: `Refund a guest order · €${Number(order.priceEUR).toFixed(2)}`,
-        body: `Order #${order.orderNo} (${order.gameName}) was cancelled and paid without an account, so there is no balance to credit — refund it in Stripe.`,
-        href: `/dashboard/admin/orders/${orderId}`,
-      });
+      await settleCancelledOrder(order, "cancel_approved");
     }
 
     if (order.clientUserId) {

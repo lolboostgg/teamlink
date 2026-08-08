@@ -221,6 +221,41 @@ export async function chargeSavedCard(input: {
   );
 }
 
+export interface StripeRefund {
+  id: string;
+  status: string;
+  amount: number;
+}
+
+/**
+ * Gives a payment back to where it came from.
+ *
+ * Full refund unless an amount is given — a cancelled order returns
+ * everything, but the same call covers a partial one later. Stripe answers a
+ * repeated refund of the same intent with an error rather than refunding
+ * twice, and the idempotency key makes a retried request harmless besides;
+ * callers still guard on their own state so a retry never has to rely on it.
+ *
+ * The refund is not the record: `charge.refunded` comes back through the
+ * webhook and is what moves the Charge row to REFUNDED.
+ */
+export async function refundPaymentIntent(input: {
+  paymentIntentId: string;
+  amountEUR?: number;
+  reason?: "duplicate" | "fraudulent" | "requested_by_customer";
+  idempotencyKey: string;
+}) {
+  return call<StripeRefund>(
+    "/refunds",
+    {
+      payment_intent: input.paymentIntentId,
+      ...(input.amountEUR !== undefined ? { amount: Math.round(input.amountEUR * 100) } : {}),
+      reason: input.reason ?? "requested_by_customer",
+    },
+    input.idempotencyKey,
+  );
+}
+
 /**
  * Verifies a webhook came from Stripe.
  *

@@ -227,12 +227,23 @@ model CreditTransaction {
   id          String       @id @default(cuid())
   userId      String
   user        User         @relation(fields: [userId], references: [id])
+  /// The order this movement belongs to, where there is one — the booking a
+  /// SPEND paid for, or the cancellation a REFUND gives back. Null for
+  /// topups, bonuses and manual adjustments, which stand on their own.
+  orderId     String?
+  order       Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
   type        CreditTxType
   amountCents Int
   note        String?
   createdAt   DateTime     @default(now())
 
+  // Makes refunding an order idempotent: a cancellation that runs twice hits
+  // this constraint instead of crediting the balance again. Postgres treats
+  // NULLs as distinct, so rows without an order aren't affected by it — the
+  // same trade TeammateEarning makes for ADJUSTMENT rows.
+  @@unique([userId, orderId, type])
   @@index([userId])
+  @@index([orderId])
 }
 
 enum Role {
@@ -527,6 +538,7 @@ model Order {
   charges    Charge[]
   tip        Tip?
   couponsRedeemed Coupon[] @relation("CouponsRedeemed")
+  creditMovements CreditTransaction[]
   /** Where confirmation and status mails go for an order placed without an
    * account. A signed-in order mails clientUser.email instead, so exactly
    * one of the two carries the address. */

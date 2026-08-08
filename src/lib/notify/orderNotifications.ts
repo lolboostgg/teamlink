@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/notify/mail";
-import { orderConfirmationMail, orderCompletedMail, teammateAssignedMail } from "@/lib/notify/templates";
+import {
+  orderConfirmationMail,
+  orderCompletedMail,
+  orderCancelledMail,
+  teammateAssignedMail,
+} from "@/lib/notify/templates";
 import { postToTeammateChannel, sendDiscordDms, ACCENT } from "@/lib/notify/discordNotify";
 import { sanitizeNotificationPrefs, type NotificationChannel } from "@/lib/notificationPrefs";
 
@@ -180,6 +185,48 @@ export async function notifyTeammateAssigned(orderId: string): Promise<void> {
  * rating is one tap inside the mail rather than a landing page that asks
  * them to decide twice.
  */
+/**
+ * An order ended without a session happening, and the money has been dealt
+ * with. Says which, in the same mail.
+ *
+ * Reaches a guest as well as an account — `guestEmail` is the whole reason
+ * that column exists, and a guest is the customer who most needs telling,
+ * since they have no balance page to check and no bell to see.
+ */
+export async function notifyOrderCancelled(
+  orderId: string,
+  outcome: { reason: string; refund: string | null },
+): Promise<void> {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { clientUser: { select: { email: true, name: true, notificationPrefs: true } } },
+    });
+    if (!order) return;
+
+    const to = order.clientUser?.email ?? order.guestEmail;
+    if (!to) return;
+    if (order.clientUser && !wantsOrderUpdates(order.clientUser.notificationPrefs, "email")) return;
+
+    await sendMail({
+      to,
+      ...orderCancelledMail({
+        name: order.clientUser?.name ?? null,
+        orderNo: order.orderNo,
+        gameName: order.gameName,
+        option: order.option,
+        reason: outcome.reason,
+        refund: outcome.refund,
+        // Nothing to come back to on the order itself — it is over. Point at
+        // the game so "book again" is one click rather than a search.
+        url: `${appUrl()}/games/${encodeURIComponent(order.gameSlug)}`,
+      }),
+    });
+  } catch (err) {
+    console.error("[notify] cancellation mail failed:", orderId, err);
+  }
+}
+
 export async function notifyOrderCompleted(orderId: string): Promise<void> {
   try {
     const order = await prisma.order.findUnique({
