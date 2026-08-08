@@ -184,7 +184,14 @@ export function playSound(name: SoundName = "generic") {
   setTimeout(() => void ctx.close(), (end - now) * 1000 + 300);
 }
 
-/** The original two-tone chime, kept so existing callers keep working. */
+/**
+ * The original two-tone chime, kept so existing callers keep working.
+ *
+ * Deliberately no longer "request". That cue was later given a real recording
+ * — the teammate's new-order alert — so every caller of this alias silently
+ * started announcing an incoming order request instead of chiming. The
+ * customer's own screens were the ones doing it, on being matched.
+ */
 export function playNotificationSound() {
-  playSound("request");
+  playSound("generic");
 }

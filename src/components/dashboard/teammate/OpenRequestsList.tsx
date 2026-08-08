@@ -326,5 +326,9 @@ function useRequestAlerts(
   // still announcing what had just been answered.
   useEffect(() => {
     if (silenced || requests.length === 0) stopSound("request");
+    // And on the way out. Accepting navigates to the order room, which
+    // unmounted this while the clip was still running — so the alert for an
+    // order they had just taken followed them into it and kept playing.
+    return () => stopSound("request");
   }, [silenced, requests.length]);
 }
