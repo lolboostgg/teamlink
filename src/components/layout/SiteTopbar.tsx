@@ -24,8 +24,12 @@ export function SiteTopbar() {
     return () => observer.disconnect();
   }, []);
 
+  // The sticky lives here rather than on .site-header itself. A sticky
+  // element only travels inside its own parent's box, and this wrapper is
+  // exactly as tall as the header it holds — so the header had nowhere to
+  // stick to and scrolled straight out of view with it.
   return (
-    <div ref={ref}>
+    <div ref={ref} className="site-topbar">
       <Header />
     </div>
   );

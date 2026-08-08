@@ -586,20 +586,26 @@ ul {
   color: transparent;
 }
 
-.site-header {
+/* Sticky sits on .site-topbar, the wrapper one level up (see SiteTopbar) —
+   a sticky element only travels inside its own parent, and that wrapper is
+   the header's own height, so sticking it here meant not sticking at all. */
+.site-topbar {
   position: sticky;
   top: 0;
   z-index: 50;
+}
+
+.site-header {
   height: var(--header-h);
   display: flex;
   align-items: center;
   padding: 0 16px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  border-bottom: 1px solid transparent;
 }
 
-/* A floating pill bar instead of a full-bleed strip that just fades into
-   whatever hero art sits behind it — it reads clearly over anything now,
-   not just once .is-scrolled darkens it, and inset margins make it feel
-   like a distinct piece of chrome rather than the page's own edge. */
+/* Bare over the hero: no pill, no border, no frosting — just the logo and
+   the actions sitting on the artwork. */
 .site-header__inner {
   width: 100%;
   max-width: var(--container);
@@ -608,18 +614,15 @@ ul {
   display: flex;
   align-items: center;
   gap: 32px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(9, 12, 22, 0.55);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
-  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.site-header.is-scrolled .site-header__inner {
-  background: rgba(8, 10, 20, 0.88);
-  border-color: var(--border-strong);
-  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.4);
+/* Once the page moves, the bar earns a background — full width now rather
+   than the old floating pill. Without one the header is unreadable the
+   moment real content scrolls underneath it. */
+.site-header.is-scrolled {
+  border-bottom-color: var(--border);
+  background: rgba(8, 10, 20, 0.82);
+  backdrop-filter: blur(16px);
 }
 
 .site-header__actions {
@@ -15076,4 +15079,29 @@ a.notification-panel__item:hover {
 .invite-panel .dashboard-panel__title i {
   color: var(--accent);
   font-size: 13px;
+}
+
+/* The "where did my money go" line under a cancellation. Quieter than the
+   subtitle above it — the headline states the refund, this only says which
+   form it took. */
+.matching-screen__note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 460px;
+  margin: -12px 0 24px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-faint);
+  font-size: 12.5px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.matching-screen__note i {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: 12px;
 }

@@ -18,6 +18,7 @@ import { SessionScreen } from "@/components/matchmaking/SessionScreen";
 import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
 import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
 import { Modal } from "@/components/ui/Modal";
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { avatarFrameStyle } from "@/lib/avatarFrame";
 import { PriceTag } from "@/components/currency/PriceTag";
@@ -73,8 +74,31 @@ function formatMMSS(totalSeconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-// Shared by both the searching and picking phases — same destructive
-// action (give up the request, no charge carried through), same dialog.
+/**
+ * Where the money actually went. Signed in it is store credit, as a guest it
+ * goes back to the card — see settleCancelledOrder() in lib/orderRefunds.
+ * Worth spelling out on screen: an account holder watching their card for a
+ * refund that was never coming is a support ticket, and a guest wondering
+ * whether "refunded" meant a voucher is another.
+ */
+function RefundNote() {
+  const { isAuthenticated, isLoading } = useAuthModal();
+  if (isLoading) return null;
+
+  return (
+    <p className="matching-screen__note">
+      <i className="fa-solid fa-circle-info" aria-hidden="true" />{" "}
+      {isAuthenticated
+        ? "It's back in your balance as credit, ready for your next booking."
+        : "It's on its way back to your payment method — usually a few working days, depending on your bank."}
+    </p>
+  );
+}
+
+// Shared by both the searching and picking phases — same destructive action,
+// same dialog. It used to promise "no charge was carried through", which was
+// true of the mock checkout it was written for and has not been true since
+// real money started moving.
 function CancelRequestModal({ open, onClose, onConfirm }: { open: boolean; onClose: () => void; onConfirm: () => void }) {
   return (
     <Modal open={open} onClose={onClose} labelledBy="cancel-request-title">
@@ -86,7 +110,8 @@ function CancelRequestModal({ open, onClose, onConfirm }: { open: boolean; onClo
           Cancel this request?
         </h2>
         <p className="cancel-confirm__sub">
-          We&rsquo;ll stop searching for a teammate. No charge was carried through beyond this mock checkout.
+          We&rsquo;ll stop searching for a teammate and refund what you paid &mdash; automatically, no need to ask. The
+          confirmation goes to your email.
         </p>
         <div className="cancel-confirm__actions">
           <button type="button" className="btn btn--ghost btn--block" onClick={onClose}>
@@ -359,14 +384,19 @@ export function MatchmakingScreen({ orderId, accessToken }: Props) {
             <i className="fa-solid fa-check" aria-hidden="true" />
           </span>
           <h1 className="matching-screen__title">Session cancelled</h1>
-          <p className="matching-screen__sub">Your teammate confirmed the cancellation. Taking you home...</p>
+          <p className="matching-screen__sub">
+            Your teammate confirmed the cancellation. Payment refunded &mdash; check your email for the details.
+          </p>
         </div>
       );
     }
     return (
       <div className="matching-screen">
         <h1 className="matching-screen__title">Request cancelled</h1>
-        <p className="matching-screen__sub">No charge was carried through beyond this mock checkout.</p>
+        <p className="matching-screen__sub">
+          Payment refunded &mdash; check your email for the details.
+        </p>
+        <RefundNote />
         <Link href="/games" className="btn btn--vivid">
           Back to games
         </Link>
@@ -381,7 +411,11 @@ export function MatchmakingScreen({ orderId, accessToken }: Props) {
           <i className="fa-solid fa-xmark" aria-hidden="true" />
         </span>
         <h1 className="matching-screen__title">No one was available</h1>
-        <p className="matching-screen__sub">Every teammate we tried was busy or didn&rsquo;t respond in time.</p>
+        <p className="matching-screen__sub">
+          Every teammate we tried was busy or didn&rsquo;t respond in time. Payment refunded &mdash; check your email
+          for the details.
+        </p>
+        <RefundNote />
         <Link href={`/games/${order.gameSlug}`} className="btn btn--vivid">
           Find another teammate
         </Link>
