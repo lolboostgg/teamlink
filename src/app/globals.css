@@ -10625,6 +10625,35 @@ ul {
 }
 
 /* ── Notification bell ──────────────────────────────────────────── */
+/* Same shape as the bell it sits beside — they are two halves of the same
+   question, so they should not look like different kinds of control. */
+.sound-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.sound-toggle:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text);
+}
+
+/* Muted is a state worth seeing at a glance: it is the reason someone will
+   later say they never got told. */
+.sound-toggle.is-muted {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+}
+
 .notification-bell {
   position: relative;
   width: 36px;

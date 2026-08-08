@@ -39,8 +39,29 @@ const CUES: Record<string, { tones: Tone[]; type?: OscillatorType }> = {
 
 export type SoundName = keyof typeof CUES;
 
+const MUTE_KEY = "teamlink-sounds-muted";
+/** Fired when the preference changes, so a toggle anywhere on the page
+ * updates every other copy of it. */
+export const SOUND_PREF_EVENT = "teamlink-sound-pref";
+
+export function soundsEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(MUTE_KEY) !== "1";
+}
+
+export function setSoundsEnabled(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  if (enabled) window.localStorage.removeItem(MUTE_KEY);
+  else window.localStorage.setItem(MUTE_KEY, "1");
+  window.dispatchEvent(new CustomEvent(SOUND_PREF_EVENT));
+}
+
 export function playSound(name: SoundName = "generic") {
   if (typeof window === "undefined") return;
+  // Checked here rather than at each call site: there are half a dozen of
+  // them across three screens, and one that forgets is the whole point of
+  // the switch defeated.
+  if (!soundsEnabled()) return;
   const Ctx =
     window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctx) return;

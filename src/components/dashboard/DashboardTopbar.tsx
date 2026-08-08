@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { SettingsTrigger } from "@/components/layout/SettingsTrigger";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
+import { SoundToggle } from "@/components/dashboard/SoundToggle";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { DASHBOARD_ROLES } from "@/lib/roles";
 import { profileHrefForRole } from "@/lib/roles";
@@ -56,6 +57,7 @@ export function DashboardTopbar({ avatarUrl }: { avatarUrl?: string | null }) {
 
       <div className="dashboard-topbar__actions">
         <SettingsTrigger />
+        <SoundToggle />
         <NotificationBell />
 
         <div className="dropdown-switcher" ref={ref}>
