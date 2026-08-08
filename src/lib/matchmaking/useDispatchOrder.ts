@@ -53,7 +53,10 @@ export function useDispatchOrder(orderId: string | null) {
     }
   }, [orderId]);
 
-  useLiveSync("orders", load, 1000, { enabled: Boolean(orderId), key: orderId ?? undefined });
+  // The stream is what makes this screen feel live; this is only the net for
+  // when it is down. At one second it was not a fallback, it was a second
+  // poller running next to a push channel that already told us everything.
+  useLiveSync("orders", load, 5000, { enabled: Boolean(orderId), key: orderId ?? undefined });
 
   // Every countdown on these screens (search elapsed, selection window,
   // reroll deadline, session clock) is derived from `now`, so it has to
@@ -68,15 +71,25 @@ export function useDispatchOrder(orderId: string | null) {
 
   // The clock-driven transitions (searching → candidates ready → selecting →
   // in progress) run inside reconcile() on read, and nothing publishes an
-  // event for them — so while the order is still live it needs a real
-  // once-a-second read, not the slowed-down fallback poll.
+  // event for them — so a live order still needs somebody to read it for the
+  // clock to move.
+  //
+  // That was a read every second from every open tab, which is what
+  // exhausted the connection pool: a poll whose only job is to turn a crank
+  // was competing with the requests that actually serve someone. The
+  // deadlines it advances are 20 and 60 seconds long, so three seconds is
+  // still far finer than anything it decides — and only while an order is
+  // in a phase where a clock can move it at all. Once assigned, nothing is
+  // waiting on a timer and the stream carries the rest.
   const settled =
     order !== null && ["completed", "cancelled", "no_match"].includes(order.status);
+  const clockRunning =
+    order !== null && ["searching", "candidates_ready", "selecting"].includes(order.status);
   useEffect(() => {
-    if (!orderId || settled) return;
-    const tick = setInterval(() => void load(), 1000);
+    if (!orderId || settled || !clockRunning) return;
+    const tick = setInterval(() => void load(), 3000);
     return () => clearInterval(tick);
-  }, [orderId, settled, load]);
+  }, [orderId, settled, clockRunning, load]);
 
   const post = useCallback(
     async (body: Record<string, unknown>) => {

@@ -51,7 +51,12 @@ export function useDispatchState(enabled = true) {
   const urgent =
     state.phase === "DISPATCH_INCOMING" || state.phase === "WAITING_FOR_CUSTOMER_SELECTION";
 
-  useLiveSync("dispatch", load, urgent ? 500 : 2000, { enabled });
+  // Twice a second, from every teammate with the panel open, against a read
+  // that now also tops up invitations — several queries each time. The push
+  // channel already wakes this the instant an order is dispatched, which is
+  // the moment that actually matters; these numbers only decide how long a
+  // dropped stream stays stale.
+  useLiveSync("dispatch", load, urgent ? 1500 : 5000, { enabled });
 
   // The panel heartbeat, deliberately not part of the poll above.
   //
