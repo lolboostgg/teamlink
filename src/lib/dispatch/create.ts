@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { MAX_CANDIDATES, DISPATCH_WINDOW_MS } from "@/lib/dispatch/service";
 import { teammateCut } from "@/lib/payoutSplit";
@@ -140,11 +141,10 @@ async function dispatchOrder(orderId: string) {
   await publish({ topic: "dispatch", key: dispatched.id, userIds: invited });
   await publish({ topic: "orders", key: dispatched.id, userIds: order.clientUserId ? [order.clientUserId] : [] });
 
-  // Awaited rather than left floating: this runs inside a server action or
-  // the Stripe webhook, and once the response is sent the process can be
-  // frozen with the work half done — a fire-and-forget send is simply never
-  // made. It swallows its own errors, so it cannot fail the dispatch.
-  await notifyOrderDispatched(dispatched.id);
+  // after(), not await and not a floating promise: the customer should not
+  // wait on an SMTP handshake to see their search start, and a floating
+  // promise would be dropped when the response ends the request.
+  after(() => notifyOrderDispatched(dispatched.id));
 
   return dispatched;
 }

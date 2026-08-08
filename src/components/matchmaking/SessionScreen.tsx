@@ -227,20 +227,28 @@ export function SessionScreen({ orderId }: Props) {
   // customer finishes on Stripe's page and the webhook adds the games.
   async function handleBuyMore() {
     setBuyingMore(true);
-    const result = await addGames(order!.id, buyMoreQty, "card");
-    if (!result.ok) {
+    try {
+      const result = await addGames(order!.id, buyMoreQty, "card");
+      if (!result.ok) {
+        setBuyingMore(false);
+        showToast(result.error, "error");
+        return;
+      }
+      if ("redirect" in result) {
+        window.location.assign(result.redirect);
+        return;
+      }
       setBuyingMore(false);
-      showToast(result.error, "error");
-      return;
+      setBuyMoreOpen(false);
+      setBuyMoreQty(1);
+      showToast(`Added ${buyMoreQty} more game${buyMoreQty > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
+    } catch (err) {
+      // Same trap as the tip and replay buttons: a thrown action skipped the
+      // line that puts the button back, so it sat on "Adding…" for good.
+      console.error("[add-games] failed:", err);
+      setBuyingMore(false);
+      showToast("Couldn't add those games — please try again.", "error");
     }
-    if ("redirect" in result) {
-      window.location.assign(result.redirect);
-      return;
-    }
-    setBuyingMore(false);
-    setBuyMoreOpen(false);
-    setBuyMoreQty(1);
-    showToast(`Added ${buyMoreQty} more game${buyMoreQty > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
   }
 
   // Both of these only raised a toast at the customer and stopped there —

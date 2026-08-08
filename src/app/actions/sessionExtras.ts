@@ -26,14 +26,21 @@ const MAX_TIP_EUR = 200;
  */
 export async function addGames(orderId: string, quantity: number, method: PaymentMethodKey): Promise<ExtraPaymentResult> {
   const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) return { ok: false, error: "Sign in to extend this session." };
+  const userId = session?.user?.id ?? null;
 
   const qty = Math.max(1, Math.min(9, Math.round(quantity)));
+  // Same rule as tipping and playing again: the order id is the capability
+  // for a guest, and an account-bound order still requires its owner.
   const order = await prisma.order.findFirst({
-    where: { id: orderId, clientUserId: userId, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
+    where: { id: orderId, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
   });
   if (!order) return { ok: false, error: "This session cannot be extended." };
+  if (order.clientUserId && order.clientUserId !== userId) {
+    return { ok: false, error: "This session cannot be extended." };
+  }
+  if (method === "credits" && !userId) {
+    return { ok: false, error: "Sign in to pay from your balance, or pay by card or PayPal." };
+  }
 
   const unitPrice = Number(order.priceEUR) / Math.max(1, order.gamesBooked);
   const amountEUR = Math.round(unitPrice * qty * 100) / 100;
@@ -43,6 +50,26 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
     if (!paid.ok) return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
     await applyExtraGames(orderId, qty);
     return { ok: true };
+  }
+
+  // No account means no saved card to try first — straight to the hosted
+  // page, where the webhook adds the games once it is paid.
+  if (!userId) {
+    try {
+      const checkout = await startCheckout({
+        amountEUR,
+        description: `${qty} more game${qty > 1 ? "s" : ""} · ${order.gameName}`,
+        returnPath: `/checkout/matching?order=${orderId}`,
+        kind: "EXTRA_GAMES",
+        orderId,
+        methods: method === "paypal" ? ["paypal"] : ["card"],
+        extraMetadata: { quantity: String(qty) },
+        guestEmail: order.guestEmail ?? undefined,
+      });
+      return { ok: true, redirect: checkout.url };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Couldn't start the payment." };
+    }
   }
 
   const charged = await chargeDefaultCard({

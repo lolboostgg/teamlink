@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
 import { deliverExternally } from "@/lib/notify/channels";
@@ -24,13 +25,14 @@ export async function notifyUser(userId: string, input: NotifyInput) {
   // Discord and mail on top, where the event's type calls for it — see the
   // policy table in notify/channels.ts.
   //
-  // Awaited, despite being slower than the caller needs. A floating promise
-  // does not survive here: this runs inside server actions and route
-  // handlers, and once the response is sent the process can be frozen or
-  // torn down with the request — so a fire-and-forget send is simply never
-  // made. deliverExternally swallows its own errors, so awaiting it cannot
-  // fail the notification.
-  await deliverExternally(userId, input);
+  // after() rather than await or a floating promise. Awaiting put an SMTP
+  // connection (ten second timeout) and two Discord round trips in front of
+  // the user's own click — accepting an order sat there spinning while a
+  // mail was negotiated. A floating promise has the opposite problem: once
+  // the response is sent the process can be frozen, so the send is never
+  // made at all. after() is the one that keeps the work and gives the
+  // response back immediately.
+  after(() => deliverExternally(userId, input));
 
   return notification;
 }
@@ -51,10 +53,11 @@ export async function notifyAdmins(input: NotifyInput) {
   });
   await publish({ topic: "notifications", userIds: admins.map((a) => a.id) });
 
-  // Same fan-out as notifyUser. Most admin events are bell-only by policy,
-  // but the ones that are not — a guest refund nobody can pay automatically
-  // — must not sit unseen until someone happens to open the dashboard.
-  await Promise.allSettled(admins.map((admin) => deliverExternally(admin.id, input)));
+  // Same fan-out as notifyUser, and off the request path for the same
+  // reason. Most admin events are bell-only by policy; the ones that are not
+  // — a guest refund nobody can pay automatically — must not sit unseen
+  // until someone happens to open the dashboard.
+  after(() => Promise.allSettled(admins.map((admin) => deliverExternally(admin.id, input))));
 }
 
 export async function listNotifications(userId: string, take = 30) {
