@@ -14414,3 +14414,24 @@ a.notification-panel__item:hover {
   justify-content: center;
   gap: 10px;
 }
+
+/* A lapsed alert. Kept on screen for the moment between the clock running
+   out and the next read dropping it — a row that vanishes mid-reach is its
+   own confusion — but visibly no longer on offer. */
+.request-card.is-expired {
+  border-color: var(--dash-line);
+  background: var(--dash-surface-2);
+  box-shadow: none;
+  opacity: 0.55;
+}
+
+.request-card.is-expired .request-card__rank,
+.request-card.is-expired .request-card__order-no,
+.request-card.is-expired .request-fact--strong .request-fact__value {
+  color: var(--text-muted);
+}
+
+.request-card.is-expired .request-card__order-no {
+  background: transparent;
+  border-color: var(--dash-line);
+}

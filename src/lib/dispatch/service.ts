@@ -494,13 +494,24 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
         include: { order: true },
       });
       if (!candidate) throw new DispatchError("You weren't invited to this order.");
+      // Each of these used to read "You already answered this request",
+      // which is only true for one of them and actively misleading for the
+      // rest — a teammate who let a wave lapse was told they had answered it,
+      // and one who was outraced was told the same. Both then ask why they
+      // can't accept, and the message is the reason they can't tell.
+      if (candidate.status === "TIMED_OUT") {
+        throw new DispatchError("This request timed out — it's already gone to the next teammates.");
+      }
+      if (candidate.status === "SUPERSEDED") {
+        throw new DispatchError("Someone else got there first on this one.");
+      }
       if (candidate.status !== "PENDING") throw new DispatchError("You already answered this request.");
       if (candidate.expiresAt && candidate.expiresAt <= now) {
         await tx.dispatchCandidate.update({
           where: { id: candidate.id },
           data: { status: "TIMED_OUT", respondedAt: now },
         });
-        throw new DispatchError("That request expired.");
+        throw new DispatchError("This request timed out — it's already gone to the next teammates.");
       }
       if (!["SEARCHING", "CANDIDATES_READY", "SELECTING"].includes(candidate.order.status)) {
         throw new DispatchError("This order is no longer taking candidates.");

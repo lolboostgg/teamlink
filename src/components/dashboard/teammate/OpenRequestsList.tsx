@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
+import type { DispatchOrderView } from "@/lib/dispatch/phase";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
@@ -52,64 +53,14 @@ export function OpenRequestsList() {
   return (
     <div className="request-list">
       <AlertPermission />
-      {requests.map(({ order, msLeft, acceptedCount }) => {
-        const rank = formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null);
-        return (
-          <article key={order.id} className="request-card">
-            <header className="request-card__head">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
-              <div className="request-card__who">
-                {/* The rank is the first thing a teammate reads — it decides
-                    whether the order is one they want at all. */}
-                <div className="request-card__rank">{rank ?? "Unranked"}</div>
-                <div className="request-card__name">{order.customerLabel}</div>
-              </div>
-              <div className="request-card__order">
-                <span className="request-card__order-no">#{order.orderNo}</span>
-                <span className="request-card__order-game">{order.gameName}</span>
-              </div>
-              <Countdown msLeft={msLeft} />
-            </header>
-
-            <div className="request-card__facts">
-              <Fact label="Games" value={String(order.gamesBooked)} strong />
-              <Fact label="Mode" value={order.option} />
-              <Fact
-                label="Team"
-                value={order.teammatesRequested === 1 ? "Solo" : `${order.teammatesRequested} teammates`}
-              />
-              <Fact label="You earn" value={<PriceTag amountEUR={order.payoutEUR} />} strong />
-            </div>
-
-            <footer className="request-card__foot">
-              <span className="request-card__accepted">
-                {acceptedCount === 0
-                  ? "First to accept"
-                  : `${acceptedCount} already accepted — the customer picks`}
-              </span>
-              <div className="request-card__actions">
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  disabled={busyId === order.id}
-                  onClick={() => respond(order.id, false)}
-                >
-                  Decline
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--vivid request-card__accept"
-                  disabled={busyId === order.id}
-                  onClick={() => respond(order.id, true)}
-                >
-                  {busyId === order.id ? "Accepting…" : "Accept order"}
-                </button>
-              </div>
-            </footer>
-          </article>
-        );
-      })}
+      {requests.map((request) => (
+        <RequestCard
+          key={request.order.id}
+          request={request}
+          busy={busyId === request.order.id}
+          onRespond={respond}
+        />
+      ))}
     </div>
   );
 }
@@ -124,22 +75,95 @@ function Fact({ label, value, strong }: { label: string; value: ReactNode; stron
 }
 
 /**
- * Counts down locally between polls. The server sends how long is left rather
- * than a deadline, so this only has to tick — no clock skew to correct.
+ * One open request, with its own clock.
+ *
+ * The countdown lives here rather than in the list because it decides more
+ * than a number: once a wave lapses the alert is over, and a card that still
+ * looks live invites a click that can only be refused. The server is the
+ * authority — this just stops offering a button that has nothing behind it.
  */
-function Countdown({ msLeft }: { msLeft: number }) {
+function RequestCard({
+  request,
+  busy,
+  onRespond,
+}: {
+  request: { order: DispatchOrderView; msLeft: number; acceptedCount: number };
+  busy: boolean;
+  onRespond: (orderId: string, accept: boolean) => void;
+}) {
+  const { order, msLeft, acceptedCount } = request;
   const [left, setLeft] = useState(msLeft);
   useEffect(() => setLeft(msLeft), [msLeft]);
   useEffect(() => {
     const t = setInterval(() => setLeft((value) => Math.max(0, value - 1000)), 1000);
     return () => clearInterval(t);
   }, []);
+
   const seconds = Math.ceil(left / 1000);
+  // The row stays on screen for the moment between the clock running out and
+  // the next read dropping it — vanishing mid-reach is its own confusion.
+  const expired = left <= 0;
+  const rank = formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null);
+
   return (
-    <div className={`request-card__timer${seconds <= 10 ? " is-urgent" : ""}`}>
-      <span className="request-card__timer-value">{seconds}s</span>
-      <span className="request-card__timer-label">to answer</span>
-    </div>
+    <article className={`request-card${expired ? " is-expired" : ""}`}>
+      <header className="request-card__head">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
+        <div className="request-card__who">
+          {/* The rank is the first thing a teammate reads — it decides
+              whether the order is one they want at all. */}
+          <div className="request-card__rank">{rank ?? "Unranked"}</div>
+          <div className="request-card__name">{order.customerLabel}</div>
+        </div>
+        <div className="request-card__order">
+          <span className="request-card__order-no">#{order.orderNo}</span>
+          <span className="request-card__order-game">{order.gameName}</span>
+        </div>
+        <div className={`request-card__timer${!expired && seconds <= 10 ? " is-urgent" : ""}`}>
+          <span className="request-card__timer-value">{expired ? "—" : `${seconds}s`}</span>
+          <span className="request-card__timer-label">{expired ? "expired" : "to answer"}</span>
+        </div>
+      </header>
+
+      <div className="request-card__facts">
+        <Fact label="Games" value={String(order.gamesBooked)} strong />
+        <Fact label="Mode" value={order.option} />
+        <Fact
+          label="Team"
+          value={order.teammatesRequested === 1 ? "Solo" : `${order.teammatesRequested} teammates`}
+        />
+        <Fact label="You earn" value={<PriceTag amountEUR={order.payoutEUR} />} strong />
+      </div>
+
+      <footer className="request-card__foot">
+        <span className="request-card__accepted">
+          {expired
+            ? "Passed on to the next teammates."
+            : acceptedCount === 0
+              ? "First to accept"
+              : `${acceptedCount} already accepted — the customer picks`}
+        </span>
+        <div className="request-card__actions">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            disabled={busy || expired}
+            onClick={() => onRespond(order.id, false)}
+          >
+            Decline
+          </button>
+          <button
+            type="button"
+            className="btn btn--vivid request-card__accept"
+            disabled={busy || expired}
+            onClick={() => onRespond(order.id, true)}
+          >
+            {busy ? "Accepting…" : expired ? "Too late" : "Accept order"}
+          </button>
+        </div>
+      </footer>
+    </article>
   );
 }
 
