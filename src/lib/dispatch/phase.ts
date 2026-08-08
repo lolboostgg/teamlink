@@ -1,5 +1,6 @@
 import { payoutForOrder } from "@/lib/payoutSplit";
 import type { AvatarFrame } from "@/lib/avatarFrame";
+import { publicCustomerName } from "@/lib/customerName";
 
 // The teammate's position in the dispatch flow. Accepting makes you a
 // candidate, not the assignee — see lib/dispatch/service.ts.
@@ -76,6 +77,7 @@ type CandidateRow = {
     priceEUR: unknown;
     teammatePayoutEUR: unknown;
     customerLabel: string;
+    clientUserId: string | null;
     teammatesRequested: number;
     gamesBooked: number;
     vibe: string | null;
@@ -104,7 +106,13 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
     option: order.option,
     priceEUR: price,
     payoutEUR: payoutForOrder(order),
-    customerLabel: order.customerLabel,
+    // Never the raw label: a guest checks out with an email address, and
+    // this view goes to the teammate who took the order.
+    customerLabel: publicCustomerName({
+      customerLabel: order.customerLabel,
+      clientUserId: order.clientUserId ?? null,
+      orderNo: order.orderNo,
+    }),
     teammatesRequested: order.teammatesRequested,
     gamesBooked: order.gamesBooked,
     vibe: order.vibe,

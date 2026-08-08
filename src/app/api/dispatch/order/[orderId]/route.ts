@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { assertAssignedTeammate, DispatchError } from "@/lib/dispatch/service";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import type { AvatarFrame } from "@/lib/avatarFrame";
+import { publicCustomerName } from "@/lib/customerName";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
       option: order.option,
       priceEUR: Number(order.priceEUR),
       payoutEUR: payoutForOrder(order),
-      customerLabel: order.clientUser?.name || order.clientUser?.email || order.customerLabel,
+      // Was falling back to the account's email, and before that to a guest's
+      // — so the one screen a teammate spends the whole session on was the
+      // one most likely to show a real address. A name the customer chose is
+      // fine; anything that looks like an address becomes Guest#NNNN.
+      customerLabel: publicCustomerName({
+        customerLabel: order.clientUser?.name || order.customerLabel,
+        clientUserId: order.clientUserId,
+        orderNo: order.orderNo,
+      }),
       teammateName: order.candidates.find((c) => c.selected)?.teammate.name ?? null,
       teammatesRequested: order.teammatesRequested,
       gamesBooked: order.gamesBooked,

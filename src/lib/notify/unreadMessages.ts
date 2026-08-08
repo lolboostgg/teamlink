@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications/service";
+import { publicCustomerName } from "@/lib/customerName";
 
 /**
  * Chases messages that went unanswered.
@@ -40,6 +41,7 @@ export async function sweepUnreadMessages(now = new Date()): Promise<UnreadSweep
       orderNo: true,
       gameName: true,
       customerLabel: true,
+      clientUserId: true,
       candidates: {
         where: { selected: true },
         select: { teammateId: true, teammate: { select: { userId: true } } },
@@ -95,7 +97,7 @@ export async function sweepUnreadMessages(now = new Date()): Promise<UnreadSweep
       await notifyUser(candidate.teammate.userId, {
         type,
         title: "Unanswered message",
-        body: `${order.customerLabel} has been waiting ${minutes} minutes for a reply on ${order.gameName} (#${order.orderNo}).`,
+        body: `${publicCustomerName(order)} has been waiting ${minutes} minutes for a reply on ${order.gameName} (#${order.orderNo}).`,
         href: `/dashboard/teammate/session/${order.id}`,
       });
 
