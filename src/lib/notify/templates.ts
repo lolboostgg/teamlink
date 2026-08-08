@@ -9,12 +9,15 @@
  * The palette matches the app (see globals.css :root) so a mail and the order
  * screen it links to read as the same product.
  *
- * There is deliberately not a single <img> in here. Most clients block remote
- * images until the reader asks for them, and Gmail strips SVG outright — a
- * masthead built from an image is a broken-image icon sitting exactly where
- * the brand should be, for a large share of readers, on first open.
- * Everything visual is built from type, colour and table cells, which no
- * client can refuse to render.
+ * Nothing structural is an image. Most clients block remote images until the
+ * reader asks for them, so a masthead built from one is a broken-image icon
+ * sitting exactly where the brand should be, for a large share of readers, on
+ * first open. The wordmark, the panels and the button are all type, colour and
+ * table cells, which no client can refuse to render.
+ *
+ * The one exception is the row of social marks in the footer, where an icon
+ * is the whole point and a blocked one costs nothing — they fall back to
+ * their own names as alt text. See SOCIALS.
  */
 
 const BG = "#060811";
@@ -46,11 +49,24 @@ const COMPANY = {
   support: "support@lolboost.gg",
 };
 
-const SOCIALS: { label: string; url: string }[] = [
-  { label: "Discord", url: COMPANY.discord },
-  { label: "Instagram", url: "https://instagram.com/lolboost.gg" },
-  { label: "TikTok", url: "https://tiktok.com/@lolboost.gg" },
-  { label: "X", url: "https://x.com/lolboostgg" },
+/**
+ * `icon` is a hosted PNG, deliberately.
+ *
+ * An icon font cannot work here — mail clients drop external stylesheets and
+ * @font-face, so FontAwesome would render as empty boxes. Gmail strips inline
+ * SVG and Outlook refuses base64 data URIs, which rules out the other two
+ * obvious answers. A bitmap on our own domain is the only thing every client
+ * draws. The marks are FontAwesome's own brand glyphs, rasterised into
+ * public/email/social at 2x.
+ *
+ * Images are also the one thing a client may refuse to load at all, so each
+ * link carries its name as alt text and reads as a word if nothing arrives.
+ */
+const SOCIALS: { label: string; url: string; icon: string }[] = [
+  { label: "Discord", url: COMPANY.discord, icon: "discord" },
+  { label: "Instagram", url: "https://instagram.com/lolboost.gg", icon: "instagram" },
+  { label: "TikTok", url: "https://tiktok.com/@lolboost.gg", icon: "tiktok" },
+  { label: "X", url: "https://x.com/lolboostgg", icon: "x" },
 ];
 
 function escapeHtml(value: string): string {
@@ -72,8 +88,12 @@ interface Shell {
   ctaLabel: string;
   ctaUrl: string;
   footnote: string;
-  /** The one number the mail is about — shown large above the detail rows. */
-  highlight?: { label: string; value: string };
+  /**
+   * The one number the mail is about, shown large above the detail rows.
+   * `note` is the sentence around it — a whole sentence set at the headline
+   * size wraps to three lines and stops reading as a figure at all.
+   */
+  highlight?: { label: string; value: string; note?: string };
   /** The grey line clients show next to the subject in the inbox list. */
   preheader?: string;
   /** A one-click rating row. Only worth showing once there is something to
@@ -112,6 +132,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
                     <td style="padding:16px 18px;font-family:${FONT};">
                       <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:${FAINT};">${escapeHtml(highlight.label)}</div>
                       <div style="margin-top:4px;font-size:26px;font-weight:800;color:${TEXT};line-height:1.15;">${escapeHtml(highlight.value)}</div>
+                      ${highlight.note ? `<div style="margin-top:6px;font-size:13px;line-height:1.5;color:${MUTED};">${escapeHtml(highlight.note)}</div>` : ""}
                     </td>
                   </tr>
                 </table>
@@ -149,10 +170,17 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
             </tr>`
     : "";
 
-  const socialsHtml = SOCIALS.map(
+  // A row of cells rather than inline-block links: Outlook's word-based
+  // renderer ignores inline-block spacing and would stack them.
+  const socialsHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>${SOCIALS.map(
     (social) =>
-      `<a href="${social.url}" style="color:${MUTED};text-decoration:none;font-weight:700;">${escapeHtml(social.label)}</a>`,
-  ).join(`<span style="color:${BORDER};"> &nbsp;&middot;&nbsp; </span>`);
+      `<td style="padding:0 7px;">
+         <a href="${social.url}" style="text-decoration:none;" title="${escapeHtml(social.label)}">
+           <img src="${COMPANY.site}/email/social/${social.icon}.png" width="20" height="20" alt="${escapeHtml(social.label)}"
+                style="display:block;width:20px;height:20px;border:0;outline:none;color:${MUTED};font-size:11px;font-weight:700;">
+         </a>
+       </td>`,
+  ).join("")}</tr></table>`;
 
   return `<!doctype html>
 <html lang="en">
@@ -212,7 +240,11 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
                     </td>
                   </tr>
                 </table>
-                <p style="margin:14px 0 0;font-size:12px;line-height:1.5;color:${FAINT};font-family:${FONT};word-break:break-all;">${ctaUrl}</p>
+                <!-- The same link in full, for a client that strips anchors
+                     and for anyone reading the source before trusting it. Kept
+                     small and quiet: it is a fallback, not a second call to
+                     action, and at full size it competed with the button. -->
+                <p style="margin:13px 0 0;font-size:10.5px;line-height:1.45;color:${FAINT};font-family:${FONT};word-break:break-all;opacity:.75;">${ctaUrl}</p>
               </td>
             </tr>
             ${reviewBlock}
@@ -401,15 +433,19 @@ export function orderCancelledMail(input: {
   option: string;
   /** Why it ended, as a sentence. */
   reason: string;
-  /** What happened to the money, as a sentence. Null when nothing was taken. */
-  refund: string | null;
+  /** The figure and the sentence around it. Null when nothing was taken. */
+  refund: { amount: string; detail: string } | null;
   url: string;
 }): MailBody {
   const content: Shell = {
     heading: "Your order was cancelled",
-    intro: input.refund ? `${input.reason} ${input.refund}` : input.reason,
+    // The money line belongs to the highlight box below, not here as well —
+    // printing both put the same sentence on the screen twice in a row.
+    intro: input.reason,
     preheader: `${input.gameName} · ${input.option} — cancelled`,
-    ...(input.refund ? { highlight: { label: "Your money", value: input.refund } } : {}),
+    ...(input.refund
+      ? { highlight: { label: "Your money", value: input.refund.amount, note: input.refund.detail } }
+      : {}),
     rows: [
       { label: "Order", value: `#${input.orderNo}` },
       { label: "Game", value: input.gameName },

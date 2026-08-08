@@ -255,29 +255,32 @@ const REFUND_TEXT: Record<RefundReason, string> = {
   cancel_approved: "Your session has been cancelled.",
 };
 
-function moneyLine(outcome: RefundOutcome): string | null {
+function moneyLine(outcome: RefundOutcome): { amount: string; detail: string } | null {
+  const partial =
+    outcome.played && outcome.booked && outcome.played > 0
+      ? ` That's the ${outcome.booked - outcome.played} of ${outcome.booked} games you didn't get — the ${outcome.played} that were played aren't refunded.`
+      : "";
+
   if (outcome.cents <= 0) {
     // Everything booked was delivered, so a cancellation at the end owes
     // nothing. Saying so plainly beats leaving them to wonder.
     return outcome.played && outcome.booked && outcome.played >= outcome.booked
-      ? "All the games you booked were played, so there's nothing to refund."
+      ? { amount: "Nothing owed", detail: "All the games you booked were played, so there's nothing to refund." }
       : null;
   }
+
   const amount = `€${(outcome.cents / 100).toFixed(2)}`;
-  const part =
-    outcome.played && outcome.booked && outcome.played > 0
-      ? ` That's the ${outcome.booked - outcome.played} of ${outcome.booked} games you didn't get — the ${outcome.played} that were played aren't refunded.`
-      : "";
   if (outcome.method === "credit") {
-    return `${amount} is back in your balance as credit, ready for your next booking.${part}`;
+    return { amount, detail: `Back in your balance as credit, ready for your next booking.${partial}` };
   }
   // Never charged, only reserved — saying "refunded" would have the customer
   // watching for money that is not coming, because it never left.
   if (outcome.method === "released") {
-    return `The ${amount} hold on your card has been released — you were never charged.`;
+    return { amount, detail: "The hold on your card has been released — you were never charged." };
   }
-  return `${amount} has been refunded to your original payment method.${part}`;
+  return { amount, detail: `Refunded to your original payment method.${partial}` };
 }
+
 
 
 /**

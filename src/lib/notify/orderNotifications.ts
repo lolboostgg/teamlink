@@ -195,7 +195,7 @@ export async function notifyTeammateAssigned(orderId: string): Promise<void> {
  */
 export async function notifyOrderCancelled(
   orderId: string,
-  outcome: { reason: string; refund: string | null },
+  outcome: { reason: string; refund: { amount: string; detail: string } | null },
 ): Promise<void> {
   try {
     const order = await prisma.order.findUnique({

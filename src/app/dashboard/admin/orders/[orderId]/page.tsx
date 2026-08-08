@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
+import { payoutForOrder } from "@/lib/payoutSplit";
 import { AdminOrderReply } from "@/components/dashboard/admin/AdminOrderReply";
 import { AdminOrderControls } from "@/components/dashboard/admin/AdminOrderControls";
 
@@ -30,6 +31,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const teammateName = selected?.teammate.name ?? "No teammate selected";
   const statusLabel = order.status.toLowerCase().replaceAll("_", " ");
   const dateTime = (value: Date) => new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(value);
+  // What the order pays out, and per head — the payout is the whole pot split
+  // evenly across whoever actually played it, same as creditOrderPayout does.
+  const selectedCount = order.candidates.filter((candidate) => candidate.selected).length;
+  const payoutPot = payoutForOrder(order);
+  const teammateCutEach = payoutPot / Math.max(1, selectedCount);
   const statusTone = order.status === "COMPLETED" ? "success" : order.status === "CANCELLED" || order.status === "CANCEL_PENDING" ? "warning" : "accent";
 
   return <div className="admin-order-detail">
@@ -44,10 +50,10 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <span className={`admin-order-status admin-order-status--${statusTone}`}><i className={order.status === "COMPLETED" ? "fa-solid fa-check" : "fa-solid fa-circle"} />{statusLabel}</span>
       </div>
       <dl className="admin-order-facts">
-        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-user" /></span><span><dt>Client</dt><dd>{order.clientUser ? <Link href={`/dashboard/admin/accounts/${order.clientUser.id}`}>{clientName}</Link> : clientName}</dd></span></div>
-        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-headset" /></span><span><dt>Teammate</dt><dd>{selected ? <Link href={`/dashboard/admin/teammates/${selected.teammateId}`}>{teammateName}</Link> : teammateName}</dd></span></div>
+        <div><span className="admin-order-fact__icon admin-order-fact__icon--face"><AvatarIcon seed={`client-${clientName}`} /></span><span><dt>Client</dt><dd>{order.clientUser ? <Link href={`/dashboard/admin/accounts/${order.clientUser.id}`}>{clientName}</Link> : clientName}</dd></span></div>
+        <div><span className="admin-order-fact__icon admin-order-fact__icon--face">{selected ? <AvatarIcon seed={`teammate-${selected.teammateId}`} /> : <i className="fa-solid fa-headset" />}</span><span><dt>Teammate</dt><dd>{selected ? <Link href={`/dashboard/admin/teammates/${selected.teammateId}`}>{teammateName}</Link> : teammateName}</dd></span></div>
         <div><span className="admin-order-fact__icon"><i className="fa-solid fa-gamepad" /></span><span><dt>Game & option</dt><dd>{order.gameName}<small>{order.option}</small></dd></span></div>
-        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-coins" /></span><span><dt>Order value</dt><dd><PriceTag amountEUR={Number(order.priceEUR)} /></dd></span></div>
+        <div><span className="admin-order-fact__icon"><i className="fa-solid fa-coins" /></span><span><dt>Order value</dt><dd><PriceTag amountEUR={Number(order.priceEUR)} /><small>{selectedCount > 0 ? <>Teammate cut <PriceTag amountEUR={teammateCutEach} />{selectedCount > 1 ? ` each · ${selectedCount} teammates` : ""}</> : <>Teammate cut <PriceTag amountEUR={payoutPot} /></>}</small></dd></span></div>
       </dl>
       <div className="admin-order-session-strip">
         <div><span>Games</span><strong>{order.games.length}<small> / {order.gamesBooked}</small></strong></div>
