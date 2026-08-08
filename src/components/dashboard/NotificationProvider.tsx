@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useSession } from "next-auth/react";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
-import { playNotificationSound } from "@/lib/notificationSound";
+import { playSound, type SoundName } from "@/lib/notificationSound";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 
@@ -66,12 +66,22 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   useLiveSync("notifications", load, 8000, { enabled: signedIn });
 
+  // Different events, different cues — the bell is the one place every
+  // notification type passes through, so it is where the mapping belongs.
+  function soundForType(type: string): SoundName {
+    if (type === "tip.received") return "tip";
+    if (type.startsWith("order.unread")) return "message";
+    if (type === "order.cancel_requested") return "cancel";
+    if (type === "dispatch.incoming") return "request";
+    return "generic";
+  }
+
   // A newly arrived unread notification gets one sound, not one per poll.
   useEffect(() => {
     const newest = stored.find((n) => !n.read);
     if (!newest || announced === newest.id) return;
     if (announced !== null) {
-      playNotificationSound();
+      playSound(soundForType(newest.type));
       if (newest.type === "order.completed") showToast(newest.body || newest.title, "success");
     }
     setAnnounced(newest.id);

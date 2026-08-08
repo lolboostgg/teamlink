@@ -8,6 +8,7 @@ import {
   useChatTyping,
   useConversationMessages,
 } from "@/lib/matchmaking/chatStore";
+import { playSound } from "@/lib/notificationSound";
 import type { AvatarFrame } from "@/lib/avatarFrame";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
@@ -53,6 +54,23 @@ export function SessionChat({
   playStylePref,
 }: Props) {
   const { messages, refresh } = useConversationMessages(conversationKey);
+
+  // A short blip when the other side writes, so a backgrounded tab is not
+  // silent. Keyed on the last message id: the poll re-delivers the same
+  // thread every few seconds and must not re-announce it.
+  const announcedMessage = useRef<string | null>(null);
+  useEffect(() => {
+    const last = messages.at(-1);
+    if (!last || last.from === viewer) return;
+    if (announcedMessage.current === null) {
+      // First render of an existing thread is history, not news.
+      announcedMessage.current = last.id;
+      return;
+    }
+    if (announcedMessage.current === last.id) return;
+    announcedMessage.current = last.id;
+    playSound("message");
+  }, [messages, viewer]);
   const [draft, setDraft] = useState("");
   const seededRef = useRef(false);
   const otherSide = viewer === "client" ? "teammate" : "client";

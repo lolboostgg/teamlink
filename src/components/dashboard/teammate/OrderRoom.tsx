@@ -7,6 +7,7 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { conversationKey, sendChatMessage } from "@/lib/matchmaking/chatStore";
 import { gameIcon } from "@/lib/gameArt";
+import { playSound } from "@/lib/notificationSound";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 import { FileDrop } from "@/components/ui/FileDrop";
@@ -159,6 +160,9 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   const router = useRouter();
   const { showToast } = useToast();
   const [order, setOrder] = useState<DispatchOrderView | null>(null);
+  // A cancellation request pauses the session until the teammate answers, so
+  // it must not wait to be noticed. Once per order, hence the ref.
+  const announcedCancel = useRef<string | null>(null);
   const [denied, setDenied] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -188,6 +192,13 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   }, [orderId, showToast]);
 
   useLiveSync("orders", load, 4000, { key: orderId });
+
+  useEffect(() => {
+    if (order?.status !== "CANCEL_PENDING") return;
+    if (announcedCancel.current === order.id) return;
+    announcedCancel.current = order.id;
+    playSound("cancel");
+  }, [order?.status, order?.id]);
 
   useEffect(() => {
     if (!order || order.status === "COMPLETED" || order.games.length < order.gamesBooked) return;
