@@ -27,11 +27,16 @@ const EMPTY: StateResponse = {
 };
 
 /**
- * How often the open panel tells the server it's still there. Comfortably
- * inside the freshness window dispatch requires (lib/dispatch/create.ts), with
- * room for a background tab whose timers the browser has throttled.
+ * How often the open panel tells the server it's still there.
+ *
+ * Comfortably inside the freshness window dispatch requires (see waves.ts),
+ * with room for a background tab whose timers the browser has throttled.
+ * It used to be every 20s and it used to be the full dispatch-state read —
+ * several queries per online teammate, on a timer, to write one timestamp.
+ * The write has its own endpoint now, so this can be slower and costs one
+ * statement when it fires.
  */
-const HEARTBEAT_MS = 20_000;
+const HEARTBEAT_MS = 45_000;
 
 /**
  * Polls the server for the authoritative dispatch phase. Two seconds while
@@ -68,7 +73,11 @@ export function useDispatchState(enabled = true) {
   // channel already wakes this the instant an order is dispatched, which is
   // the moment that actually matters; these numbers only decide how long a
   // dropped stream stays stale.
-  useLiveSync("dispatch", load, urgent ? 4000 : 20_000, { enabled });
+  // The push channel wakes this the instant an order is dispatched, which is
+  // the moment that matters. These numbers only decide how long a dropped
+  // stream stays stale — and this is the heaviest read in the app, so idle
+  // teammates should not be making it every twenty seconds for nothing.
+  useLiveSync("dispatch", load, urgent ? 4000 : 60_000, { enabled });
 
   // The panel heartbeat, deliberately not part of the poll above.
   //
@@ -81,9 +90,16 @@ export function useDispatchState(enabled = true) {
   // interval keeps the beat going in both cases.
   useEffect(() => {
     if (!enabled) return;
-    const beat = setInterval(() => void load(), HEARTBEAT_MS);
-    return () => clearInterval(beat);
-  }, [enabled, load]);
+    const beat = () => {
+      void fetch("/api/dispatch/heartbeat", { method: "POST", keepalive: true }).catch(() => {
+        // A missed beat is not worth surfacing. Several have to be missed
+        // before it costs the teammate anything.
+      });
+    };
+    beat();
+    const timer = setInterval(beat, HEARTBEAT_MS);
+    return () => clearInterval(timer);
+  }, [enabled]);
 
   // Local interpolation between polls.
   const [now, setNow] = useState(() => Date.now());

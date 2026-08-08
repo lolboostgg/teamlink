@@ -58,6 +58,25 @@ function dispatchLocally(event: LiveEvent) {
 }
 
 /**
+ * Which database URL the bus connects on.
+ *
+ * Not necessarily the one Prisma uses. LISTEN/NOTIFY needs a session that
+ * stays put — a transaction-mode pooler hands the connection back between
+ * statements, so a LISTEN registered on it is silently dropped and
+ * cross-instance delivery degrades to "same process only" without any error
+ * to notice it by.
+ *
+ * That is exactly the pooler Prisma should be on, though: it is what absorbs
+ * a Next.js app's many short-lived queries. So the two are allowed to differ.
+ * Set EVENTS_DATABASE_URL to a session-mode or direct connection when
+ * DATABASE_URL points at the transaction pooler; leave it unset and the bus
+ * shares whatever Prisma uses, which is right for a single connection string.
+ */
+function busConnectionString(): string | undefined {
+  return process.env.EVENTS_DATABASE_URL ?? process.env.DATABASE_URL;
+}
+
+/**
  * Opens the dedicated LISTEN connection. Kept separate from the Prisma pool:
  * a listening connection is held open for the lifetime of the process and
  * must never be handed back to a pool between queries.
@@ -66,10 +85,10 @@ async function ensureListener(): Promise<void> {
   const current = bus();
   if (current.listener) return;
   if (current.listenerStarting) return current.listenerStarting;
-  if (!process.env.DATABASE_URL) return;
+  if (!busConnectionString()) return;
 
   current.listenerStarting = (async () => {
-    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    const client = new Client({ connectionString: busConnectionString() });
     client.on("notification", (message) => {
       if (message.channel !== PG_CHANNEL || !message.payload) return;
       try {
@@ -107,11 +126,11 @@ async function ensureListener(): Promise<void> {
 export async function publish(event: LiveEvent): Promise<void> {
   dispatchLocally(event);
 
-  if (!process.env.DATABASE_URL) return;
+  if (!busConnectionString()) return;
   try {
     const current = bus();
     if (!current.publisher) {
-      const client = new Client({ connectionString: process.env.DATABASE_URL });
+      const client = new Client({ connectionString: busConnectionString() });
       client.on("error", () => {
         const state = bus();
         if (state.publisher === client) state.publisher = undefined;

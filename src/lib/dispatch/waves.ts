@@ -52,12 +52,20 @@ export const WAVE_WINDOW_MS = 15_000;
 export const POOL_RETRY_MS = 15_000;
 
 /**
- * How stale a teammate's last panel read may be and still count as online.
- * The panel beats every 20s; this allows several missed beats, because
- * browsers throttle timers in a background tab and a teammate waiting for
- * work usually has the dashboard behind whatever they're doing meanwhile.
+ * How stale a teammate's last beat may be and still count as online.
+ *
+ * The online switch alone is not enough to go on: somebody flips it, shuts
+ * the laptop, and stays online forever. The panel beats every 45s (see
+ * useDispatchState); this allows several missed beats, because browsers
+ * throttle timers in a background tab and a teammate waiting for work
+ * usually has the dashboard behind whatever they are doing meanwhile.
+ *
+ * Generous, deliberately. A wave costs fifteen seconds to discover that
+ * somebody isn't there, and the dispatcher moves on by itself — so inviting
+ * one stale teammate is cheap, while wrongly excluding a real one who was
+ * simply in a background tab is not.
  */
-const HEARTBEAT_MAX_AGE_MS = 120_000;
+const HEARTBEAT_MAX_AGE_MS = 180_000;
 
 type Client = Prisma.TransactionClient | typeof prisma;
 
