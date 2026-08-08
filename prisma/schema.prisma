@@ -504,6 +504,10 @@ model Order {
   charges    Charge[]
   tip        Tip?
   couponsRedeemed Coupon[] @relation("CouponsRedeemed")
+  /** Where confirmation and status mails go for an order placed without an
+   * account. A signed-in order mails clientUser.email instead, so exactly
+   * one of the two carries the address. */
+  guestEmail  String?
   /** Snapshot of the in-game identity this order was booked with. */
   ign         String?
   ignRegion   String?

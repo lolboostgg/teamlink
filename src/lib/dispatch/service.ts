@@ -4,6 +4,7 @@ import { notifyUser, notifyAdmins } from "@/lib/notifications/service";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
 import { issueSessionRewardCoupon } from "@/lib/couponsServer";
+import { notifyTeammateAssigned } from "@/lib/notify/orderNotifications";
 
 /**
  * Server-authoritative dispatch rules. Every transition that decides who
@@ -217,6 +218,16 @@ export async function reconcileOrder(orderId: string) {
 
   if (result && previousStatus !== null && result.status !== previousStatus) {
     await publishOrderChange(orderId);
+
+    // Auto-select fired: the selection window ran out, which almost always
+    // means the customer isn't looking at the page. Mail them. A customer who
+    // picked for themselves is by definition already on the screen and needs
+    // no mail, so the other assignment paths deliberately stay quiet. The
+    // status comparison is also what keeps this to one mail — a later
+    // reconcile sees ASSIGNED on both sides and does nothing.
+    if (previousStatus === "SELECTING" && result.status === "ASSIGNED") {
+      void notifyTeammateAssigned(orderId);
+    }
   }
   return result;
 }

@@ -88,6 +88,9 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
     requestedTeammateId: input.requestedTeammateId ?? null,
     customerLabel: (session?.user?.name || session?.user?.email || guestEmail || "Customer").slice(0, 120),
     clientUserId: userId,
+    // Only for a guest: an account order is mailed at the address on the
+    // account, which stays right when the account's email later changes.
+    guestEmail: userId ? null : guestEmail,
     isReplay: !!input.isReplay,
     ign: input.ign?.slice(0, 60) ?? null,
     ignRegion: input.ignRegion?.slice(0, 20) ?? null,

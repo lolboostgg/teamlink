@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { MAX_CANDIDATES, DISPATCH_WINDOW_MS } from "@/lib/dispatch/service";
 import { teammateCut } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
+import { notifyOrderDispatched } from "@/lib/notify/orderNotifications";
 import { Prisma } from "@/generated/prisma/client";
 
 export interface CreateOrderInput {
@@ -13,6 +14,9 @@ export interface CreateOrderInput {
   requestedTeammateId: string | null;
   customerLabel: string;
   clientUserId: string | null;
+  /** Where to mail a guest order. Null for an account order, which mails the
+   * address on the account instead. */
+  guestEmail?: string | null;
   isReplay?: boolean;
   /** In-game identity, snapshotted onto the order. */
   ign?: string | null;
@@ -44,6 +48,7 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
     data: {
       clientUserId: input.clientUserId,
       customerLabel: input.customerLabel,
+      guestEmail: input.guestEmail ?? null,
       gameSlug: input.gameSlug,
       gameName: input.gameName,
       option: input.option,
@@ -134,6 +139,12 @@ async function dispatchOrder(orderId: string) {
   const invited = invitees.map((teammate) => teammate.userId).filter((id): id is string => Boolean(id));
   await publish({ topic: "dispatch", key: dispatched.id, userIds: invited });
   await publish({ topic: "orders", key: dispatched.id, userIds: order.clientUserId ? [order.clientUserId] : [] });
+
+  // Mail and Discord go out after the live push, and are not awaited: SMTP and
+  // the Discord API are both third parties on the far side of a network, and
+  // the customer is already staring at the search screen by now. Failures are
+  // logged inside notifyOrderDispatched and go no further.
+  void notifyOrderDispatched(dispatched.id);
 
   return dispatched;
 }

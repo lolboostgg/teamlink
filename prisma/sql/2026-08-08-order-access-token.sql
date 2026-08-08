@@ -23,3 +23,8 @@ SET "accessToken" = translate(encode(gen_random_bytes(24), 'base64'), '+/=', '-_
 WHERE "accessToken" IS NULL;
 
 CREATE UNIQUE INDEX IF NOT EXISTS "Order_accessToken_key" ON "Order"("accessToken");
+
+-- Where the confirmation mail goes when the order was placed without an
+-- account. The address was only ever handed to Stripe before, so a guest
+-- order had nothing to mail back to.
+ALTER TABLE "Order" ADD COLUMN IF NOT EXISTS "guestEmail" TEXT;
