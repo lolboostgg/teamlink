@@ -17,6 +17,22 @@ export const DISPATCH_WINDOW_MS = 60_000;
 export const SELECTION_WINDOW_MS = 60_000;
 
 /**
+ * A grace period at the top of the search during which acceptances are
+ * recorded but the customer's picker stays shut. It buys the customer time to
+ * set their preferences (vibe, conversation, play style) on the searching
+ * screen before the screen changes under them. Teammates are unaffected —
+ * they see the request the instant it is dispatched.
+ */
+export const PICKER_REVEAL_DELAY_MS = 20_000;
+
+/** Whether an order is past its reveal delay. Orders that were never
+ * dispatched have no delay to serve. */
+export function pickerRevealed(dispatchedAt: Date | null, now: Date): boolean {
+  if (!dispatchedAt) return true;
+  return dispatchedAt.getTime() + PICKER_REVEAL_DELAY_MS <= now.getTime();
+}
+
+/**
  * How long an order may sit assigned with nothing happening before it's given
  * up on.
  *
@@ -154,16 +170,29 @@ export async function reconcileOrder(orderId: string) {
       .sort((a, b) => (a.respondedAt?.getTime() ?? 0) - (b.respondedAt?.getTime() ?? 0));
     const settled = candidates.every((c) => c.status !== "PENDING") || order.dispatchDeadline <= now;
 
+    // The customer sets vibe, conversation and play style on the searching
+    // screen; a teammate answering in the first couple of seconds used to
+    // yank that screen away mid-choice. So the picker is held shut for a
+    // short beat after dispatch — the invitations still go out at once and
+    // acceptances still land, they just aren't acted on yet. Held here
+    // rather than hidden in the customer view on purpose: the selection
+    // window has to start when the customer can actually see the picker,
+    // not while it is still closed.
+    const revealed = pickerRevealed(order.dispatchedAt, now);
+
     if (order.status === "SEARCHING" || order.status === "CANDIDATES_READY") {
       // The first acceptance opens the picker immediately. Other pending
       // invitees remain eligible and may continue filling the five slots.
-      if (accepted.length > 0) {
+      if (accepted.length > 0 && revealed) {
         return tx.order.update({
           where: { id: orderId },
           data: { status: "SELECTING", selectionDeadline: new Date(now.getTime() + SELECTION_WINDOW_MS) },
         });
       }
-      if (settled) {
+      // Only when nobody took it. Without the accepted check, an order whose
+      // invitees had all answered before the reveal would count as settled
+      // and be written off as NO_MATCH despite having a teammate waiting.
+      if (settled && accepted.length === 0) {
         return tx.order.update({
           where: { id: orderId },
           data: { status: order.isReplay ? "CANCELLED" : "NO_MATCH" },
@@ -338,7 +367,9 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
       if (candidate.order.requestedTeammateId === teammateId || (favorite && candidate.order.teammatesRequested === 1)) {
         await assignWinners(tx, orderId, [candidate.id], now);
         await notifySelected(tx, [teammateId], candidate.order.gameName, orderId);
-      } else if (candidate.order.status !== "SELECTING") {
+      } else if (candidate.order.status !== "SELECTING" && pickerRevealed(candidate.order.dispatchedAt, now)) {
+        // Inside the reveal delay the acceptance is recorded but the picker
+        // stays shut; reconcileOrder opens it the moment the delay is up.
         await tx.order.update({
           where: { id: orderId },
           data: { status: "SELECTING", selectionDeadline: new Date(now.getTime() + SELECTION_WINDOW_MS) },

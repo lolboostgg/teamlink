@@ -29,7 +29,6 @@ export function CheckoutPaymentStep({
   creditsEnabled,
   creditBalanceCents,
 }: Props) {
-  const active = PAYMENT_METHODS.find((m) => m.key === method) ?? PAYMENT_METHODS[0];
   const visibleMethods = PAYMENT_METHODS.filter((pm) => pm.key !== "credits" || creditsEnabled);
   const balanceEUR = creditBalanceCents != null ? creditBalanceCents / 100 : null;
   const insufficientCredits = method === "credits" && balanceEUR !== null && balanceEUR < totalEUR;
@@ -40,93 +39,92 @@ export function CheckoutPaymentStep({
     onSubmit();
   }
 
+  // What each method costs, said on the row itself so the three can be
+  // compared without clicking through them one at a time.
+  function feeBadge(pm: (typeof PAYMENT_METHODS)[number]) {
+    if (pm.key === "crypto") return { text: "Unavailable", tone: "muted" as const };
+    if (pm.feePercent === 0 && pm.feeFixedEUR === 0) return { text: "No extra fee", tone: "good" as const };
+    return { text: `+${pm.feePercent}% + €${pm.feeFixedEUR.toFixed(2)}`, tone: "warn" as const };
+  }
+
   return (
     <form onSubmit={handleSubmit}>
+      {/* One card of rows that open in place, rather than a row of tiles
+          plus a second card repeating whichever tile was pressed — the two
+          always said the same thing twice. */}
       <div className="checkout-card">
         <div className="checkout-card__title">Payment method</div>
-        <div className="payment-methods">
-          {visibleMethods.map((pm) => (
-            <button
-              key={pm.key}
-              type="button"
-              className={`payment-method${method === pm.key ? " is-selected" : ""}`}
-              onClick={() => onMethodChange(pm.key)}
-            >
-              <i className={pm.icon} aria-hidden="true" />
-              {pm.label}
-            </button>
-          ))}
+
+        <div className="pay-options" role="radiogroup" aria-label="Payment method">
+          {visibleMethods.map((pm) => {
+            const badge = feeBadge(pm);
+            const isActive = method === pm.key;
+            return (
+              <div key={pm.key} className={`pay-option${isActive ? " is-selected" : ""}`}>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  className="pay-option__head"
+                  onClick={() => onMethodChange(pm.key)}
+                >
+                  <span className="pay-option__radio" aria-hidden="true" />
+                  <span className="pay-option__icon">
+                    <i className={pm.icon} aria-hidden="true" />
+                  </span>
+                  <span className="pay-option__name">{pm.label}</span>
+                  <span className={`pay-option__badge pay-option__badge--${badge.tone}`}>{badge.text}</span>
+                </button>
+
+                {isActive && (
+                  <div className="pay-option__body">
+                    {pm.key === "card" && (
+                      <p>
+                        You&rsquo;ll be taken to Stripe&rsquo;s secure page to enter your card. We never see or store
+                        the number — only the last four digits come back, so paying again later is one click.
+                      </p>
+                    )}
+
+                    {pm.key === "paypal" && (
+                      <p>
+                        You&rsquo;ll be redirected to PayPal to approve the payment. It runs through Stripe, so it
+                        lands on the same order as a card payment would.
+                      </p>
+                    )}
+
+                    {pm.key === "crypto" && (
+                      <p>
+                        Not available yet — there&rsquo;s no crypto processor connected, so this would take an address
+                        that nobody watches. Pay by card, PayPal or credits for now.
+                      </p>
+                    )}
+
+                    {pm.key === "credits" && (
+                      <p>
+                        Your balance:{" "}
+                        {balanceEUR !== null ? (
+                          <strong>
+                            <PriceTag amountEUR={balanceEUR} />
+                          </strong>
+                        ) : (
+                          "loading…"
+                        )}
+                      </p>
+                    )}
+
+                    {pm.key === "credits" && insufficientCredits && (
+                      <p className="pay-option__warn pay-option__warn--danger">
+                        <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> Not enough credits for this
+                        total — top up or choose another payment method.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
-
-      {method === "card" && (
-        <div className="checkout-card">
-          <div className="checkout-card__title">
-            <i className="fa-brands fa-cc-stripe" aria-hidden="true" style={{ marginRight: 8 }} />
-            Card
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            You&rsquo;ll be taken to Stripe&rsquo;s secure page to enter your card. We never see or store the number —
-            only the last four digits come back, so paying again later is one click.
-          </p>
-          <p style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 8 }}>{active.note}</p>
-        </div>
-      )}
-
-      {method === "paypal" && (
-        <div className="checkout-card">
-          <div className="checkout-card__title">
-            <i className="fa-brands fa-paypal" aria-hidden="true" style={{ marginRight: 8 }} />
-            PayPal
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            You&rsquo;ll be redirected to PayPal to approve the payment. It runs through Stripe, so it lands on the
-            same order as a card payment would.
-          </p>
-          <p style={{ fontSize: 12, color: "var(--warning)", marginTop: 8 }}>
-            <i className="fa-solid fa-circle-info" aria-hidden="true" /> {active.note} (
-            {active.feePercent}% + <PriceTag amountEUR={active.feeFixedEUR} />)
-          </p>
-        </div>
-      )}
-
-      {method === "crypto" && (
-        <div className="checkout-card">
-          <div className="checkout-card__title">
-            <i className="fa-brands fa-bitcoin" aria-hidden="true" style={{ marginRight: 8 }} />
-            Crypto
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            Not available yet — there&rsquo;s no crypto processor connected, so this would take an address that
-            nobody watches. Pay by card, PayPal or credits for now.
-          </p>
-        </div>
-      )}
-
-      {method === "credits" && (
-        <div className="checkout-card">
-          <div className="checkout-card__title">
-            <i className="fa-solid fa-coins" aria-hidden="true" style={{ marginRight: 8 }} />
-            TeamLink Credits
-          </div>
-          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-            Your balance:{" "}
-            {balanceEUR !== null ? (
-              <strong style={{ color: "var(--text)" }}>
-                <PriceTag amountEUR={balanceEUR} />
-              </strong>
-            ) : (
-              "loading..."
-            )}
-          </p>
-          {insufficientCredits && (
-            <p style={{ fontSize: 12, color: "var(--danger)", marginTop: 8 }}>
-              <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> Not enough credits for this total —
-              top up or choose another payment method.
-            </p>
-          )}
-        </div>
-      )}
 
       <button
         type="submit"

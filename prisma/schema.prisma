@@ -459,6 +459,12 @@ enum OrderStatus {
 model Order {
   id                  String    @id @default(cuid())
   orderNo             Int       @unique @default(autoincrement())
+  /// Secret handle this order is reachable by from the outside: the checkout
+  /// URL, the live order screen, and the links in confirmation mails. Kept
+  /// separate from `id` because `id` is what every internal API route is
+  /// keyed by — handing it out would make every such route guessable from a
+  /// link a customer might paste anywhere.
+  accessToken         String?   @unique
   clientUserId        String?
   clientUser          User?     @relation("ClientOrders", fields: [clientUserId], references: [id])
   customerLabel       String
