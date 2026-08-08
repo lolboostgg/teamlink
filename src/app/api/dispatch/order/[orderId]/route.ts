@@ -50,6 +50,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
   return NextResponse.json(
     {
       id: order.id,
+      // The number every screen shows and every support conversation quotes.
+      // It was simply missing from this payload, so the teammate's order room
+      // rendered "Order #" with nothing after it.
+      orderNo: order.orderNo,
       teammateId:
         order.candidates.find((c) => c.selected && c.isPrimary)?.teammateId ??
         order.candidates.find((c) => c.selected)?.teammateId ??
