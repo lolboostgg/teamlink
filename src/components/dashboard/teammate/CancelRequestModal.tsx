@@ -11,12 +11,20 @@ import { PriceTag } from "@/components/currency/PriceTag";
 export function CancelRequestModal({
   customerName,
   refundEUR,
+  keepEUR = 0,
+  played = 0,
+  booked = 1,
   pending,
   onApprove,
   onDecline,
 }: {
   customerName: string;
+  /** Only the unplayed share — what the customer actually gets back. */
   refundEUR?: number | null;
+  /** The teammate's cut of the games already delivered. */
+  keepEUR?: number;
+  played?: number;
+  booked?: number;
   pending: boolean;
   onApprove: () => void;
   onDecline: () => void;
@@ -97,7 +105,15 @@ export function CancelRequestModal({
                 ) : (
                   " and refunds the customer"
                 )}
-                . You keep nothing for it.
+                .{" "}
+                {played > 0 ? (
+                  <>
+                    Only the {booked - Math.min(played, booked)} of {booked} games they haven&rsquo;t had &mdash;
+                    you keep <PriceTag amountEUR={keepEUR} /> for the {played} you played.
+                  </>
+                ) : (
+                  "Nothing has been played yet, so it all goes back and you keep nothing for it."
+                )}
               </small>
             </span>
           </div>

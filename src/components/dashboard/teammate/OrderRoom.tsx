@@ -381,7 +381,14 @@ export function OrderRoom({ orderId }: { orderId: string }) {
       {order.status === "CANCEL_PENDING" && (
         <CancelRequestModal
           customerName={order.customerLabel}
-          refundEUR={order.priceEUR}
+          // Only the games they will not get. Mirrors owedCents() in
+          // lib/orderRefunds, which is what actually moves the money — the
+          // modal used to promise the whole price back regardless of how
+          // much of the session had already been delivered.
+          refundEUR={(order.priceEUR * (booked - Math.min(played, booked))) / booked}
+          keepEUR={(order.payoutEUR * Math.min(played, booked)) / booked}
+          played={played}
+          booked={booked}
           pending={cancelPending}
           onApprove={() => respondToCancel(true)}
           onDecline={() => respondToCancel(false)}

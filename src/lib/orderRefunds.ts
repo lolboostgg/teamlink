@@ -4,6 +4,7 @@ import { refundPaymentIntent, stripeConfigured, StripeError } from "@/lib/stripe
 import { notifyAdmins } from "@/lib/notifications/service";
 import { notifyOrderCancelled } from "@/lib/notify/orderNotifications";
 import { releaseOrderAuthorization } from "@/lib/orderPayments";
+import { payoutForOrder } from "@/lib/payoutSplit";
 
 /**
  * Giving a cancelled order's money back.
@@ -45,6 +46,7 @@ export interface RefundableOrder {
   orderNo: number;
   clientUserId: string | null;
   gameName: string;
+  /** The running total, extra games included — see applyExtraGames. */
   priceEUR: Prisma.Decimal | number | string;
 }
 
@@ -55,15 +57,39 @@ export interface RefundOutcome {
   method: "credit" | "stripe" | "released" | "none";
   /** Set when the money could not be returned and an admin was asked to. */
   problem?: string;
+  /** Games actually delivered, and booked — a partial refund says so. */
+  played?: number;
+  booked?: number;
 }
 
 /**
- * What this order actually cost, in cents. The base price plus any extra
- * games bought during it — a tip is excluded on purpose, since it is for a
- * teammate who did play, and a cancelled order has no tip anyway.
+ * How much of an order is actually owed back, in cents.
+ *
+ * Not always the whole thing. A session cancelled halfway has delivered some
+ * of what was bought — two games booked and one played is one game's worth
+ * of service rendered — so only the unplayed share comes back. With nothing
+ * played, which is every cancellation before a session starts, that is the
+ * full amount and this changes nothing.
+ *
+ * The price is already the running total: buying extra games raises
+ * priceEUR and gamesBooked together (see applyExtraGames), so per-game
+ * arithmetic covers extras without counting them separately. Adding the
+ * EXTRA_GAMES charges on top, as this used to, paid them out twice.
+ *
+ * A tip is deliberately outside all of this. It is for a teammate who did
+ * play, and is not part of what the booking cost.
  */
-function orderCents(order: RefundableOrder, extraCents: number): number {
-  return Math.round(Number(order.priceEUR) * 100) + extraCents;
+async function owedCents(order: RefundableOrder): Promise<{ cents: number; played: number; booked: number }> {
+  const gross = Math.round(Number(order.priceEUR) * 100);
+  const [row, played] = await Promise.all([
+    prisma.order.findUnique({ where: { id: order.id }, select: { gamesBooked: true } }),
+    prisma.sessionGame.count({ where: { orderId: order.id } }),
+  ]);
+
+  const booked = Math.max(1, row?.gamesBooked ?? 1);
+  if (played <= 0) return { cents: gross, played: 0, booked };
+  if (played >= booked) return { cents: 0, played, booked };
+  return { cents: Math.round((gross * (booked - played)) / booked), played, booked };
 }
 
 export async function refundOrder(order: RefundableOrder, reason: RefundReason): Promise<RefundOutcome> {
@@ -72,13 +98,12 @@ export async function refundOrder(order: RefundableOrder, reason: RefundReason):
     select: { id: true, kind: true, amountEUR: true, stripePaymentIntentId: true },
   });
 
-  const extraCents = charges
-    .filter((charge) => charge.kind === "EXTRA_GAMES")
-    .reduce((sum, charge) => sum + Math.round(Number(charge.amountEUR) * 100), 0);
+  const owed = await owedCents(order);
+  const outcome = order.clientUserId
+    ? await creditBack(order, order.clientUserId, owed.cents, reason)
+    : await refundToStripe(order, charges, owed);
 
-  return order.clientUserId
-    ? creditBack(order, order.clientUserId, orderCents(order, extraCents), reason)
-    : refundToStripe(order, charges);
+  return { ...outcome, played: owed.played, booked: owed.booked };
 }
 
 /**
@@ -138,12 +163,17 @@ async function creditBack(
 async function refundToStripe(
   order: RefundableOrder,
   charges: { id: string; amountEUR: Prisma.Decimal; stripePaymentIntentId: string | null }[],
+  owed: { cents: number },
 ): Promise<RefundOutcome> {
+  if (owed.cents <= 0) return { cents: 0, method: "none" };
+
   // Anything still only reserved is let go rather than refunded. Cheaper —
   // Stripe keeps its fee on a refund but takes nothing for a hold that was
   // never captured — and truer, since no money left the customer's account
   // in the first place.
-  const released = await releaseOrderAuthorization(order);
+  const released = owed.cents >= Math.round(Number(order.priceEUR) * 100)
+    ? await releaseOrderAuthorization(order)
+    : { releasedCents: 0, problem: undefined as string | undefined };
   if (released.releasedCents > 0 || released.problem) {
     return {
       cents: released.releasedCents,
@@ -169,9 +199,10 @@ async function refundToStripe(
 
   let refunded = 0;
   let problem: string | undefined;
-  let owed = 0;
+  let unpaid = 0;
 
   for (const charge of payable) {
+    if (refunded >= owed.cents) break;
     const cents = Math.round(Number(charge.amountEUR) * 100);
     const claimed = await prisma.charge.updateMany({
       where: { id: charge.id, status: "SUCCEEDED" },
@@ -182,20 +213,23 @@ async function refundToStripe(
     try {
       await refundPaymentIntent({
         paymentIntentId: charge.stripePaymentIntentId!,
+        // Capped at what is still owed: a partly played session gets part of
+        // its money back, and Stripe refuses anything over the charge anyway.
+        amountEUR: Math.min(cents, Math.max(0, owed.cents - refunded)) / 100,
         reason: "requested_by_customer",
         // The charge row's id: however often this is retried, Stripe only
         // ever creates the one refund.
         idempotencyKey: `refund_${charge.id}`,
       });
-      refunded += cents;
+      refunded += Math.min(cents, owed.cents - refunded);
     } catch (err) {
       await prisma.charge.update({ where: { id: charge.id }, data: { status: "SUCCEEDED" } });
-      owed += cents;
+      unpaid += cents;
       problem = err instanceof StripeError ? err.message : "Stripe refused the refund.";
     }
   }
 
-  if (owed > 0) await raise(order, owed, problem ?? "The refund did not go through.");
+  if (unpaid > 0) await raise(order, unpaid, problem ?? "The refund did not go through.");
   return { cents: refunded, method: refunded > 0 ? "stripe" : "none", problem };
 }
 
@@ -208,17 +242,103 @@ const REFUND_TEXT: Record<RefundReason, string> = {
 };
 
 function moneyLine(outcome: RefundOutcome): string | null {
-  if (outcome.cents <= 0) return null;
+  if (outcome.cents <= 0) {
+    // Everything booked was delivered, so a cancellation at the end owes
+    // nothing. Saying so plainly beats leaving them to wonder.
+    return outcome.played && outcome.booked && outcome.played >= outcome.booked
+      ? "All the games you booked were played, so there's nothing to refund."
+      : null;
+  }
   const amount = `€${(outcome.cents / 100).toFixed(2)}`;
+  const part =
+    outcome.played && outcome.booked && outcome.played > 0
+      ? ` That's the ${outcome.booked - outcome.played} of ${outcome.booked} games you didn't get — the ${outcome.played} that were played aren't refunded.`
+      : "";
   if (outcome.method === "credit") {
-    return `${amount} is back in your balance as credit, ready for your next booking.`;
+    return `${amount} is back in your balance as credit, ready for your next booking.${part}`;
   }
   // Never charged, only reserved — saying "refunded" would have the customer
   // watching for money that is not coming, because it never left.
   if (outcome.method === "released") {
     return `The ${amount} hold on your card has been released — you were never charged.`;
   }
-  return `${amount} has been refunded to your original payment method.`;
+  return `${amount} has been refunded to your original payment method.${part}`;
+}
+
+
+/**
+ * Pays the teammates for the games they actually delivered on an order that
+ * was cancelled part-way.
+ *
+ * The customer only gets the unplayed share back (see owedCents), so without
+ * this the played share would simply stay with the house while the person who
+ * played those games got nothing. A session cancelled after one of two games
+ * is one game's work done, and it is owed.
+ *
+ * Sibling of creditOrderPayout() in lib/dispatch/service.ts, which pays the
+ * whole pot when an order completes. Kept separate rather than folded in:
+ * that one runs inside the completion transaction and always pays in full,
+ * this one runs after a cancellation has committed and pays a fraction. The
+ * same unique (teammateId, orderId, ORDER_PAYOUT) index makes both idempotent
+ * and makes them mutually exclusive — whichever happens first wins, and a
+ * completed order can never also be paid as a cancelled one.
+ */
+async function payForPlayedGames(order: RefundableOrder, played: number, booked: number): Promise<void> {
+  if (played <= 0) return;
+
+  try {
+    const [row, selected] = await Promise.all([
+      prisma.order.findUnique({
+        where: { id: order.id },
+        select: { priceEUR: true, teammatePayoutEUR: true },
+      }),
+      prisma.dispatchCandidate.findMany({
+        where: { orderId: order.id, selected: true },
+        select: { teammateId: true, isPrimary: true },
+        orderBy: { isPrimary: "desc" },
+      }),
+    ]);
+    if (!row || selected.length === 0) return;
+
+    // The played fraction of the pot, split the same way a completion splits
+    // it: evenly, with the rounding remainder going to the primary.
+    const potCents = Math.round((Math.round(payoutForOrder(row) * 100) * Math.min(played, booked)) / booked);
+    if (potCents <= 0) return;
+
+    const baseCents = Math.floor(potCents / selected.length);
+    let remainder = potCents - baseCents * selected.length;
+
+    for (const candidate of selected) {
+      const cents = baseCents + (remainder > 0 ? 1 : 0);
+      if (remainder > 0) remainder -= 1;
+      if (cents === 0) continue;
+
+      const amountEUR = new Prisma.Decimal(cents).dividedBy(100);
+      try {
+        await prisma.$transaction(async (tx) => {
+          await tx.teammateEarning.create({
+            data: {
+              teammateId: candidate.teammateId,
+              orderId: order.id,
+              type: "ORDER_PAYOUT",
+              amountEUR,
+              note: `${played} of ${booked} games — order cancelled part-way`,
+            },
+          });
+          await tx.teammate.update({
+            where: { id: candidate.teammateId },
+            data: { balanceEUR: { increment: amountEUR } },
+          });
+        });
+      } catch (err) {
+        // Already paid for this order. The constraint doing its job.
+        if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) throw err;
+      }
+    }
+  } catch {
+    // A cancellation must not fail because a payout did. The earnings ledger
+    // is correctable by hand; a stuck order is not.
+  }
 }
 
 /**
@@ -237,6 +357,9 @@ export async function settleCancelledOrder(
   reason: RefundReason,
 ): Promise<RefundOutcome> {
   const outcome = await refundOrder(order, reason);
+  if (outcome.played && outcome.booked) {
+    await payForPlayedGames(order, outcome.played, outcome.booked);
+  }
   await notifyOrderCancelled(order.id, {
     reason: REFUND_TEXT[reason],
     // A refund that failed was already raised to the admins; promising the
