@@ -14519,3 +14519,42 @@ a.notification-panel__item:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Ranks and lanes as their own art. Five lane names did not fit the column
+   and were cut off mid-word — "Jungle, Mid, ADC, S…" tells a teammate less
+   than five icons do. */
+.order-room__marks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.order-room__marks img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.order-room__marks i {
+  width: 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.order-room__marks-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* The card is a column so the support link can sit at its foot rather than
+   directly under the last rule, wherever that happens to land. */
+.order-room__brief--fill {
+  display: flex;
+  flex-direction: column;
+}
+
+.order-room__help {
+  margin-top: auto;
+}

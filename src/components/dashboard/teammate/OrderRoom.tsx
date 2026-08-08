@@ -191,6 +191,52 @@ function CopyValue({ value }: { value: string }) {
   );
 }
 
+/**
+ * Ranks and lanes as their own art rather than a list of words.
+ *
+ * Five lane names do not fit the column and were being cut off mid-word —
+ * "Jungle, Mid, ADC, S…" tells a teammate less than five icons do, and these
+ * are marks people already read at a glance in the game itself. The label
+ * stays as the tooltip, and anything without art falls back to its name so a
+ * game we have no icons for still reads.
+ */
+function OptionMarks({
+  gameSlug,
+  section,
+  values,
+  empty,
+  suffix,
+}: {
+  gameSlug: string;
+  section: "ranks" | "roles";
+  values: string[];
+  empty: string;
+  suffix?: string;
+}) {
+  if (values.length === 0) return <>{empty}</>;
+  const options = getGameProfileConfig(gameSlug)?.[section]?.options ?? [];
+
+  return (
+    <span className="order-room__marks">
+      {values.map((value) => {
+        const option = options.find((o) => o.value === value);
+        const label = option?.label ?? value;
+        if (option?.icon) {
+          // eslint-disable-next-line @next/next/no-img-element
+          return <img key={value} src={option.icon} alt={label} title={label} />;
+        }
+        if (option?.glyph) return <i key={value} className={option.glyph} title={label} aria-hidden="true" />;
+        return (
+          <span key={value} className="order-room__marks-text">
+            {label}
+          </span>
+        );
+      })}
+      {suffix && <span className="order-room__marks-text">{suffix}</span>}
+    </span>
+  );
+}
+
 export function OrderRoom({ orderId }: { orderId: string }) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -413,16 +459,27 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                     the customer never having been asked. */}
                 <div>
                   <dt>Rank</dt>
-                  <dd>{formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) || "Unranked"}</dd>
+                  {/* The division is not a tier of its own and has no art of
+                      its own — it rides along with the emblem it belongs to. */}
+                  <dd>
+                    <OptionMarks
+                      gameSlug={order.gameSlug}
+                      section="ranks"
+                      values={order.ignRank ? [order.ignRank] : []}
+                      empty={formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) || "Unranked"}
+                      suffix={order.ignRank ? (formatRank(order.gameSlug, order.ignRank, order.ignDivision ?? null) ?? undefined) : undefined}
+                    />
+                  </dd>
                 </div>
                 <div>
                   <dt>{getGameProfileConfig(order.gameSlug)?.roles?.label ?? "Roles"}</dt>
                   <dd>
-                    {order.ignRoles && order.ignRoles.length > 0
-                      ? order.ignRoles
-                          .map((value) => getGameProfileConfig(order.gameSlug)?.roles?.options.find((o) => o.value === value)?.label ?? value)
-                          .join(", ")
-                      : "Any"}
+                    <OptionMarks
+                      gameSlug={order.gameSlug}
+                      section="roles"
+                      values={order.ignRoles ?? []}
+                      empty="Any"
+                    />
                   </dd>
                 </div>
               </dl>
@@ -468,10 +525,15 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </li>
           </ul>
 
-          <Link href="/contact" className="order-room__help">
+          <a
+            className="order-room__help"
+            href="https://discord.com/channels/1535592539195703398/1535592539997081668"
+            target="_blank"
+            rel="noreferrer"
+          >
             <i className="fa-solid fa-headset" aria-hidden="true" />
             Something wrong with this order?
-          </Link>
+          </a>
         </div>
       </aside>
 
