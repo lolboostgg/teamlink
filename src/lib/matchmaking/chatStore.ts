@@ -68,16 +68,40 @@ function writeConversation(key: string, messages: ChatMessage[]): void {
 // the browser claims. The local value is only the optimistic echo, and the
 // next sync replaces it with the stored row either way.
 async function persistMessage(message: ChatMessage): Promise<void> {
-  await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: message.id,
-      key: message.conversationKey,
-      text: message.text,
-      createdAt: message.createdAt,
-    }),
-  }).catch(() => undefined);
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: message.id,
+        key: message.conversationKey,
+        text: message.text,
+        createdAt: message.createdAt,
+      }),
+    });
+
+    // A rejected message used to be swallowed whole: the optimistic copy sat
+    // in localStorage looking sent, the next sync replaced the thread with
+    // the server's version, and the message simply vanished with nothing
+    // said and nothing logged. Whatever the reason for the rejection, it has
+    // to be visible somewhere.
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      console.error("[chat] message rejected:", res.status, detail);
+      dropMessage(message.conversationKey, message.id);
+    }
+  } catch (err) {
+    console.error("[chat] message could not be sent:", err);
+    dropMessage(message.conversationKey, message.id);
+  }
+}
+
+/** Removes an optimistic copy the server never accepted, so the thread stops
+ * showing a message that does not exist. */
+function dropMessage(key: string, id: string): void {
+  if (typeof window === "undefined") return;
+  writeAll(readAll().filter((m) => m.id !== id));
+  window.dispatchEvent(new CustomEvent("teamlink-chat-rejected", { detail: { key, id } }));
 }
 
 export function sendChatMessage(key: string, from: "client" | "teammate" | "admin", text: string): void {
