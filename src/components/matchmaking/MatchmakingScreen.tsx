@@ -230,7 +230,7 @@ export function MatchmakingScreen({ orderId }: Props) {
                 runs there is nothing else to do, and every one of these was
                 two taps and a Confirm away for a single-word choice. */}
             <div className="matching-screen__prefs">
-              <div className="matching-screen__pref-group">
+              <div className="matching-screen__pref-group matching-screen__pref-group--inline">
                 <span className="matching-screen__pref-label">
                   <i className="fa-solid fa-comments" aria-hidden="true" /> Conversation
                 </span>
@@ -248,7 +248,7 @@ export function MatchmakingScreen({ orderId }: Props) {
                 </div>
               </div>
 
-              <div className="matching-screen__pref-group">
+              <div className="matching-screen__pref-group matching-screen__pref-group--inline">
                 <span className="matching-screen__pref-label">
                   <i className="fa-solid fa-gamepad" aria-hidden="true" /> Play style
                 </span>

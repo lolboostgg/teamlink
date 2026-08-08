@@ -284,6 +284,12 @@ async function assignWinners(
   candidateIds: string[],
   now: Date,
 ) {
+  // Guarded rather than assumed: the line below indexes [0], and an empty
+  // list would hand Prisma an undefined id, throw inside the transaction,
+  // and surface as a 500 on the customer's order read — which is not what a
+  // "nobody to assign" situation should look like from the outside.
+  if (candidateIds.length === 0) return;
+
   const winners = await tx.dispatchCandidate.findMany({
     where: { id: { in: candidateIds } },
     select: { teammateId: true },

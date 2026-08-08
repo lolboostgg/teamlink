@@ -31,7 +31,15 @@ export function useDispatchOrder(orderId: string | null) {
     try {
       const res = await fetch(`/api/dispatch/orders/${orderId}`, { cache: "no-store" });
       const data = await res.json();
-      setOrder(res.ok ? data.order : null);
+
+      // Only a 404 means the order genuinely isn't there. Anything else is
+      // our side failing, and blanking the order on that told a customer
+      // with a live, paid, assigned session that we had lost it — while
+      // hiding the actual error behind a reassuring-looking screen. Keep the
+      // last good state instead and let the next tick retry.
+      if (res.ok) setOrder(data.order);
+      else if (res.status === 404) setOrder(null);
+      else console.error("[order] read failed:", res.status, data?.error);
       // Round trip included, so this reads a touch old and the timer errs
       // towards showing slightly more elapsed time rather than less. That is
       // the right way round: a search that looks a second ahead is invisible,
