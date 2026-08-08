@@ -54,6 +54,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
       : null;
   const onboardingPending = onboarding ? !isOnboardingComplete(onboarding) : false;
 
+  // The account's own picture, independent of any teammate row.
+  //
+  // Everything below used to hang off `teammate`, which is null for an admin
+  // and for a plain client — so their uploaded avatar never reached the
+  // sidebar or the topbar and both fell back to initials. The session cannot
+  // stand in for it either: an uploaded image is a data URL and
+  // sessionSafeAvatar() strips those out of the token on purpose, since a
+  // multi-kilobyte cookie breaks the login outright.
+  const account = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true, avatarUrl: true, discordId: true, discordAvatar: true },
+      })
+    : null;
+  // Older uploads were truncated to exactly 2,000 characters by the profile
+  // sanitizer; a partial data URL can never render.
+  const accountUpload =
+    account?.avatarUrl?.startsWith("data:image/") && account.avatarUrl.length <= 2_000
+      ? null
+      : account?.avatarUrl ?? null;
+  const accountAvatar =
+    accountUpload || discordAvatarUrl(account?.discordId ?? null, account?.discordAvatar ?? null) || null;
+
   const storedAvatar = teammate?.avatarUrl || teammate?.user?.avatarUrl || null;
   // Older uploads were truncated to exactly 2,000 characters by the profile
   // sanitizer. A partial data URL can never render, so fall through to the
@@ -84,9 +107,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <>
         <DispatchFlow />
         <div className="dashboard-shell">
-          <DashboardSidebar teammate={teammateProfile} onboardingPending={onboardingPending} />
+          <DashboardSidebar
+            teammate={teammateProfile}
+            accountName={account?.name ?? null}
+            accountAvatarUrl={accountAvatar}
+            onboardingPending={onboardingPending}
+          />
           <div className="dashboard-shell__main">
-            <DashboardTopbar avatarUrl={teammateProfile?.avatarUrl} />
+            <DashboardTopbar avatarUrl={teammateProfile?.avatarUrl ?? accountAvatar} />
             <ViewTransition
               enter={{ "dashboard-enter": "dash-in-fwd", default: "none" }}
               exit={{ "dashboard-exit": "dash-out-back", default: "none" }}

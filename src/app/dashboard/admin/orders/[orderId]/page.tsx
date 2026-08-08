@@ -36,6 +36,25 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const selectedCount = order.candidates.filter((candidate) => candidate.selected).length;
   const payoutPot = payoutForOrder(order);
   const teammateCutEach = payoutPot / Math.max(1, selectedCount);
+  // AvatarIcon falls back to the placeholder unless it is given a URL, and
+  // every call on this page was passing a seed alone — so client, teammate
+  // and every chat bubble drew the same default face.
+  const clientAvatar = order.clientUser?.avatarUrl ?? null;
+  const clientFrame = order.clientUser
+    ? {
+        avatarFocusX: order.clientUser.avatarFocusX,
+        avatarFocusY: order.clientUser.avatarFocusY,
+        avatarZoom: order.clientUser.avatarZoom,
+      }
+    : null;
+  const teammateAvatar = selected?.teammate.avatarUrl ?? null;
+  const teammateFrame = selected
+    ? {
+        avatarFocusX: selected.teammate.avatarFocusX,
+        avatarFocusY: selected.teammate.avatarFocusY,
+        avatarZoom: selected.teammate.avatarZoom,
+      }
+    : null;
   const statusTone = order.status === "COMPLETED" ? "success" : order.status === "CANCELLED" || order.status === "CANCEL_PENDING" ? "warning" : "accent";
 
   return <div className="admin-order-detail">
@@ -50,8 +69,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <span className={`admin-order-status admin-order-status--${statusTone}`}><i className={order.status === "COMPLETED" ? "fa-solid fa-check" : "fa-solid fa-circle"} />{statusLabel}</span>
       </div>
       <dl className="admin-order-facts">
-        <div><span className="admin-order-fact__icon admin-order-fact__icon--face"><AvatarIcon seed={`client-${clientName}`} /></span><span><dt>Client</dt><dd>{order.clientUser ? <Link href={`/dashboard/admin/accounts/${order.clientUser.id}`}>{clientName}</Link> : clientName}</dd></span></div>
-        <div><span className="admin-order-fact__icon admin-order-fact__icon--face">{selected ? <AvatarIcon seed={`teammate-${selected.teammateId}`} /> : <i className="fa-solid fa-headset" />}</span><span><dt>Teammate</dt><dd>{selected ? <Link href={`/dashboard/admin/teammates/${selected.teammateId}`}>{teammateName}</Link> : teammateName}</dd></span></div>
+        <div><span className="admin-order-fact__icon admin-order-fact__icon--face"><AvatarIcon seed={`client-${clientName}`} avatarUrl={clientAvatar} frame={clientFrame} /></span><span><dt>Client</dt><dd>{order.clientUser ? <Link href={`/dashboard/admin/accounts/${order.clientUser.id}`}>{clientName}</Link> : clientName}</dd></span></div>
+        <div><span className="admin-order-fact__icon admin-order-fact__icon--face">{selected ? <AvatarIcon seed={`teammate-${selected.teammateId}`} avatarUrl={teammateAvatar} frame={teammateFrame} /> : <i className="fa-solid fa-headset" />}</span><span><dt>Teammate</dt><dd>{selected ? <Link href={`/dashboard/admin/teammates/${selected.teammateId}`}>{teammateName}</Link> : teammateName}</dd></span></div>
         <div><span className="admin-order-fact__icon"><i className="fa-solid fa-gamepad" /></span><span><dt>Game & option</dt><dd>{order.gameName}<small>{order.option}</small></dd></span></div>
         <div><span className="admin-order-fact__icon"><i className="fa-solid fa-coins" /></span><span><dt>Order value</dt><dd><PriceTag amountEUR={Number(order.priceEUR)} /><small>{selectedCount > 0 ? <>Teammate cut <PriceTag amountEUR={teammateCutEach} />{selectedCount > 1 ? ` each · ${selectedCount} teammates` : ""}</> : <>Teammate cut <PriceTag amountEUR={payoutPot} /></>}</small></dd></span></div>
       </dl>
@@ -80,9 +99,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       </div>
       {!conversationKey ? <div className="dashboard-empty dashboard-empty--compact"><p>No teammate has been selected for this order.</p></div> : <div className="admin-order-chat">
         <header className="admin-order-chat__head">
-          <div className="admin-order-chat__person"><span className="chat-list__avatar"><AvatarIcon seed={`client-${clientName}`} /></span><span><small>Client</small><strong>{clientName}</strong></span></div>
+          <div className="admin-order-chat__person"><span className="chat-list__avatar"><AvatarIcon seed={`client-${clientName}`} avatarUrl={clientAvatar} frame={clientFrame} /></span><span><small>Client</small><strong>{clientName}</strong></span></div>
           <div className="admin-order-chat__connection"><span /><strong>#{order.orderNo}</strong><span /></div>
-          <div className="admin-order-chat__person admin-order-chat__person--teammate"><span><small>Teammate</small><strong>{teammateName}</strong></span><span className="chat-list__avatar"><AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} /></span></div>
+          <div className="admin-order-chat__person admin-order-chat__person--teammate"><span><small>Teammate</small><strong>{teammateName}</strong></span><span className="chat-list__avatar"><AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} avatarUrl={teammateAvatar} frame={teammateFrame} /></span></div>
         </header>
         <div className="admin-order-chat__messages">
           {messages.length === 0 && <div className="chat-thread__empty"><i className="fa-regular fa-comments" /><p>No persisted chat messages yet.</p></div>}
@@ -91,9 +110,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             const fromAdmin = message.sender === "admin";
             const senderName = fromAdmin ? "Admin" : fromTeammate ? teammateName : clientName;
             return <article key={message.id} className={`admin-order-chat__message${fromTeammate || fromAdmin ? " admin-order-chat__message--teammate" : ""}`}>
-              {!fromTeammate && !fromAdmin && <span className="admin-order-chat__avatar"><AvatarIcon seed={`client-${clientName}`} /></span>}
+              {!fromTeammate && !fromAdmin && <span className="admin-order-chat__avatar"><AvatarIcon seed={`client-${clientName}`} avatarUrl={clientAvatar} frame={clientFrame} /></span>}
               <div><header><strong>{senderName}</strong><span>{fromAdmin ? "Admin" : fromTeammate ? "Teammate" : "Client"}</span></header><p>{message.text}</p><time>{dateTime(message.createdAt)}</time></div>
-              {(fromTeammate || fromAdmin) && <span className="admin-order-chat__avatar">{fromAdmin ? <i className="fa-solid fa-shield-halved" /> : <AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} />}</span>}
+              {(fromTeammate || fromAdmin) && <span className="admin-order-chat__avatar">{fromAdmin ? <i className="fa-solid fa-shield-halved" /> : <AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} avatarUrl={teammateAvatar} frame={teammateFrame} />}</span>}
             </article>;
           })}
         </div>
@@ -104,7 +123,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     <section className="dashboard-panel admin-order-audit-panel">
       <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Candidates & game reports</div><div className="dashboard-panel__sub">Dispatch audit and submitted results</div></div></div>
       <div className="admin-order-audit">
-        <section><h3><i className="fa-solid fa-users" /> Candidates <span>{order.candidates.length}</span></h3>{order.candidates.map((candidate) => <div key={candidate.id}><span><AvatarIcon seed={candidate.teammateId} />{candidate.teammate.name}</span><strong className={candidate.selected ? "is-selected" : ""}>{candidate.status.toLowerCase()}{candidate.selected ? " · selected" : ""}</strong></div>)}</section>
+        <section><h3><i className="fa-solid fa-users" /> Candidates <span>{order.candidates.length}</span></h3>{order.candidates.map((candidate) => <div key={candidate.id}><span><AvatarIcon seed={candidate.teammateId} avatarUrl={candidate.teammate.avatarUrl} frame={{ avatarFocusX: candidate.teammate.avatarFocusX, avatarFocusY: candidate.teammate.avatarFocusY, avatarZoom: candidate.teammate.avatarZoom }} />{candidate.teammate.name}</span><strong className={candidate.selected ? "is-selected" : ""}>{candidate.status.toLowerCase()}{candidate.selected ? " · selected" : ""}</strong></div>)}</section>
         <section><h3><i className="fa-solid fa-trophy" /> Game reports <span>{order.games.length}/{order.gamesBooked}</span></h3>{order.games.length ? order.games.map((game) => <div key={game.id}><span>Game {game.gameNumber}</span><strong className={`game-result game-result--${game.result.toLowerCase()}`}>{game.result}</strong></div>) : <p>No game reports.</p>}</section>
       </div>
     </section>

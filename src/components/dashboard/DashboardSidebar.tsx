@@ -47,9 +47,14 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
 
 export function DashboardSidebar({
   teammate,
+  accountName = null,
+  accountAvatarUrl = null,
   onboardingPending = false,
 }: {
   teammate?: TeammateSidebarData | null;
+  /** The signed-in account itself — an admin or client has no teammate row. */
+  accountName?: string | null;
+  accountAvatarUrl?: string | null;
   onboardingPending?: boolean;
 }) {
   const pathname = usePathname();
@@ -124,9 +129,10 @@ export function DashboardSidebar({
             least important thing on the panel. It opens upward: it sits at the
             bottom of the screen, and a menu opening downward falls off it. */}
         <SidebarAccountMenu
-          name={teammate?.name ?? (role === "admin" ? "Admin" : "Account")}
+          name={teammate?.name ?? accountName ?? (role === "admin" ? "Admin" : "Account")}
           role={role === "admin" ? "Admin" : "Teammate"}
-          avatarUrl={teammate?.avatarUrl ?? null}
+          // An admin has no teammate row, so theirs comes off the account.
+          avatarUrl={teammate?.avatarUrl ?? accountAvatarUrl ?? null}
           balanceEUR={teammate ? teammate.balanceEUR : null}
           profileHref={role === "admin" ? "/dashboard/admin/profile" : "/dashboard/teammate/profile"}
           collapsed={collapsed}
