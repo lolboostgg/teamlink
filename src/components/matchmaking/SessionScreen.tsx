@@ -23,7 +23,7 @@ import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { PaymentMethodPicker } from "@/components/ui/PaymentMethodPicker";
 import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
 import type { PaymentMethodKey } from "@/lib/payments";
-import { SESSION_STATUS_LABELS, GAME_RESULT_LABELS, REPORTABLE_STATUSES, sessionStepIndex, type SessionStatus, type GameResult } from "@/lib/dispatch/sessionTypes";
+import { SESSION_STATUS_LABELS, REPORTABLE_STATUSES, sessionStepIndex, type SessionStatus } from "@/lib/dispatch/sessionTypes";
 
 interface Props {
   orderId: string;
@@ -722,26 +722,12 @@ export function SessionScreen({ orderId }: Props) {
               })}
             </div>
 
-            {/* Results, not screenshots. The proof image is evidence for us —
-                a picture of somebody's game client, submitted to settle
-                whether the work happened — so it stays with the teammate and
-                the admins. What the customer is owed is the outcome. */}
-            {games.length > 0 && (
-              <div className="session-screen__results">
-                {games.map((game) => {
-                  const result = (GAME_RESULT_LABELS[game.result as GameResult] ?? game.result) as string;
-                  return (
-                    <span
-                      className={`session-screen__result session-screen__result--${String(game.result).toLowerCase()}`}
-                      key={game.gameNumber}
-                    >
-                      <strong>Game {game.gameNumber}</strong>
-                      <small>{result}</small>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
+            {/* Per-game results used to be listed here. The customer is
+                playing the games — they know how each one went, and being
+                told "Game 1 · Win" by the site adds nothing to an evening
+                they were present for. The games counter above already says
+                how far along the booking is, which is the part they cannot
+                see for themselves. */}
           </div>
         </Reveal>
 
