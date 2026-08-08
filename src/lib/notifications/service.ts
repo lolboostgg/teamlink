@@ -13,6 +13,9 @@ export interface NotifyInput {
   title: string;
   body?: string;
   href?: string;
+  /** Extra rows for the Discord embed only. The bell and the mail are prose;
+   * a chat message is read at a glance and wants the numbers laid out. */
+  fields?: { name: string; value: string; inline?: boolean }[];
 }
 
 export async function notifyUser(userId: string, input: NotifyInput) {

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications/service";
 import { publish } from "@/lib/events/bus";
+import { publicCustomerName } from "@/lib/customerName";
 
 /**
  * Recording a tip.
@@ -74,7 +75,20 @@ export async function recordTip(input: {
     await notifyUser(teammateUserId, {
       type: "tip.received",
       title: `You got a €${input.amountEUR.toFixed(2)} tip`,
-      body: `${order.customerLabel} tipped you for the ${order.gameName} session. It's already on your balance.`,
+      // Never the raw label. A guest checks out with an email address, and
+      // that address became customerLabel — this message goes straight to the
+      // teammate's Discord, so the raw value handed a stranger a working
+      // email for somebody who never agreed to share it.
+      body: `${publicCustomerName({
+        customerLabel: order.customerLabel,
+        clientUserId: order.clientUserId ?? null,
+        orderNo: order.orderNo,
+      })} tipped you for the ${order.gameName} session. It's already on your balance.`,
+      fields: [
+        { name: "Amount", value: `€${input.amountEUR.toFixed(2)}`, inline: true },
+        { name: "Order", value: `#${order.orderNo}`, inline: true },
+        { name: "Game", value: order.gameName, inline: true },
+      ],
       href: "/dashboard/teammate/payments",
     });
   }

@@ -41,7 +41,15 @@ export async function submitTeammateReview(orderId: string, teammateId: string, 
     await notifyUser(teammate.userId, {
       type: "order.reviewed",
       title: `You got ${rating} star${rating === 1 ? "" : "s"}`,
-      body: `A customer rated your ${order.gameName} session. Your average is now ${(aggregate._avg.rating ?? 5).toFixed(2)}.`,
+      body: `A customer rated your ${order.gameName} session.`,
+      fields: [
+        // The stars drawn out rather than a number: this is read at a glance
+        // in a column of other messages, and "4/5" is a figure you have to
+        // stop and parse.
+        { name: "Rating", value: "⭐".repeat(rating) + "☆".repeat(5 - rating), inline: true },
+        { name: "New average", value: (aggregate._avg.rating ?? 5).toFixed(2), inline: true },
+        { name: "Order", value: `#${order.orderNo}`, inline: true },
+      ],
       href: "/dashboard/teammate",
     });
   }

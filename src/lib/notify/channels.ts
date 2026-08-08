@@ -78,7 +78,31 @@ interface Notice {
   title: string;
   body?: string;
   href?: string;
+  fields?: { name: string; value: string; inline?: boolean }[];
 }
+
+/**
+ * How each kind of event presents itself in Discord.
+ *
+ * A chat client is not an inbox: messages are scanned in a column of dozens,
+ * and an embed is placed by its coloured edge and its glyph before it is
+ * read. Every notice used to arrive in the same blue under the same plain
+ * title, so a rejected payout and a five-star review looked alike.
+ *
+ * Colours are Discord's decimal ints, matching the app's own semantics.
+ */
+const PRESENTATION: Record<string, { emoji: string; color: number }> = {
+  "tip.received": { emoji: "\u{1F4B0}", color: 0x2fbf71 },
+  "order.reviewed": { emoji: "\u{2B50}", color: 0xf5b301 },
+  "order.completed": { emoji: "\u{1F3C1}", color: 0x2fbf71 },
+  "payout.paid": { emoji: "\u{1F4B8}", color: 0x2fbf71 },
+  "payout.rejected": { emoji: "\u{26A0}\u{FE0F}", color: 0xe5484d },
+  "order.cancel_requested": { emoji: "\u{1F6D1}", color: 0xe5484d },
+  "order.refund_due": { emoji: "\u{1F4B3}", color: 0xf5a524 },
+  "order.abandoned": { emoji: "\u{1F4A4}", color: 0xf5a524 },
+  "order.unread": { emoji: "\u{1F4AC}", color: 0x4066ff },
+  "order.unread_escalated": { emoji: "\u{1F4AC}", color: 0xf5a524 },
+};
 
 /**
  * Fans one notification out beyond the bell.
@@ -98,16 +122,18 @@ export async function deliverExternally(userId: string, notice: Notice): Promise
     if (!user) return;
 
     const url = notice.href ? `${appUrl()}${notice.href.startsWith("/") ? "" : "/"}${notice.href}` : appUrl();
+    const look = PRESENTATION[notice.type] ?? { emoji: "\u{1F514}", color: ACCENT };
     const jobs: Promise<unknown>[] = [];
 
     if (policy.discord && user.discordId && wants(user.notificationPrefs, policy.topic, "discord")) {
       jobs.push(
         sendDiscordDm(user.discordId, {
-          title: notice.title,
+          title: `${look.emoji} ${notice.title}`,
           description: notice.body ?? "",
+          fields: notice.fields,
           linkUrl: url,
           linkLabel: "Open TeamLink",
-          color: ACCENT,
+          color: look.color,
         }),
       );
     }
