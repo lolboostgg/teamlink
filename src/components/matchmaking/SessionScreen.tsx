@@ -55,7 +55,7 @@ function formatClock(totalSeconds: number): string {
 export function SessionScreen({ orderId }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
-  const { order, now, sessionElapsedSeconds, requestCancelSession } = useDispatchOrder(orderId);
+  const { order, loaded, now, sessionElapsedSeconds, requestCancelSession } = useDispatchOrder(orderId);
   const completionConversationKey = order?.selectedTeammateId
     ? conversationKey(order.id, order.selectedTeammateId)
     : undefined;
@@ -115,6 +115,18 @@ export function SessionScreen({ orderId }: Props) {
       cancelled = true;
     };
   }, [order?.status, order?.id]);
+
+  // "Not found" and "not fetched yet" both leave order null, and this used to
+  // treat them the same — so a reload flashed "we couldn't find that session"
+  // at somebody whose session was fine, before replacing it with the session.
+  // Only say it once the answer is actually in.
+  if (!loaded) {
+    return (
+      <div className="matching-screen">
+        <span className="matching-screen__spinner" aria-hidden="true" />
+      </div>
+    );
+  }
 
   if (!order) {
     return (

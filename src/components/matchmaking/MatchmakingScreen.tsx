@@ -182,11 +182,19 @@ export function MatchmakingScreen({ orderId }: Props) {
     }
   }, [order?.status]);
 
-  // Covers both "still loading from localStorage" (loaded===false, which is
-  // also exactly what the server rendered, so no hydration mismatch) and the
-  // real "actively searching" phase once the order is in — same visual
-  // either way, just with real details (and preferences) once available.
-  if (!loaded || order?.status === "candidates_ready") {
+  // Nothing is known yet, so claim nothing. This used to fall into the
+  // searching card below, which announced "searching for your perfect
+  // teammate" on every reload — including reloads of a session that was
+  // assigned an hour ago and only needed fetching.
+  if (!loaded) {
+    return (
+      <div className="matching-screen matching-screen--card matching-screen--arena">
+        <span className="matching-screen__spinner matching-screen__spinner--lg" aria-hidden="true" />
+      </div>
+    );
+  }
+
+  if (order?.status === "candidates_ready") {
     const optionDescription = order ? getBookingOptionDescription(order.gameSlug, order.option) : undefined;
     const dispatchWindowSeconds = Math.max(1, Math.ceil(dispatchWindowMs / 1000));
     const progressPct = order ? Math.min(100, (searchElapsedSeconds / dispatchWindowSeconds) * 100) : 0;
