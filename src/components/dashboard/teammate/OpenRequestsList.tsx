@@ -35,7 +35,13 @@ export function OpenRequestsList() {
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  useRequestAlerts(requests);
+  // Once they have accepted, the alert has done its job — the phase moves to
+  // waiting-on-the-customer and the modal takes over the screen. Silencing on
+  // the phase rather than on the list emptying is what makes that immediate:
+  // the row drops out on the next read, and until then the sound would keep
+  // going underneath a dialog that says the opposite.
+  const answered = phase !== "ONLINE_IDLE" && phase !== "DISPATCH_INCOMING";
+  useRequestAlerts(requests, answered || busyId !== null);
 
   async function respond(orderId: string, accept: boolean) {
     setBusyId(orderId);
@@ -259,7 +265,10 @@ function AlertPermission() {
  * crowded browser, and the OS notification carries when the browser itself is
  * behind something else.
  */
-function useRequestAlerts(requests: { order: { id: string; orderNo: number; gameName: string } }[]) {
+function useRequestAlerts(
+  requests: { order: { id: string; orderNo: number; gameName: string } }[],
+  silenced: boolean,
+) {
   const seen = useRef<Set<string> | null>(null);
   const baseTitle = useRef<string>("");
 
@@ -280,6 +289,12 @@ function useRequestAlerts(requests: { order: { id: string; orderNo: number; game
 
     for (const { order } of requests) {
       if (seen.current.has(order.id)) continue;
+      if (silenced) {
+        // Still recorded as seen, so it doesn't announce itself later as if
+        // it had just arrived.
+        seen.current.add(order.id);
+        continue;
+      }
       seen.current.add(order.id);
       // Before the sound: this is the moment the alert is provably on screen,
       // and only from here may a non-response count against them.
@@ -300,7 +315,7 @@ function useRequestAlerts(requests: { order: { id: string; orderNo: number; game
     seen.current = new Set(requests.map((r) => r.order.id));
 
     document.title = requests.length > 0 ? `(${requests.length}) ${baseTitle.current}` : baseTitle.current;
-  }, [requests]);
+  }, [requests, silenced]);
 
   // Keeps sounding while anything is open, not once on arrival.
   //
@@ -309,7 +324,7 @@ function useRequestAlerts(requests: { order: { id: string; orderNo: number; game
   // trivially missed, and then the alert expires in silence. The repeat
   // stops on its own the moment the list empties, which is either because
   // they answered or because it was taken.
-  const open = requests.length > 0;
+  const open = requests.length > 0 && !silenced;
   useEffect(() => {
     if (!open) return;
     const nag = setInterval(() => playSound("request"), 3000);
