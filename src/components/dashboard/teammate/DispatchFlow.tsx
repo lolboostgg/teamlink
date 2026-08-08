@@ -123,13 +123,12 @@ export function DispatchFlow() {
   // request twice over.
   const onRequestsPage = pathname === "/dashboard/teammate/requests";
 
-  // Inside an order, an alert is noise at best. A teammate in a session is
-  // reading a chat, watching a timer or writing up a game, and the one sound
-  // that is designed to cut through a voice call is the last thing that
-  // belongs there — least of all when it is announcing something they are
-  // not free to take.
-  const inOrder = pathname.startsWith("/dashboard/teammate/session/");
-
+  // Being busy is not a question the URL can answer. A teammate sitting on a
+  // *completed* order's page is free, and should hear the next request —
+  // blocking on the route would have kept them silent there. The server
+  // already settles this: an order in flight outranks an invitation in
+  // deriveServerPhase, so DISPATCH_INCOMING can only mean nothing is running.
+  //
   // The alert only ever means "there is something here you can accept". Not
   // the phase alone: the phase is derived from the newest candidate row and
   // can name an order that is no longer on offer, which is where the sound
@@ -138,7 +137,7 @@ export function DispatchFlow() {
   const openRequestCount = state.requests.length;
 
   useEffect(() => {
-    if (onRequestsPage || inOrder) return;
+    if (onRequestsPage) return;
     if (state.phase !== "DISPATCH_INCOMING" || !stateOrderId) return;
     if (openRequestCount === 0) return;
     if (announced.current === stateOrderId) return;
@@ -150,7 +149,6 @@ export function DispatchFlow() {
     }
   }, [
     onRequestsPage,
-    inOrder,
     openRequestCount,
     state.phase,
     stateOrderId,
