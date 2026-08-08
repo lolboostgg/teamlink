@@ -7306,26 +7306,60 @@ ul {
   max-width: 560px;
 }
 
+/* Each question on its own recessed panel instead of a bare label above a
+   loose row of chips — with two groups of four or five, the old version
+   gave no boundary between "conversation" and "play style" beyond a bit of
+   whitespace, so it read as one long list of nine chips. */
 .preferences-modal__section {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.018);
 }
 
 .preferences-modal__section-label {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 11px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 .preferences-modal__section-label i {
   color: var(--accent);
   width: 14px;
+  font-size: 11px;
+}
+
+/* A selected chip should read as filled, not as an outlined one that
+   happens to be blue — at four chips a thin ring is easy to miss. */
+.preferences-modal .chip-check:has(input:checked) {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.preferences-modal .chip-check {
+  padding: 8px 14px;
+}
+
+.preferences-modal__title--center {
+  margin-bottom: 6px;
+}
+
+.preferences-modal__sub--center {
+  margin-bottom: 18px;
 }
 
 .preferences-modal__confirm {
-  margin-top: 4px;
+  margin-top: 14px;
 }
 
 .btn--ghost.is-active {
