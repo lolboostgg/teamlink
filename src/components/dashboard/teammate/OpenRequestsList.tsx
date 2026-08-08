@@ -7,7 +7,7 @@ import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchAction
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
 import { formatRank } from "@/lib/gameRanks";
-import { playSound } from "@/lib/notificationSound";
+import { playSound, stopSound } from "@/lib/notificationSound";
 import { ackDispatchAlert } from "@/lib/dispatch/ack";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -320,4 +320,11 @@ function useRequestAlerts(
 
     document.title = requests.length > 0 ? `(${requests.length}) ${baseTitle.current}` : baseTitle.current;
   }, [requests, silenced]);
+
+  // The alert is a recording, not a beep. Accepting two seconds in used to
+  // leave the rest of it playing under the "waiting for the customer" dialog,
+  // still announcing what had just been answered.
+  useEffect(() => {
+    if (silenced || requests.length === 0) stopSound("request");
+  }, [silenced, requests.length]);
 }

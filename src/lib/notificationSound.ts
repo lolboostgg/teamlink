@@ -112,6 +112,24 @@ const DEFAULT_GAP_MS = 400;
 
 const lastPlayed = new Map<string, number>();
 
+/**
+ * Cuts a cue off mid-play.
+ *
+ * Needed because the order alert is a recording of real length, not a beep:
+ * accepting a request two seconds in left the remaining seconds playing
+ * underneath the "waiting for the customer" dialog, still announcing
+ * something that had just been answered. Nothing else in here is long enough
+ * for that to matter, which is why only a recording can be stopped.
+ */
+export function stopSound(name: SoundName): void {
+  const src = RECORDINGS[name];
+  if (!src) return;
+  const audio = players.get(src);
+  if (!audio) return;
+  audio.pause();
+  audio.currentTime = 0;
+}
+
 export function playSound(name: SoundName = "generic") {
   if (typeof window === "undefined") return;
   // Checked here rather than at each call site: there are half a dozen of
