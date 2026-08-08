@@ -971,7 +971,7 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
       type: "order.completed",
       title: "Your session is complete",
       body: (farewell ?? "GG!").trim().slice(0, 80) || "GG!",
-      href: `/checkout/matching?order=${orderId}`,
+      href: `/checkout/matching?order=${completed.orderNo}`,
     });
   }
   // after(), not awaited: the teammate pressing "complete" should not wait
@@ -979,11 +979,17 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
   // response ends the request.
   after(() => notifyOrderCompleted(orderId));
 
+  // Said plainly, because the old wording — "payout is pending review" — was
+  // simply untrue. creditOrderPayout ran in the transaction above; the money
+  // is on the teammate's balance the moment the order closes and nothing is
+  // waiting on anybody. What can be reviewed later is a payout *request*,
+  // which the teammate raises separately and which does not exist yet, so the
+  // link pointed at a queue with nothing in it for this order.
   await notifyAdmins({
     type: "order.completed",
     title: `Order completed · ${completed.gameName}`,
-    body: `${completed.option} — payout is pending review.`,
-    href: "/dashboard/admin/payouts",
+    body: `${completed.option} — €${payoutForOrder(completed).toFixed(2)} credited to the teammate's balance.`,
+    href: `/dashboard/admin/orders/${completed.orderNo}`,
   });
 
   await publishOrderChange(orderId);

@@ -616,9 +616,14 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             )}
           </div>
 
+          {/* It used to say "payout is pending review", which had teammates
+              waiting on an approval that was never coming — the balance is
+              credited the moment the order closes. What needs asking for is
+              the withdrawal, and that is a different screen. */}
           {isClosed && (
             <p className="form-row__hint">
-              Order completed — payout is pending review. <Link href="/dashboard/teammate">Back to dashboard</Link>
+              Order completed — your share is on your balance already.{" "}
+              <Link href="/dashboard/teammate/payments">Request a payout</Link>
             </p>
           )}
         </div>
