@@ -64,6 +64,10 @@ export function DispatchFlow() {
   const [pending, startTransition] = useTransition();
   const [dismissed, setDismissed] = useState<string | null>(null);
   const stateOrderId = state.order?.id;
+  // The URL carries the order number; the id stays the key the "already
+  // routed once" marker is stored under, so an order that changes neither
+  // still counts as the same one.
+  const stateOrderNo = state.order?.orderNo;
   const stateOrderGameName = state.order?.gameName;
   const stateOrderOption = state.order?.option;
 
@@ -80,9 +84,9 @@ export function DispatchFlow() {
   // so redirecting on every pathname change meant they could not open
   // Reviews, their profile, or anything else until the session started.
   useEffect(() => {
-    if (!isTeammate || !stateOrderId) return;
+    if (!isTeammate || !stateOrderId || !stateOrderNo) return;
     if (state.phase !== "SELECTED" && state.phase !== "ACTIVE_SESSION") return;
-    const href = `/dashboard/teammate/session/${stateOrderId}`;
+    const href = `/dashboard/teammate/session/${stateOrderNo}`;
 
     // Marked as done only once we can see we actually got there. It used to
     // be marked first and navigated second, which meant a single navigation
@@ -97,7 +101,7 @@ export function DispatchFlow() {
     // Reviews or their profile without being yanked back.
     if (acknowledgedItems(SESSION_ROUTED_KEY).includes(stateOrderId)) return;
     router.replace(href);
-  }, [isTeammate, state.phase, stateOrderId, pathname, router]);
+  }, [isTeammate, state.phase, stateOrderId, stateOrderNo, pathname, router]);
 
   useEffect(() => {
     if (state.phase !== "NOT_SELECTED" || !stateOrderId) return;
@@ -183,7 +187,7 @@ export function DispatchFlow() {
   // there has to be a way back — otherwise a running order is only reachable
   // via the Orders list, which reads like it isn't running at all.
   if ((state.phase === "SELECTED" || state.phase === "ACTIVE_SESSION") && state.order) {
-    const href = `/dashboard/teammate/session/${state.order.id}`;
+    const href = `/dashboard/teammate/session/${state.order.orderNo}`;
     if (pathname === href) return null;
 
     return (

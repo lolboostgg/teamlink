@@ -86,7 +86,7 @@ export async function sweepUnreadMessages(now = new Date()): Promise<UnreadSweep
         where: {
           userId: candidate.teammate.userId,
           type,
-          href: `/dashboard/teammate/session/${order.id}`,
+          href: `/dashboard/teammate/session/${order.orderNo}`,
           createdAt: { gte: last.createdAt },
         },
         select: { id: true },
@@ -98,7 +98,7 @@ export async function sweepUnreadMessages(now = new Date()): Promise<UnreadSweep
         type,
         title: "Unanswered message",
         body: `${publicCustomerName(order)} has been waiting ${minutes} minutes for a reply on ${order.gameName} (#${order.orderNo}).`,
-        href: `/dashboard/teammate/session/${order.id}`,
+        href: `/dashboard/teammate/session/${order.orderNo}`,
       });
 
       if (type === "order.unread_escalated") result.mailSent++;

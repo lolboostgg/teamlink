@@ -39,7 +39,7 @@ export async function applyExtraGames(orderId: string, quantity: number) {
         type: "order.games_added",
         title: `${order.customerLabel} booked ${qty === 1 ? "one more game" : `${qty} more games`}`,
         body: `${order.gameName} · ${updated.gamesBooked} games total`,
-        href: `/dashboard/teammate/session/${order.id}`,
+        href: `/dashboard/teammate/session/${order.orderNo}`,
       })),
     });
   }

@@ -21,7 +21,7 @@ export function BookingsTable({ orders }: { orders: DispatchOrder[] }) {
         <td><span className={`dashboard-pill ${STATUS_PILL[status]}`}>{status}</span></td>
         <td><PriceTag amountEUR={order.priceEUR} /></td>
         <td>{formatOrderDate(order.createdAt)}</td>
-        <td>{status === "upcoming" ? <Link href={`/checkout/matching?order=${order.id}`} className="btn btn--ghost btn--sm">Continue</Link> : <Link href={`/games/${order.gameSlug}`} className="btn btn--ghost btn--sm">Rebook</Link>}</td>
+        <td>{status === "upcoming" ? <Link href={`/checkout/matching?order=${order.orderNo}`} className="btn btn--ghost btn--sm">Continue</Link> : <Link href={`/games/${order.gameSlug}`} className="btn btn--ghost btn--sm">Rebook</Link>}</td>
       </tr>;
     })}</tbody>
   </table>;

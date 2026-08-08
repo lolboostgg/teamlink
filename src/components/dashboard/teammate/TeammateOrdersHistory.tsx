@@ -45,7 +45,7 @@ export function TeammateOrdersHistory() {
         <td><span className="client-order-option"><strong>{order.option}</strong><small>{order.gamesBooked} game{order.gamesBooked === 1 ? "" : "s"}</small></span></td>
         <td><span className="client-order-teammate"><span className="client-order-teammate__avatar"><SafeAvatarImage src={order.customerAvatarUrl} /></span><strong>{order.customerLabel}</strong></span></td>
         <td><span className={`dashboard-pill ${PILL[status]}`}>{status}</span></td><td><PriceTag amountEUR={order.priceEUR} /></td><td>{formatOrderDate(order.createdAt)}</td>
-        <td><Link href={`/dashboard/teammate/session/${order.id}`} className="btn btn--ghost btn--sm">View</Link></td>
+        <td><Link href={`/dashboard/teammate/session/${order.orderNo}`} className="btn btn--ghost btn--sm">View</Link></td>
       </tr>; })}</tbody>
     </table></div> : <div className="dashboard-empty"><i className="fa-solid fa-receipt" /><p>No orders match your filters.</p></div>}
   </div>;

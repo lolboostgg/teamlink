@@ -85,7 +85,7 @@ export function LiveOrdersPanel() {
               <div className="notification-panel__actions">
                 {cancellable && (
                   <>
-                    <Link href={`/checkout/matching?order=${order.id}`} className="btn btn--sm btn--ghost">
+                    <Link href={`/checkout/matching?order=${order.orderNo}`} className="btn btn--sm btn--ghost">
                       View
                     </Link>
                     <button type="button" className="btn btn--sm btn--ghost" onClick={() => cancelOrder(order.id)}>
@@ -94,7 +94,7 @@ export function LiveOrdersPanel() {
                   </>
                 )}
                 {(order.status === "assigned" || order.status === "in_progress") && (
-                  <Link href={`/checkout/matching?order=${order.id}`} className="btn btn--sm btn--ghost">
+                  <Link href={`/checkout/matching?order=${order.orderNo}`} className="btn btn--sm btn--ghost">
                     Continue
                   </Link>
                 )}

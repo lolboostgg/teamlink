@@ -470,7 +470,9 @@ async function notifySelected(
   tx: Prisma.TransactionClient,
   teammateIds: string[],
   gameName: string,
-  orderId: string,
+  // The number, not the id — it is what the session URL is keyed by, and a
+  // notification is exactly the kind of link that outlives the change.
+  orderNo: number,
 ) {
   const teammates = await tx.teammate.findMany({
     where: { id: { in: teammateIds }, userId: { not: null } },
@@ -484,7 +486,7 @@ async function notifySelected(
       type: "order.assigned",
       title: "You've been selected",
       body: `The customer picked you for ${gameName}.`,
-      href: `/dashboard/teammate/session/${orderId}`,
+      href: `/dashboard/teammate/session/${orderNo}`,
     })),
   });
 }
@@ -619,7 +621,7 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
       // A favorite gets the same atomic fast path on a single-slot order.
       if (candidate.order.requestedTeammateId === teammateId || (favorite && candidate.order.teammatesRequested === 1)) {
         await assignWinners(tx, orderId, [candidate.id], now);
-        await notifySelected(tx, [teammateId], candidate.order.gameName, orderId);
+        await notifySelected(tx, [teammateId], candidate.order.gameName, candidate.order.orderNo);
       } else if (candidate.order.status !== "SELECTING" && pickerRevealed(candidate.order.dispatchedAt, now)) {
         // Inside the reveal delay the acceptance is recorded but the picker
         // stays shut; reconcileOrder opens it the moment the delay is up.
@@ -695,7 +697,7 @@ export async function selectTeammates(orderId: string, teammateIds: string[]) {
 
       await assignWinners(tx, orderId, eligible.slice(0, Math.max(1, order.teammatesRequested)).map((c) => c.id), now);
       const assigned = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
-      await notifySelected(tx, eligible.map((c) => c.teammateId), order.gameName, orderId);
+      await notifySelected(tx, eligible.map((c) => c.teammateId), order.gameName, order.orderNo);
       return assigned;
     },
     { isolationLevel: "Serializable" },
