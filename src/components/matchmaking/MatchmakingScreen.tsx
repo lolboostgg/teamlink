@@ -212,8 +212,13 @@ export function MatchmakingScreen({ orderId }: Props) {
         </h1>
         {order && (
           <>
+            {/* No deadline to count down to any more: the dispatcher keeps
+                sending waves until somebody accepts, so promising a time we
+                don't control would be a countdown to nothing. */}
             <p className="matching-screen__elapsed-label">
-              {order.isReplay ? `Exclusive request · cancels in ${formatMMSS(Math.max(0, dispatchWindowSeconds - searchElapsedSeconds))}` : `Estimated under ${formatMMSS(dispatchWindowSeconds)}`}
+              {order.isReplay
+                ? "Exclusive request · waiting on your teammate"
+                : "Usually under a minute — we'll keep looking until someone takes it."}
             </p>
 
             <div className="matching-screen__summary">

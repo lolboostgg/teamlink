@@ -6,8 +6,9 @@ import { useLiveSync } from "@/lib/events/useLiveSync";
 
 type StateResponse = DispatchStateView & {
   maxCandidates: number;
-  /** When this teammate went online, or null if they aren't. */
-  availableSince: number | null;
+  /** When this teammate's current wait started — going online, or finishing
+   * their last order, whichever came later. */
+  waitingSince: number | null;
   /** The server's own clock, so the idle timer doesn't trust the browser's. */
   serverNow: number | null;
 };
@@ -21,7 +22,7 @@ const EMPTY: StateResponse = {
   acceptedCount: 0,
   requests: [],
   maxCandidates: 5,
-  availableSince: null,
+  waitingSince: null,
   serverNow: null,
 };
 

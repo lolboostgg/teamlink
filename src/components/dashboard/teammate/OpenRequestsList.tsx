@@ -7,6 +7,7 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
 import { formatRank } from "@/lib/gameRanks";
 import { playSound } from "@/lib/notificationSound";
+import { ackDispatchAlert } from "@/lib/dispatch/ack";
 import { useToast } from "@/components/ui/ToastProvider";
 
 /**
@@ -29,7 +30,7 @@ import { useToast } from "@/components/ui/ToastProvider";
  * waiting to be noticed.
  */
 export function OpenRequestsList() {
-  const { requests, availableSince, serverNow, phase, refresh } = useDispatchState();
+  const { requests, waitingSince, serverNow, phase, refresh } = useDispatchState();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -45,7 +46,7 @@ export function OpenRequestsList() {
   }
 
   if (requests.length === 0) {
-    return <IdlePanel availableSince={availableSince} serverNow={serverNow} offline={phase === "OFFLINE"} />;
+    return <IdlePanel waitingSince={waitingSince} serverNow={serverNow} offline={phase === "OFFLINE"} />;
   }
 
   return (
@@ -151,11 +152,11 @@ function Countdown({ msLeft }: { msLeft: number }) {
  * the connection is alive.
  */
 function IdlePanel({
-  availableSince,
+  waitingSince,
   serverNow,
   offline,
 }: {
-  availableSince: number | null;
+  waitingSince: number | null;
   serverNow: number | null;
   offline: boolean;
 }) {
@@ -168,7 +169,7 @@ function IdlePanel({
     return () => clearInterval(t);
   }, [skew]);
 
-  if (offline || !availableSince) {
+  if (offline || !waitingSince) {
     return (
       <div className="request-idle request-idle--offline">
         <i className="fa-solid fa-power-off" aria-hidden="true" />
@@ -181,15 +182,15 @@ function IdlePanel({
     );
   }
 
-  const minutes = Math.max(0, Math.floor((now - availableSince) / 60_000));
-  const since = new Date(availableSince).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const minutes = Math.max(0, Math.floor((now - waitingSince) / 60_000));
+  const since = new Date(waitingSince).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="request-idle">
       <span className="request-idle__pulse" aria-hidden="true" />
       <div className="request-idle__label">Time elapsed</div>
       <div className="request-idle__clock">
-        {minutes} min <span className="request-idle__since">(online since {since})</span>
+        {minutes} min <span className="request-idle__since">(waiting since {since})</span>
       </div>
       <p className="request-idle__hint">
         Waiting for orders. Keep this panel open — the next request appears here on its own, with a sound and a
@@ -256,6 +257,9 @@ function useRequestAlerts(requests: { order: { id: string; orderNo: number; game
     for (const { order } of requests) {
       if (seen.current.has(order.id)) continue;
       seen.current.add(order.id);
+      // Before the sound: this is the moment the alert is provably on screen,
+      // and only from here may a non-response count against them.
+      ackDispatchAlert(order.id);
       playSound("request");
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
         // The tag collapses repeats of the same order rather than stacking a

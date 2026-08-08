@@ -279,6 +279,14 @@ model Teammate {
   avatarZoom     Int      @default(100)
   available      Boolean  @default(true)
   availableSince DateTime?
+  /// Regions this teammate plays in, e.g. ["euw","eune"]. Empty or null means
+  /// no restriction — an order for any region may reach them.
+  regions        Json?
+  /// "Only alert me up to Diamond", set by the teammate themselves.
+  maxRankSelf    String?
+  /// The ceiling an admin has cleared them for. Wins over maxRankSelf, so
+  /// nobody can opt into orders above what we've approved them for.
+  maxRankAdmin   String?
   lastSeenAt     DateTime?
   lastDispatchAt DateTime?
   lastAssignedAt DateTime?
@@ -476,7 +484,21 @@ model Order {
   gamesBooked         Int       @default(1)
   requestedTeammateId String?
   status              OrderStatus @default(SEARCHING)
+  /// Kept for the columns and screens written against it, but no longer a
+  /// cut-off: the search runs until somebody accepts or the customer cancels,
+  /// so this is set far ahead and never used to fail an order.
   dispatchDeadline    DateTime
+  /// Which invite wave the order is on. 0 until the first one goes out.
+  dispatchWave        Int       @default(0)
+  /// When the current wave's alerts stop counting. The next wave goes out
+  /// once this passes without enough acceptances.
+  waveDeadline        DateTime?
+  /// Set when a wave found nobody left to invite. The dispatcher waits a beat
+  /// on this before starting over — teammates come online continuously, so an
+  /// empty roster now is not an empty roster in fifteen seconds.
+  poolExhaustedAt     DateTime?
+  /// Admin hold. Waves stop going out; everything already in flight stands.
+  matchingPaused      Boolean   @default(false)
   // When the order was actually fanned out to teammates — i.e. when the
   // payment cleared. The row itself is written at the top of checkout, so
   // createdAt is not when the search started.
@@ -498,6 +520,7 @@ model Order {
   createdAt           DateTime  @default(now())
 
   candidates DispatchCandidate[]
+  dispatchEvents DispatchEvent[]
   games      SessionGame[]
   review     Review?
   earnings   TeammateEarning[]
@@ -535,6 +558,10 @@ enum CandidateStatus {
   ACCEPTED
   DECLINED
   TIMED_OUT
+  /// The wave filled up while this alert was still on screen. Distinct from
+  /// TIMED_OUT on purpose: nobody ignored anything here, they were simply
+  /// beaten to it, and the priority scoring must never read this as a miss.
+  SUPERSEDED
 }
 
 // One teammate's slot in an order's dispatch wave. `selected`/`isPrimary`
@@ -553,6 +580,14 @@ model DispatchCandidate {
   simulatedOutcome   CandidateStatus?
   invitedAt          DateTime         @default(now())
   expiresAt          DateTime?
+  /// Which wave this invitation belongs to. A teammate who timed out early
+  /// can be invited again in a later round, which overwrites this row — the
+  /// dispatch log keeps the history.
+  wave               Int              @default(1)
+  /// When the teammate's browser confirmed the alert was on screen. A
+  /// non-response only counts against them from this moment: before it, the
+  /// silence was our delivery failing, not their attention.
+  deliveredAt        DateTime?
   respondedAt        DateTime?
   /** 1-based order of acceptance — 1 is the auto-select. */
   candidatePosition  Int?
@@ -564,6 +599,32 @@ model DispatchCandidate {
 
   @@unique([orderId, teammateId])
   @@index([teammateId, status])
+}
+
+/// Append-only trace of everything the dispatcher did to an order.
+///
+/// Without it, "why did Kevin never get this order?" is unanswerable after
+/// the fact: candidate rows only carry their final state, and a teammate who
+/// was filtered out of the pool leaves no row at all. Rows are written from
+/// inside the same transaction as the change they describe, so the log cannot
+/// disagree with what happened.
+model DispatchEvent {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// See DISPATCH_EVENT in lib/dispatch/log.ts — a string rather than an enum
+  /// so a new kind of entry doesn't need a migration.
+  type       String
+  /// Set when the entry is about one teammate.
+  teammateId String?
+  /// Human-readable line for the admin timeline.
+  message    String   @db.Text
+  /// Whatever numbers the entry carried — pool size, wave number, filter
+  /// counts. Read by the admin view, never by the dispatcher itself.
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([orderId, createdAt])
 }
 
 // One played game inside an order. `proofPath` points at a private Storage

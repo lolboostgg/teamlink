@@ -22,6 +22,7 @@ const CANDIDATE_STATUS: Record<string, CandidateStatus> = {
   ACCEPTED: "accepted",
   DECLINED: "declined",
   TIMED_OUT: "timed_out",
+  SUPERSEDED: "superseded",
 };
 
 type Row = {

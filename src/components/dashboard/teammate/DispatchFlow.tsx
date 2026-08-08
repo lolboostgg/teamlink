@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
 import { playNotificationSound } from "@/lib/notificationSound";
+import { ackDispatchAlert } from "@/lib/dispatch/ack";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { withdrawDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
@@ -127,6 +128,7 @@ export function DispatchFlow() {
     if (state.phase !== "DISPATCH_INCOMING" || !stateOrderId) return;
     if (announced.current === stateOrderId) return;
     announced.current = stateOrderId;
+    ackDispatchAlert(stateOrderId);
     playNotificationSound();
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       new Notification("New order request", { body: `${stateOrderGameName} · ${stateOrderOption}` });

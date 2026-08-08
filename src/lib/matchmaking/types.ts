@@ -1,6 +1,6 @@
 import type { AvatarFrame } from "@/lib/avatarFrame";
 
-export type CandidateStatus = "pending" | "accepted" | "declined" | "timed_out";
+export type CandidateStatus = "pending" | "accepted" | "declined" | "timed_out" | "superseded";
 
 export interface DispatchCandidate {
   teammateId: string;

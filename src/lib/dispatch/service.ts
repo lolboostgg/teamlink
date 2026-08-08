@@ -5,6 +5,8 @@ import { payoutForOrder } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
 import { issueSessionRewardCoupon } from "@/lib/couponsServer";
 import { notifyTeammateAssigned } from "@/lib/notify/orderNotifications";
+import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
+import { candidateTarget, sendWave, resetForRetry, POOL_RETRY_MS, type WaveResult } from "@/lib/dispatch/waves";
 
 /**
  * Server-authoritative dispatch rules. Every transition that decides who
@@ -129,6 +131,10 @@ export async function reconcileOrder(orderId: string) {
   // and this runs on every order read.
   let previousStatus: string | null = null;
   let abandoned: { orderNo: number; gameName: string; clientUserId: string | null; priceEUR: number } | null = null;
+  // A wave sent inside the transaction below. Waking the invited teammates
+  // has to wait until it commits — publishing first would send them to read a
+  // row that does not exist yet.
+  let waved: WaveResult | null = null;
 
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
@@ -159,17 +165,60 @@ export async function reconcileOrder(orderId: string) {
       return order;
     }
 
-    // Invites nobody answered in time.
-    await tx.dispatchCandidate.updateMany({
+    // Invites nobody answered in time. Logged one by one rather than as a
+    // count: which teammate let a wave lapse is exactly what the priority
+    // scoring will need to read back, and what an admin asks about first.
+    const lapsed = await tx.dispatchCandidate.findMany({
       where: { orderId, status: "PENDING", expiresAt: { lte: now } },
-      data: { status: "TIMED_OUT", respondedAt: now },
+      select: { teammateId: true, wave: true, deliveredAt: true, teammate: { select: { name: true } } },
     });
+    if (lapsed.length > 0) {
+      await tx.dispatchCandidate.updateMany({
+        where: { orderId, status: "PENDING", expiresAt: { lte: now } },
+        data: { status: "TIMED_OUT", respondedAt: now },
+      });
+      for (const miss of lapsed) {
+        await logDispatch(
+          tx,
+          orderId,
+          DISPATCH_EVENT.TIMED_OUT,
+          miss.deliveredAt
+            ? `${miss.teammate.name} let wave ${miss.wave} lapse.`
+            : `${miss.teammate.name} timed out on wave ${miss.wave} — the alert was never confirmed as delivered.`,
+          // `delivered` is what separates "ignored us" from "never reached
+          // them", and only the first may ever count against a teammate.
+          { teammateId: miss.teammateId, detail: { wave: miss.wave, delivered: Boolean(miss.deliveredAt) } },
+        );
+      }
+    }
 
     const candidates = await tx.dispatchCandidate.findMany({ where: { orderId } });
     const accepted = candidates
       .filter((c) => c.status === "ACCEPTED")
       .sort((a, b) => (a.respondedAt?.getTime() ?? 0) - (b.respondedAt?.getTime() ?? 0));
-    const settled = candidates.every((c) => c.status !== "PENDING") || order.dispatchDeadline <= now;
+    const target = candidateTarget(order.teammatesRequested);
+
+    // Enough people said yes. Whoever still has the alert on screen loses
+    // nothing by it — being beaten to an order is not a miss, and marking
+    // these TIMED_OUT would have the scoring read it as one.
+    if (accepted.length >= target) {
+      const beaten = candidates.filter((c) => c.status === "PENDING");
+      if (beaten.length > 0) {
+        await tx.dispatchCandidate.updateMany({
+          where: { orderId, status: "PENDING" },
+          data: { status: "SUPERSEDED", respondedAt: now },
+        });
+        await logDispatch(
+          tx,
+          orderId,
+          DISPATCH_EVENT.SUPERSEDED,
+          `${beaten.length} alert${beaten.length === 1 ? "" : "s"} withdrawn — the order already had ${accepted.length} acceptance${accepted.length === 1 ? "" : "s"}.`,
+          { detail: { withdrawn: beaten.length, accepted: accepted.length } },
+        );
+      }
+    }
+
+    const settled = candidates.every((c) => c.status !== "PENDING");
 
     // The customer sets vibe, conversation and play style on the searching
     // screen; a teammate answering in the first couple of seconds used to
@@ -185,19 +234,49 @@ export async function reconcileOrder(orderId: string) {
       // The first acceptance opens the picker immediately. Other pending
       // invitees remain eligible and may continue filling the five slots.
       if (accepted.length > 0 && revealed) {
+        await logDispatch(tx, orderId, DISPATCH_EVENT.SELECTION, `Customer selection opened with ${accepted.length} candidate${accepted.length === 1 ? "" : "s"}.`);
         return tx.order.update({
           where: { id: orderId },
           data: { status: "SELECTING", selectionDeadline: new Date(now.getTime() + SELECTION_WINDOW_MS) },
         });
       }
-      // Only when nobody took it. Without the accepted check, an order whose
-      // invitees had all answered before the reveal would count as settled
-      // and be written off as NO_MATCH despite having a teammate waiting.
-      if (settled && accepted.length === 0) {
-        return tx.order.update({
-          where: { id: orderId },
-          data: { status: order.isReplay ? "CANCELLED" : "NO_MATCH" },
-        });
+
+      // A "play again" order is addressed to one teammate. There is no next
+      // wave to fall through to, so their answer ends it.
+      if (order.isReplay && settled && accepted.length === 0) {
+        await logDispatch(tx, orderId, DISPATCH_EVENT.ENDED, "The requested teammate didn't take it.");
+        return tx.order.update({ where: { id: orderId }, data: { status: "CANCELLED" } });
+      }
+
+      // Everything below is the wave clock. There is no failure state here:
+      // the search runs until somebody accepts or the customer cancels, and
+      // an order nobody can take this second is not an order nobody can ever
+      // take — teammates come online continuously.
+      if (!order.matchingPaused && !order.requestedTeammateId) {
+        const waveOver = settled || !order.waveDeadline || order.waveDeadline <= now;
+
+        if (order.poolExhaustedAt) {
+          // Everyone eligible has been asked. Wait a beat, then release the
+          // lapsed invitations so the same people can be reached again.
+          if (order.poolExhaustedAt.getTime() + POOL_RETRY_MS <= now.getTime()) {
+            await resetForRetry(tx, orderId, now);
+            const retry = await sendWave(tx, orderId, now);
+            if (retry.exhausted) {
+              await tx.order.update({ where: { id: orderId }, data: { poolExhaustedAt: now } });
+            } else {
+              waved = retry;
+            }
+          }
+        } else if (waveOver) {
+          const next = await sendWave(tx, orderId, now);
+          if (next.exhausted) {
+            await tx.order.update({ where: { id: orderId }, data: { poolExhaustedAt: now } });
+          } else {
+            waved = next;
+          }
+        }
+
+        return tx.order.findUnique({ where: { id: orderId } });
       }
     }
 
@@ -215,6 +294,13 @@ export async function reconcileOrder(orderId: string) {
   });
 
   if (abandoned) await announceAbandonedOrder(orderId, abandoned);
+
+  // The one event where a poll interval is the difference between taking an
+  // order and losing it: a wave is eight seconds long.
+  if (waved && waved.invited.length > 0) {
+    const userIds = waved.invited.map((t) => t.userId).filter((id): id is string => Boolean(id));
+    await publish({ topic: "dispatch", key: orderId, userIds });
+  }
 
   if (result && previousStatus !== null && result.status !== previousStatus) {
     await publishOrderChange(orderId);
@@ -278,7 +364,7 @@ async function notifySelected(
   });
 }
 
-async function assignWinners(
+export async function assignWinners(
   tx: Prisma.TransactionClient,
   orderId: string,
   candidateIds: string[],
@@ -339,6 +425,10 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
       }
 
       if (!accept) {
+        await logDispatch(tx, orderId, DISPATCH_EVENT.DECLINED, `Declined on wave ${candidate.wave}.`, {
+          teammateId,
+          detail: { wave: candidate.wave, afterMs: now.getTime() - candidate.invitedAt.getTime() },
+        });
         return tx.dispatchCandidate.update({
           where: { id: candidate.id },
           data: { status: "DECLINED", respondedAt: now, manual: true },
@@ -372,6 +462,16 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
           isAutoSelect: acceptedCount === 0,
         },
       });
+      await logDispatch(
+        tx,
+        orderId,
+        DISPATCH_EVENT.ACCEPTED,
+        `Accepted on wave ${candidate.wave} after ${Math.round((now.getTime() - candidate.invitedAt.getTime()) / 100) / 10}s — candidate #${acceptedCount + 1}.`,
+        {
+          teammateId,
+          detail: { wave: candidate.wave, position: acceptedCount + 1, afterMs: now.getTime() - candidate.invitedAt.getTime() },
+        },
+      );
       const favorite = candidate.order.clientUserId
         ? await tx.favoriteTeammate.findUnique({
             where: { clientUserId_teammateId: { clientUserId: candidate.order.clientUserId, teammateId } },
@@ -649,100 +749,49 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
 }
 
 /**
- * Invites a teammate to orders that are already searching.
+ * Advances every open search this teammate could be part of.
  *
- * The invite wave is picked once, at dispatch, from whoever happened to be
- * online at that second. Someone who opens their panel ten seconds later used
- * to see nothing at all until the next order — which is worst exactly when the
- * roster is thin and the customer is the one waiting. Called on every teammate
- * panel read, so coming online is enough to be considered.
+ * Replaces the old self-invitation top-up, which let anyone opening their
+ * panel add themselves to a running order — harmless when the wave was picked
+ * once at dispatch, but it walks straight past a dispatcher that is supposed
+ * to decide who gets asked and in what order.
  *
- * Returns the order ids the teammate was newly invited to.
+ * The pool is recomputed for every wave, so coming online is still enough to
+ * be considered; the difference is that the dispatcher now does the
+ * considering. What this call is for is the clock: waves are eight seconds
+ * long and nothing in this deployment ticks on its own, so a read is what
+ * moves them. Capped, because it runs on every panel read.
  */
-export async function inviteToRunningOrders(teammateId: string): Promise<string[]> {
-  const now = new Date();
-
-  const teammate = await prisma.teammate.findUnique({ where: { id: teammateId } });
-  if (!teammate || !teammate.available) return [];
-
-  // Anyone already committed elsewhere stays out — the same rule the initial
-  // wave applies, so a teammate can't be pulled onto two orders at once.
-  const busy = await prisma.dispatchCandidate.findFirst({
-    where: {
-      teammateId,
-      OR: [
-        { selected: true, order: { status: { in: ["ASSIGNED", "IN_PROGRESS"] } } },
-        { status: "ACCEPTED", order: { status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] } } },
-      ],
-    },
-    select: { id: true },
+export async function tickSearchingOrders(teammateId: string): Promise<void> {
+  const teammate = await prisma.teammate.findUnique({
+    where: { id: teammateId },
+    select: { available: true, gameSlugs: true },
   });
-  if (busy) return [];
+  if (!teammate?.available) return;
 
   const gameSlugs = (teammate.gameSlugs as string[] | null) ?? [];
-  if (gameSlugs.length === 0) return [];
+  if (gameSlugs.length === 0) return;
 
   const open = await prisma.order.findMany({
     where: {
-      status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] },
-      dispatchDeadline: { gt: now },
+      status: { in: ["SEARCHING", "CANDIDATES_READY"] },
       gameSlug: { in: gameSlugs },
-      // A replay request belongs to the one teammate it names; nobody else
-      // gets pulled into it.
-      OR: [{ requestedTeammateId: null }, { requestedTeammateId: teammateId }],
-      candidates: { none: { teammateId } },
+      matchingPaused: false,
     },
-    include: { candidates: { select: { id: true } } },
+    select: { id: true },
     orderBy: { dispatchedAt: "asc" },
+    take: 5,
   });
 
-  const invited: string[] = [];
-
-  for (const order of open) {
-    if (order.candidates.length >= MAX_CANDIDATES) continue;
-
-    try {
-      await prisma.dispatchCandidate.create({
-        data: {
-          orderId: order.id,
-          teammateId,
-          invitedAt: now,
-          expiresAt: order.dispatchDeadline,
-        },
-      });
-    } catch {
-      // Unique on (orderId, teammateId): a concurrent panel read got there
-      // first, which is a no-op rather than an error.
-      continue;
-    }
-
-    invited.push(order.id);
-    // One order at a time. Two requests appearing at once would have the
-    // teammate accept one and lose the other anyway, and the busy check above
-    // will keep them out of the rest until this one resolves.
-    break;
-  }
-
-  if (invited.length > 0) {
-    await prisma.teammate.update({ where: { id: teammateId }, data: { lastDispatchAt: now } });
-    if (teammate.userId) {
-      for (const orderId of invited) {
-        await publish({ topic: "dispatch", key: orderId, userIds: [teammate.userId] });
-      }
-    }
-  }
-
-  return invited;
+  for (const order of open) await reconcileOrder(order.id);
 }
 
 /** Everything the teammate dashboard needs in one read. */
 export async function getTeammateDispatchView(teammateId: string) {
-  // Before reading, offer this teammate anything already searching. The invite
-  // wave is picked at dispatch from whoever was online that second, so without
-  // this a teammate who opens their panel mid-search sees an empty screen while
-  // a customer is actively waiting for someone exactly like them.
-  await inviteToRunningOrders(teammateId).catch((err) => {
-    console.error("[dispatch] top-up invite failed:", teammateId, err);
+  // Turns the wave clock on anything this teammate could be sent. They may
+  // well end up in the wave this call sends.
+  await tickSearchingOrders(teammateId).catch((err) => {
+    console.error("[dispatch] wave tick failed:", teammateId, err);
   });
 
   const rows = await prisma.dispatchCandidate.findMany({

@@ -34,14 +34,23 @@ export async function GET() {
   const rows = await getTeammateDispatchView(teammate.id);
   const view = deriveServerPhase(rows, teammate.available);
 
-  // availableSince is what the idle panel counts from, and serverNow is what
-  // it counts against — a browser clock a few minutes out would otherwise
-  // show a teammate who just went online as having waited an hour.
+  // What the idle panel counts from. Not the whole online session: somebody
+  // who has been logged in for six hours and just finished an order has not
+  // been waiting six hours, and a clock that says otherwise turns "time
+  // waiting" into "time the tab was open" — which is neither what the
+  // teammate wants to know nor what the dispatcher rewards.
+  const waitingSince = [teammate.availableSince, teammate.lastAssignedAt]
+    .filter((date): date is Date => Boolean(date))
+    .sort((a, b) => b.getTime() - a.getTime())[0];
+
+  // serverNow is what it counts against — a browser clock a few minutes out
+  // would otherwise show a teammate who just went online as having waited an
+  // hour.
   return NextResponse.json(
     {
       ...view,
       maxCandidates: MAX_CANDIDATES,
-      availableSince: teammate.availableSince?.getTime() ?? null,
+      waitingSince: waitingSince?.getTime() ?? null,
       serverNow: now.getTime(),
     },
     { headers: { "Cache-Control": "no-store" } },
