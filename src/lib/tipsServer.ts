@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications/service";
+import { publish } from "@/lib/events/bus";
 
 /**
  * Recording a tip.
@@ -66,6 +67,10 @@ export async function recordTip(input: {
   // that fails must not roll a paid tip back. Routed through notifyUser, so
   // the channel policy decides where it goes — see notify/channels.ts.
   if (teammateUserId) {
+    // Wakes the teammate's own screens: the balance in the sidebar reads
+    // itself on this topic, and a tip is the one balance change that happens
+    // while they are sitting there watching it.
+    await publish({ topic: "orders", key: input.orderId, userIds: [teammateUserId] });
     await notifyUser(teammateUserId, {
       type: "tip.received",
       title: `You got a €${input.amountEUR.toFixed(2)} tip`,

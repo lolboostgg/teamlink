@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
+import { useLiveSync } from "@/lib/events/useLiveSync";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 
@@ -23,7 +24,7 @@ export function SidebarAccountMenu({
   name,
   role,
   avatarUrl,
-  balanceEUR,
+  balanceEUR: initialBalanceEUR,
   profileHref,
   collapsed,
 }: {
@@ -37,6 +38,30 @@ export function SidebarAccountMenu({
 }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+
+  // Seeded from the layout's server render, then kept current on its own.
+  // Finishing an order or being tipped moved this number in the database and
+  // nowhere the teammate could see it — the balance was the one thing on the
+  // panel that needed a reload to be true.
+  const [balanceEUR, setBalanceEUR] = useState(initialBalanceEUR);
+  useEffect(() => setBalanceEUR(initialBalanceEUR), [initialBalanceEUR]);
+
+  const hasBalance = initialBalanceEUR !== null;
+  const loadBalance = useCallback(async () => {
+    try {
+      const res = await fetch("/api/teammate/balance", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data.balanceEUR === "number") setBalanceEUR(data.balanceEUR);
+    } catch {
+      // Keep the last known figure; the next signal retries.
+    }
+  }, []);
+
+  // Money moves when an order closes or a tip lands, both of which already
+  // announce themselves on this topic. The fallback is slow on purpose —
+  // this is a number that changes a few times a day, not a live feed.
+  useLiveSync("orders", loadBalance, 120_000, { enabled: hasBalance });
 
   useEffect(() => {
     if (!open) return;
