@@ -72,11 +72,9 @@ export async function GET(request: Request) {
       })
     : [];
 
-  const now = Date.now();
-
   return NextResponse.json(
     {
-      serverNow: now,
+      serverNow: now.getTime(),
       orders: orders.map((order) => ({
         id: order.id,
         orderNo: order.orderNo,
