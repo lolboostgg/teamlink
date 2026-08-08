@@ -13,7 +13,12 @@ import { useLiveSync } from "@/lib/events/useLiveSync";
 export const DISPATCH_WINDOW_MS = 60_000;
 export const SELECTION_WINDOW_MS = 60_000;
 
-export function useDispatchOrder(orderId: string | null) {
+/**
+ * `accessToken` is what proves the caller may touch this order when there is
+ * no account to check against — see authorizeOrder() in the route. A
+ * signed-in customer is recognised by their session and may pass null.
+ */
+export function useDispatchOrder(orderId: string | null, accessToken?: string | null) {
   const [order, setOrder] = useState<DispatchOrder | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Difference between the server's clock and this browser's, measured on
@@ -29,7 +34,10 @@ export function useDispatchOrder(orderId: string | null) {
   const load = useCallback(async () => {
     if (!orderId) return;
     try {
-      const res = await fetch(`/api/dispatch/orders/${orderId}`, { cache: "no-store" });
+      const res = await fetch(`/api/dispatch/orders/${orderId}`, {
+        cache: "no-store",
+        headers: accessToken ? { "x-order-token": accessToken } : undefined,
+      });
       const data = await res.json();
 
       // Only a 404 means the order genuinely isn't there. Anything else is
@@ -51,7 +59,7 @@ export function useDispatchOrder(orderId: string | null) {
       setLoaded(true);
       setNow(Date.now() + skewRef.current);
     }
-  }, [orderId]);
+  }, [orderId, accessToken]);
 
   // The stream is what makes this screen feel live; this is only the net for
   // when it is down. At one second it was not a fallback, it was a second
@@ -96,7 +104,10 @@ export function useDispatchOrder(orderId: string | null) {
       if (!orderId) return;
       const res = await fetch(`/api/dispatch/orders/${orderId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { "x-order-token": accessToken } : {}),
+        },
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -104,7 +115,7 @@ export function useDispatchOrder(orderId: string | null) {
       if (res.ok && data.order) setOrder(data.order);
       else load();
     },
-    [orderId, load],
+    [orderId, accessToken, load],
   );
 
   const dispatchSecondsLeft = order ? Math.max(0, Math.ceil((order.dispatchDeadline - now) / 1000)) : 0;

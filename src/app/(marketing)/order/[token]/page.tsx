@@ -27,7 +27,7 @@ export default async function OrderByTokenPage({ params }: { params: Promise<{ t
 
   const order = await prisma.order.findUnique({
     where: { accessToken: token },
-    select: { id: true },
+    select: { id: true, accessToken: true },
   });
 
   if (!order) {
@@ -43,7 +43,7 @@ export default async function OrderByTokenPage({ params }: { params: Promise<{ t
   return (
     <main className="checkout-page">
       <div className="container">
-        <MatchmakingScreen orderId={order.id} />
+        <MatchmakingScreen orderId={order.id} accessToken={order.accessToken} />
       </div>
     </main>
   );

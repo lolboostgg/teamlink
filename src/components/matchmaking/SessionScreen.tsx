@@ -28,6 +28,9 @@ import { OrderNotFound } from "@/components/matchmaking/OrderNotFound";
 
 interface Props {
   orderId: string;
+  /** Passed straight through to the order API — a guest stays authorised
+   *  for the whole session, not just the matching phase. */
+  accessToken?: string | null;
 }
 
 const HELP_REASONS = [
@@ -53,10 +56,10 @@ function formatClock(totalSeconds: number): string {
 // component drives two phases off the same order: the invite/chat view
 // while assigned/in_progress, and the rate + discount + keep-playing view
 // once completed.
-export function SessionScreen({ orderId }: Props) {
+export function SessionScreen({ orderId, accessToken }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
-  const { order, loaded, now, sessionElapsedSeconds, requestCancelSession } = useDispatchOrder(orderId);
+  const { order, loaded, now, sessionElapsedSeconds, requestCancelSession } = useDispatchOrder(orderId, accessToken);
   const completionConversationKey = order?.selectedTeammateId
     ? conversationKey(order.id, order.selectedTeammateId)
     : undefined;

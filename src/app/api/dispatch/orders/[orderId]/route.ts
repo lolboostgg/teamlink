@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "node:crypto";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { reconcileOrder, selectTeammates, DispatchError } from "@/lib/dispatch/service";
 import { toCustomerOrder } from "@/lib/dispatch/customerView";
@@ -8,9 +10,53 @@ export const dynamic = "force-dynamic";
 
 const include = { candidates: true, review: true, games: true } as const;
 
+/** Compares two secrets without leaking their contents through timing. */
+function tokenMatches(given: string, expected: string): boolean {
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/**
+ * Decides whether the caller may read or act on this order.
+ *
+ * Until this existed there was no check at all: the order id alone reached
+ * every action below, and the id travels to the browser (the entry pages
+ * hand it to the matchmaking screen, which fetches with it). Anyone who came
+ * by an id — a support screenshot, a log line, a shared machine — could
+ * cancel the order or pick its teammates.
+ *
+ * Three ways to qualify. A signed-in customer is matched against the order's
+ * own clientUserId, admins pass by role, and everyone else has to present the
+ * order's access token: a guest has no account to be checked against, so
+ * holding the secret from their confirmation link is the proof. See
+ * app/(marketing)/order/[token], which reads it server-side.
+ *
+ * A caller who fails is answered with the same 404 as an order that doesn't
+ * exist — a 403 would confirm the id is real, which is what probing is for.
+ */
+async function authorizeOrder(orderId: string, request: Request) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { id: true, clientUserId: true, accessToken: true },
+  });
+  if (!order) return null;
+
+  const given = request.headers.get("x-order-token");
+  if (given && order.accessToken && tokenMatches(given, order.accessToken)) return order;
+
+  const session = await auth();
+  if (!session?.user?.id) return null;
+  if (session.user.role === "ADMIN") return order;
+  return order.clientUserId === session.user.id ? order : null;
+}
+
 /** Customer-side read of one order, in the shape the matchmaking screens expect. */
-export async function GET(_request: Request, { params }: { params: Promise<{ orderId: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
+  if (!(await authorizeOrder(orderId, request))) {
+    return NextResponse.json({ error: "Unknown order." }, { status: 404 });
+  }
 
   // No scheduler in this deployment, so the clock-driven transitions catch
   // up whenever someone reads the order.
@@ -36,6 +82,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
  */
 export async function POST(request: Request, { params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
+  if (!(await authorizeOrder(orderId, request))) {
+    return NextResponse.json({ error: "Unknown order." }, { status: 404 });
+  }
   const body = await request.json();
 
   try {

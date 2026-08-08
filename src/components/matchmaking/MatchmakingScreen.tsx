@@ -55,6 +55,9 @@ function buildSlots(candidates: DispatchCandidate[], winner: DispatchCandidate |
 
 interface Props {
   orderId: string;
+  /** Proof of ownership for a guest, who has no session to be matched
+   *  against — see authorizeOrder() in the order route. */
+  accessToken?: string | null;
 }
 
 const VIBE_OPTIONS = [
@@ -106,7 +109,7 @@ function CancelRequestModal({ open, onClose, onConfirm }: { open: boolean; onClo
 // live session/chat and eventual Session Complete view — all on this one
 // page/URL, no route change, so the site header never disappears behind a
 // different shell.
-export function MatchmakingScreen({ orderId }: Props) {
+export function MatchmakingScreen({ orderId, accessToken }: Props) {
   const router = useRouter();
   const {
     order,
@@ -119,7 +122,7 @@ export function MatchmakingScreen({ orderId }: Props) {
     confirmMultiSelection,
     cancelOrder,
     updatePreferences,
-  } = useDispatchOrder(orderId);
+  } = useDispatchOrder(orderId, accessToken);
 
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [confirmTarget, setConfirmTarget] = useState<{ teammateId: string; action: PickAction } | null>(null);
@@ -422,7 +425,7 @@ export function MatchmakingScreen({ orderId }: Props) {
   }
 
   if (order.status === "assigned" || order.status === "in_progress" || order.status === "completed") {
-    return <SessionScreen orderId={orderId} />;
+    return <SessionScreen orderId={orderId} accessToken={accessToken} />;
   }
 
   const winner = firstAcceptedCandidate(order.candidates);
