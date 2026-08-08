@@ -413,8 +413,8 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                   shows whatever is picked here, live. Without that sentence the
                   strip reads like bookkeeping nobody asked for. */}
               <div className="dashboard-panel__sub">
-                <i className="fa-solid fa-eye" aria-hidden="true" /> {order.customerLabel} sees this live — keep it
-                current so they know you haven&rsquo;t gone quiet
+                <i className="fa-solid fa-eye" aria-hidden="true" /> {order.customerLabel}
+                {" sees this live — keep it current so they know you haven’t gone quiet"}
               </div>
             </div>
             <span className="order-room__proof-count">{played}/{booked} games submitted</span>
