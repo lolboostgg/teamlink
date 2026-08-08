@@ -421,6 +421,7 @@ async function runReconcileTransaction(orderId: string, now: Date) {
     // reconcile sees ASSIGNED on both sides and does nothing.
     if (previousStatus === "SELECTING" && result.status === "ASSIGNED") {
       void notifyTeammateAssigned(orderId);
+      await captureOnAssignment(orderId);
     }
   }
   return result;
@@ -632,6 +633,9 @@ export async function respondToDispatch(orderId: string, teammateId: string, acc
     { isolationLevel: "Serializable" },
   );
 
+  // The replay and favourite fast paths assign outright, without the customer
+  // ever seeing a picker — so this is an assignment too.
+  await captureOnAssignment(orderId);
   await publishOrderChange(orderId);
   return responded;
 }
@@ -697,8 +701,42 @@ export async function selectTeammates(orderId: string, teammateIds: string[]) {
     { isolationLevel: "Serializable" },
   );
 
+  await captureOnAssignment(orderId);
   await publishOrderChange(orderId);
   return picked;
+}
+
+/**
+ * Takes a guest's reserved money the moment the order is assigned.
+ *
+ * Assignment is what opens the order room, so this is "charged as soon as
+ * the teammate is in the room" — expressed as the state change that puts
+ * them there rather than as a side effect of the page rendering, which a
+ * prefetch, a reload or a remount would each fire again.
+ *
+ * Deliberately best-effort. It never throws and never unwinds the
+ * assignment: a card that has gone bad since checkout is not a reason to
+ * throw away a teammate who just accepted. The hard guarantee still sits on
+ * the session start, where setSessionStatus refuses to go in-game on money
+ * it could not take — this only moves the attempt earlier, so a teammate
+ * finds out before investing time rather than after.
+ *
+ * Idempotent through captureOrderPayment's own claim, so the later gate is a
+ * no-op once this has succeeded.
+ */
+async function captureOnAssignment(orderId: string): Promise<void> {
+  try {
+    const result = await captureOrderPayment(orderId);
+    if (result.ok) return;
+    await logDispatch(
+      prisma,
+      orderId,
+      DISPATCH_EVENT.ASSIGNED,
+      `The customer's payment could not be taken yet: ${result.error} The session cannot start until it clears.`,
+    );
+  } catch {
+    // Never at the assignment's expense.
+  }
 }
 
 /** Guard for the order room: only a selected teammate may read or write it. */

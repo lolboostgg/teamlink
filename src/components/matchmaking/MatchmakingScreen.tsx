@@ -75,14 +75,16 @@ function formatMMSS(totalSeconds: number): string {
 }
 
 /**
- * Where the money actually went — the two paths differ enough that saying
- * only "refunded" would mislead both.
+ * Where the money actually went.
  *
- * An account was charged at checkout and gets store credit back, so telling
- * them to watch their card would have them waiting for money that is never
- * coming. A guest was never charged at all: their card was authorised and the
- * hold is released, which is not a refund and does not behave like one on a
- * statement. See settleCancelledOrder() in lib/orderRefunds.
+ * An account was charged at checkout and gets store credit back, so pointing
+ * them at their card would have them waiting for money that is never coming.
+ *
+ * A guest gets one of two things, and this screen cannot tell which: their
+ * money is only reserved until the order is assigned, so a cancellation
+ * before that releases a hold and one after it is a real refund. The wording
+ * stays true of both and leaves the exact answer to the mail, which knows —
+ * see moneyLine() in lib/orderRefunds.
  */
 function RefundNote() {
   const { isAuthenticated, isLoading } = useAuthModal();
@@ -93,7 +95,7 @@ function RefundNote() {
       <i className="fa-solid fa-circle-info" aria-hidden="true" />{" "}
       {isAuthenticated
         ? "It's back in your balance as credit, ready for your next booking."
-        : "Your card was only ever put on hold for this, never charged — the hold drops off by itself, usually within a day or two."}
+        : "You aren't charged for a session that didn't happen. If the payment had already gone through it's on its way back; if it was still only a hold on your card, that's been released. Your email says which."}
     </p>
   );
 }
