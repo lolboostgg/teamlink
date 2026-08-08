@@ -13,6 +13,8 @@ interface Props {
   booked: number;
   /** Already COMPLETED, CANCELLED or NO_MATCH — nothing left to steer. */
   settled: boolean;
+  /** Shown in the settled state, so the bar says what it ended as. */
+  statusLabel: string;
 }
 
 const MODES: { key: CancelMode; label: string; hint: string }[] = [
@@ -31,7 +33,7 @@ const MODES: { key: CancelMode; label: string; hint: string }[] = [
  * happen. A teammate who lost access, a session finished in Discord, a
  * complaint settled at a number nobody's arithmetic would have produced.
  */
-export function AdminOrderControls({ orderId, priceEUR, played, booked, settled }: Props) {
+export function AdminOrderControls({ orderId, priceEUR, played, booked, settled, statusLabel }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const [mode, setMode] = useState<CancelMode>("proportional");
@@ -55,20 +57,16 @@ export function AdminOrderControls({ orderId, priceEUR, played, booked, settled 
     });
   }
 
+  // A full panel with a head, a subtitle and no controls under it was most
+  // of a screen's height saying "nothing to do here". One line does that.
   if (settled) {
     return (
-      <section className="dashboard-panel admin-order-controls">
-        <div className="dashboard-panel__head">
-          <div>
-            <div className="dashboard-panel__title">
-              <i className="fa-solid fa-sliders" aria-hidden="true" /> Manual controls
-            </div>
-            <div className="dashboard-panel__sub">
-              This order has already been settled, so there is nothing left to cancel or close.
-            </div>
-          </div>
-        </div>
-      </section>
+      <p className="admin-order-settled">
+        <i className="fa-solid fa-lock" aria-hidden="true" />
+        <span>
+          This order is <strong>{statusLabel}</strong> — settled, so there is nothing left to cancel or close.
+        </span>
+      </p>
     );
   }
 

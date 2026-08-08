@@ -12446,7 +12446,7 @@ a.notification-panel__item:hover {
 .admin-order-status--success { border-color: rgba(47, 191, 113, .25); background: rgba(47, 191, 113, .1); color: var(--hue-green); }
 .admin-order-status--warning { border-color: rgba(224, 168, 59, .25); background: rgba(224, 168, 59, .1); color: var(--warning); }
 .admin-order-status--accent { border-color: rgba(70, 104, 255, .25); background: rgba(70, 104, 255, .1); color: #7890ff; }
-.admin-order-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
+.admin-order-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, .8fr); gap: 9px; }
 .admin-order-facts > div { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--dash-line); border-radius: 11px; background: rgba(255, 255, 255, .022); }
 .admin-order-fact__icon { width: 30px; height: 30px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 9px; background: rgba(255, 255, 255, .045); color: var(--text-faint); font-size: 11px; }
 .admin-order-facts dt { margin-bottom: 3px; color: var(--text-faint); font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
@@ -12479,7 +12479,7 @@ a.notification-panel__item:hover {
 .admin-order-chat__connection { display: flex; align-items: center; gap: 7px; color: var(--text-faint); }
 .admin-order-chat__connection span { height: 1px; flex: 1; background: var(--dash-line); }
 .admin-order-chat__connection i { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .04); font-size: 8px; }
-.admin-order-chat__messages { min-height: 260px; max-height: 510px; display: flex; flex-direction: column; gap: 9px; padding: 17px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.admin-order-chat__messages { min-height: 96px; max-height: 510px; display: flex; flex-direction: column; gap: 9px; padding: 17px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 .admin-order-chat__message { width: min(72%, 620px); display: flex; align-items: flex-end; gap: 8px; }
 .admin-order-chat__message--teammate { align-self: flex-end; }
 .admin-order-chat__avatar { width: 28px; height: 28px; flex: 0 0 auto; overflow: hidden; border-radius: 50%; }
@@ -15212,4 +15212,68 @@ a.notification-panel__item:hover {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* Money is what an admin opens this page for — the one fact that gets to
+   look like a figure rather than a label/value pair. */
+.admin-order-facts > div:last-child {
+  border-color: rgba(70, 104, 255, 0.22);
+  background: rgba(70, 104, 255, 0.07);
+}
+
+.admin-order-facts > div:last-child .admin-order-fact__icon {
+  color: #7188ff;
+}
+
+.admin-order-facts > div:last-child dd {
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: 0.01em;
+}
+
+/* Settled orders: one line where a whole empty panel used to be. */
+.admin-order-settled {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--dash-line);
+  border-radius: var(--dash-radius);
+  background: var(--dash-surface);
+  color: var(--text-faint);
+  font-size: 12.5px;
+}
+
+.admin-order-settled i {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.admin-order-settled strong {
+  color: var(--text-muted);
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+/* The controls panel leads with its choices, so the head can be tighter than
+   the dashboard default. */
+.admin-order-controls .dashboard-panel__head {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+}
+
+.admin-order-controls .dashboard-panel__title i {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+/* An empty game-report list read as a broken panel — a line of text with no
+   shape to it, floating under a heading. */
+.admin-order-audit section > p {
+  padding: 14px 12px;
+  border: 1px dashed var(--dash-line);
+  border-radius: var(--dash-radius-sm);
+  color: var(--text-faint);
+  font-size: 11.5px;
+  text-align: center;
 }

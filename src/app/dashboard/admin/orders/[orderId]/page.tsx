@@ -51,7 +51,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       </dl>
       <div className="admin-order-session-strip">
         <div><span>Games</span><strong>{order.games.length}<small> / {order.gamesBooked}</small></strong></div>
-        <div><span>Session status</span><strong>{order.sessionStatus?.toLowerCase().replaceAll("_", " ") || "Not started"}</strong></div>
+        <div><span>{["COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status) ? "Last session status" : "Session status"}</span><strong>{order.sessionStatus?.toLowerCase().replaceAll("_", " ") || "Not started"}</strong></div>
         <div><span>Assigned</span><strong>{order.assignedAt ? dateTime(order.assignedAt) : "—"}</strong></div>
         <div><span>Completed</span><strong>{order.sessionCompleteAt ? dateTime(order.sessionCompleteAt) : "—"}</strong></div>
       </div>
@@ -63,6 +63,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       played={order.games.length}
       booked={Math.max(1, order.gamesBooked)}
       settled={["COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status)}
+      statusLabel={statusLabel}
     />
 
     <div className="admin-order-workspace">
