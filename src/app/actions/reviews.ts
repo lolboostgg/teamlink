@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { notifyUser } from "@/lib/notifications/service";
 
 export async function submitTeammateReview(orderId: string, teammateId: string, rating: number) {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
@@ -27,10 +28,24 @@ export async function submitTeammateReview(orderId: string, teammateId: string, 
     update: { teammateId, clientUserId: order.clientUserId, rating },
   });
   const aggregate = await prisma.review.aggregate({ where: { teammateId }, _avg: { rating: true } });
-  await prisma.teammate.update({
+  const teammate = await prisma.teammate.update({
     where: { id: teammateId },
     data: { rating: aggregate._avg.rating ?? 5 },
+    select: { userId: true },
   });
+
+  // A rating moves the teammate's roster average, which decides how often
+  // they get dispatched — so it is worth telling them about, not just
+  // silently writing.
+  if (teammate.userId) {
+    await notifyUser(teammate.userId, {
+      type: "order.reviewed",
+      title: `You got ${rating} star${rating === 1 ? "" : "s"}`,
+      body: `A customer rated your ${order.gameName} session. Your average is now ${(aggregate._avg.rating ?? 5).toFixed(2)}.`,
+      href: "/dashboard/teammate",
+    });
+  }
+
   return { ok: true } as const;
 }
 

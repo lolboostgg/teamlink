@@ -130,6 +130,31 @@ export function orderConfirmationMail(input: {
   };
 }
 
+/**
+ * The generic body for anything routed through the notification channels (see
+ * notify/channels.ts) — payouts, fines, cancellations. Those carry their own
+ * wording already, so this only frames it.
+ */
+export function plainNoticeMail(input: {
+  name: string | null;
+  heading: string;
+  body: string;
+  url: string;
+}): MailBody {
+  const content: Shell = {
+    heading: input.heading,
+    intro: input.body,
+    rows: [],
+    ctaLabel: "Open TeamLink",
+    ctaUrl: input.url,
+    footnote: input.name
+      ? `Sent to ${input.name} because it affects your account. You can turn these off in your notification settings.`
+      : "You can turn these off in your notification settings.",
+  };
+
+  return { subject: input.heading, html: shell(content), text: shellText(content) };
+}
+
 export function teammateAssignedMail(input: {
   orderNo: number;
   gameName: string;

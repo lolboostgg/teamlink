@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
+import { deliverExternally } from "@/lib/notify/channels";
 
 /**
  * In-app notifications. Every platform event that someone should hear about
@@ -19,6 +20,12 @@ export async function notifyUser(userId: string, input: NotifyInput) {
   });
   // Pushes the bell instead of making it wait out its poll interval.
   await publish({ topic: "notifications", userIds: [userId] });
+
+  // Discord and mail on top, where the event's type calls for it — see the
+  // policy table in notify/channels.ts. Not awaited: both are third parties
+  // across a network, and the bell row is already written either way.
+  void deliverExternally(userId, input);
+
   return notification;
 }
 
