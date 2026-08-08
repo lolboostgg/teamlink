@@ -44,15 +44,20 @@ export function SoundToggle() {
   }
 
   return (
+    // Labelled rather than an icon alone: a speaker glyph with a slash
+    // through it is easy to misread as "the sound is broken" instead of "you
+    // switched it off", and this is a setting people will look for.
     <button
       type="button"
-      className={`sound-toggle${enabled ? "" : " is-muted"}`}
+      className={`sound-toggle${enabled ? " is-on" : " is-muted"}`}
       onClick={toggle}
-      aria-pressed={!enabled}
-      title={enabled ? "Notification sounds on" : "Notification sounds off"}
-      aria-label={enabled ? "Turn notification sounds off" : "Turn notification sounds on"}
+      role="switch"
+      aria-checked={enabled}
+      aria-label="Notification sounds"
     >
       <i className={enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark"} aria-hidden="true" />
+      <span className="sound-toggle__label">Sound</span>
+      <span className="sound-toggle__state">{enabled ? "On" : "Off"}</span>
     </button>
   );
 }

@@ -10625,33 +10625,64 @@ ul {
 }
 
 /* ── Notification bell ──────────────────────────────────────────── */
-/* Same shape as the bell it sits beside — they are two halves of the same
-   question, so they should not look like different kinds of control. */
+/* Says what it is and what state it is in. An icon alone reads as "the
+   sound is broken" as easily as "you switched it off", and this is a
+   setting people go looking for. */
 .sound-toggle {
-  width: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
+  padding: 0 13px;
+  border-radius: 999px;
   border: 1px solid var(--border);
-  display: grid;
-  place-items: center;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.sound-toggle:hover {
+.sound-toggle i {
+  font-size: 12px;
+}
+
+/* Green while it is on, so "you will be told about things" is the state you
+   can confirm at a glance — the mute is the one worth noticing, but the
+   reassurance is what people actually check for. */
+.sound-toggle.is-on {
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.sound-toggle.is-on:hover {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+}
+
+.sound-toggle.is-muted:hover {
   background: rgba(255, 255, 255, 0.09);
   color: var(--text);
 }
 
-/* Muted is a state worth seeing at a glance: it is the reason someone will
-   later say they never got told. */
-.sound-toggle.is-muted {
-  color: var(--warning);
-  border-color: color-mix(in srgb, var(--warning) 35%, transparent);
-  background: color-mix(in srgb, var(--warning) 10%, transparent);
+.sound-toggle__state {
+  padding-left: 8px;
+  border-left: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The label goes before the state does — on a narrow header the word
+   "Sound" is the part the icon already tells you. */
+@media (max-width: 720px) {
+  .sound-toggle__label {
+    display: none;
+  }
+
+  .sound-toggle__state {
+    padding-left: 0;
+    border-left: none;
+  }
 }
 
 .notification-bell {
