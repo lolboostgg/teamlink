@@ -36,16 +36,13 @@ export function StatCard({
   href,
 }: Props) {
   const style = color ? ({ "--item-color": color } as CSSProperties) : undefined;
-  const Tag = href ? Link : "div";
+  const className = `stat-card${compactValue ? " stat-card--compact-value" : ""}${href ? " stat-card--link" : ""}`;
 
-  return (
-    <Tag
-      // Only Link accepts href, and only when there is one — spreading keeps
-      // the plain <div> case free of a stray attribute.
-      {...(href ? { href } : {})}
-      className={`stat-card${compactValue ? " stat-card--compact-value" : ""}${href ? " stat-card--link" : ""}`}
-      style={style}
-    >
+  // Two branches rather than one variable element: Link's href is required,
+  // so a shared <Tag> would have to be handed a possibly-undefined href and
+  // the type would have to be lied about to make it compile.
+  const body = (
+    <>
       <div className="stat-card__icon">
         <i className={icon} aria-hidden="true" />
       </div>
@@ -65,6 +62,20 @@ export function StatCard({
           {Math.abs(deltaPct)}%
         </div>
       )}
-    </Tag>
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={className} style={style}>
+        {body}
+      </Link>
+    );
+  }
+
+  return (
+    <div className={className} style={style}>
+      {body}
+    </div>
   );
 }

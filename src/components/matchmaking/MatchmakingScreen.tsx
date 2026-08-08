@@ -190,7 +190,7 @@ export function MatchmakingScreen({ orderId }: Props) {
     const dispatchWindowSeconds = Math.max(1, Math.ceil(dispatchWindowMs / 1000));
     const progressPct = order ? Math.min(100, (searchElapsedSeconds / dispatchWindowSeconds) * 100) : 0;
     return (
-      <div className="matching-screen matching-screen--card matching-screen--arena">
+      <div className="matching-screen matching-screen--card matching-screen--arena matching-screen--searching">
         {order ? (
           <div className="match-ring" style={{ "--match-progress": `${progressPct}%` } as React.CSSProperties}>
             <span className="match-ring__time">{formatMMSS(searchElapsedSeconds)}</span>
