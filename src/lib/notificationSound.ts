@@ -56,12 +56,54 @@ export function setSoundsEnabled(enabled: boolean): void {
   window.dispatchEvent(new CustomEvent(SOUND_PREF_EVENT));
 }
 
+/**
+ * Cues that have a real recording behind them.
+ *
+ * The synthesised tones below are fine for the small stuff, but the order
+ * alert is the one sound that has to cut through a game, a voice call and a
+ * stream — that wants an actual sound designed for it, not two sine waves.
+ * Anything not listed here still falls back to the generated cue, and so does
+ * this one if the file can't be played.
+ */
+const RECORDINGS: Partial<Record<SoundName, string>> = {
+  request: "/sounds/neworder.mp3",
+};
+
+// One element per cue, reused. A fresh Audio per play re-fetches the file on
+// some browsers, and this one repeats every few seconds while an alert is up.
+const players = new Map<string, HTMLAudioElement>();
+
+function playRecording(src: string): boolean {
+  try {
+    let audio = players.get(src);
+    if (!audio) {
+      audio = new Audio(src);
+      audio.preload = "auto";
+      players.set(src, audio);
+    }
+    // Rewound rather than layered: the repeat should sound like the same
+    // alert going again, not like three of them piling up.
+    audio.currentTime = 0;
+    void audio.play().catch(() => {
+      // Autoplay refused, or the file is missing. Nothing to do here — the
+      // synthesised cue below has already been skipped, and forcing it would
+      // be refused for the same reason.
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function playSound(name: SoundName = "generic") {
   if (typeof window === "undefined") return;
   // Checked here rather than at each call site: there are half a dozen of
   // them across three screens, and one that forgets is the whole point of
   // the switch defeated.
   if (!soundsEnabled()) return;
+
+  const recording = RECORDINGS[name];
+  if (recording && playRecording(recording)) return;
   const Ctx =
     window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctx) return;
