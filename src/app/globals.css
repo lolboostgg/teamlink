@@ -5872,55 +5872,101 @@ ul {
   color: var(--text-muted);
 }
 
-/* Custom track/thumb instead of the bare OS slider — flat cyan-on-gray
-   default read as out of place next to everything else in the editor. */
+/* The gradient used to sit on the <input> itself, which is why this looked
+   wrong: the element box *is* the visible bar then, so the fill ran the
+   full height of the control and the browser's focus ring drew a rectangle
+   around all of it. The track belongs on ::-webkit-slider-runnable-track /
+   ::-moz-range-track, leaving the element itself transparent and only as
+   tall as the thumb needs. */
 .avatar-frame__zoom input {
   flex: 1;
   -webkit-appearance: none;
   appearance: none;
-  height: 3px;
-  min-height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--cta-vivid) 0%, var(--cta-vivid) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.14) var(--zoom-pct, 0%), rgba(255, 255, 255, 0.14) 100%);
+  height: 16px;
+  background: transparent;
   cursor: pointer;
+}
+
+.avatar-frame__zoom input:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* --track-fill is the shared definition of "filled up to here"; both
+   engines draw it, WebKit as the whole track and Firefox as ::-moz-range-
+   progress over a plain track. Accent rather than the vivid cyan: the cyan
+   is reserved for the one CTA per screen, and a zoom slider is not it. */
+.avatar-frame__zoom input {
+  --track-fill: linear-gradient(
+    90deg,
+    var(--accent) 0%,
+    var(--accent) var(--zoom-pct, 0%),
+    rgba(255, 255, 255, 0.12) var(--zoom-pct, 0%),
+    rgba(255, 255, 255, 0.12) 100%
+  );
+}
+
+.avatar-frame__zoom input::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--track-fill);
 }
 
 .avatar-frame__zoom input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: var(--text);
+  background: #fff;
   border: none;
-  box-shadow: 0 0 0 3px var(--bg), 0 1px 4px rgba(0, 0, 0, 0.5);
-  transition: transform 0.15s ease;
-  margin-top: 0;
-}
-
-.avatar-frame__zoom input::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+  /* Centres the thumb on a 4px track: half the thumb minus half the track. */
+  margin-top: -5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .avatar-frame__zoom input::-moz-range-track {
-  height: 3px;
+  height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .avatar-frame__zoom input::-moz-range-progress {
-  height: 3px;
+  height: 4px;
   border-radius: 999px;
-  background: var(--cta-vivid);
+  background: var(--accent);
 }
 
 .avatar-frame__zoom input::-moz-range-thumb {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: var(--text);
-  border: 3px solid var(--bg);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  background: #fff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.avatar-frame__zoom input:hover::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+/* A ring on the thumb rather than the browser's rectangle around the whole
+   control — the thumb is what the arrow keys actually move. */
+.avatar-frame__zoom input:focus-visible {
+  outline: none;
+}
+
+.avatar-frame__zoom input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent), 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.avatar-frame__zoom input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent), 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-frame__zoom input::-webkit-slider-thumb { transition: none; }
 }
 
 .avatar-frame__drop {
