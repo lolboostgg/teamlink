@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { ReviewsList } from "@/components/dashboard/teammate/ReviewsList";
+import { ReviewsBoard } from "@/components/dashboard/teammate/ReviewsBoard";
 import { requireOnboardedTeammate } from "@/lib/teammateGate";
 
 export const metadata: Metadata = { title: "Reviews" };
@@ -34,12 +34,16 @@ export default async function TeammateReviewsPage() {
     <div className="dashboard-panel">
       <div className="dashboard-panel__head">
         <div>
-          <div className="dashboard-panel__title">Recent reviews</div>
-          <div className="dashboard-panel__sub">What clients are saying</div>
+          <div className="dashboard-panel__title">
+            <i className="fa-solid fa-star" aria-hidden="true" /> Reviews
+          </div>
+          <div className="dashboard-panel__sub">
+            What clients are saying. Tap a row of the spread to see only those.
+          </div>
         </div>
       </div>
       {display.length > 0 ? (
-        <ReviewsList reviews={display} />
+        <ReviewsBoard reviews={display} />
       ) : (
         <div className="dashboard-empty">
           <i className="fa-solid fa-star-half-stroke" aria-hidden="true" />
