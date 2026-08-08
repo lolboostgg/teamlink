@@ -39,6 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           avatarZoom: true,
           rating: true,
           available: true,
+          balanceEUR: true,
           user: { select: { avatarUrl: true, discordId: true, discordAvatar: true } },
           _count: { select: { candidacies: { where: { selected: true } } } },
         },
@@ -73,6 +74,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         rating: teammate.rating,
         sessionsCount: teammate._count.candidacies,
         available: teammate.available,
+        // Decimal doesn't cross the server/client boundary — it has to be a
+        // plain number before it gets there.
+        balanceEUR: Number(teammate.balanceEUR),
       }
     : null;
   return (

@@ -15,6 +15,7 @@ export type TeammateSidebarData = {
   rating: number;
   sessionsCount: number;
   available: boolean;
+  balanceEUR: number;
 };
 
 export function TeammateSidebarProfile({ teammate }: { teammate: TeammateSidebarData }) {

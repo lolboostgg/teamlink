@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/Logo";
+import { SidebarAccountMenu } from "@/components/dashboard/SidebarAccountMenu";
 import { TeammateSidebarProfile, type TeammateSidebarData } from "@/components/dashboard/teammate/TeammateSidebarProfile";
 
 // Client dashboard has its own tab strip instead (see
@@ -118,35 +119,18 @@ export function DashboardSidebar({
       </nav>
 
       <div className="dashboard-sidebar__utility">
-        {/* Support sat between two navigation links as a third piece of grey
-            text, so the one thing someone looks for when stuck read as the
-            least important item on the panel. */}
-        {!collapsed && (
-          <div className="sidebar-support">
-            <span className="sidebar-support__status">
-              <span className="sidebar-support__dot" aria-hidden="true" />
-              All systems operational
-            </span>
-            <p className="sidebar-support__copy">Stuck on something? We usually reply within an hour.</p>
-            <a href="mailto:support@teamlink.gg" className="sidebar-support__cta">
-              <i className="fa-regular fa-life-ring" aria-hidden="true" /> Contact support
-            </a>
-          </div>
-        )}
-        {collapsed && (
-          <a href="mailto:support@teamlink.gg" title="Contact support">
-            <i className="fa-regular fa-life-ring" />
-            <span>Contact support</span>
-          </a>
-        )}
-        <Link
-          href={role === "admin" ? "/dashboard/admin/profile" : "/dashboard/teammate/profile"}
-          title={collapsed ? "My profile" : undefined}
-        >
-          <i className="fa-solid fa-user" />
-          <span>My profile</span>
-        </Link>
-        <Link href="/" transitionTypes={["dashboard-exit"]} title={collapsed ? "Back to site" : undefined}><i className="fa-solid fa-arrow-left" /><span>Back to site</span></Link>
+        {/* One control instead of a support card, a profile link and a
+            back-to-site link stacked in the same corner, each reading as the
+            least important thing on the panel. It opens upward: it sits at the
+            bottom of the screen, and a menu opening downward falls off it. */}
+        <SidebarAccountMenu
+          name={teammate?.name ?? (role === "admin" ? "Admin" : "Account")}
+          role={role === "admin" ? "Admin" : "Teammate"}
+          avatarUrl={teammate?.avatarUrl ?? null}
+          balanceEUR={teammate ? teammate.balanceEUR : null}
+          profileHref={role === "admin" ? "/dashboard/admin/profile" : "/dashboard/teammate/profile"}
+          collapsed={collapsed}
+        />
       </div>
     </aside>
   );
