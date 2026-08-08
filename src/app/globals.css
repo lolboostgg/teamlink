@@ -14822,3 +14822,258 @@ a.notification-panel__item:hover {
 .dispatch-tool__note {
   margin: 8px 0 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Admin → Onboarding — teammate invite links.
+   ------------------------------------------------------------------------- */
+
+/* The two text fields sit in .form-row-grid, whose own gap already spaces
+   them — the rows' default bottom margin doubled it up. */
+.invite-form .form-row-grid .form-row {
+  margin-bottom: 0;
+}
+
+/* Expiry and the submit button share one footer bar. Given a grid cell of its
+   own, the day count left half a row empty and the button ended up stranded
+   on a line below it. */
+.invite-form__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.invite-form__expiry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-form__expiry-label {
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+/* Same segmented shell the orders toolbar uses, so the control reads as part
+   of the dashboard rather than a form widget of its own. */
+.invite-form__presets {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.invite-preset {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.14s ease, background 0.14s ease;
+}
+
+.invite-preset:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.invite-preset.is-active {
+  color: #fff;
+  background: rgba(70, 104, 255, 0.2);
+}
+
+/* Any other day count. The chip itself is the field's frame, keeping it in
+   the preset row instead of below it as a full-width input. */
+.invite-preset--custom {
+  gap: 6px;
+  padding-left: 7px;
+  cursor: text;
+}
+
+.invite-preset--custom:focus-within {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.invite-preset--custom input {
+  width: 44px;
+  height: 23px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.invite-preset--custom input:focus {
+  outline: none;
+  border-color: rgba(70, 104, 255, 0.75);
+}
+
+.invite-preset--custom.is-invalid input {
+  border-color: var(--danger);
+}
+
+/* Steppers on a 2-digit field cost more width than they buy. */
+.invite-preset--custom input::-webkit-outer-spin-button,
+.invite-preset--custom input::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.invite-form__warning {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--warning);
+  font-size: 11px;
+}
+
+/* Stays right even after the bar wraps on a narrow window. */
+.invite-form__submit {
+  margin-left: auto;
+}
+
+.invite-filters {
+  flex-shrink: 0;
+}
+
+.invite-filter__count {
+  min-width: 17px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.orders-status-pill.is-active .invite-filter__count {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.invites-table {
+  min-width: 860px;
+}
+
+.invites-table th:last-child {
+  padding-right: 14px;
+  text-align: right;
+}
+
+/* Name, address and outcome as three lines — inline they ran together into
+   one unreadable string ("Unnamed inviteJoined as Josh"). */
+.invite-who {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.invite-who strong {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.invite-who small {
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.invite-who__joined i {
+  margin-right: 5px;
+  color: var(--hue-green);
+  font-size: 9px;
+}
+
+.invite-when {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.invite-when strong {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.invite-when small {
+  color: var(--text-faint);
+  font-size: 10.5px;
+}
+
+.invite-opens {
+  min-width: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border: 1px solid var(--dash-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.invite-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+/* The shared table rule adds its own spacing between action buttons; here the
+   flex gap already does it. */
+.invite-actions .btn + .btn {
+  margin-left: 0;
+}
+
+.invite-actions__none {
+  color: var(--text-faint);
+  opacity: 0.5;
+}
+
+@media (max-width: 720px) {
+  .invite-form__foot {
+    align-items: stretch;
+  }
+
+  .invite-form__presets {
+    flex-wrap: wrap;
+  }
+
+  .invite-form__submit {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+}
+
+/* Tinted and a size down — at the title's own weight the icon competed with
+   the words next to it. */
+.invite-panel .dashboard-panel__title i {
+  color: var(--accent);
+  font-size: 13px;
+}
