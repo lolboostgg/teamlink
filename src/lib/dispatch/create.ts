@@ -7,6 +7,18 @@ import { publish } from "@/lib/events/bus";
 import { notifyOrderDispatched } from "@/lib/notify/orderNotifications";
 import { Prisma } from "@/generated/prisma/client";
 
+/**
+ * A secret handle for one order.
+ *
+ * 32 hex characters from the platform's own CSPRNG. Kept well clear of the
+ * order id, which is what every internal API route is keyed by: the point of
+ * the token is that the link a customer keeps, forwards and pastes into a
+ * support chat opens exactly one page and unlocks nothing else.
+ */
+function newAccessToken(): string {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
 export interface CreateOrderInput {
   gameSlug: string;
   gameName: string;
@@ -49,6 +61,11 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
   const order = await prisma.order.create({
     data: {
       clientUserId: input.clientUserId,
+      // The handle this order is reachable by from outside. Minted here so
+      // every order has one — the column was added with a backfill for the
+      // rows that already existed, and without this the next order written
+      // would have been the first one without a token again.
+      accessToken: newAccessToken(),
       customerLabel: input.customerLabel,
       guestEmail: input.guestEmail ?? null,
       gameSlug: input.gameSlug,

@@ -39,6 +39,20 @@ export type PlaceOrderResult = { ok: true; redirect: string } | { ok: false; err
  * itself, so a hand-typed URL settles nothing. The webhook stays the
  * guarantee for customers who close the tab.
  */
+/**
+ * Where to send the customer for one order.
+ *
+ * The token URL, when the order has one. It is the address they keep — it
+ * survives in their history, gets forwarded and pasted into support threads —
+ * and it must not be the order's real id, which every internal API route is
+ * keyed by. Orders written before the column existed still resolve by id.
+ */
+function orderPath(order: { id: string; accessToken?: string | null }): string {
+  return order.accessToken
+    ? `/order/${encodeURIComponent(order.accessToken)}`
+    : `/checkout/matching?order=${order.id}`;
+}
+
 export async function confirmCheckoutReturn(sessionId: string): Promise<{ settled: boolean }> {
   return { settled: await settleCheckoutSession(sessionId) };
 }
@@ -118,14 +132,14 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
       return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
     }
     await activateOrderAfterPayment(order.id);
-    return { ok: true, redirect: `/checkout/matching?order=${order.id}` };
+    return { ok: true, redirect: orderPath(order) };
   }
 
   try {
     const checkout = await startCheckout({
       amountEUR: totalEUR,
       description: `${game.name} · ${input.option}`,
-      returnPath: `/checkout/matching?order=${order.id}`,
+      returnPath: orderPath(order),
       kind: "ORDER",
       orderId: order.id,
       guestEmail: guestEmail ?? undefined,
@@ -185,7 +199,7 @@ export async function rerollOrder(orderId: string): Promise<PlaceOrderResult> {
   await prisma.order.update({ where: { id: previous.id }, data: { status: "CANCELLED" } });
   await activateOrderAfterPayment(replacement.id);
 
-  return { ok: true, redirect: `/checkout/matching?order=${replacement.id}` };
+  return { ok: true, redirect: orderPath(replacement) };
 }
 
 /**
@@ -251,14 +265,14 @@ export async function placeReplayCheckout(
       return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
     }
     await activateOrderAfterPayment(order.id);
-    return { ok: true, redirect: `/checkout/matching?order=${order.id}` };
+    return { ok: true, redirect: orderPath(order) };
   }
 
   try {
     const checkout = await startCheckout({
       amountEUR: priceEUR,
       description: `Replay · ${previous.gameName} · ${previous.option}`,
-      returnPath: `/checkout/matching?order=${order.id}`,
+      returnPath: orderPath(order),
       kind: "ORDER",
       orderId: order.id,
       methods: method === "paypal" ? ["paypal"] : ["card"],

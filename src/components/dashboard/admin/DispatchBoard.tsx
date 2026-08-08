@@ -7,12 +7,15 @@ import { GameMark } from "@/components/dashboard/GameMark";
 import { formatRank } from "@/lib/gameRanks";
 import {
   cancelDispatch,
+  correctOrderDetails,
   extendSelection,
   forceNextWave,
+  forceSelect,
   removeCandidate,
   restartDispatch,
   setMatchingPaused,
 } from "@/app/dashboard/admin/dispatch/actions";
+import { ranksForGame, DIVISIONS, rankHasDivisions } from "@/lib/gameRanks";
 
 /**
  * The live dispatch board.
@@ -95,6 +98,7 @@ export function DispatchBoard() {
   const [orders, setOrders] = useState<BoardOrder[]>([]);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [focus, setFocus] = useState<string | null>(null);
+  const [tools, setTools] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const { showToast } = useToast();
@@ -248,6 +252,9 @@ export function DispatchBoard() {
                   +60s to pick
                 </button>
               )}
+              <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => setTools(tools === order.id ? null : order.id)}>
+                {tools === order.id ? "Hide tools" : "Assign / correct"}
+              </button>
               <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => setFocus(open ? null : order.id)}>
                 {open ? "Hide log" : "Dispatch log"}
               </button>
@@ -255,6 +262,17 @@ export function DispatchBoard() {
                 Cancel order
               </button>
             </footer>
+
+            {tools === order.id && (
+              <div className="dispatch-tools">
+                <AssignControl
+                  order={order}
+                  busy={busy}
+                  onAssign={(teammateId, name) => run(`Assigned ${name}.`, () => forceSelect(order.id, teammateId))}
+                />
+                <CorrectControl order={order} busy={busy} onSaved={() => void load()} />
+              </div>
+            )}
 
             {open && (
               <ol className="dispatch-log">
@@ -278,4 +296,149 @@ function formatDuration(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
   return `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`;
+}
+
+/**
+ * Puts a named teammate on the order, whatever the dispatcher thinks.
+ *
+ * The escape hatch for "the customer asked for this person in a support
+ * chat" — so it searches the whole roster rather than the eligible pool, and
+ * says plainly which rule is being stepped over rather than hiding the
+ * candidate.
+ */
+function AssignControl({
+  order,
+  busy,
+  onAssign,
+}: {
+  order: BoardOrder;
+  busy: boolean;
+  onAssign: (teammateId: string, name: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<
+    { id: string; name: string; rating: number; available: boolean; busy: boolean; games: string[] }[]
+  >([]);
+
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+    // Debounced: this fires per keystroke otherwise, against a LIKE query.
+    const t = setTimeout(() => {
+      void fetch(`/api/admin/teammates/search?q=${encodeURIComponent(query.trim())}`, { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : { teammates: [] }))
+        .then((data) => setResults(data.teammates ?? []))
+        .catch(() => setResults([]));
+    }, 250);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  return (
+    <div className="dispatch-tool">
+      <label className="dispatch-tool__label" htmlFor={`assign-${order.id}`}>
+        Assign a teammate directly
+      </label>
+      <input
+        id={`assign-${order.id}`}
+        className="dispatch-tool__input"
+        placeholder="Search the roster by name…"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+      />
+      <ul className="dispatch-tool__results">
+        {query.trim().length >= 2 && results.length === 0 && (
+          <li className="dispatch-tool__empty">Nobody by that name.</li>
+        )}
+        {results.map((teammate) => (
+          <li key={teammate.id}>
+            <span className="dispatch-tool__name">{teammate.name}</span>
+            <span className="dispatch-tool__flags">
+              {!teammate.available && <em>offline</em>}
+              {teammate.busy && <em>on another order</em>}
+              {!teammate.games.includes(order.gameSlug) && <em>doesn&rsquo;t play {order.gameName}</em>}
+            </span>
+            <button
+              type="button"
+              className="btn btn--vivid btn--sm"
+              disabled={busy}
+              onClick={() => onAssign(teammate.id, teammate.name)}
+            >
+              Assign
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Corrects what the customer typed at checkout.
+ *
+ * These three fields are the dispatcher's filters, so a mistyped rank or the
+ * wrong region is not a cosmetic problem — it is why an order finds nobody.
+ * Takes effect from the next wave; the one in flight has already been sent.
+ */
+function CorrectControl({ order, busy, onSaved }: { order: BoardOrder; busy: boolean; onSaved: () => void }) {
+  const [rank, setRank] = useState(order.rank ?? "");
+  const [division, setDivision] = useState(order.division ?? "");
+  const [region, setRegion] = useState(order.region ?? "");
+  const [saving, setSaving] = useState(false);
+  const ranks = ranksForGame(order.gameSlug);
+
+  return (
+    <div className="dispatch-tool">
+      <span className="dispatch-tool__label">Correct the order&rsquo;s filters</span>
+      <div className="dispatch-tool__row">
+        <select value={rank} onChange={(event) => setRank(event.target.value)} aria-label="Rank">
+          <option value="">No rank</option>
+          {ranks.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={division}
+          onChange={(event) => setDivision(event.target.value)}
+          aria-label="Division"
+          disabled={!rankHasDivisions(rank || null)}
+        >
+          <option value="">—</option>
+          {DIVISIONS.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+        <input
+          value={region}
+          onChange={(event) => setRegion(event.target.value)}
+          placeholder="Region"
+          aria-label="Region"
+        />
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          disabled={busy || saving}
+          onClick={() => {
+            setSaving(true);
+            void correctOrderDetails(order.id, {
+              ignRank: rank || null,
+              ignDivision: division || null,
+              ignRegion: region || null,
+            }).finally(() => {
+              setSaving(false);
+              onSaved();
+            });
+          }}
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+      </div>
+      <p className="dispatch-tool__note">Applies from the next wave — the one in flight has already gone out.</p>
+    </div>
+  );
 }

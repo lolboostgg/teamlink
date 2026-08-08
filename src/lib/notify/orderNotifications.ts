@@ -19,8 +19,21 @@ export function appUrl(): string {
   return (process.env.APP_URL ?? "https://gaming.lolboost.gg").replace(/\/$/, "");
 }
 
-export function orderUrl(orderId: string): string {
-  return `${appUrl()}/checkout/matching?order=${encodeURIComponent(orderId)}`;
+/**
+ * The link to an order that is safe to send somewhere.
+ *
+ * Prefers the order's access token over its id. The id is what every internal
+ * API route is keyed by, so a link carrying it hands whoever it reaches the
+ * key to those routes — and this is the link that ends up in a mailbox, a
+ * Discord message and a support thread. The token opens one page and nothing
+ * else.
+ *
+ * Falls back to the old query URL for orders written before the column
+ * existed, which still resolve by id.
+ */
+export function orderUrl(order: { id: string; accessToken?: string | null }): string {
+  if (order.accessToken) return `${appUrl()}/order/${encodeURIComponent(order.accessToken)}`;
+  return `${appUrl()}/checkout/matching?order=${encodeURIComponent(order.id)}`;
 }
 
 /** Whether a user wants order updates on this channel. Unset means yes — an
@@ -85,7 +98,7 @@ async function mailCustomer(order: DispatchedOrder): Promise<void> {
     gameName: order.gameName,
     option: order.option,
     priceEUR: Number(order.priceEUR),
-    url: orderUrl(order.id),
+    url: orderUrl(order),
   });
 
   await sendMail({ to, ...mail });
@@ -149,7 +162,7 @@ export async function notifyTeammateAssigned(orderId: string): Promise<void> {
         orderNo: order.orderNo,
         gameName: order.gameName,
         teammateNames: names,
-        url: orderUrl(order.id),
+        url: orderUrl(order),
       }),
     });
   } catch (err) {

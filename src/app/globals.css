@@ -14728,3 +14728,97 @@ a.notification-panel__item:hover {
   right: auto;
   width: 210px;
 }
+
+/* ── Dispatch board: manual overrides ────────────────────────
+   Both of these step over the dispatcher, so they are behind a toggle rather
+   than sitting next to the everyday actions. */
+.dispatch-tools {
+  display: grid;
+  gap: 14px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--dash-line);
+  background: var(--dash-surface);
+}
+
+.dispatch-tool__label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.dispatch-tool__input,
+.dispatch-tool__row input,
+.dispatch-tool__row select {
+  padding: 8px 10px;
+  border: 1px solid var(--dash-line);
+  border-radius: 9px;
+  background: var(--dash-surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.dispatch-tool__input {
+  width: 100%;
+  max-width: 340px;
+}
+
+.dispatch-tool__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.dispatch-tool__results {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dispatch-tool__results li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--dash-line);
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.dispatch-tool__name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* What rule this override is stepping over, said plainly. */
+.dispatch-tool__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-right: auto;
+}
+
+.dispatch-tool__flags em {
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--warning, #f5a524);
+}
+
+.dispatch-tool__empty,
+.dispatch-tool__note {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.dispatch-tool__note {
+  margin: 8px 0 0;
+}
