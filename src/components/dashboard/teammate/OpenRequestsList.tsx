@@ -14,16 +14,16 @@ import { useToast } from "@/components/ui/ToastProvider";
 /**
  * Every open request at once.
  *
- * The dispatch modal shows one order and blocks the screen, which is right
- * when there is one — it is an interruption that wants an answer. It is wrong
- * when three land together: the others queue up invisibly behind it and the
- * teammate can't tell whether they are choosing between a €4.99 Duo and a
- * €12 Flex, or answering the only thing on offer.
+ * The only place a request is answered. There was a modal that could open
+ * over any page in the dashboard, showing one order at a time; it interrupted
+ * work it had no business interrupting, hid the other invitations behind it,
+ * and was a second source of the alert sound competing with this one. It is
+ * gone. Requests live here.
  *
- * This reads the same endpoint the modal does (/api/dispatch/state) rather
- * than the order history: history only lists orders a teammate was actually
- * picked for, so an invitation still waiting for an answer never appeared in
- * it — which is why this page was always empty.
+ * Reads /api/dispatch/state rather than the order history: history only lists
+ * orders a teammate was actually picked for, so an invitation still waiting
+ * for an answer never appeared in it — which is why this page was always
+ * empty.
  *
  * It is built for a panel left open all day on a second monitor: everything
  * that matters is legible from across a desk, and a new request announces
@@ -35,11 +35,10 @@ export function OpenRequestsList() {
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // Once they have accepted, the alert has done its job — the phase moves to
-  // waiting-on-the-customer and the modal takes over the screen. Silencing on
-  // the phase rather than on the list emptying is what makes that immediate:
-  // the row drops out on the next read, and until then the sound would keep
-  // going underneath a dialog that says the opposite.
+  // Once they have accepted, the alert has done its job. Silencing on the
+  // phase rather than on the list emptying is what makes that immediate: the
+  // row only drops out on the next read, and until then a second announcement
+  // would land after they had already answered.
   const answered = phase !== "ONLINE_IDLE" && phase !== "DISPATCH_INCOMING";
   useRequestAlerts(requests, answered || busyId !== null);
 
@@ -321,20 +320,4 @@ function useRequestAlerts(
 
     document.title = requests.length > 0 ? `(${requests.length}) ${baseTitle.current}` : baseTitle.current;
   }, [requests, silenced]);
-
-  // Keeps sounding while anything is open, not once on arrival.
-  //
-  // A wave is eight seconds long and the panel is meant to sit in a
-  // background tab — one chime at the exact moment the request lands is
-  // trivially missed, and then the alert expires in silence. The repeat
-  // stops on its own the moment the list empties, which is either because
-  // they answered or because it was taken.
-  const open = requests.length > 0 && !silenced;
-  useEffect(() => {
-    if (!open) return;
-    // The real spacing is enforced in playSound, which is the only place that
-    // can see every source of this cue at once.
-    const nag = setInterval(() => playSound("request"), 2000);
-    return () => clearInterval(nag);
-  }, [open]);
 }

@@ -101,17 +101,13 @@ function playRecording(src: string): boolean {
 /**
  * Shortest gap between two plays of the same cue.
  *
- * Enforced here rather than at the call sites, because the call sites are the
- * problem: an order request is announced by the requests panel, re-announced
- * by the repeat while it stays open, and announced again by the dispatch
- * modal on other pages — three independent places, none of which can see what
- * the others just did. Any one of them firing twice, or two firing at once,
- * turned the alert into a stutter.
- *
- * The order cue is the long one and gets the long gap. Everything else only
- * needs enough to swallow a double-fire from one render.
+ * There is one announcer now, so this is no longer holding a crowd apart —
+ * it is the backstop that keeps a re-render, a double poll or two requests
+ * landing in the same read from stacking the clip on itself. Long enough to
+ * cover the recording, short enough that a genuinely second request still
+ * gets its own announcement.
  */
-const MIN_GAP_MS: Partial<Record<SoundName, number>> = { request: 6_000 };
+const MIN_GAP_MS: Partial<Record<SoundName, number>> = { request: 3_000 };
 const DEFAULT_GAP_MS = 400;
 
 const lastPlayed = new Map<string, number>();

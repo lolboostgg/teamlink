@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { PriceTag } from "@/components/currency/PriceTag";
-import { gameIcon } from "@/lib/gameArt";
-import { playNotificationSound } from "@/lib/notificationSound";
-import { ackDispatchAlert } from "@/lib/dispatch/ack";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
-import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { withdrawDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { useToast } from "@/components/ui/ToastProvider";
-import type { DispatchOrderView } from "@/lib/dispatch/phase";
 
 const NOT_SELECTED_ACK_KEY = "teamlink:acknowledged-not-selected";
 // Orders we've already sent the teammate into the session room for. Without
@@ -55,49 +49,6 @@ function CountdownRing({ msLeft, totalMs }: { msLeft: number; totalMs: number })
   );
 }
 
-function OrderFacts({ order }: { order: DispatchOrderView }) {
-  // "Service" lived here too, repeating the game row directly above it.
-  const facts: [string, string][] = [
-    ["Customer", order.customerLabel],
-    ["Team size", `${order.teammatesRequested} teammate${order.teammatesRequested === 1 ? "" : "s"}`],
-  ];
-
-  // Only what the customer actually stated — three rows of "No preference"
-  // filled the card without telling the teammate anything.
-  const prefs = ([
-    ["Conversation", order.conversationPref],
-    ["Play style", order.playStylePref],
-    ["Vibe", order.vibe],
-  ] as [string, string | null][]).filter(([, value]) => value);
-
-  return (
-    <>
-      <dl className="dispatch-facts">
-        {facts.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      {prefs.length > 0 && (
-        <div className="dispatch-prefs">
-          <span className="dispatch-prefs__label">What they asked for</span>
-          <div className="dispatch-prefs__pills">
-            {prefs.map(([label, value]) => (
-              <span key={label} className="dispatch-prefs__pill">
-                <small>{label}</small>
-                {value}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
 /**
  * The dispatch flow, now driven entirely by the server's phase (see
  * lib/dispatch/service.ts). Accepting is a server action — the UI never
@@ -111,50 +62,17 @@ export function DispatchFlow() {
   const { showToast } = useToast();
   const state = useDispatchState();
   const [pending, startTransition] = useTransition();
-  const announced = useRef<string | null>(null);
   const [dismissed, setDismissed] = useState<string | null>(null);
   const stateOrderId = state.order?.id;
   const stateOrderGameName = state.order?.gameName;
   const stateOrderOption = state.order?.option;
 
-  // The open-requests page is this modal, spread out and with every other
-  // invitation next to it. Laying a one-order dialog over the top hides the
-  // list the teammate went there to read, and both would announce the same
-  // request twice over.
-  const onRequestsPage = pathname === "/dashboard/teammate/requests";
-
-  // Being busy is not a question the URL can answer. A teammate sitting on a
-  // *completed* order's page is free, and should hear the next request —
-  // blocking on the route would have kept them silent there. The server
-  // already settles this: an order in flight outranks an invitation in
-  // deriveServerPhase, so DISPATCH_INCOMING can only mean nothing is running.
-  //
-  // The alert only ever means "there is something here you can accept". Not
-  // the phase alone: the phase is derived from the newest candidate row and
-  // can name an order that is no longer on offer, which is where the sound
-  // that seemed to arrive out of nowhere came from. An actionable invitation
-  // is one that is in the open-requests list.
-  const openRequestCount = state.requests.length;
-
-  useEffect(() => {
-    if (onRequestsPage) return;
-    if (state.phase !== "DISPATCH_INCOMING" || !stateOrderId) return;
-    if (openRequestCount === 0) return;
-    if (announced.current === stateOrderId) return;
-    announced.current = stateOrderId;
-    ackDispatchAlert(stateOrderId);
-    playNotificationSound();
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      new Notification("New order request", { body: `${stateOrderGameName} · ${stateOrderOption}` });
-    }
-  }, [
-    onRequestsPage,
-    openRequestCount,
-    state.phase,
-    stateOrderId,
-    stateOrderGameName,
-    stateOrderOption,
-  ]);
+  // The incoming-request modal is gone. Requests are answered in one place —
+  // /dashboard/teammate/requests — and nothing else announces them: a dialog
+  // that could appear over any page in the dashboard was interrupting work it
+  // had no business interrupting, and it was a second, competing source of
+  // the alert sound. Announcing is the requests panel's job now, and only
+  // its job.
 
   // Being picked takes the teammate to the session room — but only once. The
   // phase stays SELECTED for the whole time the order is ASSIGNED (it only
@@ -199,69 +117,6 @@ export function DispatchFlow() {
   }, [state.phase, stateOrderId]);
 
   if (!isTeammate) return null;
-
-  function respond(accept: boolean) {
-    const orderId = state.order?.id;
-    if (!orderId) return;
-    startTransition(async () => {
-      const result = await respondToDispatchAction(orderId, accept);
-      if (!result.ok) showToast(result.error, "error");
-      state.refresh();
-    });
-  }
-
-  if (state.phase === "DISPATCH_INCOMING" && state.order && !onRequestsPage) {
-    const order = state.order;
-    return (
-      <div className="dispatch-modal__backdrop" role="dialog" aria-modal="true" aria-labelledby="dispatch-title">
-        <div className="dispatch-modal">
-          <div className="dispatch-modal__head">
-            <div>
-              <div className="dispatch-modal__eyebrow">Incoming request</div>
-              <h2 className="dispatch-modal__title" id="dispatch-title">
-                New order request
-              </h2>
-            </div>
-            <CountdownRing msLeft={state.msLeft} totalMs={60_000} />
-          </div>
-
-          <div className="dispatch-modal__game">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={gameIcon(order.gameSlug)} alt="" />
-            <div>
-              <strong>{order.gameName}</strong>
-              <span>{order.option}</span>
-            </div>
-            <div className="dispatch-modal__payout">
-              <span>Your payout</span>
-              <PriceTag amountEUR={order.payoutEUR} />
-            </div>
-          </div>
-
-          <OrderFacts order={order} />
-
-          <p className="dispatch-modal__note">
-            Accepting puts you in the candidate pool — the customer still picks from up to {state.maxCandidates}{" "}
-            teammates. Only accept if you can start right away.
-          </p>
-
-          <div className="dispatch-modal__actions">
-            <button type="button" className="btn btn--ghost" disabled={pending} onClick={() => respond(false)}>
-              Decline
-            </button>
-            <button
-              type="button"
-              className="btn btn--vivid dispatch-modal__accept"
-              disabled={pending}
-              onClick={() => respond(true)}
-            >
-              {pending ? "Sending..." : "Accept order"}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (state.phase === "WAITING_FOR_CUSTOMER_SELECTION" && state.order) {
     return (
