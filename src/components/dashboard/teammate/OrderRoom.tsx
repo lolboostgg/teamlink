@@ -303,6 +303,9 @@ export function OrderRoom({ orderId }: { orderId: string }) {
           what pushed the chat off the screen. They are sections of the
           same brief now, divided by a hairline. */}
       <aside className="order-room__side">
+        {/* Two cards, mirroring the rows on the right: this one sits beside
+            Session, the one below fills the rest like the chat does. The
+            column used to end halfway down, leaving the page lopsided. */}
         <div className="dashboard-panel order-room__brief">
           <div className="order-room__game">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -338,9 +341,12 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </div>
           </dl>
 
+        </div>
+
+        <div className="dashboard-panel order-room__brief order-room__brief--fill">
           {(order.ign || order.ignRank || (order.ignRoles && order.ignRoles.length > 0)) && (
             <>
-              <div className="order-room__section">Who to add</div>
+              <div className="order-room__section order-room__section--first">Who to add</div>
               <dl className="order-room__facts">
                 {order.ign && (
                   <div>

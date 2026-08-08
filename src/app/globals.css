@@ -4726,10 +4726,17 @@ ul {
   min-height: 600px;
 }
 
-/* Scrolls inside itself rather than growing the page: the brief is the one
-   part whose length depends on the order (roles, rank, a long customer
-   label), and the chat next to it must keep its own height. */
-.order-room__side { display: grid; gap: 14px; min-height: 0; overflow-y: auto; }
+/* Same two rows as .order-room__main, so the two columns line up: the brief
+   sits beside Session, and the panel under it fills the rest exactly as the
+   chat does. Left column used to stop halfway down and leave the page
+   visibly lopsided. */
+.order-room__side {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 14px;
+  height: 100%;
+  min-height: 0;
+}
 .order-room__side > .dashboard-panel { padding: 16px 18px; }
 .order-room__side .dashboard-panel__head { margin-bottom: 12px; padding-bottom: 12px; }
 .order-room__side .account-facts { gap: 0; }
@@ -4741,7 +4748,22 @@ ul {
    around about fifteen short values, and it pushed the chat below the
    fold. One panel with hairline-divided sections instead. */
 .order-room__brief {
-  align-self: start;
+  align-self: stretch;
+}
+
+/* The lower card takes whatever height is left and scrolls inside itself —
+   its content is the variable part (roles, a long rank, extra preferences)
+   and it must not push the column past the viewport. */
+.order-room__brief--fill {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* No divider above the first section: it is the top of its own card. */
+.order-room__section--first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .order-room__payout {
@@ -4840,6 +4862,18 @@ ul {
     grid-template-columns: 1fr;
     height: auto;
     min-height: 0;
+  }
+
+  /* Single column: there is no second column to match, so the cards go back
+     to being as tall as their contents rather than splitting a height that
+     no longer exists. */
+  .order-room__side {
+    grid-template-rows: none;
+    height: auto;
+  }
+
+  .order-room__brief--fill {
+    overflow-y: visible;
   }
 }
 
