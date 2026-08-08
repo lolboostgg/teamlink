@@ -199,13 +199,25 @@ export async function placeReplayCheckout(
 ): Promise<PlaceOrderResult> {
   const session = await auth();
   const userId = session?.user?.id ?? null;
-  if (!userId) return { ok: false, error: "Sign in to book another session." };
 
+  // Playing again is the single best moment this product has, and it used to
+  // be reserved for people with an account — a guest who just had a good
+  // session was told to sign up first. Knowing the order id is the
+  // capability, as everywhere else in the guest flow; an account-bound order
+  // still requires its owner.
   const previous = await prisma.order.findFirst({
-    where: { id: orderId, clientUserId: userId },
+    where: { id: orderId },
     include: { candidates: { where: { selected: true, isPrimary: true } } },
   });
   if (!previous) return { ok: false, error: "Unknown order." };
+  if (previous.clientUserId && previous.clientUserId !== userId) {
+    return { ok: false, error: "Unknown order." };
+  }
+
+  // Credits are an account balance, so a guest has none to spend.
+  if (method === "credits" && !userId) {
+    return { ok: false, error: "Sign in to pay from your balance, or pay by card or PayPal." };
+  }
 
   const teammateId = previous.candidates[0]?.teammateId ?? null;
   if (!teammateId) return { ok: false, error: "That session has no teammate to play with again." };
@@ -220,6 +232,9 @@ export async function placeReplayCheckout(
     requestedTeammateId: teammateId,
     customerLabel: previous.customerLabel,
     clientUserId: userId,
+    // Carried over so a guest's replay is mailed to the same address the
+    // first booking was — there is no account to read one off.
+    guestEmail: userId ? null : previous.guestEmail,
     isReplay: true,
     ign: previous.ign,
     ignRegion: previous.ignRegion,

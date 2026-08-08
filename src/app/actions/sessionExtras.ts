@@ -90,24 +90,55 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
  */
 export async function sendTip(orderId: string, amountEUR: number, method: PaymentMethodKey): Promise<ExtraPaymentResult> {
   const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) return { ok: false, error: "Sign in to send a tip." };
+  const userId = session?.user?.id ?? null;
 
   const amount = Math.round(Number(amountEUR) * 100) / 100;
   if (!Number.isFinite(amount) || amount <= 0) return { ok: false, error: "Enter a tip amount." };
   if (amount > MAX_TIP_EUR) return { ok: false, error: `Tips are capped at €${MAX_TIP_EUR}.` };
 
+  // A guest booked without an account and can still want to tip the teammate
+  // who just played with them — refusing that helps nobody. Knowing the order
+  // id is the capability, same as everywhere else in the guest flow (see the
+  // review action). An account-bound order still requires its owner, so a
+  // signed-in stranger cannot tip on somebody else's session.
   const order = await prisma.order.findFirst({
-    where: { id: orderId, clientUserId: userId, status: "COMPLETED" },
+    where: { id: orderId, status: "COMPLETED" },
   });
   if (!order) return { ok: false, error: "You can only tip a session you completed." };
+  if (order.clientUserId && order.clientUserId !== userId) {
+    return { ok: false, error: "You can only tip a session you completed." };
+  }
   if (await getTipForOrder(orderId)) return { ok: false, error: "You already tipped this session." };
+
+  // Credits are an account balance; a guest has none to spend.
+  if (method === "credits" && !userId) {
+    return { ok: false, error: "Sign in to pay from your balance, or pay by card or PayPal." };
+  }
 
   if (method === "credits") {
     const paid = await spendCredits(amount, `Tip · ${order.gameName}`);
     if (!paid.ok) return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
     await recordTip({ orderId, amountEUR: amount, fromUserId: userId });
     return { ok: true };
+  }
+
+  // A guest has no saved card to charge, so there is nothing to try before
+  // the hosted page — go straight there and let the webhook record the tip.
+  if (!userId) {
+    try {
+      const checkout = await startCheckout({
+        amountEUR: amount,
+        description: `Tip · ${order.gameName}`,
+        returnPath: `/checkout/matching?order=${orderId}`,
+        kind: "TIP",
+        orderId,
+        methods: method === "paypal" ? ["paypal"] : ["card"],
+        saveCard: false,
+      });
+      return { ok: true, redirect: checkout.url };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Couldn't start the payment." };
+    }
   }
 
   const charged = await chargeDefaultCard({

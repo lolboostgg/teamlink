@@ -15,10 +15,14 @@ export function PaymentMethodPicker({
   value,
   onChange,
   disabled = false,
+  creditsEnabled = true,
 }: {
   value: PaymentMethodKey;
   onChange: (value: PaymentMethodKey) => void;
   disabled?: boolean;
+  /** Credits are an account balance. A guest has none, so the option is
+   * dropped rather than offered and then refused on submit. */
+  creditsEnabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -57,7 +61,7 @@ export function PaymentMethodPicker({
 
       {open && (
         <ul className="pay-picker__menu" role="listbox" aria-label="Payment method">
-          {PAYMENT_METHODS.map((method) => (
+          {PAYMENT_METHODS.filter((method) => method.key !== "credits" || creditsEnabled).map((method) => (
             <li key={method.key}>
               <button
                 type="button"

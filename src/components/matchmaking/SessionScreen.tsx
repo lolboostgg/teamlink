@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDispatchOrder } from "@/lib/matchmaking/useDispatchOrder";
@@ -69,7 +70,16 @@ export function SessionScreen({ orderId }: Props) {
   // Both charges used to be hardwired to "card", which ignored a customer
   // sitting on a credits balance.
   const [tipMethod, setTipMethod] = useState<PaymentMethodKey>("card");
+  // Defaults to credits for an account, card for a guest — a guest has no
+  // balance, so pre-selecting it would guarantee a refusal on submit.
+  const { status: authStatus } = useSession();
+  const isGuest = authStatus !== "authenticated";
   const [replayMethod, setReplayMethod] = useState<PaymentMethodKey>("credits");
+  // Derived rather than reset in an effect: the state's default is written
+  // before the session status is known, and a guest must never end up
+  // submitting the one method they cannot use.
+  const effectiveReplayMethod: PaymentMethodKey =
+    isGuest && replayMethod === "credits" ? "card" : replayMethod;
   const [tipSent, setTipSent] = useState<number | null>(null);
   const [blocked, setBlocked] = useState(false);
   const [rerolling, setRerolling] = useState(false);
@@ -188,7 +198,7 @@ export function SessionScreen({ orderId }: Props) {
   async function handleKeepPlaying() {
     setStartingReplay(true);
     try {
-      const result = await placeReplayCheckout(order!.id, replayMethod);
+      const result = await placeReplayCheckout(order!.id, effectiveReplayMethod);
       if (!result.ok) {
         setStartingReplay(false);
         showToast(result.error, "error");
@@ -398,7 +408,12 @@ export function SessionScreen({ orderId }: Props) {
               Would you like to continue playing with {teammate.name}?
             </p>
             <div className="session-complete__keep-playing-row">
-              <PaymentMethodPicker value={replayMethod} onChange={setReplayMethod} disabled={startingReplay} />
+              <PaymentMethodPicker
+                value={effectiveReplayMethod}
+                onChange={setReplayMethod}
+                disabled={startingReplay}
+                creditsEnabled={!isGuest}
+              />
               <button type="button" className="btn btn--vivid" onClick={handleKeepPlaying} disabled={startingReplay}>
                 {startingReplay ? (
                   "Starting…"
@@ -445,7 +460,12 @@ export function SessionScreen({ orderId }: Props) {
             )}
             <div className="pay-picker-row">
               <span>Pay with</span>
-              <PaymentMethodPicker value={tipMethod} onChange={setTipMethod} disabled={sendingTip} />
+              <PaymentMethodPicker
+                value={tipMethod}
+                onChange={setTipMethod}
+                disabled={sendingTip}
+                creditsEnabled={!isGuest}
+              />
             </div>
             <p className="cancel-confirm__sub tip-confirm__note">
               Credited to {teammate.name} straight away.
