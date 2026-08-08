@@ -81,8 +81,11 @@ function playRecording(src: string): boolean {
       audio.preload = "auto";
       players.set(src, audio);
     }
-    // Rewound rather than layered: the repeat should sound like the same
-    // alert going again, not like three of them piling up.
+    // A clip that is still playing is left alone. Restarting it from the top
+    // every few seconds chopped the recording off mid-phrase and made the
+    // alert sound broken rather than urgent — the repeat is meant to sound
+    // like the same alert going again, once it has finished.
+    if (!audio.paused && !audio.ended) return true;
     audio.currentTime = 0;
     void audio.play().catch(() => {
       // Autoplay refused, or the file is missing. Nothing to do here — the

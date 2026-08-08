@@ -29,8 +29,20 @@ export const SEARCH_HORIZON_MS = 24 * 60 * 60 * 1000;
 /** Teammates alerted per wave. */
 export const WAVE_SIZE = 5;
 
-/** How long one wave's alert stays live before the next group goes out. */
-export const WAVE_WINDOW_MS = 8_000;
+/**
+ * How long one wave's alert stays live before the next group goes out.
+ *
+ * Eight seconds is the window as designed, but it is not the window as
+ * experienced: the alert has to reach a browser, that browser has to render
+ * it, and a teammate has to look up, read a rank and a payout, and decide.
+ * Measured from the wave going out, most of eight seconds is gone before any
+ * of that starts, and the countdown a teammate actually sees read four.
+ *
+ * Fifteen leaves a real decision in it while still moving an unanswered
+ * order on quickly — the whole point of waves is that nobody waits on one
+ * person for long.
+ */
+export const WAVE_WINDOW_MS = 15_000;
 
 /**
  * Pause before starting over once everyone eligible has been asked. Short

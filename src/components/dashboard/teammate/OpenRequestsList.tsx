@@ -327,7 +327,9 @@ function useRequestAlerts(
   const open = requests.length > 0 && !silenced;
   useEffect(() => {
     if (!open) return;
-    const nag = setInterval(() => playSound("request"), 3000);
+    // Longer than the clip, so a repeat starts from silence instead of
+    // cutting the previous one off.
+    const nag = setInterval(() => playSound("request"), 5000);
     return () => clearInterval(nag);
   }, [open]);
 }
