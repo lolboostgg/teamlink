@@ -94,7 +94,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
                 <td><PriceTag amountEUR={Number(order.priceEUR)} /></td>
                 <td><span className={`dashboard-pill ${STATUS_CLASS[order.status] ?? "dashboard-pill--warning"}`}>{order.status.toLowerCase().replaceAll("_", " ")}</span>{order.sessionStatus && order.sessionStatus !== "ORDER_COMPLETED" && <small>{order.sessionStatus.toLowerCase().replaceAll("_", " ")}</small>}</td>
                 <td>{new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(order.createdAt)}</td>
-                <td><Link href={`/dashboard/admin/orders/${order.id}`} className="btn btn--ghost btn--sm admin-order-view"><i className="fa-solid fa-eye" /> View</Link></td>
+                <td><Link href={`/dashboard/admin/orders/${order.orderNo}`} className="btn btn--ghost btn--sm admin-order-view"><i className="fa-solid fa-eye" /> View</Link></td>
               </tr>
             ))}</tbody>
           </table>

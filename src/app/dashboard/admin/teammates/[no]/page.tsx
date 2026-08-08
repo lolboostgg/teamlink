@@ -20,10 +20,8 @@ interface Props {
 
 export default async function AdminTeammatePage({ params }: Props) {
   const { no } = await params;
-  const teammateNo = Number(no);
-  if (!Number.isInteger(teammateNo)) notFound();
-
-  const detail = await getTeammateDetail(teammateNo);
+  // Either form: #12 from a URL, or a raw id from an older link.
+  const detail = await getTeammateDetail(no);
   if (!detail) notFound();
 
   const earnings = await loadTeammateEarnings(detail.teammate.id);

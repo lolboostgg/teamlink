@@ -247,7 +247,7 @@ export function TeammateDetail({
                 {orders.map((o) => (
                   <tr key={o.orderId}>
                     <td><span className="client-order-game"><GameMark slug={o.gameSlug} /><strong>{o.gameName}</strong></span></td>
-                    <td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${o.orderId}`}>#{o.orderNo}</Link></td>
+                    <td className="dashboard-table__primary"><Link href={`/dashboard/admin/orders/${o.orderNo}`}>#{o.orderNo}</Link></td>
                     <td><span className="client-order-option"><strong>{o.option}</strong></span></td>
                     <td><span className="client-order-teammate"><span className="client-order-teammate__avatar"><SafeAvatarImage src={o.clientAvatarUrl} alt={o.clientName} /></span><strong>{o.clientName}</strong></span></td>
                     <td>

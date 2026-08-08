@@ -402,7 +402,7 @@ async function raise(order: RefundableOrder, cents: number, problem: string): Pr
       type: "order.refund_due",
       title: `Refund needs a hand · €${(cents / 100).toFixed(2)}`,
       body: `Order #${order.orderNo} (${order.gameName}) was cancelled and the automatic refund failed: ${problem} Refund it in Stripe.`,
-      href: `/dashboard/admin/orders/${order.id}`,
+      href: `/dashboard/admin/orders/${order.orderNo}`,
     });
   } catch {
     // The alert failing must not take the cancellation down with it.

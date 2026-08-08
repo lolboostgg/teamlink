@@ -25,7 +25,18 @@ export async function setUserPassword(userId: string, password: string) {
     data: { passwordHash: await bcrypt.hash(password, 12) },
   });
 
-  revalidatePath(`/dashboard/admin/accounts/${userId}`);
+  await revalidateAccount(userId);
+}
+
+/**
+ * Revalidates the account page as it is actually served — by account number.
+ *
+ * The cuid still resolves as a fallback, but nobody's browser is sitting on
+ * that URL, so revalidating it refreshes a path no one is looking at.
+ */
+async function revalidateAccount(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { accountNo: true } });
+  if (user) revalidatePath(`/dashboard/admin/accounts/${user.accountNo}`);
 }
 
 export async function removeUserTwoFactor(userId: string) {
@@ -37,7 +48,7 @@ export async function removeUserTwoFactor(userId: string) {
   const { twoFactorEnabled: _enabled, twoFactorSecret: _secret, ...remainingSecurity } = security;
   const next = { ...prefs, _security: remainingSecurity };
   await prisma.user.update({ where: { id: userId }, data: { notificationPrefs: next as Prisma.InputJsonObject } });
-  revalidatePath(`/dashboard/admin/accounts/${userId}`);
+  await revalidateAccount(userId);
 }
 
 export async function reviewVerification(teammateId: string, approve: boolean, note: string) {
@@ -77,6 +88,6 @@ export async function updateAccountDetails(userId: string, input: { name: string
 
   await prisma.user.update({ where: { id: userId }, data: { name: name || null, email } });
 
-  revalidatePath(`/dashboard/admin/accounts/${userId}`);
+  await revalidateAccount(userId);
   revalidatePath("/dashboard/admin/users");
 }

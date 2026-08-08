@@ -127,7 +127,7 @@ export async function releaseOrderAuthorization(order: {
       type: "order.refund_due",
       title: `Couldn't release a hold · ${order.gameName}`,
       body: `Order #${order.orderNo} was cancelled but its authorisation is still open: ${problem} It expires by itself within seven days; cancel it in Stripe to free it sooner.`,
-      href: `/dashboard/admin/orders/${order.id}`,
+      href: `/dashboard/admin/orders/${order.orderNo}`,
     }).catch(() => undefined);
   }
 

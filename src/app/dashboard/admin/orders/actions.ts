@@ -90,7 +90,9 @@ export async function adminCancelOrder(
 
     await publish({ topic: "orders", key: orderId, userIds: [] });
     await publish({ topic: "dispatch", key: orderId, userIds: [] });
-    revalidatePath(`/dashboard/admin/orders/${orderId}`);
+    // By number, since that is the URL the page is served at — revalidating
+    // the id would name a path nobody is looking at.
+    revalidatePath(`/dashboard/admin/orders/${order.orderNo}`);
 
     const amount = `€${(outcome.cents / 100).toFixed(2)}`;
     if (outcome.problem) return { ok: false, error: `Cancelled, but the refund failed: ${outcome.problem}` };
@@ -113,8 +115,8 @@ export async function adminCancelOrder(
 export async function adminCompleteOrder(orderId: string): Promise<Result> {
   try {
     const admin = await requireAdmin();
-    await forceCompleteOrder(orderId, admin);
-    revalidatePath(`/dashboard/admin/orders/${orderId}`);
+    const closed = await forceCompleteOrder(orderId, admin);
+    revalidatePath(`/dashboard/admin/orders/${closed.orderNo}`);
     return { ok: true, message: "Order closed and paid out." };
   } catch (err) {
     return fail(err);

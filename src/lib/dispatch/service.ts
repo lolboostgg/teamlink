@@ -461,7 +461,7 @@ async function announceAbandonedOrder(
     type: "order.abandoned",
     title: `Order abandoned · ${order.gameName}`,
     body: `#${order.orderNo} sat assigned without a session — ${settled}.`,
-    href: `/dashboard/admin/orders/${orderId}`,
+    href: `/dashboard/admin/orders/${order.orderNo}`,
   });
 }
 

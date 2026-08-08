@@ -5,9 +5,17 @@ import { prisma } from "@/lib/db";
  * Works for roster rows that were never linked to a user account — those
  * simply have no account-side data.
  */
-export async function getTeammateDetail(teammateNo: number) {
+/**
+ * One teammate, by their roster number (#12) or by their raw id.
+ *
+ * The number is what the URLs carry; the id is the fallback so an older link,
+ * a notification written before the switch, or an internal redirect still
+ * resolves instead of 404ing. Same trade getAccountDetail makes.
+ */
+export async function getTeammateDetail(noOrId: number | string) {
+  const teammateNo = Number(noOrId);
   const teammate = await prisma.teammate.findUnique({
-    where: { teammateNo },
+    where: Number.isInteger(teammateNo) && teammateNo > 0 ? { teammateNo } : { id: String(noOrId) },
     include: {
       user: true,
       verification: true,

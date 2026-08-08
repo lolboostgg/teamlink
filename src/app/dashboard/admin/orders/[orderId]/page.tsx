@@ -11,8 +11,12 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params;
+  // URLs carry the human order number (#1117). The cuid still resolves, so
+  // links written before the switch — notifications, bookmarks, support
+  // threads — keep working.
+  const orderNo = Number(orderId);
   const order = await prisma.order.findUnique({
-    where: { id: orderId },
+    where: Number.isInteger(orderNo) && orderNo > 0 ? { orderNo } : { id: orderId },
     include: {
       clientUser: true,
       candidates: { include: { teammate: true }, orderBy: { invitedAt: "asc" } },
@@ -69,8 +73,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <span className={`admin-order-status admin-order-status--${statusTone}`}><i className={order.status === "COMPLETED" ? "fa-solid fa-check" : "fa-solid fa-circle"} />{statusLabel}</span>
       </div>
       <dl className="admin-order-facts">
-        <div><span className="admin-order-fact__icon admin-order-fact__icon--face"><AvatarIcon seed={`client-${clientName}`} avatarUrl={clientAvatar} frame={clientFrame} /></span><span><dt>Client</dt><dd>{order.clientUser ? <Link href={`/dashboard/admin/accounts/${order.clientUser.id}`}>{clientName}</Link> : clientName}</dd></span></div>
-        <div><span className="admin-order-fact__icon admin-order-fact__icon--face">{selected ? <AvatarIcon seed={`teammate-${selected.teammateId}`} avatarUrl={teammateAvatar} frame={teammateFrame} /> : <i className="fa-solid fa-headset" />}</span><span><dt>Teammate</dt><dd>{selected ? <Link href={`/dashboard/admin/teammates/${selected.teammateId}`}>{teammateName}</Link> : teammateName}</dd></span></div>
+        <div><span className="admin-order-fact__icon admin-order-fact__icon--face"><AvatarIcon seed={`client-${clientName}`} avatarUrl={clientAvatar} frame={clientFrame} /></span><span><dt>Client</dt><dd>{order.clientUser ? <Link href={`/dashboard/admin/accounts/${order.clientUser.accountNo}`}>{clientName}</Link> : clientName}</dd></span></div>
+        <div><span className="admin-order-fact__icon admin-order-fact__icon--face">{selected ? <AvatarIcon seed={`teammate-${selected.teammateId}`} avatarUrl={teammateAvatar} frame={teammateFrame} /> : <i className="fa-solid fa-headset" />}</span><span><dt>Teammate</dt><dd>{selected ? <Link href={`/dashboard/admin/teammates/${selected.teammate.teammateNo}`}>{teammateName}</Link> : teammateName}</dd></span></div>
         <div><span className="admin-order-fact__icon"><i className="fa-solid fa-gamepad" /></span><span><dt>Game & option</dt><dd>{order.gameName}<small>{order.option}</small></dd></span></div>
         <div><span className="admin-order-fact__icon"><i className="fa-solid fa-coins" /></span><span><dt>Order value</dt><dd><PriceTag amountEUR={Number(order.priceEUR)} /><small>{selectedCount > 0 ? <>Teammate cut <PriceTag amountEUR={teammateCutEach} />{selectedCount > 1 ? ` each · ${selectedCount} teammates` : ""}</> : <>Teammate cut <PriceTag amountEUR={payoutPot} /></>}</small></dd></span></div>
       </dl>
