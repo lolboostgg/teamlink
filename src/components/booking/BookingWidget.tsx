@@ -187,11 +187,20 @@ export function BookingWidget({ game }: Props) {
         <Reveal key={visibleCategory.category} delay={40}>
           <div className="booking-category">
             {visibleCategory.options.map((option) => (
-              <button
+              // Shell rather than a single button: the teammate stepper below
+              // is made of buttons, and a button inside a button is not valid
+              // HTML — the browser closes the outer one early and the row
+              // falls apart. The shell carries the card, the button is just
+              // the clickable row inside it.
+              <div
                 key={option.name}
+                className={`booking-option-shell${selected.name === option.name ? " is-selected" : ""}`}
+              >
+              <button
                 type="button"
-                className={`booking-option${selected.name === option.name ? " is-selected" : ""}`}
+                className="booking-option"
                 onClick={() => selectOption(option)}
+                aria-pressed={selected.name === option.name}
               >
                 {selected.name === option.name && (
                   <span className="booking-option__check" aria-hidden="true">
@@ -219,6 +228,38 @@ export function BookingWidget({ game }: Props) {
                   </span>
                 </span>
               </button>
+
+              {/* Only where there is a choice to make, and only on the mode
+                  actually selected — a stepper stuck at 1 with both buttons
+                  greyed out reads as broken, and four of them at once reads
+                  as clutter. */}
+              {selected.name === option.name && option.maxTeammates > 1 && (
+                <div className="booking-option__teammates">
+                  <span className="booking-option__teammates-label">
+                    <i className="fa-solid fa-user-group" aria-hidden="true" /> Teammates
+                  </span>
+                  <span className="booking-stepper">
+                    <button
+                      type="button"
+                      onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
+                      disabled={groupSize <= 1}
+                      aria-label="Fewer teammates"
+                    >
+                      <i className="fa-solid fa-minus" aria-hidden="true" />
+                    </button>
+                    <span className="booking-stepper__value">{groupSize}</span>
+                    <button
+                      type="button"
+                      onClick={() => setGroupSize((n) => Math.min(option.maxTeammates, n + 1))}
+                      disabled={groupSize >= option.maxTeammates}
+                      aria-label="More teammates"
+                    >
+                      <i className="fa-solid fa-plus" aria-hidden="true" />
+                    </button>
+                  </span>
+                </div>
+              )}
+              </div>
             ))}
           </div>
         </Reveal>

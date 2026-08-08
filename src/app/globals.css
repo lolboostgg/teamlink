@@ -2074,6 +2074,22 @@ ul {
    very tall/dense; a flat row list keeps every option visible at a glance
    without the scroll depth. Which specific teammate you get is decided
    after checkout by the live dispatch/pick flow, not chosen here. */
+/* The card is the shell, not the button — the teammate stepper inside it is
+   made of buttons, and nesting those inside another button is invalid HTML
+   that browsers "fix" by closing the outer one early. */
+.booking-option-shell {
+  position: relative;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  margin-bottom: 8px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.booking-option-shell:hover {
+  border-color: var(--border-strong);
+}
+
 .booking-option {
   position: relative;
   display: flex;
@@ -2081,26 +2097,48 @@ ul {
   gap: 14px;
   width: 100%;
   padding: 14px 16px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  background: var(--bg-elevated);
+  border: none;
+  background: none;
+  border-radius: inherit;
+  color: inherit;
+  font-family: inherit;
   text-align: left;
-  margin-bottom: 8px;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.booking-option:hover {
-  border-color: var(--border-strong);
 }
 
 /* Same colored-glow selected state as the teammate pick cards later in the
    flow (.pick-card.is-selected) — one visual language for "this is chosen"
    across the whole booking-to-matching journey instead of two different
    ones. */
-.booking-option.is-selected {
+.booking-option-shell.is-selected {
   border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 55%, var(--border-strong));
   background: color-mix(in srgb, var(--cat-color, var(--accent)) 8%, var(--bg-elevated));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat-color, var(--accent)) 45%, transparent), 0 0 20px color-mix(in srgb, var(--cat-color, var(--accent)) 22%, transparent);
+}
+
+/* Sits under the row it belongs to, divided by a hairline — beside the
+   price it would compete with the one number the row exists to show. */
+.booking-option__teammates {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px;
+  padding: 11px 0;
+  border-top: 1px solid color-mix(in srgb, var(--cat-color, var(--accent)) 22%, var(--border));
+}
+
+.booking-option__teammates-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.booking-option__teammates-label i {
+  font-size: 11px;
+  color: var(--cat-color, var(--accent));
 }
 
 /* Bigger, rounder and gradient-filled instead of a flat tinted square —
@@ -2123,7 +2161,7 @@ ul {
   transition: transform 0.15s ease;
 }
 
-.booking-option.is-selected .booking-option__icon {
+.booking-option-shell.is-selected .booking-option__icon {
   transform: scale(1.08);
 }
 
@@ -2240,6 +2278,10 @@ ul {
   padding: 16px 22px 0;
   background: linear-gradient(180deg, transparent, var(--bg-elevated) 20%);
   box-shadow: inset 0 1px 0 var(--border);
+  /* The footer bleeds to the card's edges, so without this its square
+     corners paint over the card's rounded ones and the bottom of the card
+     looks clipped off. */
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 /* ── Live queue readout ─────────────────────────────────────
