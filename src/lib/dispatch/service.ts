@@ -642,8 +642,103 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
   return completed;
 }
 
+/**
+ * Invites a teammate to orders that are already searching.
+ *
+ * The invite wave is picked once, at dispatch, from whoever happened to be
+ * online at that second. Someone who opens their panel ten seconds later used
+ * to see nothing at all until the next order — which is worst exactly when the
+ * roster is thin and the customer is the one waiting. Called on every teammate
+ * panel read, so coming online is enough to be considered.
+ *
+ * Returns the order ids the teammate was newly invited to.
+ */
+export async function inviteToRunningOrders(teammateId: string): Promise<string[]> {
+  const now = new Date();
+
+  const teammate = await prisma.teammate.findUnique({ where: { id: teammateId } });
+  if (!teammate || !teammate.available) return [];
+
+  // Anyone already committed elsewhere stays out — the same rule the initial
+  // wave applies, so a teammate can't be pulled onto two orders at once.
+  const busy = await prisma.dispatchCandidate.findFirst({
+    where: {
+      teammateId,
+      OR: [
+        { selected: true, order: { status: { in: ["ASSIGNED", "IN_PROGRESS"] } } },
+        { status: "ACCEPTED", order: { status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] } } },
+      ],
+    },
+    select: { id: true },
+  });
+  if (busy) return [];
+
+  const gameSlugs = (teammate.gameSlugs as string[] | null) ?? [];
+  if (gameSlugs.length === 0) return [];
+
+  const open = await prisma.order.findMany({
+    where: {
+      status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] },
+      dispatchDeadline: { gt: now },
+      gameSlug: { in: gameSlugs },
+      // A replay request belongs to the one teammate it names; nobody else
+      // gets pulled into it.
+      OR: [{ requestedTeammateId: null }, { requestedTeammateId: teammateId }],
+      candidates: { none: { teammateId } },
+    },
+    include: { candidates: { select: { id: true } } },
+    orderBy: { dispatchedAt: "asc" },
+  });
+
+  const invited: string[] = [];
+
+  for (const order of open) {
+    if (order.candidates.length >= MAX_CANDIDATES) continue;
+
+    try {
+      await prisma.dispatchCandidate.create({
+        data: {
+          orderId: order.id,
+          teammateId,
+          invitedAt: now,
+          expiresAt: order.dispatchDeadline,
+        },
+      });
+    } catch {
+      // Unique on (orderId, teammateId): a concurrent panel read got there
+      // first, which is a no-op rather than an error.
+      continue;
+    }
+
+    invited.push(order.id);
+    // One order at a time. Two requests appearing at once would have the
+    // teammate accept one and lose the other anyway, and the busy check above
+    // will keep them out of the rest until this one resolves.
+    break;
+  }
+
+  if (invited.length > 0) {
+    await prisma.teammate.update({ where: { id: teammateId }, data: { lastDispatchAt: now } });
+    if (teammate.userId) {
+      for (const orderId of invited) {
+        await publish({ topic: "dispatch", key: orderId, userIds: [teammate.userId] });
+      }
+    }
+  }
+
+  return invited;
+}
+
 /** Everything the teammate dashboard needs in one read. */
 export async function getTeammateDispatchView(teammateId: string) {
+  // Before reading, offer this teammate anything already searching. The invite
+  // wave is picked at dispatch from whoever was online that second, so without
+  // this a teammate who opens their panel mid-search sees an empty screen while
+  // a customer is actively waiting for someone exactly like them.
+  await inviteToRunningOrders(teammateId).catch((err) => {
+    console.error("[dispatch] top-up invite failed:", teammateId, err);
+  });
+
   const rows = await prisma.dispatchCandidate.findMany({
     where: {
       teammateId,

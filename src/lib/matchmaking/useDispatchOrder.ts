@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DispatchOrder } from "@/lib/matchmaking/types";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 
@@ -16,6 +16,12 @@ export const SELECTION_WINDOW_MS = 60_000;
 export function useDispatchOrder(orderId: string | null) {
   const [order, setOrder] = useState<DispatchOrder | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Difference between the server's clock and this browser's, measured on
+  // every read. Without it a browser running a few seconds behind compares
+  // its own Date.now() against a server timestamp, gets a negative elapsed
+  // time, and shows 0:00 until it catches up — which looked exactly like a
+  // timer that refuses to start.
+  const skewRef = useRef(0);
   // Distinguishes "still loading" from "genuinely no such order" — both
   // render order===null, but only the latter should show "not found".
   const [loaded, setLoaded] = useState(false);
@@ -26,11 +32,16 @@ export function useDispatchOrder(orderId: string | null) {
       const res = await fetch(`/api/dispatch/orders/${orderId}`, { cache: "no-store" });
       const data = await res.json();
       setOrder(res.ok ? data.order : null);
+      // Round trip included, so this reads a touch old and the timer errs
+      // towards showing slightly more elapsed time rather than less. That is
+      // the right way round: a search that looks a second ahead is invisible,
+      // one stuck at zero is what got reported.
+      if (typeof data.serverNow === "number") skewRef.current = data.serverNow - Date.now();
     } catch {
       // Keep the last good state; the next tick retries.
     } finally {
       setLoaded(true);
-      setNow(Date.now());
+      setNow(Date.now() + skewRef.current);
     }
   }, [orderId]);
 
@@ -43,7 +54,7 @@ export function useDispatchOrder(orderId: string | null) {
   // between server events.
   useEffect(() => {
     if (!orderId) return;
-    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const tick = setInterval(() => setNow(Date.now() + skewRef.current), 1000);
     return () => clearInterval(tick);
   }, [orderId]);
 
@@ -68,6 +79,7 @@ export function useDispatchOrder(orderId: string | null) {
         body: JSON.stringify(body),
       });
       const data = await res.json();
+      if (typeof data.serverNow === "number") skewRef.current = data.serverNow - Date.now();
       if (res.ok && data.order) setOrder(data.order);
       else load();
     },

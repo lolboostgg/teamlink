@@ -19,7 +19,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
   const order = await prisma.order.findUnique({ where: { id: orderId }, include });
   if (!order) return NextResponse.json({ error: "Unknown order." }, { status: 404 });
 
-  return NextResponse.json({ order: toCustomerOrder(order) }, { headers: { "Cache-Control": "no-store" } });
+  // Every timestamp in the payload is server time, but the screens tick on
+  // the browser's clock. Sending ours lets the client measure the difference
+  // instead of assuming there is none — a browser running even slightly
+  // behind used to sit on 0:00 until it caught up.
+  return NextResponse.json(
+    { order: toCustomerOrder(order), serverNow: Date.now() },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 /**
@@ -89,5 +96,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ ord
     ].filter((id): id is string => Boolean(id));
     await publish({ topic: "orders", key: orderId, userIds });
   }
-  return NextResponse.json({ order: order ? toCustomerOrder(order) : null });
+  return NextResponse.json({ order: order ? toCustomerOrder(order) : null, serverNow: Date.now() });
 }
