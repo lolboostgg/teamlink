@@ -35,7 +35,7 @@ export function useAllOrdersState(): {
     }
   }, []);
 
-  useLiveSync("orders", refresh, 3000);
+  useLiveSync("orders", refresh, 20_000);
 
   return { orders, loading, refresh };
 }

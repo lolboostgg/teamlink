@@ -123,8 +123,84 @@ async function abandonAssignment(
   });
 }
 
+/**
+ * Orders reconciled in the last second, and what they returned.
+ *
+ * Every open tab reading an order calls reconcileOrder, and they all call it
+ * with the same clock. Ten readers a second on one order is ten transactions
+ * that reach the same conclusion, nine of which exist only to lose a race —
+ * and each one holds a pooled connection while it does. Coalescing them costs
+ * a Map and nothing else.
+ *
+ * Deliberately per-process and in-memory: it is an optimisation, never a
+ * correctness mechanism. Two processes racing still land in the transaction,
+ * which is where the actual guarantees live.
+ */
+const recentReconciles = new Map<string, { at: number; result: Promise<unknown> }>();
+const RECONCILE_COALESCE_MS = 1_000;
+
 export async function reconcileOrder(orderId: string) {
+  const inflight = recentReconciles.get(orderId);
+  if (inflight && Date.now() - inflight.at < RECONCILE_COALESCE_MS) {
+    return inflight.result as ReturnType<typeof runReconcile>;
+  }
+  const result = runReconcile(orderId);
+  recentReconciles.set(orderId, { at: Date.now(), result });
+  // Bounded: this is a cache with a one-second life, not a leak waiting to
+  // happen on a long-lived process.
+  if (recentReconciles.size > 500) {
+    const cutoff = Date.now() - RECONCILE_COALESCE_MS;
+    for (const [id, entry] of recentReconciles) if (entry.at < cutoff) recentReconciles.delete(id);
+  }
+  return result;
+}
+
+async function runReconcile(orderId: string) {
   const now = new Date();
+
+  // Cheap gate before the expensive part.
+  //
+  // A transaction that reads the order, sweeps the candidates, and writes
+  // nothing is the single most common thing this app does — an order sitting
+  // assigned for an hour is read constantly and can change nothing. One
+  // indexed read here replaces that transaction in the overwhelming majority
+  // of calls.
+  const peek = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!peek) return null;
+  if (["AWAITING_PAYMENT", "COMPLETED", "CANCELLED", "NO_MATCH"].includes(peek.status)) return peek;
+
+  if (peek.status === "ASSIGNED" || peek.status === "IN_PROGRESS" || peek.status === "CANCEL_PENDING") {
+    // Only the abandonment clock can move these, and it is two hours long.
+    const stale =
+      peek.status === "ASSIGNED" &&
+      peek.assignedAt !== null &&
+      peek.assignedAt.getTime() + ABANDONED_ASSIGNMENT_MS <= now.getTime();
+    if (!stale) return peek;
+  } else {
+    // Searching or selecting: something is due only if a clock has run out or
+    // somebody has answered. `count` beats fetching the rows — the answer is
+    // a number and the decision is "is it zero".
+    const [expired, answered] = await Promise.all([
+      prisma.dispatchCandidate.count({ where: { orderId, status: "PENDING", expiresAt: { lte: now } } }),
+      prisma.dispatchCandidate.count({ where: { orderId, status: "ACCEPTED" } }),
+    ]);
+    const waveDue =
+      !peek.matchingPaused &&
+      peek.status !== "SELECTING" &&
+      (peek.poolExhaustedAt
+        ? peek.poolExhaustedAt.getTime() + POOL_RETRY_MS <= now.getTime()
+        : !peek.waveDeadline || peek.waveDeadline <= now);
+    const selectionDue =
+      peek.status === "SELECTING" && peek.selectionDeadline !== null && peek.selectionDeadline <= now;
+    const pickerDue = answered > 0 && peek.status !== "SELECTING" && pickerRevealed(peek.dispatchedAt, now);
+
+    if (expired === 0 && !waveDue && !selectionDue && !pickerDue) return peek;
+  }
+
+  return runReconcileTransaction(orderId, now);
+}
+
+async function runReconcileTransaction(orderId: string, now: Date) {
 
   // Captured from the transaction's own read so the clock-driven transitions
   // can be announced without paying for a second query on every reconcile —
@@ -772,18 +848,26 @@ export async function tickSearchingOrders(teammateId: string): Promise<void> {
   const gameSlugs = (teammate.gameSlugs as string[] | null) ?? [];
   if (gameSlugs.length === 0) return;
 
-  const open = await prisma.order.findMany({
+  // Only orders whose wave clock has actually run out. Reconciling every
+  // open order on every panel read meant one teammate refreshing their
+  // dashboard did five transactions' worth of work to discover that nothing
+  // had changed — multiplied by every teammate with the panel open. The
+  // filter is the whole point: almost always this query returns nothing and
+  // the call costs one indexed read.
+  const now = new Date();
+  const due = await prisma.order.findMany({
     where: {
       status: { in: ["SEARCHING", "CANDIDATES_READY"] },
       gameSlug: { in: gameSlugs },
       matchingPaused: false,
+      OR: [{ waveDeadline: null }, { waveDeadline: { lte: now } }],
     },
     select: { id: true },
     orderBy: { dispatchedAt: "asc" },
-    take: 5,
+    take: 3,
   });
 
-  for (const order of open) await reconcileOrder(order.id);
+  for (const order of due) await reconcileOrder(order.id);
 }
 
 /** Everything the teammate dashboard needs in one read. */

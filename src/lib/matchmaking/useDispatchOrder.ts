@@ -56,7 +56,7 @@ export function useDispatchOrder(orderId: string | null) {
   // The stream is what makes this screen feel live; this is only the net for
   // when it is down. At one second it was not a fallback, it was a second
   // poller running next to a push channel that already told us everything.
-  useLiveSync("orders", load, 5000, { enabled: Boolean(orderId), key: orderId ?? undefined });
+  useLiveSync("orders", load, 20_000, { enabled: Boolean(orderId), key: orderId ?? undefined });
 
   // Every countdown on these screens (search elapsed, selection window,
   // reroll deadline, session clock) is derived from `now`, so it has to
@@ -87,7 +87,7 @@ export function useDispatchOrder(orderId: string | null) {
     order !== null && ["searching", "candidates_ready", "selecting"].includes(order.status);
   useEffect(() => {
     if (!orderId || settled || !clockRunning) return;
-    const tick = setInterval(() => void load(), 3000);
+    const tick = setInterval(() => void load(), 4000);
     return () => clearInterval(tick);
   }, [orderId, settled, clockRunning, load]);
 

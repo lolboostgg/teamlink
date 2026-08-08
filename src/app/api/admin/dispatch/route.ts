@@ -26,11 +26,23 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const focus = url.searchParams.get("order");
 
-  const live = await prisma.order.findMany({
-    where: { status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] } },
+  // Only what a clock can actually move. Ticking every live order on every
+  // two-second board refresh is a busy loop wearing a dashboard's clothes.
+  const now = new Date();
+  const due = await prisma.order.findMany({
+    where: {
+      status: { in: ["SEARCHING", "CANDIDATES_READY", "SELECTING"] },
+      matchingPaused: false,
+      OR: [
+        { waveDeadline: null },
+        { waveDeadline: { lte: now } },
+        { selectionDeadline: { lte: now } },
+      ],
+    },
     select: { id: true },
+    take: 10,
   });
-  for (const order of live) await reconcileOrder(order.id);
+  for (const order of due) await reconcileOrder(order.id);
 
   const orders = await prisma.order.findMany({
     where: {

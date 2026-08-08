@@ -36,12 +36,15 @@ function createPrismaClient(): PrismaClient {
     idleTimeoutMillis: 30_000,
     query_timeout: 8_000,
     statement_timeout: 8_000,
-    // Raised from 5: every dashboard page is force-dynamic and runs several
-    // queries per render, so a handful of concurrent readers could exhaust
-    // the pool and leave requests queueing behind it — which surfaces as a
-    // slow dashboard, then a server error that clears up on its own. The
-    // transaction pooler is built to absorb this shape.
-    max: 10,
+    // Back down from 10. Supabase's *session* pooler allows 15 clients in
+    // total, and this app runs more than one Node process and restarts them
+    // on deploy — at 10 per process, two processes alone are over the limit
+    // and every query starts failing with EMAXCONNSESSION. Queueing behind a
+    // small pool is slow; exceeding the pooler's ceiling is an outage.
+    //
+    // Raise this only after DATABASE_URL points at the transaction pooler
+    // (port 6543, with ?pgbouncer=true), which is built to absorb this shape.
+    max: 5,
   });
   return new PrismaClient({ adapter });
 }

@@ -65,12 +65,17 @@ function closeStream() {
  *
  * A stream reporting "open" only means the browser's HTTP connection to
  * `/api/events` succeeded — it says nothing about whether server→server
- * delivery (Postgres LISTEN/NOTIFY across instances) is actually working.
- * When it silently isn't, this is what keeps chat and dashboards from going
- * up to a full minute of silence between two people on different instances,
- * so it stays close to the disconnected interval rather than far above it.
+ * delivery (Postgres LISTEN/NOTIFY across instances) is actually working, so
+ * some net has to stay under it.
+ *
+ * It used to be four seconds, which is not a net: with several of these hooks
+ * per tab and several tabs per person, the "fallback" was doing nearly all
+ * the reading, at a steady rate, whether or not anything had changed. That is
+ * what pinned the database pool and the CPU. Thirty seconds is a genuine
+ * fallback — the stream is what makes the app feel live, and if the stream is
+ * broken the right fix is to fix the stream, not to hide it behind a poll.
  */
-const CONNECTED_FALLBACK_MS = 4_000;
+const CONNECTED_FALLBACK_MS = 30_000;
 
 /**
  * Keeps a view in sync with the server.

@@ -108,9 +108,10 @@ export function DispatchBoard() {
     setLoaded(true);
   }, [focus]);
 
-  // Waves are eight seconds long, so a board that lags by more than a couple
-  // of seconds is showing a dispatch that has already moved on.
-  useLiveSync("orders", load, 2000);
+  // The stream pushes every dispatch change, so this is only the net behind
+  // it. Faster would mean an admin leaving the board open all day costs more
+  // database reads than the customers do.
+  useLiveSync("orders", load, 5000);
 
   // Independent of the fetch: the queue clocks have to keep counting between
   // reads or the board looks frozen.

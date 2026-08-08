@@ -68,7 +68,7 @@ export function useDispatchState(enabled = true) {
   // channel already wakes this the instant an order is dispatched, which is
   // the moment that actually matters; these numbers only decide how long a
   // dropped stream stays stale.
-  useLiveSync("dispatch", load, urgent ? 1500 : 5000, { enabled });
+  useLiveSync("dispatch", load, urgent ? 4000 : 20_000, { enabled });
 
   // The panel heartbeat, deliberately not part of the poll above.
   //
