@@ -156,6 +156,41 @@ function GameCompletionModal({
   );
 }
 
+/**
+ * A value you are meant to paste somewhere else.
+ *
+ * The in-game name exists to be typed into a game client, and retyping a
+ * Riot ID by eye from a second monitor is how a teammate ends up adding the
+ * wrong person. One click, and the confirmation is the label itself so it
+ * needs no space of its own.
+ */
+function CopyValue({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  return (
+    <button
+      type="button"
+      className={`order-room__copy${copied ? " is-copied" : ""}`}
+      title="Copy to clipboard"
+      onClick={() => {
+        // Clipboard access is refused outside a secure context and in some
+        // embedded browsers. Nothing to recover here — the value is on screen
+        // either way, so the click simply does nothing rather than erroring.
+        void navigator.clipboard?.writeText(value).then(() => setCopied(true)).catch(() => {});
+      }}
+    >
+      <span>{value}</span>
+      <i className={copied ? "fa-solid fa-check" : "fa-regular fa-copy"} aria-hidden="true" />
+    </button>
+  );
+}
+
 export function OrderRoom({ orderId }: { orderId: string }) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -362,7 +397,9 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                 {order.ign && (
                   <div>
                     <dt>In-game name</dt>
-                    <dd>{order.ign}</dd>
+                    <dd>
+                      <CopyValue value={order.ign} />
+                    </dd>
                   </div>
                 )}
                 {order.ignRegion && (
@@ -401,6 +438,40 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             <span>{order.playStylePref ?? "No preference"}</span>
             <span className="order-room__pref-chips--vibe">{order.vibe ?? "No vibe set"}</span>
           </div>
+
+          {/* The column ran out of content halfway down, and the things that
+              belong in the leftover space are the ones nobody looks up until
+              it is too late: what to do when the customer doesn't show, and
+              the rules that decide whether an order gets paid out. */}
+          <div className="order-room__section">Running this order</div>
+          <ul className="order-room__rules">
+            <li>
+              <i className="fa-solid fa-user-plus" aria-hidden="true" />
+              <span>
+                Add them in-game and say hello in the chat. Keep everything in this chat — it&rsquo;s the only
+                record we can read back if there&rsquo;s a dispute.
+              </span>
+            </li>
+            <li>
+              <i className="fa-solid fa-camera" aria-hidden="true" />
+              <span>
+                Submit a screenshot after every game. Payouts are released against those, and the customer never
+                sees them.
+              </span>
+            </li>
+            <li>
+              <i className="fa-solid fa-hourglass-half" aria-hidden="true" />
+              <span>
+                No-show? Wait 15 minutes, message them, then contact support — don&rsquo;t cancel it yourself, or
+                the order counts against you.
+              </span>
+            </li>
+          </ul>
+
+          <Link href="/contact" className="order-room__help">
+            <i className="fa-solid fa-headset" aria-hidden="true" />
+            Something wrong with this order?
+          </Link>
         </div>
       </aside>
 

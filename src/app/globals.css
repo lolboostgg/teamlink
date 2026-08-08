@@ -14435,3 +14435,87 @@ a.notification-panel__item:hover {
   background: transparent;
   border-color: var(--dash-line);
 }
+
+/* ── Order room: copyable value + running notes ──────────────
+   The in-game name exists to be pasted into a game client, and the left
+   column ran out of content halfway down — the space goes to the things
+   nobody looks up until it is too late. */
+.order-room__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 2px 7px;
+  margin: -2px -7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.order-room__copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-room__copy i {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.order-room__copy:hover {
+  border-color: var(--dash-line);
+  background: var(--dash-surface);
+}
+
+.order-room__copy.is-copied,
+.order-room__copy.is-copied i {
+  color: var(--success);
+}
+
+.order-room__rules {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.order-room__rules li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.order-room__rules i {
+  margin-top: 2px;
+  width: 14px;
+  text-align: center;
+  color: var(--text-faint);
+}
+
+.order-room__help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 10px;
+  border: 1px solid var(--dash-line);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.order-room__help:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
