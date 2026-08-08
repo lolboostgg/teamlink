@@ -15,7 +15,7 @@ import { TeammateCard } from "@/components/matchmaking/TeammateCard";
 import { SearchingCard } from "@/components/matchmaking/SearchingCard";
 import { TeammateDetailsPanel } from "@/components/matchmaking/TeammateDetailsPanel";
 import { SessionScreen } from "@/components/matchmaking/SessionScreen";
-import { CONVERSATION_OPTIONS, PLAY_STYLE_OPTIONS } from "@/components/matchmaking/PreferencesModal";
+import { PreferencesModal } from "@/components/matchmaking/PreferencesModal";
 import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
 import { Modal } from "@/components/ui/Modal";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
@@ -124,6 +124,7 @@ export function MatchmakingScreen({ orderId }: Props) {
   const [confirmTarget, setConfirmTarget] = useState<{ teammateId: string; action: PickAction } | null>(null);
   const [selectedAnimIds, setSelectedAnimIds] = useState<string[]>([]);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
   const pickSoundPlayed = useRef(false);
   const sessionSoundPlayed = useRef(false);
   const settledCheckout = useRef(false);
@@ -230,41 +231,27 @@ export function MatchmakingScreen({ orderId }: Props) {
                 runs there is nothing else to do, and every one of these was
                 two taps and a Confirm away for a single-word choice. */}
             <div className="matching-screen__prefs">
-              <div className="matching-screen__pref-group matching-screen__pref-group--inline">
-                <span className="matching-screen__pref-label">
-                  <i className="fa-solid fa-comments" aria-hidden="true" /> Conversation
+              {/* Conversation and play style are four and five long labels;
+                  inline they either wrapped into four lines each or ran off
+                  the side of the card. As a summary row they take one line
+                  and the choosing happens in the modal that already exists
+                  for them. Vibe stays out here: four icons is compact
+                  already, and it is the one people actually change. */}
+              <button
+                type="button"
+                className="matching-screen__pref-summary"
+                onClick={() => setPrefsOpen(true)}
+              >
+                <span className="matching-screen__pref-summary-main">
+                  <span className="matching-screen__pref-summary-label">
+                    <i className="fa-solid fa-sliders" aria-hidden="true" /> Conversation &amp; play style
+                  </span>
+                  <span className="matching-screen__pref-summary-value">
+                    {order.conversationPref ?? "No preference"} · {order.playStylePref ?? "No preference"}
+                  </span>
                 </span>
-                <div className="matching-screen__pref-pills">
-                  {CONVERSATION_OPTIONS.map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      className={`matching-screen__pref-pill${order.conversationPref === opt ? " is-selected" : ""}`}
-                      onClick={() => updatePreferences({ conversationPref: opt })}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="matching-screen__pref-group matching-screen__pref-group--inline">
-                <span className="matching-screen__pref-label">
-                  <i className="fa-solid fa-gamepad" aria-hidden="true" /> Play style
-                </span>
-                <div className="matching-screen__pref-pills">
-                  {PLAY_STYLE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      className={`matching-screen__pref-pill${order.playStylePref === opt ? " is-selected" : ""}`}
-                      onClick={() => updatePreferences({ playStylePref: opt })}
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                <span className="matching-screen__pref-summary-action">Change</span>
+              </button>
 
               <div className="matching-screen__pref-group">
                 <span className="matching-screen__pref-label">
@@ -296,6 +283,14 @@ export function MatchmakingScreen({ orderId }: Props) {
             >
               Cancel request
             </button>
+
+            <PreferencesModal
+              open={prefsOpen}
+              onClose={() => setPrefsOpen(false)}
+              conversationPref={order.conversationPref}
+              playStylePref={order.playStylePref}
+              onSave={updatePreferences}
+            />
 
             <CancelRequestModal
               open={cancelConfirmOpen}

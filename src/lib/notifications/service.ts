@@ -22,9 +22,15 @@ export async function notifyUser(userId: string, input: NotifyInput) {
   await publish({ topic: "notifications", userIds: [userId] });
 
   // Discord and mail on top, where the event's type calls for it — see the
-  // policy table in notify/channels.ts. Not awaited: both are third parties
-  // across a network, and the bell row is already written either way.
-  void deliverExternally(userId, input);
+  // policy table in notify/channels.ts.
+  //
+  // Awaited, despite being slower than the caller needs. A floating promise
+  // does not survive here: this runs inside server actions and route
+  // handlers, and once the response is sent the process can be frozen or
+  // torn down with the request — so a fire-and-forget send is simply never
+  // made. deliverExternally swallows its own errors, so awaiting it cannot
+  // fail the notification.
+  await deliverExternally(userId, input);
 
   return notification;
 }

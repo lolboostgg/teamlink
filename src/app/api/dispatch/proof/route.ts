@@ -48,20 +48,17 @@ export async function GET(request: Request) {
   const game = await prisma.sessionGame.findFirst({ where: { proofPath: path } });
   if (!game) return NextResponse.json({ error: "Not found." }, { status: 404 });
 
+  // Teammates and admins only. The customer used to be allowed through here
+  // as well, but a proof screenshot is evidence for us, not something the
+  // person who booked the session is meant to see — it is a picture of
+  // somebody's game client, submitted to settle whether the work happened.
   if (session.user.role !== "ADMIN") {
-    const order = await prisma.order.findUnique({
-      where: { id: game.orderId },
-      select: { clientUserId: true },
-    });
-    const isCustomer = Boolean(order?.clientUserId) && order!.clientUserId === session.user.id;
-    if (!isCustomer) {
-      const teammate = await prisma.teammate.findUnique({ where: { userId: session.user.id } });
-      if (!teammate) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-      try {
-        await assertAssignedTeammate(game.orderId, teammate.id);
-      } catch {
-        return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-      }
+    const teammate = await prisma.teammate.findUnique({ where: { userId: session.user.id } });
+    if (!teammate) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    try {
+      await assertAssignedTeammate(game.orderId, teammate.id);
+    } catch {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
   }
 

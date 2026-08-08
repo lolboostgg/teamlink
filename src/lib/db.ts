@@ -36,7 +36,12 @@ function createPrismaClient(): PrismaClient {
     idleTimeoutMillis: 30_000,
     query_timeout: 8_000,
     statement_timeout: 8_000,
-    max: 5,
+    // Raised from 5: every dashboard page is force-dynamic and runs several
+    // queries per render, so a handful of concurrent readers could exhaust
+    // the pool and leave requests queueing behind it — which surfaces as a
+    // slow dashboard, then a server error that clears up on its own. The
+    // transaction pooler is built to absorb this shape.
+    max: 10,
   });
   return new PrismaClient({ adapter });
 }

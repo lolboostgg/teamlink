@@ -140,11 +140,11 @@ async function dispatchOrder(orderId: string) {
   await publish({ topic: "dispatch", key: dispatched.id, userIds: invited });
   await publish({ topic: "orders", key: dispatched.id, userIds: order.clientUserId ? [order.clientUserId] : [] });
 
-  // Mail and Discord go out after the live push, and are not awaited: SMTP and
-  // the Discord API are both third parties on the far side of a network, and
-  // the customer is already staring at the search screen by now. Failures are
-  // logged inside notifyOrderDispatched and go no further.
-  void notifyOrderDispatched(dispatched.id);
+  // Awaited rather than left floating: this runs inside a server action or
+  // the Stripe webhook, and once the response is sent the process can be
+  // frozen with the work half done — a fire-and-forget send is simply never
+  // made. It swallows its own errors, so it cannot fail the dispatch.
+  await notifyOrderDispatched(dispatched.id);
 
   return dispatched;
 }

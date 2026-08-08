@@ -19,7 +19,6 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/ToastProvider";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
-import { PrivateImage } from "@/components/ui/PrivateImage";
 import { PaymentMethodPicker } from "@/components/ui/PaymentMethodPicker";
 import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
 import type { PaymentMethodKey } from "@/lib/payments";
@@ -188,14 +187,24 @@ export function SessionScreen({ orderId }: Props) {
   // priced from the original order server-side and paid for like any other.
   async function handleKeepPlaying() {
     setStartingReplay(true);
-    const result = await placeReplayCheckout(order!.id, replayMethod);
-    if (!result.ok) {
+    try {
+      const result = await placeReplayCheckout(order!.id, replayMethod);
+      if (!result.ok) {
+        setStartingReplay(false);
+        showToast(result.error, "error");
+        return;
+      }
+      if (result.redirect.startsWith("http")) window.location.assign(result.redirect);
+      else router.push(result.redirect);
+    } catch (err) {
+      // A server action that throws rather than returning {ok:false} used to
+      // leave this button disabled and reading "Starting…" forever, with
+      // nothing said and nothing to look at. Whatever went wrong, the button
+      // has to come back.
+      console.error("[replay] failed:", err);
       setStartingReplay(false);
-      showToast(result.error, "error");
-      return;
+      showToast("Couldn't start that session — please try again.", "error");
     }
-    if (result.redirect.startsWith("http")) window.location.assign(result.redirect);
-    else router.push(result.redirect);
   }
 
   function handleHelpReason() {
@@ -453,22 +462,30 @@ export function SessionScreen({ orderId }: Props) {
                   const amount = tipTarget === -1 ? Number(tipCustom) : tipTarget!;
                   if (!(amount > 0)) return;
                   setSendingTip(true);
-                  const result = await sendTip(order.id, amount, tipMethod);
-                  if (!result.ok) {
+                  try {
+                    const result = await sendTip(order.id, amount, tipMethod);
+                    if (!result.ok) {
+                      setSendingTip(false);
+                      showToast(result.error, "error");
+                      return;
+                    }
+                    // No saved card: Stripe's page finishes the payment and
+                    // the webhook credits the teammate.
+                    if ("redirect" in result) {
+                      window.location.assign(result.redirect);
+                      return;
+                    }
+                    setTipSent(amount);
                     setSendingTip(false);
-                    showToast(result.error, "error");
-                    return;
+                    setTipTarget(null);
+                    showToast(`Tip of €${amount} sent to ${teammate.name}.`, "success");
+                  } catch (err) {
+                    // Same as the replay button: a thrown action left this
+                    // stuck on "Processing payment…" with no way back.
+                    console.error("[tip] failed:", err);
+                    setSendingTip(false);
+                    showToast("Couldn't send that tip — please try again.", "error");
                   }
-                  // No saved card: Stripe's page finishes the payment and the
-                  // webhook credits the teammate.
-                  if ("redirect" in result) {
-                    window.location.assign(result.redirect);
-                    return;
-                  }
-                  setTipSent(amount);
-                  setSendingTip(false);
-                  setTipTarget(null);
-                  showToast(`Tip of €${amount} sent to ${teammate.name}.`, "success");
                 }}
               >
                 {sendingTip ? "Processing payment..." : `Pay €${tipTarget === -1 ? tipCustom || "0" : tipTarget}`}
@@ -677,27 +694,24 @@ export function SessionScreen({ orderId }: Props) {
               })}
             </div>
 
+            {/* Results, not screenshots. The proof image is evidence for us —
+                a picture of somebody's game client, submitted to settle
+                whether the work happened — so it stays with the teammate and
+                the admins. What the customer is owed is the outcome. */}
             {games.length > 0 && (
-              <div className="session-screen__proofs">
-                {games.map((game) => (
-                  <div className="session-screen__proof" key={game.gameNumber}>
-                    {game.proofPath ? (
-                      <PrivateImage
-                        src={`/api/dispatch/proof?path=${encodeURIComponent(game.proofPath)}`}
-                        name={game.proofName ?? `Game ${game.gameNumber}`}
-                        alt={`Game ${game.gameNumber} result`}
-                      />
-                    ) : (
-                      <span className="session-screen__proof-placeholder">
-                        <i className="fa-solid fa-image" aria-hidden="true" />
-                      </span>
-                    )}
-                    <span>
+              <div className="session-screen__results">
+                {games.map((game) => {
+                  const result = (GAME_RESULT_LABELS[game.result as GameResult] ?? game.result) as string;
+                  return (
+                    <span
+                      className={`session-screen__result session-screen__result--${String(game.result).toLowerCase()}`}
+                      key={game.gameNumber}
+                    >
                       <strong>Game {game.gameNumber}</strong>
-                      <small>{GAME_RESULT_LABELS[game.result as GameResult] ?? game.result}</small>
+                      <small>{result}</small>
                     </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

@@ -6778,48 +6778,66 @@ ul {
 }
 
 /* ── Searching, on one screen ────────────────────────────────
-   Conversation and Play style were a stacked label plus a wrapped pill
-   grid, so two short questions took four lines each. On one row apiece
-   they take one, which is what gets the vibe picker and the cancel button
-   above the fold without moving anything into a second column.
-
-   The pills scroll sideways rather than wrapping: wrapping is what made
-   these tall in the first place, and there are only four or five of them,
-   all visible at the widths this card is actually used at. */
-.matching-screen--searching .matching-screen__pref-group--inline {
-  flex-direction: row;
+   Conversation and play style are four and five long labels. Inline they
+   either wrapped to four lines each or ran off the side of the card, so
+   they collapse to one summary row and the choosing happens in the modal
+   that already exists for them. */
+.matching-screen__pref-summary {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 9px 12px;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.018);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.matching-screen--searching .matching-screen__pref-group--inline .matching-screen__pref-label {
+.matching-screen__pref-summary:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.matching-screen__pref-summary-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.matching-screen__pref-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.matching-screen__pref-summary-label i {
+  color: var(--accent);
+}
+
+.matching-screen__pref-summary-value {
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matching-screen__pref-summary-action {
   flex: 0 0 auto;
-  width: 74px;
-  /* The label is an icon plus text in a flex row, so it needs permission to
-     wrap — otherwise it runs past its fixed width instead of taking a
-     second line. */
-  flex-wrap: wrap;
-  line-height: 1.15;
-}
-
-.matching-screen--searching .matching-screen__pref-group--inline .matching-screen__pref-pills {
-  flex: 1;
-  flex-wrap: nowrap;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 1px;
-}
-
-.matching-screen--searching .matching-screen__pref-group--inline .matching-screen__pref-pills::-webkit-scrollbar {
-  display: none;
-}
-
-.matching-screen--searching .matching-screen__pref-group--inline .matching-screen__pref-pill {
-  flex: 0 0 auto;
-  padding: 6px 11px;
   font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
 }
 
 /* Laptops run out of height before they run out of width. */
@@ -8024,6 +8042,51 @@ ul {
   color: var(--text-faint);
   font-size: 11px;
   font-weight: 700;
+}
+
+/* The customer's view of what was played. No thumbnails: the proof
+   screenshot is evidence for us and stays with the teammate and the
+   admins, so this is the result and nothing else — which also makes it a
+   row of chips instead of a grid of tiles. */
+.session-screen__results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.session-screen__result {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface-2);
+}
+
+.session-screen__result strong {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.session-screen__result small {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.session-screen__result--win {
+  border-color: color-mix(in srgb, var(--success) 30%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+.session-screen__result--win small {
+  color: var(--success);
+}
+
+.session-screen__result--loss small {
+  color: var(--text-faint);
 }
 
 .session-screen__proofs {
