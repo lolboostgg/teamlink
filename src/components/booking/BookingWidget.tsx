@@ -10,7 +10,7 @@ import { getBookingCategories, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
-import { TrustPoints } from "@/components/ui/TrustPoints";
+import { TrustPoints, PaymentStrip } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
 import { FAQ_ITEMS } from "@/lib/content";
 
@@ -128,6 +128,17 @@ export function BookingWidget({ game }: Props) {
     router.push(`/checkout?${params.toString()}`);
   }
 
+  // The option's eta reads "1 min away" in the mode list, where "away"
+  // earns its place; next to a "Queue right now" label it is redundant.
+  const etaShort = selected.eta.replace(/\s*away$/i, "");
+
+  const steps = [
+    { title: "Mode picked", sub: `${selected.name} · ${game.name}` },
+    { title: "Account details", sub: "IGN, region and role" },
+    { title: "Pay", sub: "Card, PayPal or crypto" },
+    { title: "Teammate joins", sub: `Usually ${selected.eta}` },
+  ];
+
   const catColor = CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)";
   const categoryFaq = CATEGORY_FAQ[visibleCategory.category];
   const faqItems = categoryFaq ? [categoryFaq, ...FAQ_ITEMS] : FAQ_ITEMS;
@@ -153,12 +164,6 @@ export function BookingWidget({ game }: Props) {
             <img src={gameIcon(game.slug)} alt="" className="booking-heading__game-icon" />
             Choose your mode
           </h2>
-        </Reveal>
-
-        <Reveal delay={20}>
-          <span className="booking-live-badge">
-            <span className="pulse-dot" aria-hidden="true" /> ~1 min average wait right now
-          </span>
         </Reveal>
 
         <Reveal delay={30}>
@@ -227,56 +232,93 @@ export function BookingWidget({ game }: Props) {
 
       <div className="booking-sidebar-wrap">
         <aside className="booking-sidebar">
-          <div className="booking-sidebar__summary">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={gameIcon(game.slug)} alt="" className="booking-sidebar__summary-icon" />
-            <span className="booking-sidebar__summary-copy">
-              <span className="booking-sidebar__summary-game">{game.name}</span>
-              <span className="booking-sidebar__summary-option">{selected.name}</span>
-            </span>
-          </div>
-
-          {/* Row always renders — even for a 1-on-1 mode — so the card is
-              the same height regardless of which mode is selected. A
-              1-on-1 mode just shows a plain "1" instead of a stepper stuck
-              at 1 with both buttons disabled, which read as broken. */}
-          <div className="booking-sidebar__row booking-sidebar__row--last">
-            <span>Teammates</span>
-            {selected.maxTeammates > 1 ? (
-              <span className="booking-stepper">
-                <button
-                  type="button"
-                  onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
-                  disabled={groupSize <= 1}
-                  aria-label="Fewer teammates"
-                >
-                  <i className="fa-solid fa-minus" aria-hidden="true" />
-                </button>
-                <span className="booking-stepper__value">{groupSize}</span>
-                <button
-                  type="button"
-                  onClick={() => setGroupSize((n) => Math.min(selected.maxTeammates, n + 1))}
-                  disabled={groupSize >= selected.maxTeammates}
-                  aria-label="More teammates"
-                >
-                  <i className="fa-solid fa-plus" aria-hidden="true" />
-                </button>
+          <div className="booking-sidebar__body">
+            <div className="booking-sidebar__summary">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={gameIcon(game.slug)} alt="" className="booking-sidebar__summary-icon" />
+              <span className="booking-sidebar__summary-copy">
+                <span className="booking-sidebar__summary-game">{game.name}</span>
+                <span className="booking-sidebar__summary-option">{selected.name}</span>
               </span>
-            ) : (
-              <span className="booking-sidebar__row-fixed">1</span>
-            )}
+            </div>
+
+            {/* Row always renders — even for a 1-on-1 mode — so the card is
+                the same height regardless of which mode is selected. A
+                1-on-1 mode just shows a plain "1" instead of a stepper stuck
+                at 1 with both buttons disabled, which read as broken. */}
+            <div className="booking-sidebar__row booking-sidebar__row--last">
+              <span>Teammates</span>
+              {selected.maxTeammates > 1 ? (
+                <span className="booking-stepper">
+                  <button
+                    type="button"
+                    onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
+                    disabled={groupSize <= 1}
+                    aria-label="Fewer teammates"
+                  >
+                    <i className="fa-solid fa-minus" aria-hidden="true" />
+                  </button>
+                  <span className="booking-stepper__value">{groupSize}</span>
+                  <button
+                    type="button"
+                    onClick={() => setGroupSize((n) => Math.min(selected.maxTeammates, n + 1))}
+                    disabled={groupSize >= selected.maxTeammates}
+                    aria-label="More teammates"
+                  >
+                    <i className="fa-solid fa-plus" aria-hidden="true" />
+                  </button>
+                </span>
+              ) : (
+                <span className="booking-sidebar__row-fixed">1</span>
+              )}
+            </div>
+
+            {/* The live wait used to sit as a lone chip under the heading on
+                the left; here it stands right next to the price, which is
+                where someone is actually deciding whether to book now. */}
+            <div className="booking-queue">
+              <span className="booking-queue__label">
+                <span className="pulse-dot" aria-hidden="true" /> Queue right now
+              </span>
+              <span className="booking-queue__value">{etaShort}</span>
+            </div>
+
+            {/* Fills the card down to the sticky footer — and since this is a
+                real sequence, the numbering carries information rather than
+                decorating. Step 1 is already done by the time the card is
+                visible, so it reads as progress, not as a to-do list. */}
+            <ol className="booking-steps">
+              {steps.map((step, i) => (
+                <li key={step.title} className={`booking-step${i === 0 ? " is-done" : ""}`}>
+                  <span className="booking-step__marker" aria-hidden="true">
+                    {i === 0 ? <i className="fa-solid fa-check" /> : i + 1}
+                  </span>
+                  <span className="booking-step__copy">
+                    <span className="booking-step__title">{step.title}</span>
+                    <span className="booking-step__sub">{step.sub}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            <TrustPoints compact payments={false} />
           </div>
 
-          <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
-            <span>Total</span>
-            <PriceTag amountEUR={total} />
+          {/* Total + CTA stay pinned to the bottom of the card so the
+              button is reachable however far the mode list has pushed the
+              card down. */}
+          <div className="booking-sidebar__foot">
+            <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
+              <span>Total</span>
+              <PriceTag amountEUR={total} />
+            </div>
+
+            <button type="button" className="btn btn--vivid btn--block booking-sidebar__cta" onClick={() => setIngameOpen(true)}>
+              <i className="fa-solid fa-bolt" aria-hidden="true" /> Continue to checkout
+            </button>
+
+            <PaymentStrip />
           </div>
-
-          <button type="button" className="btn btn--vivid btn--block booking-sidebar__cta" onClick={() => setIngameOpen(true)}>
-            <i className="fa-solid fa-bolt" aria-hidden="true" /> Continue to checkout
-          </button>
-
-          <TrustPoints compact />
         </aside>
       </div>
 

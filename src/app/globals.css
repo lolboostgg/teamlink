@@ -1915,7 +1915,12 @@ ul {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 28px;
-  align-items: start;
+  /* Stretch, not start: the sidebar card runs the full height of the mode
+     list rather than ending halfway down it. What keeps the CTA reachable
+     despite the card being tall is .booking-sidebar__foot, which sticks to
+     the viewport bottom — that replaces the sticky wrapper this used to
+     have. */
+  align-items: stretch;
 }
 
 .booking-layout::before {
@@ -1952,20 +1957,6 @@ ul {
   border-radius: 10px;
   object-fit: cover;
   box-shadow: 0 0 0 1px var(--border-strong), 0 6px 18px rgba(0, 0, 0, 0.35);
-}
-
-.booking-live-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border);
-  padding: 7px 14px;
-  border-radius: 999px;
-  margin-bottom: 24px;
 }
 
 .booking-category {
@@ -2212,21 +2203,144 @@ ul {
   margin-top: 2px;
 }
 
-/* Sticky lives on the wrapper, not .booking-sidebar itself, so the trust
-   points panel underneath (see TrustPoints.tsx) scrolls as one unit with
-   it instead of being left behind. */
 .booking-sidebar-wrap {
-  position: sticky;
-  top: calc(var(--offset-h, var(--header-h)) + 20px);
+  min-width: 0;
 }
 
+/* No overflow: hidden here — .booking-sidebar__foot inside it is sticky,
+   and any clipping ancestor kills that. The one thing that relied on the
+   clip was the payment band's bottom corners, which now round themselves
+   (see .trust-points__payments). */
 .booking-sidebar {
   position: relative;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent)) 30%, var(--border));
   background: var(--bg-elevated);
   padding: 22px;
+}
+
+/* Everything above the pinned footer. Grows to eat the leftover height so
+   the card matches the mode list even when only two modes are listed. */
+.booking-sidebar__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.booking-sidebar__foot {
+  position: sticky;
+  /* Pulls level with the card's own bottom padding, so the band sits flush
+     on the card edge once the footer comes to rest. */
+  bottom: -22px;
+  margin: 14px -22px -22px;
+  padding: 16px 22px 0;
+  background: linear-gradient(180deg, transparent, var(--bg-elevated) 20%);
+  box-shadow: inset 0 1px 0 var(--border);
+}
+
+/* ── Live queue readout ─────────────────────────────────────
+   Was a standalone grey pill under the section heading; it says more
+   sitting beside the price, and it fills the card at the same time. */
+.booking-queue {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 10px 13px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--success) 26%, var(--border));
+  background: color-mix(in srgb, var(--success) 7%, transparent);
+  font-size: 12px;
+}
+
+.booking-queue__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.booking-queue__value {
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Booking steps ──────────────────────────────────────────
+   space-evenly rather than a fixed gap: the list is what absorbs the
+   height difference between a two-mode and a five-mode category. */
+.booking-steps {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 4px;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.booking-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 30px;
+  bottom: -4px;
+  width: 1px;
+  background: var(--border);
+}
+
+.booking-step__marker {
+  flex: 0 0 auto;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--cat-color, var(--accent));
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--accent)) 35%, transparent);
+}
+
+.booking-step.is-done .booking-step__marker {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+.booking-step__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.booking-step__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.booking-step__sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 /* Game + option used to be two separate label/value rows — one line says
@@ -2438,6 +2552,11 @@ ul {
   100% { transform: scale(1); }
 }
 
+/* The footer's own padding supplies the gap above the total. */
+.booking-sidebar__foot .booking-sidebar__total {
+  margin-top: 0;
+}
+
 .booking-sidebar__cta {
   box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 40%, transparent);
 }
@@ -2447,8 +2566,16 @@ ul {
     grid-template-columns: 1fr;
   }
 
+  /* Single column — the card follows the mode list rather than sitting
+     beside it, so there is no height to match and nothing to pin: a footer
+     stuck to the viewport bottom would just cover the content below it. */
   .booking-sidebar {
+    height: auto;
+  }
+
+  .booking-sidebar__foot {
     position: static;
+    background: none;
   }
 }
 
@@ -6070,12 +6197,13 @@ ul {
 
 /* Bleeds out to the card's own edges (negative margin = the card's own
    padding) so this reads as the card's footer band, not just another row
-   of content inside it — rounded to match the card's own bottom corners;
-   .booking-sidebar's overflow: hidden clips it cleanly. Recessed via an
-   inset shadow instead of a lighter overlay on top. No "We accept" label
-   here — just the icons, centered, since the band itself already reads as
-   a payment strip without needing the caption. */
-.trust-points--compact .trust-points__payments {
+   of content inside it — its own bottom radius matches the card's, so it
+   needs no clipping ancestor. Recessed via an inset shadow instead of a
+   lighter overlay on top. No "We accept" label here — just the icons,
+   centered, since the band itself already reads as a payment strip
+   without needing the caption. */
+.trust-points--compact .trust-points__payments,
+.trust-points__payments--bare {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6086,11 +6214,18 @@ ul {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-.trust-points--compact .trust-points__payment-icons {
+.trust-points--compact .trust-points__payment-icons,
+.trust-points__payments--bare .trust-points__payment-icons {
   flex-wrap: nowrap;
   gap: 12px;
   font-size: 18px;
   color: var(--text-muted);
+}
+
+/* Standalone in the booking sidebar's sticky footer, whose padding already
+   supplies the top gap — so no top margin of its own. */
+.booking-sidebar__foot .trust-points__payments--bare {
+  margin: 16px -22px 0;
 }
 
 .trust-points__payments {
@@ -6308,19 +6443,25 @@ ul {
 /* Preferences set inline while the search runs, one labelled pill row per
    choice — they used to sit behind a modal, which is two taps and a
    Confirm for picking a single word. */
+/* Each choice sits in its own recessed block, so the card reads as three
+   labelled groups instead of one long run of pills with headings floating
+   between them. */
 .matching-screen__prefs {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin: 4px 0 14px;
-  padding-top: 4px;
+  gap: 10px;
+  margin: 14px 0 18px;
   text-align: left;
 }
 
 .matching-screen__pref-group {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.018);
 }
 
 .matching-screen__pref-label {
