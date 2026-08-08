@@ -84,14 +84,18 @@ export function CancelRequestModal({
             <span>
               <strong>Approve</strong>
               <small>
+                {/* Not "to their credits": a guest has no balance, and their
+                    money goes back to the card instead. Which of the two it
+                    is depends on the customer, not on anything the teammate
+                    decides here — so it says what is true either way. */}
                 Ends the session
                 {refundEUR != null ? (
                   <>
                     {" "}
-                    and returns <PriceTag amountEUR={refundEUR} /> to their credits
+                    and refunds <PriceTag amountEUR={refundEUR} /> to the customer
                   </>
                 ) : (
-                  " and refunds them to credits"
+                  " and refunds the customer"
                 )}
                 . You keep nothing for it.
               </small>

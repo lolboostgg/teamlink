@@ -48,6 +48,10 @@ const POLICY: Record<string, ChannelPolicy> = {
   "order.completed": { email: true, topic: "orders" },
   "order.abandoned": { email: true, topic: "orders" },
 
+  // Money owed to somebody who cannot be paid automatically. Mailed as well
+  // as belled, because a guest refund waits until a person acts on it.
+  "order.refund_due": { email: true, topic: "balance" },
+
   // Deliberately bell-only: the recipient is looking at the screen it
   // happened on, or it is an admin who lives in the dashboard anyway.
   "order.games_added": {},

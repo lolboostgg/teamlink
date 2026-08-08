@@ -50,6 +50,11 @@ export async function notifyAdmins(input: NotifyInput) {
     })),
   });
   await publish({ topic: "notifications", userIds: admins.map((a) => a.id) });
+
+  // Same fan-out as notifyUser. Most admin events are bell-only by policy,
+  // but the ones that are not — a guest refund nobody can pay automatically
+  // — must not sit unseen until someone happens to open the dashboard.
+  await Promise.allSettled(admins.map((admin) => deliverExternally(admin.id, input)));
 }
 
 export async function listNotifications(userId: string, take = 30) {
