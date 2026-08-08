@@ -263,6 +263,10 @@ export async function placeReplayCheckout(
       orderId: order.id,
       methods: method === "paypal" ? ["paypal"] : ["card"],
       saveCard: true,
+      // Already given at the first checkout and stored on the order — asking
+      // a guest for it again, on a booking they are repeating, is asking a
+      // question we know the answer to.
+      guestEmail: previous.guestEmail ?? undefined,
     });
     return { ok: true, redirect: checkout.url };
   } catch (err) {

@@ -4726,11 +4726,107 @@ ul {
   min-height: 600px;
 }
 
-.order-room__side { display: grid; gap: 14px; }
+/* Scrolls inside itself rather than growing the page: the brief is the one
+   part whose length depends on the order (roles, rank, a long customer
+   label), and the chat next to it must keep its own height. */
+.order-room__side { display: grid; gap: 14px; min-height: 0; overflow-y: auto; }
 .order-room__side > .dashboard-panel { padding: 16px 18px; }
 .order-room__side .dashboard-panel__head { margin-bottom: 12px; padding-bottom: 12px; }
 .order-room__side .account-facts { gap: 0; }
 .order-room__side .account-facts > div { min-height: 38px; padding: 8px 12px; }
+
+/* ── The order brief ─────────────────────────────────────────
+   Was three panels — Order, Account, Preferences — each with a heading, a
+   subtitle and its own padding. That is three headings of chrome wrapped
+   around about fifteen short values, and it pushed the chat below the
+   fold. One panel with hairline-divided sections instead. */
+.order-room__brief {
+  align-self: start;
+}
+
+.order-room__payout {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.order-room__payout small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Two columns of short label/value pairs — the same information as the old
+   full-width rows in roughly half the height. */
+.order-room__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.order-room__facts > div {
+  min-width: 0;
+}
+
+.order-room__facts dt {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.order-room__facts dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-room__section {
+  margin: 14px 0 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dash-line);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.order-room__pref-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.order-room__pref-chips span {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--dash-line);
+  background: var(--dash-surface-2);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.order-room__pref-chips .order-room__pref-chips--vibe {
+  text-transform: capitalize;
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+}
 .order-room__main { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; height: 100%; min-height: 0; }
 .order-room__session-panel { padding: 16px 20px; }
 .order-room__session-panel .dashboard-panel__head { margin-bottom: 10px; padding-bottom: 10px; }

@@ -297,15 +297,13 @@ export function OrderRoom({ orderId }: { orderId: string }) {
       )}
 
       <div className="order-room">
+      {/* One panel, not three. Order / Account / Preferences were three
+          cards each with its own header, subtitle and padding — three
+          headings of chrome around about fifteen short values, which is
+          what pushed the chat off the screen. They are sections of the
+          same brief now, divided by a hairline. */}
       <aside className="order-room__side">
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div>
-              <div className="dashboard-panel__title">Order</div>
-              <div className="dashboard-panel__sub">Order #{order.orderNo}</div>
-            </div>
-          </div>
-
+        <div className="dashboard-panel order-room__brief">
           <div className="order-room__game">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={gameIcon(order.gameSlug)} alt="" />
@@ -313,12 +311,20 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               <strong>{order.gameName}</strong>
               <span>{order.option}</span>
             </div>
+            <span className="order-room__payout">
+              <PriceTag amountEUR={order.payoutEUR} />
+              <small>payout</small>
+            </span>
           </div>
 
-          <dl className="account-facts">
+          <dl className="order-room__facts">
+            <div>
+              <dt>Order</dt>
+              <dd>#{order.orderNo}</dd>
+            </div>
             <div>
               <dt>Customer</dt>
-              <dd>{order.customerLabel}</dd>
+              <dd title={order.customerLabel}>{order.customerLabel}</dd>
             </div>
             <div>
               <dt>Games</dt>
@@ -327,85 +333,57 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               </dd>
             </div>
             <div>
-              <dt>Payout</dt>
-              <dd>
-                <PriceTag amountEUR={order.payoutEUR} />
-              </dd>
-            </div>
-            <div>
               <dt>Started</dt>
               <dd>{order.assignedAt ? new Date(order.assignedAt).toLocaleTimeString() : "—"}</dd>
             </div>
-            <div>
-              <dt>Completed sessions</dt>
-              <dd>{order.teammateCompletedSessions ?? 0}</dd>
-            </div>
           </dl>
-        </div>
 
-        {(order.ign || order.ignRank || (order.ignRoles && order.ignRoles.length > 0)) && (
-          <div className="dashboard-panel">
-            <div className="dashboard-panel__head">
-              <div>
-                <div className="dashboard-panel__title">Account</div>
-                <div className="dashboard-panel__sub">Who to add in {order.gameName}</div>
-              </div>
-            </div>
-            <dl className="account-facts">
-              {order.ign && (
+          {(order.ign || order.ignRank || (order.ignRoles && order.ignRoles.length > 0)) && (
+            <>
+              <div className="order-room__section">Who to add</div>
+              <dl className="order-room__facts">
+                {order.ign && (
+                  <div>
+                    <dt>In-game name</dt>
+                    <dd>{order.ign}</dd>
+                  </div>
+                )}
+                {order.ignRegion && (
+                  <div>
+                    <dt>Region</dt>
+                    <dd>{order.ignRegion}</dd>
+                  </div>
+                )}
+                {/* Both rows stay put even when empty: "Unranked" and "Any"
+                    are answers the teammate needs, and hiding the row read as
+                    the customer never having been asked. */}
                 <div>
-                  <dt>In-game name</dt>
-                  <dd>{order.ign}</dd>
+                  <dt>Rank</dt>
+                  <dd>{formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) || "Unranked"}</dd>
                 </div>
-              )}
-              {order.ignRegion && (
                 <div>
-                  <dt>Region</dt>
-                  <dd>{order.ignRegion}</dd>
+                  <dt>{getGameProfileConfig(order.gameSlug)?.roles?.label ?? "Roles"}</dt>
+                  <dd>
+                    {order.ignRoles && order.ignRoles.length > 0
+                      ? order.ignRoles
+                          .map((value) => getGameProfileConfig(order.gameSlug)?.roles?.options.find((o) => o.value === value)?.label ?? value)
+                          .join(", ")
+                      : "Any"}
+                  </dd>
                 </div>
-              )}
-              {/* Both rows stay put even when empty: "Unranked" and "Any" are
-                  answers the teammate needs, and hiding the row instead read
-                  as the customer never having been asked. */}
-              <div>
-                <dt>Rank</dt>
-                <dd>{formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null) || "Unranked"}</dd>
-              </div>
-              <div>
-                <dt>{getGameProfileConfig(order.gameSlug)?.roles?.label ?? "Roles"}</dt>
-                <dd>
-                  {order.ignRoles && order.ignRoles.length > 0
-                    ? order.ignRoles
-                        .map((value) => getGameProfileConfig(order.gameSlug)?.roles?.options.find((o) => o.value === value)?.label ?? value)
-                        .join(", ")
-                    : "Any"}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        )}
+              </dl>
+            </>
+          )}
 
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div>
-              <div className="dashboard-panel__title">Preferences</div>
-              <div className="dashboard-panel__sub">What the customer asked for</div>
-            </div>
+          <div className="order-room__section">What they asked for</div>
+          {/* Chips rather than label/value rows: three preferences that are
+              usually "No preference" do not each deserve a line of their
+              own. */}
+          <div className="order-room__pref-chips">
+            <span>{order.conversationPref ?? "No preference"}</span>
+            <span>{order.playStylePref ?? "No preference"}</span>
+            <span className="order-room__pref-chips--vibe">{order.vibe ?? "No vibe set"}</span>
           </div>
-          <ul className="order-room__prefs">
-            <li>
-              <span>Conversation</span>
-              {order.conversationPref ?? "No preference"}
-            </li>
-            <li>
-              <span>Play style</span>
-              {order.playStylePref ?? "No preference"}
-            </li>
-            <li>
-              <span>Vibe</span>
-              {order.vibe ?? "No preference"}
-            </li>
-          </ul>
         </div>
       </aside>
 

@@ -134,6 +134,9 @@ export async function sendTip(orderId: string, amountEUR: number, method: Paymen
         orderId,
         methods: method === "paypal" ? ["paypal"] : ["card"],
         saveCard: false,
+        // Taken from the order rather than asked for again: a guest gave it
+        // at checkout, and this is the same person on the same session.
+        guestEmail: order.guestEmail ?? undefined,
       });
       return { ok: true, redirect: checkout.url };
     } catch (err) {
@@ -166,6 +169,9 @@ export async function sendTip(orderId: string, amountEUR: number, method: Paymen
         orderId,
         methods: method === "paypal" ? ["paypal"] : ["card"],
         saveCard: false,
+        // Taken from the order rather than asked for again: a guest gave it
+        // at checkout, and this is the same person on the same session.
+        guestEmail: order.guestEmail ?? undefined,
       });
       return { ok: true, redirect: checkout.url };
     } catch (err) {
@@ -179,12 +185,16 @@ export async function sendTip(orderId: string, amountEUR: number, method: Paymen
 /** What the session-complete screen shows instead of the tip buttons. */
 export async function loadTip(orderId: string): Promise<{ amountEUR: number } | null> {
   const session = await auth();
-  if (!session?.user?.id) return null;
+  const userId = session?.user?.id ?? null;
+  // Guests can tip now, so they also have to be able to see that they
+  // already did — otherwise the buttons come back after a reload and invite
+  // a second payment.
   const order = await prisma.order.findFirst({
-    where: { id: orderId, clientUserId: session.user.id },
-    select: { id: true },
+    where: { id: orderId },
+    select: { id: true, clientUserId: true },
   });
   if (!order) return null;
+  if (order.clientUserId && order.clientUserId !== userId) return null;
   const tip = await getTipForOrder(orderId);
   return tip ? { amountEUR: Number(tip.amountEUR) } : null;
 }
