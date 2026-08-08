@@ -98,12 +98,35 @@ function playRecording(src: string): boolean {
   }
 }
 
+/**
+ * Shortest gap between two plays of the same cue.
+ *
+ * Enforced here rather than at the call sites, because the call sites are the
+ * problem: an order request is announced by the requests panel, re-announced
+ * by the repeat while it stays open, and announced again by the dispatch
+ * modal on other pages — three independent places, none of which can see what
+ * the others just did. Any one of them firing twice, or two firing at once,
+ * turned the alert into a stutter.
+ *
+ * The order cue is the long one and gets the long gap. Everything else only
+ * needs enough to swallow a double-fire from one render.
+ */
+const MIN_GAP_MS: Partial<Record<SoundName, number>> = { request: 6_000 };
+const DEFAULT_GAP_MS = 400;
+
+const lastPlayed = new Map<string, number>();
+
 export function playSound(name: SoundName = "generic") {
   if (typeof window === "undefined") return;
   // Checked here rather than at each call site: there are half a dozen of
   // them across three screens, and one that forgets is the whole point of
   // the switch defeated.
   if (!soundsEnabled()) return;
+
+  const gap = MIN_GAP_MS[name] ?? DEFAULT_GAP_MS;
+  const previous = lastPlayed.get(name) ?? 0;
+  if (Date.now() - previous < gap) return;
+  lastPlayed.set(name, Date.now());
 
   const recording = RECORDINGS[name];
   if (recording && playRecording(recording)) return;

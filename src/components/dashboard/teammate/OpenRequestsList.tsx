@@ -310,9 +310,14 @@ function useRequestAlerts(
       }
     }
 
-    // Dropped ids are cleaned up so an order that comes back around (a
-    // re-dispatch after everyone timed out) still counts as new.
-    seen.current = new Set(requests.map((r) => r.order.id));
+    // Cleared only when the list is genuinely empty, so an order that comes
+    // back around later still counts as new.
+    //
+    // It used to be rebuilt from the current list on every read, which meant
+    // any request missing from a single response — a slow query, a wave
+    // boundary, an order that flickered out and back — was announced all over
+    // again on the next one. That is where the stutter came from.
+    if (requests.length === 0) seen.current = new Set();
 
     document.title = requests.length > 0 ? `(${requests.length}) ${baseTitle.current}` : baseTitle.current;
   }, [requests, silenced]);
@@ -327,9 +332,9 @@ function useRequestAlerts(
   const open = requests.length > 0 && !silenced;
   useEffect(() => {
     if (!open) return;
-    // Longer than the clip, so a repeat starts from silence instead of
-    // cutting the previous one off.
-    const nag = setInterval(() => playSound("request"), 5000);
+    // The real spacing is enforced in playSound, which is the only place that
+    // can see every source of this cue at once.
+    const nag = setInterval(() => playSound("request"), 2000);
     return () => clearInterval(nag);
   }, [open]);
 }
