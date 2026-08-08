@@ -8,6 +8,13 @@
  *
  * The palette matches the app (see globals.css :root) so a mail and the order
  * screen it links to read as the same product.
+ *
+ * There is deliberately not a single <img> in here. Most clients block remote
+ * images until the reader asks for them, and Gmail strips SVG outright — a
+ * masthead built from an image is a broken-image icon sitting exactly where
+ * the brand should be, for a large share of readers, on first open.
+ * Everything visual is built from type, colour and table cells, which no
+ * client can refuse to render.
  */
 
 const BG = "#060811";
@@ -18,7 +25,33 @@ const TEXT = "#f3f4f8";
 const MUTED = "#9a9db0";
 const FAINT = "#6c6f80";
 const ACCENT = "#4066ff";
+const CYAN = "#22d3ee";
+const PURPLE = "#a855f7";
+const GOLD = "#f5b301";
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif";
+
+/**
+ * Who is writing, and from where.
+ *
+ * Transactional mail into the EU and UK is expected to identify its sender,
+ * and a footer naming a real company at a real address is also the cheapest
+ * thing you can do both for deliverability and for a reader deciding whether
+ * this is a phishing attempt.
+ */
+const COMPANY = {
+  legalName: "LB Gaming Services LTD",
+  address: "71-75 Shelton Street, London, United Kingdom",
+  site: "https://gaming.lolboost.gg",
+  discord: "https://discord.gg/lolboost",
+  support: "support@lolboost.gg",
+};
+
+const SOCIALS: { label: string; url: string }[] = [
+  { label: "Discord", url: COMPANY.discord },
+  { label: "Instagram", url: "https://instagram.com/lolboost.gg" },
+  { label: "TikTok", url: "https://tiktok.com/@lolboost.gg" },
+  { label: "X", url: "https://x.com/lolboostgg" },
+];
 
 function escapeHtml(value: string): string {
   return value
@@ -43,9 +76,12 @@ interface Shell {
   highlight?: { label: string; value: string };
   /** The grey line clients show next to the subject in the inbox list. */
   preheader?: string;
+  /** A one-click rating row. Only worth showing once there is something to
+   * rate — see orderCompletedMail. */
+  review?: { question: string; hint: string; urlForScore: (score: number) => string };
 }
 
-function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, preheader }: Shell): string {
+function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, preheader, review }: Shell): string {
   // A row per line with its own divider rather than one rule above the block:
   // at four or five rows the flat list ran together.
   const rowsHtml = rows
@@ -60,7 +96,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
 
   const rowsBlock = rows.length
     ? `<tr>
-              <td style="padding:4px 30px 0;">
+              <td style="padding:6px 30px 0;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:${FONT};">
                   ${rowsHtml}
                 </table>
@@ -70,7 +106,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
 
   const highlightBlock = highlight
     ? `<tr>
-              <td style="padding:22px 30px 0;">
+              <td style="padding:24px 30px 0;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PANEL};border:1px solid ${BORDER};border-radius:12px;">
                   <tr>
                     <td style="padding:16px 18px;font-family:${FONT};">
@@ -82,6 +118,41 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
               </td>
             </tr>`
     : "";
+
+  // Five one-click links rather than one "leave a review" button. Somebody
+  // who has already decided it was five stars should not have to decide again
+  // on a landing page — a rating picked inside the mail is the one that
+  // actually gets sent.
+  const stars = [1, 2, 3, 4, 5]
+    .map(
+      (score) => `<td style="padding:0 3px;">
+                            <a href="${review?.urlForScore(score) ?? "#"}" style="display:block;width:40px;height:40px;line-height:40px;text-align:center;border-radius:10px;background:${score >= 4 ? GOLD : BORDER};color:${score >= 4 ? "#1b1400" : MUTED};text-decoration:none;font-size:19px;font-family:${FONT};">&#9733;</a>
+                          </td>`,
+    )
+    .join("");
+
+  const reviewBlock = review
+    ? `<tr>
+              <td style="padding:26px 30px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PANEL};border:1px solid ${BORDER};border-radius:14px;">
+                  <tr>
+                    <td align="center" style="padding:20px 18px;font-family:${FONT};">
+                      <div style="font-size:17px;font-weight:800;color:${TEXT};">${escapeHtml(review.question)}</div>
+                      <div style="margin-top:5px;font-size:13px;line-height:1.5;color:${MUTED};">${escapeHtml(review.hint)}</div>
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:15px auto 0;">
+                        <tr>${stars}</tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>`
+    : "";
+
+  const socialsHtml = SOCIALS.map(
+    (social) =>
+      `<a href="${social.url}" style="color:${MUTED};text-decoration:none;font-weight:700;">${escapeHtml(social.label)}</a>`,
+  ).join(`<span style="color:${BORDER};"> &nbsp;&middot;&nbsp; </span>`);
 
   return `<!doctype html>
 <html lang="en">
@@ -98,14 +169,33 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:36px 12px;">
       <tr>
         <td align="center">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:${CARD};border:1px solid ${BORDER};border-radius:18px;overflow:hidden;">
-            <!-- Accent band: the one piece of brand colour that survives every
-                 client, since it is a background and not an image. -->
-            <tr><td style="height:4px;background:${ACCENT};line-height:4px;font-size:0;">&nbsp;</td></tr>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:${CARD};border:1px solid ${BORDER};border-radius:18px;overflow:hidden;">
+            <!-- Masthead. The gradient is the brand mark's own; Outlook
+                 ignores background-image and keeps the bgcolor underneath,
+                 which is why both are set. -->
             <tr>
-              <td style="padding:30px 30px 0;font-family:${FONT};">
-                <div style="font-size:12px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:${ACCENT};">TeamLink</div>
-                <h1 style="margin:14px 0 0;font-size:24px;line-height:1.25;font-weight:800;color:${TEXT};">${escapeHtml(heading)}</h1>
+              <td bgcolor="${ACCENT}" style="background-color:${ACCENT};background-image:linear-gradient(90deg,${CYAN},${ACCENT} 55%,${PURPLE});height:5px;line-height:5px;font-size:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:28px 30px 0;font-family:${FONT};">
+                <div style="font-size:26px;font-weight:900;letter-spacing:-.02em;color:${TEXT};">
+                  TeamLink<span style="color:${CYAN};">.GG</span>
+                </div>
+                <div style="margin-top:5px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${FAINT};">
+                  Find your next teammate
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 30px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr><td style="border-top:1px solid ${BORDER};font-size:0;line-height:0;">&nbsp;</td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:22px 30px 0;font-family:${FONT};">
+                <h1 style="margin:0;font-size:24px;line-height:1.25;font-weight:800;color:${TEXT};">${escapeHtml(heading)}</h1>
                 <p style="margin:12px 0 0;font-size:15px;line-height:1.6;color:${MUTED};">${escapeHtml(intro)}</p>
               </td>
             </tr>
@@ -125,8 +215,22 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
                 <p style="margin:14px 0 0;font-size:12px;line-height:1.5;color:${FAINT};font-family:${FONT};word-break:break-all;">${ctaUrl}</p>
               </td>
             </tr>
+            ${reviewBlock}
             <tr>
-              <td style="padding:22px 30px 28px;">
+              <td style="padding:24px 30px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:12px;">
+                  <tr>
+                    <td style="padding:14px 16px;font-family:${FONT};font-size:13px;line-height:1.6;color:${MUTED};">
+                      Need a hand? Reply to this email, or find us on
+                      <a href="${COMPANY.discord}" style="color:${CYAN};text-decoration:none;font-weight:700;">Discord</a>
+                      &mdash; someone is usually around.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 30px 28px;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="border-top:1px solid ${BORDER};padding-top:16px;font-family:${FONT};font-size:12px;line-height:1.6;color:${MUTED};">
@@ -137,9 +241,34 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
               </td>
             </tr>
           </table>
-          <p style="margin:18px 0 0;font-family:${FONT};font-size:11px;line-height:1.5;color:${FAINT};">
-            TeamLink &middot; sent by lolboost.gg
-          </p>
+
+          <!-- Below the card: who sent this, and how to stop it. -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+            <tr>
+              <td align="center" style="padding:18px 20px 0;font-family:${FONT};font-size:12px;">
+                ${socialsHtml}
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:14px 20px 0;font-family:${FONT};font-size:11px;line-height:1.7;color:${FAINT};">
+                ${escapeHtml(COMPANY.legalName)} &middot; ${escapeHtml(COMPANY.address)}<br>
+                <a href="${COMPANY.site}" style="color:${FAINT};text-decoration:none;">gaming.lolboost.gg</a>
+                &nbsp;&middot;&nbsp;
+                <a href="mailto:${COMPANY.support}" style="color:${FAINT};text-decoration:none;">${COMPANY.support}</a>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:12px 20px 0;font-family:${FONT};font-size:11px;line-height:1.6;color:${FAINT};">
+                You&rsquo;re getting this because of an order you placed. Manage what we send you in your
+                <a href="${COMPANY.site}/dashboard" style="color:${FAINT};text-decoration:underline;">notification settings</a>.
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:14px 20px 0;font-family:${FONT};font-size:11px;color:${FAINT};">
+                Not affiliated with Riot Games, Epic Games, or any game publisher.
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
@@ -147,12 +276,21 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
 </html>`;
 }
 
-function shellText({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight }: Shell): string {
+function shellText({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, review }: Shell): string {
   const all = highlight ? [highlight, ...rows] : rows;
   const lines = all.map((row) => `${row.label}: ${row.value}`).join("\n");
+  const rating = review ? `${review.question}\n${review.urlForScore(5)}` : "";
   // Blank sections would otherwise leave a run of empty lines the plain-text
   // part gets judged on.
-  return [heading, intro, lines, `${ctaLabel}: ${ctaUrl}`, footnote, "TeamLink"]
+  return [
+    heading,
+    intro,
+    lines,
+    `${ctaLabel}: ${ctaUrl}`,
+    rating,
+    footnote,
+    `${COMPANY.legalName} · ${COMPANY.address}`,
+  ]
     .filter((part) => part.trim() !== "")
     .join("\n\n");
 }
@@ -193,6 +331,55 @@ export function orderConfirmationMail(input: {
 
   return {
     subject: `Order #${input.orderNo} — finding your teammate`,
+    html: shell(content),
+    text: shellText(content),
+  };
+}
+
+/**
+ * The end of an order, and the one moment a review is worth asking for.
+ *
+ * Asked here rather than a day later on purpose: the session just ended, the
+ * customer still remembers how it went, and the rating is one click away
+ * inside the mail instead of a landing page that asks them to decide twice.
+ */
+export function orderCompletedMail(input: {
+  name: string | null;
+  orderNo: number;
+  gameName: string;
+  option: string;
+  teammateName: string | null;
+  gamesPlayed: number;
+  url: string;
+}): MailBody {
+  const content: Shell = {
+    heading: "GG — your session is complete",
+    intro: input.teammateName
+      ? `${input.teammateName} has wrapped up your ${input.gameName} session. Thanks for playing with us.`
+      : `Your ${input.gameName} session is wrapped up. Thanks for playing with us.`,
+    preheader: `${input.gameName} · ${input.option} — how did it go?`,
+    highlight: input.teammateName
+      ? { label: "Your teammate", value: input.teammateName }
+      : { label: "Order", value: `#${input.orderNo}` },
+    rows: [
+      { label: "Order", value: `#${input.orderNo}` },
+      { label: "Game", value: input.gameName },
+      { label: "Mode", value: input.option },
+      { label: "Games played", value: String(input.gamesPlayed) },
+    ],
+    review: {
+      question: "How did we do?",
+      hint: "One tap. It decides who gets sent your way next time.",
+      urlForScore: (score) => `${input.url}?rate=${score}`,
+    },
+    ctaLabel: "Open your session",
+    ctaUrl: input.url,
+    footnote:
+      "Want the same teammate again? Open the session and hit Keep playing — they get first refusal on it.",
+  };
+
+  return {
+    subject: `Order #${input.orderNo} — session complete`,
     html: shell(content),
     text: shellText(content),
   };

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/notify/mail";
-import { orderConfirmationMail, teammateAssignedMail } from "@/lib/notify/templates";
+import { orderConfirmationMail, orderCompletedMail, teammateAssignedMail } from "@/lib/notify/templates";
 import { postToTeammateChannel, sendDiscordDms, ACCENT } from "@/lib/notify/discordNotify";
 import { sanitizeNotificationPrefs, type NotificationChannel } from "@/lib/notificationPrefs";
 
@@ -167,5 +167,48 @@ export async function notifyTeammateAssigned(orderId: string): Promise<void> {
     });
   } catch (err) {
     console.error("[notify] assignment notification failed:", orderId, err);
+  }
+}
+
+
+/**
+ * The end of a session, mailed with the review ask in it.
+ *
+ * Separate from the bell notification the same event raises: that one is a
+ * line of text in a feed, and this is the single best moment to ask how it
+ * went — the session just ended, the customer still remembers, and the
+ * rating is one tap inside the mail rather than a landing page that asks
+ * them to decide twice.
+ */
+export async function notifyOrderCompleted(orderId: string): Promise<void> {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        clientUser: { select: { email: true, name: true, notificationPrefs: true } },
+        candidates: { where: { selected: true, isPrimary: true }, select: { teammate: { select: { name: true } } } },
+        _count: { select: { games: true } },
+      },
+    });
+    if (!order) return;
+
+    const to = order.clientUser?.email ?? order.guestEmail;
+    if (!to) return;
+    if (order.clientUser && !wantsOrderUpdates(order.clientUser.notificationPrefs, "email")) return;
+
+    await sendMail({
+      to,
+      ...orderCompletedMail({
+        name: order.clientUser?.name ?? null,
+        orderNo: order.orderNo,
+        gameName: order.gameName,
+        option: order.option,
+        teammateName: order.candidates[0]?.teammate.name ?? null,
+        gamesPlayed: order._count.games,
+        url: orderUrl(order),
+      }),
+    });
+  } catch (err) {
+    console.error("[notify] completion mail failed:", orderId, err);
   }
 }

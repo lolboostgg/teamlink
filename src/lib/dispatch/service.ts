@@ -1,10 +1,11 @@
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { notifyUser, notifyAdmins } from "@/lib/notifications/service";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
 import { issueSessionRewardCoupon } from "@/lib/couponsServer";
-import { notifyTeammateAssigned } from "@/lib/notify/orderNotifications";
+import { notifyTeammateAssigned, notifyOrderCompleted } from "@/lib/notify/orderNotifications";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
 import { candidateTarget, sendWave, resetForRetry, POOL_RETRY_MS, type WaveResult } from "@/lib/dispatch/waves";
 
@@ -830,6 +831,11 @@ export async function completeOrder(orderId: string, teammateId: string, farewel
       href: `/checkout/matching?order=${orderId}`,
     });
   }
+  // after(), not awaited: the teammate pressing "complete" should not wait
+  // on an SMTP handshake, and a floating promise would be dropped when the
+  // response ends the request.
+  after(() => notifyOrderCompleted(orderId));
+
   await notifyAdmins({
     type: "order.completed",
     title: `Order completed · ${completed.gameName}`,
