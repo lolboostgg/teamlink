@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useAllOrdersState } from "@/lib/matchmaking/useAllOrders";
-import { useCurrentTeammateId } from "@/lib/matchmaking/useCurrentTeammateId";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
+import { formatRank } from "@/lib/gameRanks";
+import { playSound } from "@/lib/notificationSound";
 import { useToast } from "@/components/ui/ToastProvider";
 
 /**
@@ -15,24 +16,24 @@ import { useToast } from "@/components/ui/ToastProvider";
  * when there is one — it is an interruption that wants an answer. It is wrong
  * when three land together: the others queue up invisibly behind it and the
  * teammate can't tell whether they are choosing between a €4.99 Duo and a
- * €12 Flex, or answering the only thing on offer. This is the list view of
- * the same queue, and both stay in sync because both read the same orders.
+ * €12 Flex, or answering the only thing on offer.
+ *
+ * This reads the same endpoint the modal does (/api/dispatch/state) rather
+ * than the order history: history only lists orders a teammate was actually
+ * picked for, so an invitation still waiting for an answer never appeared in
+ * it — which is why this page was always empty.
+ *
+ * It is built for a panel left open all day on a second monitor: everything
+ * that matters is legible from across a desk, and a new request announces
+ * itself with a sound, a tab title and a real OS notification rather than
+ * waiting to be noticed.
  */
 export function OpenRequestsList() {
-  const teammateId = useCurrentTeammateId();
-  const { orders, loading, refresh } = useAllOrdersState();
+  const { requests, availableSince, serverNow, phase, refresh } = useDispatchState();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const open = orders
-    .filter((order) => ["searching", "candidates_ready", "selecting"].includes(order.status))
-    .map((order) => ({
-      order,
-      candidate: order.candidates.find((c) => c.teammateId === teammateId),
-    }))
-    .filter((row) => row.candidate?.status === "pending")
-    // Oldest first: the one closest to expiring is the one to answer first.
-    .sort((a, b) => (a.order.dispatchDeadline ?? 0) - (b.order.dispatchDeadline ?? 0));
+  useRequestAlerts(requests);
 
   async function respond(orderId: string, accept: boolean) {
     setBusyId(orderId);
@@ -43,73 +44,233 @@ export function OpenRequestsList() {
     refresh();
   }
 
-  if (loading) {
-    return (
-      <div className="dashboard-empty dashboard-empty--compact">
-        <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />
-        <p>Loading requests&hellip;</p>
-      </div>
-    );
-  }
-
-  if (open.length === 0) {
-    return (
-      <div className="dashboard-empty">
-        <i className="fa-solid fa-inbox" aria-hidden="true" />
-        <p>No open requests right now.</p>
-        <span className="dashboard-empty__hint">
-          Stay online and listed for the games you play — requests show up here the moment they are dispatched.
-        </span>
-      </div>
-    );
+  if (requests.length === 0) {
+    return <IdlePanel availableSince={availableSince} serverNow={serverNow} offline={phase === "OFFLINE"} />;
   }
 
   return (
     <div className="request-list">
-      {open.map(({ order }) => (
-        <div key={order.id} className="request-card">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
+      <AlertPermission />
+      {requests.map(({ order, msLeft, acceptedCount }) => {
+        const rank = formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null);
+        return (
+          <article key={order.id} className="request-card">
+            <header className="request-card__head">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
+              <div className="request-card__who">
+                {/* The rank is the first thing a teammate reads — it decides
+                    whether the order is one they want at all. */}
+                <div className="request-card__rank">{rank ?? "Unranked"}</div>
+                <div className="request-card__name">{order.customerLabel}</div>
+              </div>
+              <div className="request-card__order">
+                <span className="request-card__order-no">#{order.orderNo}</span>
+                <span className="request-card__order-game">{order.gameName}</span>
+              </div>
+              <Countdown msLeft={msLeft} />
+            </header>
 
-          <div className="request-card__main">
-            <div className="request-card__title">
-              {order.gameName} · {order.option}
+            <div className="request-card__facts">
+              <Fact label="Games" value={String(order.gamesBooked)} strong />
+              <Fact label="Mode" value={order.option} />
+              <Fact
+                label="Team"
+                value={order.teammatesRequested === 1 ? "Solo" : `${order.teammatesRequested} teammates`}
+              />
+              <Fact label="You earn" value={<PriceTag amountEUR={order.payoutEUR} />} strong />
             </div>
-            <div className="request-card__meta">
-              <span>#{order.orderNo}</span>
-              <span>
-                {order.teammates === 1 ? "1 teammate" : `${order.teammates} teammates`}
+
+            <footer className="request-card__foot">
+              <span className="request-card__accepted">
+                {acceptedCount === 0
+                  ? "First to accept"
+                  : `${acceptedCount} already accepted — the customer picks`}
               </span>
-              <span>{order.gamesBooked === 1 ? "1 game" : `${order.gamesBooked} games`}</span>
-              {order.vibe && <span className="request-card__tag">{order.vibe}</span>}
-            </div>
-          </div>
-
-          <div className="request-card__pay">
-            <PriceTag amountEUR={order.priceEUR} />
-            <span>customer pays</span>
-          </div>
-
-          <div className="request-card__actions">
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              disabled={busyId === order.id}
-              onClick={() => respond(order.id, false)}
-            >
-              Decline
-            </button>
-            <button
-              type="button"
-              className="btn btn--vivid btn--sm"
-              disabled={busyId === order.id}
-              onClick={() => respond(order.id, true)}
-            >
-              {busyId === order.id ? "…" : "Accept"}
-            </button>
-          </div>
-        </div>
-      ))}
+              <div className="request-card__actions">
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={busyId === order.id}
+                  onClick={() => respond(order.id, false)}
+                >
+                  Decline
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--vivid request-card__accept"
+                  disabled={busyId === order.id}
+                  onClick={() => respond(order.id, true)}
+                >
+                  {busyId === order.id ? "Accepting…" : "Accept order"}
+                </button>
+              </div>
+            </footer>
+          </article>
+        );
+      })}
     </div>
   );
+}
+
+function Fact({ label, value, strong }: { label: string; value: ReactNode; strong?: boolean }) {
+  return (
+    <div className={`request-fact${strong ? " request-fact--strong" : ""}`}>
+      <span className="request-fact__label">{label}</span>
+      <span className="request-fact__value">{value}</span>
+    </div>
+  );
+}
+
+/**
+ * Counts down locally between polls. The server sends how long is left rather
+ * than a deadline, so this only has to tick — no clock skew to correct.
+ */
+function Countdown({ msLeft }: { msLeft: number }) {
+  const [left, setLeft] = useState(msLeft);
+  useEffect(() => setLeft(msLeft), [msLeft]);
+  useEffect(() => {
+    const t = setInterval(() => setLeft((value) => Math.max(0, value - 1000)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const seconds = Math.ceil(left / 1000);
+  return (
+    <div className={`request-card__timer${seconds <= 10 ? " is-urgent" : ""}`}>
+      <span className="request-card__timer-value">{seconds}s</span>
+      <span className="request-card__timer-label">to answer</span>
+    </div>
+  );
+}
+
+/**
+ * What the panel shows for the vast majority of the day.
+ *
+ * A blank "nothing here" is indistinguishable from a page that has quietly
+ * stopped working, and a teammate who suspects that reloads — which is what
+ * we least want from a panel meant to stay open. A running clock is proof
+ * the connection is alive.
+ */
+function IdlePanel({
+  availableSince,
+  serverNow,
+  offline,
+}: {
+  availableSince: number | null;
+  serverNow: number | null;
+  offline: boolean;
+}) {
+  // Measured against the server's clock at the last read and advanced
+  // locally, so a browser running behind doesn't invent waiting time.
+  const skew = serverNow ? serverNow - Date.now() : 0;
+  const [now, setNow] = useState(() => Date.now() + skew);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now() + skew), 1000);
+    return () => clearInterval(t);
+  }, [skew]);
+
+  if (offline || !availableSince) {
+    return (
+      <div className="request-idle request-idle--offline">
+        <i className="fa-solid fa-power-off" aria-hidden="true" />
+        <div className="request-idle__clock">Offline</div>
+        <p className="request-idle__hint">
+          Go online from the dashboard header — requests are only dispatched to teammates who are listed and
+          available.
+        </p>
+      </div>
+    );
+  }
+
+  const minutes = Math.max(0, Math.floor((now - availableSince) / 60_000));
+  const since = new Date(availableSince).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className="request-idle">
+      <span className="request-idle__pulse" aria-hidden="true" />
+      <div className="request-idle__label">Time elapsed</div>
+      <div className="request-idle__clock">
+        {minutes} min <span className="request-idle__since">(online since {since})</span>
+      </div>
+      <p className="request-idle__hint">
+        Waiting for orders. Keep this panel open — the next request appears here on its own, with a sound and a
+        desktop notification.
+      </p>
+      <AlertPermission />
+    </div>
+  );
+}
+
+/**
+ * Desktop notifications only work if they have been granted, and browsers
+ * only allow the request from a click. Shown until answered, then gone for
+ * good — a permanently visible permission nag is its own kind of noise.
+ */
+function AlertPermission() {
+  const [state, setState] = useState<NotificationPermission | "unsupported">("granted");
+
+  useEffect(() => {
+    setState(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
+  }, []);
+
+  if (state !== "default") return null;
+
+  return (
+    <button
+      type="button"
+      className="request-permission"
+      onClick={() => void Notification.requestPermission().then(setState)}
+    >
+      <i className="fa-solid fa-bell" aria-hidden="true" />
+      Turn on desktop notifications
+    </button>
+  );
+}
+
+/**
+ * Announces a request that wasn't there a moment ago.
+ *
+ * Three channels on purpose, because the panel is meant to be left open in a
+ * background tab: the sound carries in the room, the tab title carries in a
+ * crowded browser, and the OS notification carries when the browser itself is
+ * behind something else.
+ */
+function useRequestAlerts(requests: { order: { id: string; orderNo: number; gameName: string } }[]) {
+  const seen = useRef<Set<string> | null>(null);
+  const baseTitle = useRef<string>("");
+
+  useEffect(() => {
+    baseTitle.current = document.title;
+    return () => {
+      document.title = baseTitle.current;
+    };
+  }, []);
+
+  useEffect(() => {
+    // The first read is the state of the world, not news — without this,
+    // opening the page with two requests already open fires two alerts.
+    if (seen.current === null) {
+      seen.current = new Set(requests.map((r) => r.order.id));
+      return;
+    }
+
+    for (const { order } of requests) {
+      if (seen.current.has(order.id)) continue;
+      seen.current.add(order.id);
+      playSound("request");
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        // The tag collapses repeats of the same order rather than stacking a
+        // notification per poll.
+        new Notification("New order request", {
+          body: `#${order.orderNo} · ${order.gameName} — open your dashboard to accept.`,
+          tag: `request-${order.id}`,
+        });
+      }
+    }
+
+    // Dropped ids are cleaned up so an order that comes back around (a
+    // re-dispatch after everyone timed out) still counts as new.
+    seen.current = new Set(requests.map((r) => r.order.id));
+
+    document.title = requests.length > 0 ? `(${requests.length}) ${baseTitle.current}` : baseTitle.current;
+  }, [requests]);
 }

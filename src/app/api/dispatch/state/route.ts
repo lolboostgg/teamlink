@@ -34,5 +34,16 @@ export async function GET() {
   const rows = await getTeammateDispatchView(teammate.id);
   const view = deriveServerPhase(rows, teammate.available);
 
-  return NextResponse.json({ ...view, maxCandidates: MAX_CANDIDATES }, { headers: { "Cache-Control": "no-store" } });
+  // availableSince is what the idle panel counts from, and serverNow is what
+  // it counts against — a browser clock a few minutes out would otherwise
+  // show a teammate who just went online as having waited an hour.
+  return NextResponse.json(
+    {
+      ...view,
+      maxCandidates: MAX_CANDIDATES,
+      availableSince: teammate.availableSince?.getTime() ?? null,
+      serverNow: now.getTime(),
+    },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

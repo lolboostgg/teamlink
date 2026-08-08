@@ -4,14 +4,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { DispatchStateView } from "@/lib/dispatch/phase";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 
-const EMPTY: DispatchStateView & { maxCandidates: number } = {
+type StateResponse = DispatchStateView & {
+  maxCandidates: number;
+  /** When this teammate went online, or null if they aren't. */
+  availableSince: number | null;
+  /** The server's own clock, so the idle timer doesn't trust the browser's. */
+  serverNow: number | null;
+};
+
+const EMPTY: StateResponse = {
   phase: "OFFLINE",
   order: null,
   msLeft: 0,
   candidatePosition: null,
   isAutoSelect: false,
   acceptedCount: 0,
+  requests: [],
   maxCandidates: 5,
+  availableSince: null,
+  serverNow: null,
 };
 
 /**
@@ -40,7 +51,7 @@ export function useDispatchState(enabled = true) {
     try {
       const res = await fetch("/api/dispatch/state", { cache: "no-store" });
       if (!res.ok) return;
-      const data = (await res.json()) as DispatchStateView & { maxCandidates: number };
+      const data = (await res.json()) as StateResponse;
       lastFetch.current = Date.now();
       setState({ ...EMPTY, ...data });
     } catch {

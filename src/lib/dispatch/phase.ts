@@ -52,6 +52,22 @@ export interface DispatchOrderView {
   ignRoles?: string[];
 }
 
+/**
+ * One open invitation in the requests list.
+ *
+ * The phase above deliberately describes a single order — it drives a modal,
+ * and a modal can only be about one thing. This is the other half: everything
+ * currently on offer, so a teammate with three invitations in flight can see
+ * all three and choose, instead of answering whichever one happened to win
+ * the phase precedence.
+ */
+export interface DispatchRequestView {
+  order: DispatchOrderView;
+  /** Until this invitation expires. */
+  msLeft: number;
+  acceptedCount: number;
+}
+
 export interface DispatchStateView {
   phase: TeammatePhase;
   order: DispatchOrderView | null;
@@ -59,6 +75,7 @@ export interface DispatchStateView {
   candidatePosition: number | null;
   isAutoSelect: boolean;
   acceptedCount: number;
+  requests: DispatchRequestView[];
 }
 
 type CandidateRow = {
@@ -86,6 +103,10 @@ type CandidateRow = {
     status: string;
     sessionStatus: string | null;
     assignedAt: Date | null;
+    ign: string | null;
+    ignRegion: string | null;
+    ignRank: string | null;
+    ignDivision: string | null;
     dispatchDeadline: Date;
     selectionDeadline: Date | null;
     candidates: { status: string; teammateId: string; selected: boolean; isPrimary: boolean }[];
@@ -121,6 +142,13 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
     status: order.status,
     sessionStatus: order.sessionStatus,
     assignedAt: order.assignedAt?.getTime() ?? null,
+    // The rank is the single most useful thing on an incoming request — it is
+    // what tells a teammate whether the order is worth taking at all — so it
+    // travels with the invitation, not only with the assigned order.
+    ign: order.ign,
+    ignRegion: order.ignRegion,
+    ignRank: order.ignRank,
+    ignDivision: order.ignDivision,
     games: order.games,
   };
 }
@@ -131,7 +159,37 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
  * can't be talked into something the DB doesn't agree with.
  */
 export function deriveServerPhase(rows: CandidateRow[], available: boolean, now = Date.now()): DispatchStateView {
-  const empty: DispatchStateView = {
+  return { ...derivePhase(rows, available, now), requests: openRequests(rows, available, now) };
+}
+
+/**
+ * Every invitation still open to this teammate, soonest to expire first —
+ * which is also the order they should be answered in.
+ */
+function openRequests(rows: CandidateRow[], available: boolean, now: number): DispatchRequestView[] {
+  if (!available) return [];
+  return rows
+    .filter(
+      (r) =>
+        r.status === "PENDING" &&
+        ["SEARCHING", "CANDIDATES_READY", "SELECTING"].includes(r.order.status) &&
+        r.invitedAt.getTime() <= now &&
+        (!r.expiresAt || r.expiresAt.getTime() > now),
+    )
+    .map((r) => ({
+      order: toView(r.order),
+      msLeft: Math.max(0, (r.expiresAt ?? r.order.dispatchDeadline).getTime() - now),
+      acceptedCount: r.order.candidates.filter((c) => c.status === "ACCEPTED").length,
+    }))
+    .sort((a, b) => a.msLeft - b.msLeft);
+}
+
+function derivePhase(
+  rows: CandidateRow[],
+  available: boolean,
+  now: number,
+): Omit<DispatchStateView, "requests"> {
+  const empty: Omit<DispatchStateView, "requests"> = {
     phase: available ? "ONLINE_IDLE" : "OFFLINE",
     order: null,
     msLeft: 0,

@@ -11224,75 +11224,270 @@ a.notification-panel__item:hover {
 /* ── Open requests ───────────────────────────────────────────
    The dispatch modal handles one order at a time and blocks the screen,
    which is right for an interruption. This is the same queue as a list, so
-   several arriving together can be compared before answering. */
+   several arriving together can be compared before answering.
+
+   Sized for a panel parked on a second monitor and read from a metre away:
+   rank and name large, the order number a badge you can call out over voice,
+   and the whole card lit green so an arrival registers in peripheral vision. */
 .request-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .request-card {
+  border: 1px solid color-mix(in srgb, var(--success) 45%, var(--dash-line));
+  border-radius: var(--dash-radius);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--success) 11%, transparent), transparent 70%),
+    var(--dash-surface-2);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--success) 12%, transparent), 0 10px 30px rgb(0 0 0 / 0.28);
+  overflow: hidden;
+  animation: request-in 260ms ease-out both;
+}
+
+@keyframes request-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-card { animation: none; }
+}
+
+.request-card__head {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto auto;
+  grid-template-columns: 52px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border: 1px solid var(--dash-line);
-  border-radius: var(--dash-radius-sm);
-  background: var(--dash-surface-2);
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
 }
 
 .request-card__icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
   object-fit: cover;
 }
 
-.request-card__main { min-width: 0; }
+.request-card__who { min-width: 0; }
 
-.request-card__title {
+/* The rank leads: it is what decides whether the order is worth taking. */
+.request-card__rank {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--success);
+  letter-spacing: -0.01em;
+}
+
+.request-card__name {
+  margin-top: 2px;
   font-size: 14px;
-  font-weight: 800;
-  color: var(--text);
-}
-
-.request-card__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 3px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.request-card__tag {
-  text-transform: capitalize;
-  color: var(--accent);
   font-weight: 700;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.request-card__pay {
+.request-card__order {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 3px;
+  text-align: right;
+}
+
+.request-card__order-no {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+  color: var(--success);
   font-size: 15px;
-  font-weight: 800;
-  color: var(--text);
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
 
-.request-card__pay span {
-  font-size: 10.5px;
-  font-weight: 600;
+.request-card__order-game {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-faint);
+}
+
+.request-card__timer {
+  min-width: 62px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.request-card__timer-value {
+  display: block;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1;
+}
+
+.request-card__timer-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+}
+
+.request-card__timer.is-urgent .request-card__timer-value { color: var(--danger, #e5484d); }
+
+.request-card__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1px;
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.request-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 18px;
+  background: var(--dash-surface-2);
+}
+
+.request-fact__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+}
+
+.request-fact__value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.request-fact--strong .request-fact__value {
+  font-size: 20px;
+  color: var(--success);
+}
+
+.request-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+.request-card__accepted {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .request-card__actions {
   display: flex;
+  gap: 10px;
+}
+
+/* Deliberately the largest target on the page. */
+.request-card__accept {
+  min-width: 170px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* ── Idle panel ──
+   What this page shows most of the day. A running clock is the difference
+   between "nothing has come in" and "this tab died an hour ago". */
+.request-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.request-idle__pulse {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent);
+  animation: request-pulse 2s ease-out infinite;
+}
+
+@keyframes request-pulse {
+  70%  { box-shadow: 0 0 0 14px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-idle__pulse { animation: none; }
+}
+
+.request-idle__label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+}
+
+.request-idle__clock {
+  font-size: 34px;
+  font-weight: 900;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.request-idle__since {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
+.request-idle__hint {
+  max-width: 46ch;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.request-idle--offline i {
+  font-size: 22px;
+  color: var(--text-faint);
+}
+
+.request-idle--offline .request-idle__clock { color: var(--text-muted); }
+
+.request-permission {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.request-permission:hover {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
 }
 
 .dashboard-empty__hint {
