@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { AdminOrderReply } from "@/components/dashboard/admin/AdminOrderReply";
+import { AdminOrderControls } from "@/components/dashboard/admin/AdminOrderControls";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,14 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         <div><span>Completed</span><strong>{order.sessionCompleteAt ? dateTime(order.sessionCompleteAt) : "—"}</strong></div>
       </div>
     </section>
+
+    <AdminOrderControls
+      orderId={order.id}
+      priceEUR={Number(order.priceEUR)}
+      played={order.games.length}
+      booked={Math.max(1, order.gamesBooked)}
+      settled={["COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status)}
+    />
 
     <div className="admin-order-workspace">
     <section className="dashboard-panel admin-order-chat-panel">

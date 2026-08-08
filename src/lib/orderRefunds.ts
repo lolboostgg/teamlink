@@ -79,7 +79,10 @@ export interface RefundOutcome {
  * A tip is deliberately outside all of this. It is for a teammate who did
  * play, and is not part of what the booking cost.
  */
-async function owedCents(order: RefundableOrder): Promise<{ cents: number; played: number; booked: number }> {
+async function owedCents(
+  order: RefundableOrder,
+  overrideCents?: number,
+): Promise<{ cents: number; played: number; booked: number }> {
   const gross = Math.round(Number(order.priceEUR) * 100);
   const [row, played] = await Promise.all([
     prisma.order.findUnique({ where: { id: order.id }, select: { gamesBooked: true } }),
@@ -87,18 +90,29 @@ async function owedCents(order: RefundableOrder): Promise<{ cents: number; playe
   ]);
 
   const booked = Math.max(1, row?.gamesBooked ?? 1);
+
+  // An admin settling a dispute overrides the arithmetic, but never the
+  // ceiling: we cannot give back more than was taken.
+  if (overrideCents !== undefined) {
+    return { cents: Math.max(0, Math.min(Math.round(overrideCents), gross)), played, booked };
+  }
+
   if (played <= 0) return { cents: gross, played: 0, booked };
   if (played >= booked) return { cents: 0, played, booked };
   return { cents: Math.round((gross * (booked - played)) / booked), played, booked };
 }
 
-export async function refundOrder(order: RefundableOrder, reason: RefundReason): Promise<RefundOutcome> {
+export async function refundOrder(
+  order: RefundableOrder,
+  reason: RefundReason,
+  overrideCents?: number,
+): Promise<RefundOutcome> {
   const charges = await prisma.charge.findMany({
     where: { orderId: order.id, status: "SUCCEEDED", kind: { in: ["ORDER", "EXTRA_GAMES"] } },
     select: { id: true, kind: true, amountEUR: true, stripePaymentIntentId: true },
   });
 
-  const owed = await owedCents(order);
+  const owed = await owedCents(order, overrideCents);
   const outcome = order.clientUserId
     ? await creditBack(order, order.clientUserId, owed.cents, reason)
     : await refundToStripe(order, charges, owed);
@@ -355,8 +369,13 @@ async function payForPlayedGames(order: RefundableOrder, played: number, booked:
 export async function settleCancelledOrder(
   order: RefundableOrder,
   reason: RefundReason,
+  /**
+   * Exact amount to give back, in cents, for an admin overruling the
+   * per-game split. Capped at what was actually paid.
+   */
+  overrideCents?: number,
 ): Promise<RefundOutcome> {
-  const outcome = await refundOrder(order, reason);
+  const outcome = await refundOrder(order, reason, overrideCents);
   if (outcome.played && outcome.booked) {
     await payForPlayedGames(order, outcome.played, outcome.booked);
   }

@@ -748,6 +748,54 @@ export async function assertAssignedTeammate(orderId: string, teammateId: string
   return candidate;
 }
 
+
+/**
+ * Closes an order by hand, from the admin board.
+ *
+ * completeOrder() is the teammate's route and guards accordingly: it demands
+ * the caller be the assigned teammate and every booked game submitted. Those
+ * guards are the point of it, and are exactly what an admin resolving a mess
+ * needs to step around — a teammate who lost access, a game whose proof never
+ * uploaded, a session finished in Discord.
+ *
+ * The payout is not stepped around. It runs the same creditOrderPayout as a
+ * normal completion, so closing an order pays for it, and the ledger's unique
+ * (teammateId, orderId, ORDER_PAYOUT) index means an order already paid as a
+ * part-way cancellation is not paid a second time here.
+ */
+export async function forceCompleteOrder(orderId: string, adminLabel: string) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new DispatchError("Unknown order.");
+  if (order.status === "COMPLETED") throw new DispatchError("This order is already closed.");
+
+  const completed = await prisma.$transaction(async (tx) => {
+    const closed = await tx.order.update({
+      where: { id: orderId },
+      data: { status: "COMPLETED", sessionStatus: "ORDER_COMPLETED", sessionCompleteAt: new Date() },
+    });
+
+    // Free whoever was on it, so the next wave can reach them again.
+    const selected = await tx.dispatchCandidate.findMany({
+      where: { orderId, selected: true },
+      select: { teammateId: true },
+    });
+    for (const candidate of selected) {
+      await tx.teammate.update({
+        where: { id: candidate.teammateId },
+        data: { available: true, availableSince: new Date(), sessionsCount: { increment: 1 } },
+      });
+    }
+
+    await creditOrderPayout(tx, closed);
+    await logDispatch(tx, orderId, DISPATCH_EVENT.ENDED, `${adminLabel} closed the order by hand.`);
+    return closed;
+  });
+
+  await publishOrderChange(orderId);
+  void notifyOrderCompleted(orderId);
+  return completed;
+}
+
 export async function setSessionStatus(orderId: string, teammateId: string, status: string) {
   await assertAssignedTeammate(orderId, teammateId);
 

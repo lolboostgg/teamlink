@@ -15105,3 +15105,111 @@ a.notification-panel__item:hover {
   color: var(--accent);
   font-size: 12px;
 }
+
+/* ---------------------------------------------------------------------------
+   Admin → one order: the manual cancel / complete controls.
+   ------------------------------------------------------------------------- */
+
+.admin-order-controls__modes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.admin-order-controls__mode {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 13px;
+  border: 1px solid var(--dash-line);
+  border-radius: var(--dash-radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.admin-order-controls__mode:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.admin-order-controls__mode.is-active {
+  border-color: rgba(70, 104, 255, 0.75);
+  background: rgba(70, 104, 255, 0.12);
+}
+
+.admin-order-controls__mode strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-order-controls__mode small {
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.admin-order-controls__custom {
+  max-width: 260px;
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+/* The number the whole panel exists to decide, stated once before the button
+   that acts on it. */
+.admin-order-controls__summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--dash-line);
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
+}
+
+.admin-order-controls__summary span {
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.admin-order-controls__summary strong {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+
+.admin-order-controls__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.admin-order-controls__confirm {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border: 1px solid rgba(224, 168, 59, 0.3);
+  border-radius: var(--dash-radius-sm);
+  background: rgba(224, 168, 59, 0.08);
+}
+
+.admin-order-controls__confirm p {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.admin-order-controls__confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
