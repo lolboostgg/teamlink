@@ -293,16 +293,15 @@ const MECCHA_CATEGORIES: BookingCategory[] = [
   },
 ];
 
-// NOTE: the reference also prices this by trophy bracket — 0-8k included,
-// then +$1 / +$2 / +$3 up to 15k. Nothing in BookingOption can express a
-// surcharge tied to a second choice, so that is not modelled here and the
-// prices below are the base bracket. It needs a real decision about how
-// rank-based pricing works before it goes in.
+// Trophy Road is deliberately absent. It was the one mode priced by trophy
+// bracket in the reference — 0-8k included, then +1 / +2 / +3 up to 15k — and
+// nothing in BookingOption can express a surcharge tied to a second choice.
+// Listing it at the base price would have undercharged every customer above
+// 8k, so it stays out until rank-based pricing actually exists.
 const CLASH_ROYALE_CATEGORIES: BookingCategory[] = [
   {
     category: "Team Up",
     options: [
-      { name: "Trophy Road", description: "Play 5 Trophy Road games with a pro teammate who will climb on your account to push trophies efficiently", price: 4.99, eta: "3 min away", unit: "/5 games", maxTeammates: 1 },
       { name: "Ranked", description: "Play 5 ranked games with an Ultimate Champion teammate climbing on your account to boost your standing", price: 6.99, eta: "3 min away", unit: "/5 games", maxTeammates: 1 },
       { name: "Duo Ultra", description: "Team up for 2v2 matches alongside an Ultimate Champion teammate for maximum synergy and fast wins", price: 4.99, eta: "3 min away", unit: "/5 games", maxTeammates: 1 },
     ],
