@@ -81,8 +81,191 @@ const DEFAULT_CATEGORIES: BookingCategory[] = [
   },
 ];
 
+/**
+ * The remaining catalogues.
+ *
+ * Modelled on the reference screenshots, with one deliberate difference:
+ * every figure there is USD and this platform charges EUR throughout (see
+ * lib/fx.ts — other currencies are display only). The numerals are carried
+ * across unchanged, so €11.99 stands where $11.99 stood. At today's rate
+ * that is roughly a tenth more expensive, which is a pricing decision rather
+ * than a conversion — worth a deliberate look before this goes near a real
+ * customer.
+ *
+ * `maxTeammates` is not decoration: it caps the group-size stepper, so a Duo
+ * mode has to be 1 or the widget will happily sell four of them.
+ */
+const FORTNITE_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Bundles",
+    options: [
+      { name: "Off Spawn", description: "Play with a top 0.1% PR ranked teammate", price: 41.99, originalPrice: 52.99, eta: "3 min away", unit: "/3 hours", maxTeammates: 1 },
+      { name: "Rotation", description: "Play with a top 0.1% PR ranked teammate", price: 74.99, originalPrice: 93.99, eta: "3 min away", unit: "/5 hours", maxTeammates: 1 },
+      { name: "Victory Lap", description: "Play with a top 0.1% PR ranked teammate", price: 104.99, originalPrice: 131.99, eta: "3 min away", unit: "/8 hours", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo Ultra", description: "Play with a top 0.1% Unreal teammate with high PR", price: 11.99, eta: "<1 min away", unit: "/45 min", maxTeammates: 1 },
+      { name: "Squad Ultra", description: "Play with multiple top 0.1% Unreal teammates with high PR", price: 11.99, eta: "4 min away", unit: "/45 min", maxTeammates: 3 },
+      { name: "Duo Scrim", description: "Play scrims with a top 0.1% Unreal teammate", price: 7.99, eta: "4 min away", unit: "/30 min", maxTeammates: 1 },
+      { name: "Duo Pro", description: "Play with a pro player with $10K+ earnings", price: 49.99, eta: "3 min away", unit: "/45 min", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Social",
+    options: [
+      { name: "Gamer Girl", description: "Hangout and meet with our best girl teammates", price: 6.49, eta: "3 min away", unit: "/30 min", maxTeammates: 4 },
+      { name: "Rizz Party", description: "Play with our best girl teammates to test your rizz", price: 5.99, eta: "4 min away", unit: "/30 min", maxTeammates: 4 },
+    ],
+  },
+  {
+    category: "Coaching",
+    options: [
+      { name: "Coach Duo", description: "Get coached and play 45 min at 50% off", price: 18.99, eta: "3 min away", unit: "/90 min", maxTeammates: 1 },
+      { name: "Coach", description: "Get coached by a top 0.1% Unreal & high PR teammate", price: 12.99, eta: "2 min away", unit: "/45 min", maxTeammates: 1 },
+    ],
+  },
+];
+
+const VALORANT_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo Ultra", description: "Learn & duo with a Radiant teammate", price: 7.99, eta: "<1 min away", unit: "/game", maxTeammates: 1 },
+      { name: "2v2 Duo Skirmish", description: "Play 3x Skirmish: Ascension games with a Radiant teammate", price: 6.99, eta: "3 min away", unit: "/game", maxTeammates: 1 },
+      { name: "Trio Ultra", description: "Learn & duo with 2x Radiant teammates", price: 14.99, eta: "3 min away", unit: "/game", maxTeammates: 2 },
+      { name: "Flex Ultra", description: "Play with multiple Radiant teammates", price: 7.99, eta: "4 min away", unit: "/game", maxTeammates: 4 },
+    ],
+  },
+  {
+    category: "Bundles",
+    options: [
+      { name: "Pistol Round", description: "Play 3 hours with a Radiant teammate", price: 39.99, originalPrice: 49.99, eta: "2 min away", unit: "/3 hours", maxTeammates: 1 },
+      { name: "Clutch Up", description: "Play 5 hours with a Radiant teammate", price: 59.99, originalPrice: 74.99, eta: "2 min away", unit: "/5 hours", maxTeammates: 1 },
+      { name: "Overtime", description: "Play 8 hours with a Radiant teammate", price: 79.99, originalPrice: 99.99, eta: "3 min away", unit: "/8 hours", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Social",
+    options: [
+      { name: "Gamer Girl", description: "Hangout and meet with our best girl teammates", price: 6.49, eta: "2 min away", unit: "/game", maxTeammates: 4 },
+    ],
+  },
+  {
+    category: "Coaching",
+    options: [
+      { name: "Coach Duo", description: "Get coached and play a practice game at 50% off", price: 16.99, eta: "3 min away", unit: "/45 min + game", maxTeammates: 1 },
+      { name: "Coaching", description: "Get coached by a Radiant teammate", price: 12.99, eta: "3 min away", unit: "/game", maxTeammates: 1 },
+    ],
+  },
+];
+
+const MARVEL_RIVALS_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Bundles",
+    options: [
+      { name: "First Contact", description: "Play 10 games with a top tier teammate", price: 44.99, originalPrice: 56.99, eta: "3 min away", unit: "/game", maxTeammates: 1 },
+      { name: "Team Comp", description: "Play 15 games with a top tier teammate", price: 64.99, originalPrice: 81.99, eta: "3 min away", unit: "/game", maxTeammates: 1 },
+      { name: "Endgame", description: "Play 25 games with a top tier teammate", price: 109.99, originalPrice: 137.99, eta: "4 min away", unit: "/game", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo Ultra", description: "Play Marvel Rivals with a top tier teammate", price: 4.99, eta: "2 min away", unit: "/game", maxTeammates: 1 },
+      { name: "Squad Ultra", description: "Bring your friends and play with multiple top tier teammates", price: 4.99, eta: "3 min away", unit: "/game", maxTeammates: 5 },
+    ],
+  },
+  {
+    category: "Social",
+    options: [
+      { name: "Gamer Girl", description: "Hangout and meet with our best girl teammates", price: 6.49, eta: "3 min away", unit: "/game", maxTeammates: 4 },
+    ],
+  },
+  {
+    category: "Coaching",
+    options: [
+      { name: "Coach Duo", description: "Get coached and play a practice game at 50% off", price: 12.99, eta: "4 min away", unit: "/45 min + game", maxTeammates: 1 },
+      { name: "Coach", description: "Get coached by a top tier teammate", price: 9.99, eta: "3 min away", unit: "/45 min", maxTeammates: 1 },
+    ],
+  },
+];
+
+const TFT_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Bundles",
+    options: [
+      { name: "First Carousel", description: "Get coached for 3 games with a Master+ teammate", price: 24.99, originalPrice: 31.99, eta: "4 min away", unit: "/3 games", maxTeammates: 1 },
+      { name: "Win Streak", description: "Get coached for 5 games with a Master+ teammate", price: 39.99, originalPrice: 49.99, eta: "3 min away", unit: "/5 games", maxTeammates: 1 },
+      { name: "Fast 9", description: "Get coached for 10 games with a Master+ teammate", price: 64.99, originalPrice: 81.99, eta: "3 min away", unit: "/10 games", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo Pilot", description: "Get coached from a Master+ teammate", price: 9.99, eta: "2 min away", unit: "/game", maxTeammates: 1 },
+      { name: "Double Up", description: "Play with a Master+ teammate", price: 7.99, eta: "2 min away", unit: "/game", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Social",
+    options: [
+      { name: "Gamer Girl", description: "Play with our most fun gamer girls", price: 6.49, eta: "2 min away", unit: "/game", maxTeammates: 4 },
+      { name: "Duo Casual", description: "Play any non-ranked mode with a Master+ teammate", price: 5.99, eta: "4 min away", unit: "/game", maxTeammates: 1 },
+    ],
+  },
+];
+
+const APEX_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo Ultra", description: "Play with a top 0.1% Apex Predator teammate", price: 11.99, eta: "3 min away", unit: "/45 min", maxTeammates: 1 },
+      { name: "Squad Ultra", description: "Play with two top 0.1% Apex Predator teammates", price: 11.99, eta: "3 min away", unit: "/45 min", maxTeammates: 2 },
+      { name: "Duo Wildcard", description: "Play Wildcard with a top 0.1% Apex Predator teammate", price: 8.99, eta: "4 min away", unit: "/45 min", maxTeammates: 1 },
+      { name: "Squad Wildcard", description: "Play Wildcard with two top 0.1% Apex Predator teammates", price: 8.99, eta: "3 min away", unit: "/45 min", maxTeammates: 2 },
+    ],
+  },
+  {
+    category: "Bundles",
+    options: [
+      { name: "Octane's Stim Rush", description: "Play 3 hours with a top 0.1% Apex Predator", price: 38.99, originalPrice: 48.99, eta: "2 min away", unit: "/3 hours", maxTeammates: 1 },
+      { name: "Master's Marathon", description: "Play 5 hours with a top 0.1% Apex Predator", price: 69.99, originalPrice: 87.99, eta: "4 min away", unit: "/5 hours", maxTeammates: 1 },
+      { name: "Predator's Path", description: "Play 8 hours with a top 0.1% Apex Predator", price: 99.99, originalPrice: 124.99, eta: "4 min away", unit: "/8 hours", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Coaching",
+    options: [
+      { name: "Coach", description: "Get coached by a top 0.1% Apex Predator teammate", price: 12.99, eta: "3 min away", unit: "/45 min", maxTeammates: 1 },
+    ],
+  },
+];
+
+/** No game at all — the teammate is the product. */
+const HANGOUT_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Hangout",
+    options: [
+      { name: "Duo Hangout", description: "Hang out with our best teammates", price: 13.99, eta: "3 min away", unit: "/hour", maxTeammates: 4 },
+      { name: "Duo Custom", description: "Play any game you want with our best teammates", price: 13.99, eta: "3 min away", unit: "/hour", maxTeammates: 4 },
+      { name: "Duo Hangout VIP", description: "Hang out with our most popular teammates", price: 19.99, eta: "3 min away", unit: "/hour", maxTeammates: 4 },
+      { name: "Duo Hangout VIP Extended", description: "Hang out with our most popular teammates", price: 54.99, eta: "2 min away", unit: "/3 hours", maxTeammates: 4 },
+      { name: "Duo Hangout VIP Marathon", description: "Hang out with our most popular teammates", price: 85.99, eta: "3 min away", unit: "/5 hours", maxTeammates: 4 },
+    ],
+  },
+];
+
 const CATALOG_BY_GAME: Record<string, BookingCategory[]> = {
   "league-of-legends": LOL_CATEGORIES,
+  fortnite: FORTNITE_CATEGORIES,
+  hangout: HANGOUT_CATEGORIES,
+  valorant: VALORANT_CATEGORIES,
+  "marvel-rivals": MARVEL_RIVALS_CATEGORIES,
+  "teamfight-tactics": TFT_CATEGORIES,
+  "apex-legends": APEX_CATEGORIES,
 };
 
 export function getBookingCategories(gameSlug: string): BookingCategory[] {
@@ -101,6 +284,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Ranked: "var(--hue-gold)",
   Social: "var(--hue-pink)",
   Coaching: "var(--hue-purple)",
+  Bundles: "var(--hue-cyan)",
+  Hangout: "var(--hue-pink)",
 };
 
 /** The category a booked mode belongs to, resolved from its name alone. */
