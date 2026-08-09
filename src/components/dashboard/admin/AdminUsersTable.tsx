@@ -6,6 +6,7 @@ import { formatOrderDate } from "@/lib/dashboard/orderDisplay";
 import { setUserRole } from "@/app/dashboard/admin/users/actions";
 import { DiscordTag } from "@/components/dashboard/DiscordTag";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
+import { isOnline } from "@/lib/accountPresence";
 
 export interface AdminUserRow {
   id: string;
@@ -21,6 +22,31 @@ export interface AdminUserRow {
   discordAvatar: string | null;
   storeCreditCents?: number;
   teammateBalanceEUR?: number;
+  lastSeenAt?: number | null;
+  /** Null when the account has no roster profile. */
+  teammateAvailable?: boolean | null;
+  bannedAt?: number | null;
+}
+
+/**
+ * What the status column says, which depends on what the account is.
+ *
+ * A teammate's pill answers whether the dispatcher may send them an order —
+ * that is a switch they set, and "ready" is the word for it. A customer has
+ * no such switch, so theirs answers the only question worth asking about
+ * them: are they here right now. Showing "unavailable" against a customer
+ * said neither, and read as though something were wrong with the account.
+ */
+function statusFor(user: AdminUserRow): { label: string; tone: string } {
+  if (user.bannedAt) return { label: "banned", tone: "dashboard-pill--danger" };
+  if (user.teammateAvailable !== null && user.teammateAvailable !== undefined) {
+    return user.teammateAvailable
+      ? { label: "ready", tone: "dashboard-pill--success" }
+      : { label: "unavailable", tone: "dashboard-pill--muted" };
+  }
+  return isOnline(user.lastSeenAt)
+    ? { label: "online", tone: "dashboard-pill--success" }
+    : { label: "offline", tone: "dashboard-pill--muted" };
 }
 
 export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
@@ -53,6 +79,7 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
           <th>Joined</th>
           <th>Role</th>
           <th>Balance</th>
+          <th>Status</th>
           <th />
         </tr>
       </thead>
@@ -77,6 +104,12 @@ export function AdminUsersTable({ users }: { users: AdminUserRow[] }) {
               </div>
             </td>
             <td><span className={`admin-user-balance admin-user-balance--${u.role === "TEAMMATE" ? "earned" : "credit"}`}><span className="admin-user-balance__icon"><i className={`fa-solid ${u.role === "TEAMMATE" ? "fa-coins" : "fa-wallet"}`} /></span><span className="admin-user-balance__copy"><strong>€{((u.role === "TEAMMATE" ? u.teammateBalanceEUR ?? 0 : (u.storeCreditCents ?? 0) / 100)).toFixed(2)}</strong><small>{u.role === "TEAMMATE" ? "Earnings" : "Store credit"}</small></span></span></td>
+            <td>
+              {(() => {
+                const status = statusFor(u);
+                return <span className={`dashboard-pill ${status.tone}`}>{status.label}</span>;
+              })()}
+            </td>
             <td>
               <Link href={`/dashboard/admin/accounts/${u.accountNo}`} className="btn btn--ghost btn--sm">
                 <i className="fa-solid fa-eye" aria-hidden="true" /> View

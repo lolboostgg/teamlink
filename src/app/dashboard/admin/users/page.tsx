@@ -72,6 +72,12 @@ export default async function AdminUsersPage({ searchParams }: Props) {
     discordAvatar: u.discordAvatar,
     storeCreditCents: u.creditBalanceCents,
     teammateBalanceEUR: u.teammate ? Number(u.teammate.balanceEUR) : 0,
+    lastSeenAt: u.lastSeenAt?.getTime() ?? null,
+    // Null for an account with no roster profile — that is what tells the
+    // table to answer "are they here" instead of "will the dispatcher send
+    // them work", which are different questions with different words.
+    teammateAvailable: u.teammate ? u.teammate.available : null,
+    bannedAt: u.bannedAt?.getTime() ?? null,
   }));
 
   const hrefFor = (nextPage: number) => {

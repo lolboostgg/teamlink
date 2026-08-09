@@ -12841,6 +12841,14 @@ a.notification-panel__item:hover {
   border: 1px solid rgba(224, 168, 59, 0.3);
 }
 
+/* Distinct from --warning: a locked account is not a state that resolves on
+   its own, and it should not read like one that will. */
+.dashboard-pill--danger {
+  color: #ff8f8f;
+  background: rgba(224, 82, 82, 0.14);
+  border: 1px solid rgba(224, 82, 82, 0.32);
+}
+
 .dashboard-pill--muted {
   color: var(--text-faint);
   background: rgba(255, 255, 255, 0.05);

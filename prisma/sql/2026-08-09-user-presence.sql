@@ -1,0 +1,11 @@
+-- "Is this person around right now?" for any account, not just teammates.
+--
+-- Teammate.lastSeenAt already answers a much tighter version of this — it is
+-- what the dispatcher trusts when deciding who can be sent an order, and it
+-- is fed by a 45-second heartbeat. This one is deliberately coarse: written
+-- from the auth callback that re-reads the row anyway, at most once every
+-- couple of minutes per account, so a customer list can say online or offline
+-- without putting a write in front of every request.
+--
+-- Idempotent like every file in here: safe to re-run.
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastSeenAt" TIMESTAMP(3);

@@ -42,6 +42,12 @@ model User {
   /// screen, so it has to be written for them and not for us.
   bannedAt           DateTime?
   bannedReason       String?
+  /// Last time this account was seen holding a session, written from the
+  /// auth callback that already re-reads the row (see auth.ts). Coarse on
+  /// purpose — it answers "is this person around", not "what are they doing".
+  /// Teammate.lastSeenAt is the separate, much tighter signal the dispatcher
+  /// uses to decide who can be sent an order.
+  lastSeenAt         DateTime?
   creditBalanceCents Int      @default(0)
   // { [topic]: { email, discord, sms } } — see lib/notificationPrefs.ts.
   notificationPrefs  Json?

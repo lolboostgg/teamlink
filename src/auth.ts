@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { discordDisplayName } from "@/lib/discord";
 import { decryptTwoFactorSecret, readLoginActivity, readTwoFactor, verifyTwoFactorCode } from "@/lib/twoFactor";
+import { PRESENCE_WRITE_AFTER_MS } from "@/lib/accountPresence";
 import { Prisma } from "@/generated/prisma/client";
 
 // Credentials provider requires JWT sessions (NextAuth can't use database
@@ -213,8 +214,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const fresh = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, name: true, avatarUrl: true, bannedAt: true },
+            select: { role: true, name: true, avatarUrl: true, bannedAt: true, lastSeenAt: true },
           });
+
+          // Presence, piggy-backed on a read that was happening anyway. The
+          // write is throttled far more coarsely than this callback runs, so
+          // an active session costs one every couple of minutes rather than
+          // one per request. Fire-and-forget: whether somebody shows as
+          // online is not worth delaying their page for, or failing it over.
+          if (fresh && (!fresh.lastSeenAt || Date.now() - fresh.lastSeenAt.getTime() >= PRESENCE_WRITE_AFTER_MS)) {
+            void prisma.user
+              .update({ where: { id: token.id as string }, data: { lastSeenAt: new Date() } })
+              .catch(() => {});
+          }
           // A deleted account keeps whatever the token already said; the
           // route guards still reject it, and failing the callback here
           // would sign everyone out on a transient database blip.
