@@ -56,9 +56,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Video references dropped directly in the repo root by the chat client
-# (e.g. a reference clip the user pasted in) — not project content.
+# Media dropped directly in the repo root by the chat client (a reference
+# clip, a batch of key art to curate) — the copy that ships lives under
+# public/games/ named for its slug, this one is just the drop point.
 /*.mp4
+/*.webp
 
 /src/generated/prisma
 
