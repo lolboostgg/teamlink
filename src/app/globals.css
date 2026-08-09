@@ -6942,12 +6942,35 @@ ul {
   max-width: 1040px;
 }
 
+/* The one screen on the site where somebody is waiting with nothing to do,
+   so the card carries a little more than a flat fill: light falling from the
+   ring at the top, a hairline highlight along the top edge, and depth
+   underneath. All of it derived from the cyan already in the ring — no new
+   colour, just the existing one given somewhere to land. */
 .matching-screen--card {
-  padding: 32px 40px;
+  position: relative;
+  padding: 34px 40px 30px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-card);
+  background:
+    radial-gradient(120% 90% at 50% -12%, color-mix(in srgb, var(--cta-vivid) 13%, transparent), transparent 62%),
+    var(--bg-elevated);
+  box-shadow: var(--shadow-card), 0 30px 70px -30px rgb(0 0 0 / 0.75);
+  overflow: hidden;
+}
+
+.matching-screen--card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--cta-vivid) 55%, transparent),
+    transparent
+  );
+  pointer-events: none;
 }
 
 /* ── Matchmaking's own visual identity: an "arena" glow behind Searching
@@ -7222,9 +7245,13 @@ ul {
   background: var(--accent-hover);
 }
 
+/* Equal columns, not a left-aligned flex row: the four options are one
+   choice of four and should read as four equal things, and as a flex row
+   with a fixed min-width they left a ragged gap on the right of the panel
+   that made the group look nudged out of place. */
 .matching-screen__vibe-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
   gap: 8px;
 }
 
@@ -7233,7 +7260,6 @@ ul {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  min-width: 78px;
   padding: 11px 12px 10px;
   border-radius: 10px;
   border: 1px solid transparent;
@@ -7363,6 +7389,14 @@ ul {
   font-weight: 400;
   letter-spacing: 0.01em;
   margin-bottom: 10px;
+  /* "Searching for your perfect teammate…" was breaking with the last word
+     alone on its own line, which is the one shape a two-line heading should
+     never take. Balanced, and held short of the card edge so the break lands
+     where the sentence has a joint. */
+  text-wrap: balance;
+  max-width: 22ch;
+  margin-inline: auto;
+  line-height: 1.12;
 }
 
 .matching-screen__sub {
@@ -8676,12 +8710,19 @@ ul {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  /* A bounded height (not just min-height) so the message list scrolls
-     internally instead of growing the whole panel forever as messages
-     pile up — see .chat-thread__messages/.session-chat__messages below,
-     which already has overflow-y:auto but needs a capped ancestor to
-     actually kick in. */
-  height: min(640px, calc(100vh - 180px));
+  /* Bounded (not just min-height) so the message list scrolls internally
+     instead of growing the panel forever as messages pile up — see
+     .chat-thread__messages/.session-chat__messages below, which has
+     overflow-y:auto but needs a capped ancestor to act on.
+
+     The subtraction used to be a flat 180px, which was never what sits above
+     this: the sticky header, the session bar and the status strip come to
+     roughly 250, so on any window shorter than about 820px the panel ran off
+     the bottom and took the message box with it — the one control the page
+     exists for, below the fold. --offset-h is the measured header (set in
+     SiteTopbar), dvh rather than vh so a mobile URL bar can't push the input
+     out of reach, and the clamp keeps it usable at both extremes. */
+  height: clamp(340px, calc(100dvh - var(--offset-h, var(--header-h)) - 250px), 620px);
 }
 
 .session-screen__chat-head {

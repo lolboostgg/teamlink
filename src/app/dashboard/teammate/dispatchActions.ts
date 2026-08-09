@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { publish } from "@/lib/events/bus";
 import { settleCancelledOrder } from "@/lib/orderRefunds";
 import {
+  publishOrderChange,
   respondToDispatch,
   setSessionStatus,
   recordGame,
@@ -137,9 +137,12 @@ export async function respondToCancelAction(orderId: string, approve: boolean): 
       await settleCancelledOrder(order, "cancel_approved");
     }
 
-    if (order.clientUserId) {
-      await publish({ topic: "orders", key: orderId, userIds: [order.clientUserId] });
-    }
+    // Everyone on the order, not just the customer — and on the dispatch
+    // topic as well as orders. The teammate who just approved this was the
+    // one person not told: their phase stayed SELECTED until the slow
+    // fallback poll came round, so "Order in progress · Back to order" sat
+    // there pointing at an order that no longer exists.
+    await publishOrderChange(orderId);
     revalidatePath("/dashboard/teammate");
     return { ok: true };
   } catch (err) {
