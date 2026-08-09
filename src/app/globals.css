@@ -944,10 +944,21 @@ body {
   box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
+/* Side by side, not stretched. Stacking made each button the full width of
+   the phone, which is far more emphasis than "How it works" has ever earned
+   and made the pair read as a form rather than a choice. Both fit on one
+   row at 360px once the padding stops being a desktop number. */
 @media (max-width: 480px) {
+  .hero__cta .btn--lg {
+    padding: 13px 18px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 340px) {
   .hero__cta {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
 }
 
@@ -10565,6 +10576,27 @@ body {
   .profile-account-trigger__chevron { display: none; }
   .profile-account-trigger { padding: 4px; border-radius: 50%; }
   .profile-account-trigger__avatar { width: 32px; height: 32px; border-radius: 50%; }
+}
+
+/* The currency/language control, shortened to its symbols.
+   "€ EUR · 🇬🇧 EN ⌄" is six things saying two, and on a phone those six were
+   what pushed the account avatar off the edge of the header. The symbol and
+   the flag carry it — nobody reads "EUR" after seeing "€" — and the full
+   labels are still there the moment the menu is open. */
+@media (max-width: 560px) {
+  .dropdown-switcher__code,
+  .settings-trigger__sep {
+    display: none;
+  }
+
+  .dropdown-switcher__trigger {
+    gap: 7px;
+    padding: 8px 9px;
+  }
+
+  .dropdown-switcher__trigger .fa-chevron-down {
+    font-size: 9px;
+  }
 }
 
 .dropdown-switcher__account-email {
