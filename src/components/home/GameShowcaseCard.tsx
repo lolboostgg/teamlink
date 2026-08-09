@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Game } from "@/lib/games";
 import { heroCardBackground } from "@/lib/gameArt";
 
@@ -8,6 +9,9 @@ interface Props {
   game: Game;
   onHover?: (slug: string | null) => void;
   className?: string;
+  /** Extra detail under the name — the /games listing passes availability and
+   *  price here. The sliders pass nothing and are unchanged by it. */
+  meta?: ReactNode;
 }
 
 // Shared big-card markup (key art + name) used by the horizontal sliders
@@ -19,11 +23,11 @@ interface Props {
 // banner key art already has each game's logo baked in, so the wordmark was
 // just doubling up the branding (and doing it inconsistently, since only
 // some games had a dedicated wordmark asset).
-export function GameShowcaseCard({ game, onHover, className = "" }: Props) {
+export function GameShowcaseCard({ game, onHover, className = "", meta }: Props) {
   return (
     <Link
       href={`/games/${game.slug}`}
-      className={`hero-card${className ? ` ${className}` : ""}`}
+      className={`hero-card${meta ? " hero-card--detailed" : ""}${className ? ` ${className}` : ""}`}
       onMouseEnter={() => onHover?.(game.slug)}
       onMouseLeave={() => onHover?.(null)}
     >
@@ -32,6 +36,7 @@ export function GameShowcaseCard({ game, onHover, className = "" }: Props) {
       <span className="hero-card__scrim" aria-hidden="true" />
       <div className="hero-card__footer">
         <span className="hero-card__name-text">{game.name}</span>
+        {meta && <span className="hero-card__meta">{meta}</span>}
       </div>
     </Link>
   );

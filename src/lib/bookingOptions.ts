@@ -111,6 +111,25 @@ export function categoryForOption(gameSlug: string, name: string): string | null
   return null;
 }
 
+/**
+ * The cheapest way into a game.
+ *
+ * "From €4.99" is the number somebody browsing actually wants, and it was
+ * only discoverable by opening the game and reading the widget — so the
+ * listing asked people to choose between eight games while telling them the
+ * price of none.
+ */
+export function priceFromEUR(gameSlug: string): number | null {
+  const prices = getBookingCategories(gameSlug).flatMap((cat) => cat.options.map((o) => o.price));
+  return prices.length > 0 ? Math.min(...prices) : null;
+}
+
+/** How many modes a game can be booked in — the other half of "is there
+ *  anything here for me". */
+export function modeCount(gameSlug: string): number {
+  return getBookingCategories(gameSlug).reduce((total, cat) => total + cat.options.length, 0);
+}
+
 /** The accent for a booked mode, for anywhere that shows one after checkout. */
 export function optionColor(gameSlug: string, name: string): string | null {
   const category = categoryForOption(gameSlug, name);

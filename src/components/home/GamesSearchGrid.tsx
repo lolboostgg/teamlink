@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Game } from "@/lib/games";
-import { GamesFullGrid } from "@/components/home/GamesFullGrid";
+import { GamesFullGrid, type GameListing } from "@/components/home/GamesFullGrid";
 
-export function GamesSearchGrid({ games }: { games: Game[] }) {
+export function GamesSearchGrid({ games }: { games: GameListing[] }) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -13,12 +12,23 @@ export function GamesSearchGrid({ games }: { games: Game[] }) {
     return games.filter((g) => g.name.toLowerCase().includes(q) || g.shortName.toLowerCase().includes(q));
   }, [games, query]);
 
+  // One number for the whole page, above the grid: somebody who lands here
+  // wants to know there is anybody to play with at all before they start
+  // comparing games, and eight separate counts don't answer that.
+  const totalOnline = useMemo(() => games.reduce((sum, g) => sum + g.online, 0), [games]);
+
   return (
     <div className="container">
       <div className="section__head section__head--center">
         <div className="section__eyebrow">All games</div>
         <h1 className="section__title">Choose your game</h1>
         <p className="section__sub">Pick a game to see available teammates, modes, and pricing.</p>
+        {totalOnline > 0 && (
+          <p className="games-page-live">
+            <span className="games-page-live__dot" aria-hidden="true" />
+            {totalOnline} teammate{totalOnline === 1 ? "" : "s"} online right now
+          </p>
+        )}
       </div>
 
       <div className="games-page-search">
