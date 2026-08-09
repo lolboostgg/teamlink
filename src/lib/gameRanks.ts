@@ -44,6 +44,36 @@ export function rankHasDivisions(rank: string | null): boolean {
 export const UNRANKED = "unranked";
 
 /**
+ * Each tier's own colour — the metal or gem it is actually named after, so a
+ * ladder reads as a ladder rather than a list with icons.
+ *
+ * Lived inside CheckoutIngameStep, which is why it stopped at checkout: the
+ * teammate side had the same eleven ranks and one flat neutral for all of
+ * them. Anywhere a rank is shown can ask for it now.
+ */
+const RANK_COLORS: Record<string, string> = {
+  unranked: "#8b8fa3",
+  iron: "#8c7a6b",
+  bronze: "#c17a4d",
+  silver: "#adb7c4",
+  gold: "#e8b93f",
+  platinum: "#3fd6b8",
+  emerald: "#2ecc71",
+  diamond: "#4aa8ff",
+  master: "#b366ff",
+  grandmaster: "#ff4d6d",
+  challenger: "#ffd76a",
+  radiant: "#ffd76a",
+  immortal: "#ff4d6d",
+  predator: "#ff4d6d",
+  champion: "#b366ff",
+};
+
+export function rankColor(rank: string | null | undefined): string | null {
+  return rank ? RANK_COLORS[rank] ?? null : null;
+}
+
+/**
  * The rank's own artwork, where the game has any.
  *
  * A rank badge is the thing a teammate actually reads on an incoming request

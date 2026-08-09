@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import type { DispatchOrderView } from "@/lib/dispatch/phase";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
-import { formatRank, rankIcon, UNRANKED } from "@/lib/gameRanks";
+import { formatRank, rankIcon, rankColor, UNRANKED } from "@/lib/gameRanks";
 import { getGameProfileConfig, type ProfileOption } from "@/lib/gameProfiles";
 import { optionColor } from "@/lib/bookingOptions";
 import { playSound, stopSound } from "@/lib/notificationSound";
@@ -72,28 +72,6 @@ export function OpenRequestsList() {
   );
 }
 
-function Fact({
-  label,
-  value,
-  strong,
-  color,
-}: {
-  label: string;
-  value: ReactNode;
-  strong?: boolean;
-  /** Overrides the value's colour — used to carry a mode's own accent. */
-  color?: string | null;
-}) {
-  return (
-    <div className={`request-fact${strong ? " request-fact--strong" : ""}`}>
-      <span className="request-fact__label">{label}</span>
-      <span className="request-fact__value" style={color ? { color } : undefined}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
 /** The lanes the customer asked for, as the game's own marks where it has any. */
 function roleOptionsFor(gameSlug: string, values: string[]): ProfileOption[] {
   if (values.length === 0) return [];
@@ -155,89 +133,82 @@ function RequestCard({
     { icon: "fa-solid fa-chess", label: "Play style", value: order.playStylePref },
   ].filter((entry) => Boolean(entry.value));
 
-  return (
-    <article className={`request-card${expired ? " is-expired" : ""}`}>
-      <header className="request-card__head">
-        {/* Both marks, not one instead of the other: the game says what this
-            is, the rank says whether it is worth taking, and swapping the
-            first for the second only moved the gap. Unranked orders have no
-            emblem at all, which is why the game icon stays the anchor. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
-        <div className="request-card__who">
-          <div className="request-card__rank">
-            {rankArt && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={rankArt} alt="" className="request-card__rank-art" />
-            )}
-            <span>{rank ?? "Unranked"}</span>
-          </div>
-          <div className="request-card__name">
-            {order.customerLabel}
-            {order.ignRegion && <span className="request-card__region">{order.ignRegion.toUpperCase()}</span>}
-          </div>
-        </div>
-        <div className="request-card__order">
-          <span className="request-card__order-no">#{order.orderNo}</span>
-          <span className="request-card__order-game">{order.gameName}</span>
-        </div>
-        <div className={`request-card__timer${!expired && seconds <= 10 ? " is-urgent" : ""}`}>
-          <span className="request-card__timer-value">{expired ? "—" : `${seconds}s`}</span>
-          <span className="request-card__timer-label">{expired ? "expired" : "to answer"}</span>
-        </div>
-      </header>
+  // Everything the customer stated, as one row of chips. Chips rather than a
+  // fixed grid because the set is not fixed: an order carries between two and
+  // six of these depending on what was answered, and a grid either leaves
+  // holes or has to be redesigned every time something is added.
+  const chips: { label: string; value: ReactNode; icon?: string }[] = [
+    { label: "Games", value: String(order.gamesBooked) },
+    { label: "Team", value: order.teammatesRequested === 1 ? "Solo" : `${order.teammatesRequested} teammates` },
+    ...(roles.length > 0
+      ? [
+          {
+            label: "Lanes",
+            value: (
+              <span className="request-card__lane-list">
+                {roles.map((role) => (
+                  <span key={role.value} className="request-card__lane">
+                    {role.icon && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={role.icon} alt="" />
+                    )}
+                    {role.label}
+                  </span>
+                ))}
+              </span>
+            ),
+          },
+        ]
+      : []),
+    ...asks.map((ask) => ({ label: ask.label, value: ask.value as ReactNode, icon: ask.icon })),
+  ];
 
-      <div className="request-card__facts">
-        <Fact label="Games" value={String(order.gamesBooked)} strong />
-        {/* The mode carries the colour it was booked under — Gamer Girl is
-            pink on the booking widget and was plain grey the moment it
-            reached a teammate, which is the one place it has to be told
-            apart at a glance from every other order in the queue. */}
-        <Fact label="Mode" value={order.option} color={optionColor(order.gameSlug, order.option)} />
-        <Fact
-          label="Team"
-          value={order.teammatesRequested === 1 ? "Solo" : `${order.teammatesRequested} teammates`}
-        />
-        <Fact label="You earn" value={<PriceTag amountEUR={order.payoutEUR} />} strong />
+  return (
+    <article
+      className={`request-card${expired ? " is-expired" : ""}`}
+      // The tier's own colour, used for the glow behind the emblem and for
+      // the rank word. Set as a property so the whole card can tint from one
+      // value instead of every rule repeating the lookup.
+      style={{ "--rank-color": rankColor(rankValue) ?? "var(--text-muted)" } as CSSProperties}
+    >
+      {/* The rank leads the card, at a size you can read across a room. It is
+          the one fact that decides whether an order is worth taking, and as a
+          word among words it was being scanned past. */}
+      <div className="request-card__badge">
+        {rankArt && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={rankArt} alt="" className="request-card__rank-art" />
+        )}
+        <span className="request-card__rank">{rank ?? "Unranked"}</span>
       </div>
 
-      {(roles.length > 0 || asks.length > 0) && (
-        <div className="request-card__brief">
-          {roles.length > 0 && (
-            <span className="request-card__ask request-card__lanes">
-              <i className="fa-solid fa-map-signs" aria-hidden="true" />
-              <span>
-                <small>Lanes</small>
-                {/* Labelled and named, not two bare glyphs in a dark chip —
-                    a row of unlabelled marks reads as decoration and gets
-                    skipped, which defeats the point of showing it. */}
-                <strong className="request-card__lane-list">
-                  {roles.map((role) => (
-                    <span key={role.value} className="request-card__lane">
-                      {role.icon && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={role.icon} alt="" />
-                      )}
-                      {role.label}
-                    </span>
-                  ))}
-                </strong>
-              </span>
-            </span>
-          )}
-          {asks.map((ask) => (
-            <span key={ask.label} className="request-card__ask">
-              <i className={ask.icon} aria-hidden="true" />
-              <span>
-                <small>{ask.label}</small>
-                <strong>{ask.value}</strong>
-              </span>
+      <div className="request-card__mid">
+        <div className="request-card__name">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={gameIcon(order.gameSlug)} alt="" className="request-card__game" />
+          <span className="request-card__customer">{order.customerLabel}</span>
+          {order.ignRegion && <span className="request-card__region">{order.ignRegion.toUpperCase()}</span>}
+          <span
+            className="request-card__mode"
+            style={{ "--mode-color": optionColor(order.gameSlug, order.option) ?? "var(--accent)" } as CSSProperties}
+          >
+            {order.option}
+          </span>
+        </div>
+
+        <div className="request-card__chips">
+          {chips.map((chip) => (
+            <span key={chip.label} className="request-card__chip">
+              {chip.icon && <i className={chip.icon} aria-hidden="true" />}
+              <span className="request-card__chip-label">{chip.label}</span>
+              <b>{chip.value}</b>
             </span>
           ))}
+          <span className="request-card__chip request-card__chip--id">
+            #{order.orderNo} · <b>{order.gameName}</b>
+          </span>
         </div>
-      )}
 
-      <footer className="request-card__foot">
         <span className="request-card__accepted">
           {expired
             ? "Passed on to the next teammates."
@@ -245,6 +216,16 @@ function RequestCard({
               ? "First to accept"
               : `${acceptedCount} already accepted — the customer picks`}
         </span>
+      </div>
+
+      <div className="request-card__right">
+        <div className="request-card__earn">
+          <span className="request-fact__label">You earn</span>
+          <strong>
+            <PriceTag amountEUR={order.payoutEUR} />
+          </strong>
+        </div>
+
         <div className="request-card__actions">
           <button
             type="button"
@@ -254,16 +235,19 @@ function RequestCard({
           >
             Decline
           </button>
+          {/* The clock rides on the button rather than sitting in its own
+              corner of the card: it is the deadline for pressing this, and it
+              was previously as far from it as the layout allowed. */}
           <button
             type="button"
-            className="btn btn--vivid request-card__accept"
+            className={`btn btn--vivid request-card__accept${!expired && seconds <= 10 ? " is-urgent" : ""}`}
             disabled={busy || expired}
             onClick={() => onRespond(order.id, true)}
           >
-            {busy ? "Accepting…" : expired ? "Too late" : "Accept order"}
+            {busy ? "Accepting…" : expired ? "Too late" : <>Accept · {seconds}s</>}
           </button>
         </div>
-      </footer>
+      </div>
     </article>
   );
 }

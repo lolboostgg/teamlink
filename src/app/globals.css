@@ -11445,37 +11445,77 @@ a.notification-panel__item:hover {
   .request-card { animation: none; }
 }
 
-.request-card__head {
+/* ── The request card, rank-led ──
+   The rank is the one fact that decides whether an order is worth taking, so
+   it leads at a size that reads across a room; --rank-color is set per card
+   (see OpenRequestsList) and the tier tints its own glow. Everything else is
+   chips, which is what lets the card carry between two and six stated
+   preferences without a grid that either leaves holes or gets redesigned
+   each time the order grows a field. */
+.request-card {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) auto auto;
+  grid-template-columns: 132px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  padding: 16px 18px;
-  border-bottom: 1px solid color-mix(in srgb, var(--success) 20%, transparent);
+  gap: 22px;
+  padding: 20px 22px;
 }
 
-.request-card__icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
+.request-card__badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.request-card__rank-art {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--rank-color) 55%, transparent));
+}
+
+.request-card__rank {
+  color: var(--rank-color);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.request-card__mid {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.request-card__name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+}
+
+.request-card__game {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   object-fit: cover;
 }
 
-/* Sits on the rank line itself, at the size of the text it belongs to — the
-   emblem and the word are one statement, not two things to look at. */
-.request-card__rank-art {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  object-fit: contain;
-  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.5));
+.request-card__customer {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.request-card__who { min-width: 0; }
-
 .request-card__region {
-  margin-left: 8px;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-faint);
@@ -11484,207 +11524,154 @@ a.notification-panel__item:hover {
   letter-spacing: 0.07em;
 }
 
-/* What the customer asked for. Sits between the hard facts and the buttons,
-   which is where a teammate is actually deciding — the whole point is that
-   it costs a glance to read before the Accept, not a click after it. */
-.request-card__brief {
-  display: flex;
+/* Carries the accent the mode was booked under (see lib/bookingOptions.ts),
+   so a Gamer Girl order is pink here exactly as it was on the widget. */
+.request-card__mode {
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 11px 0 0;
-  margin-top: 11px;
-  border-top: 1px solid var(--dash-line);
+  gap: 7px;
+  padding: 4px 11px;
+  border-radius: 7px;
+  color: var(--mode-color);
+  background: color-mix(in srgb, var(--mode-color) 14%, transparent);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
+
+.request-card__mode::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.request-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.request-card__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border-radius: 9px;
+  border: 1px solid var(--dash-line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.request-card__chip > i { font-size: 11px; }
+
+.request-card__chip-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.request-card__chip b {
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.request-card__chip--id { color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.request-card__chip--id b { text-transform: none; }
 
 .request-card__lane-list {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 11px;
 }
 
 .request-card__lane {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
-/* Big enough to recognise the lane by its shape without reading the word
-   next to it — at 15px these were two grey smudges. */
+/* Big enough to recognise a lane by its shape rather than by the word beside
+   it — at 15px these were two grey smudges. */
 .request-card__lane img {
-  width: 22px;
-  height: 22px;
+  width: 21px;
+  height: 21px;
   object-fit: contain;
 }
 
-.request-card__ask {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 11px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.request-card__ask > i {
+.request-card__accepted {
   color: var(--text-faint);
-  font-size: 11px;
-}
-
-.request-card__ask span {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.25;
-}
-
-.request-card__ask small {
-  color: var(--text-faint);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.request-card__ask strong {
-  color: var(--text);
   font-size: 11.5px;
-  text-transform: capitalize;
 }
 
-/* The rank leads: it is what decides whether the order is worth taking. */
-.request-card__rank {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 1.15;
-  color: var(--success);
-  letter-spacing: -0.01em;
-}
-
-.request-card__name {
-  margin-top: 2px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.request-card__order {
+.request-card__right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
-  text-align: right;
+  gap: 12px;
+  flex: 0 0 auto;
 }
 
-.request-card__order-no {
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--success) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
-  color: var(--success);
-  font-size: 15px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-}
-
-.request-card__order-game {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-faint);
-}
-
-.request-card__timer {
-  min-width: 62px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.request-card__timer-value {
-  display: block;
-  font-size: 24px;
-  font-weight: 900;
-  color: var(--text);
-  line-height: 1;
-}
-
-.request-card__timer-label {
-  display: block;
-  margin-top: 2px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-faint);
-}
-
-.request-card__timer.is-urgent .request-card__timer-value { color: var(--danger, #e5484d); }
-
-.request-card__facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1px;
-  background: color-mix(in srgb, var(--success) 14%, transparent);
-}
-
-.request-fact {
+.request-card__earn {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 12px 18px;
-  background: var(--dash-surface-2);
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.request-card__earn strong {
+  color: var(--success);
+  font-size: 25px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .request-fact__label {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
   color: var(--text-faint);
-}
-
-.request-fact__value {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--text);
-  text-transform: capitalize;
-}
-
-.request-fact--strong .request-fact__value {
-  font-size: 20px;
-  color: var(--success);
-}
-
-.request-card__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 14px 18px;
-}
-
-.request-card__accepted {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .request-card__actions {
   display: flex;
-  gap: 10px;
+  gap: 9px;
 }
 
-/* Deliberately the largest target on the page. */
 .request-card__accept {
-  min-width: 170px;
-  font-size: 15px;
+  min-width: 148px;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The last ten seconds. Colour only — the button must not start moving under
+   a cursor that is on its way to press it. */
+.request-card__accept.is-urgent {
+  background: var(--danger, #e5484d);
+  border-color: var(--danger, #e5484d);
+}
+
+@media (max-width: 900px) {
+  .request-card {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .request-card__rank-art { width: 60px; height: 60px; }
+  .request-card__right {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
 /* ── Idle panel ──
@@ -14725,16 +14712,17 @@ a.notification-panel__item:hover {
   opacity: 0.55;
 }
 
+/* An expired card keeps its shape but loses its colour — the rank, the
+   money and the mode all go grey, so a lapsed row cannot be mistaken for a
+   live one at the top of the list. */
 .request-card.is-expired .request-card__rank,
-.request-card.is-expired .request-card__order-no,
-.request-card.is-expired .request-fact--strong .request-fact__value {
+.request-card.is-expired .request-card__earn strong,
+.request-card.is-expired .request-card__mode {
   color: var(--text-muted);
 }
 
-.request-card.is-expired .request-card__order-no {
-  background: transparent;
-  border-color: var(--dash-line);
-}
+.request-card.is-expired .request-card__mode { background: rgba(255, 255, 255, 0.05); }
+.request-card.is-expired .request-card__rank-art { filter: grayscale(1); }
 
 /* ── Order room: copyable value + running notes ──────────────
    The in-game name exists to be pasted into a game client, and the left
