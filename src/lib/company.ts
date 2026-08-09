@@ -14,6 +14,10 @@ export const COMPANY = {
   site: "https://gaming.lolboost.gg",
   discord: "https://discord.gg/lolboost",
   support: "support@lolboost.gg",
+  /** Public review profile. Still under the lolboost.gg name — that is the
+   *  domain the reviews were left on, and moving a Trustpilot profile loses
+   *  them, so the link says lolboost.gg and means it. */
+  trustpilot: "https://www.trustpilot.com/review/lolboost.gg",
 };
 
 export interface SocialLink {

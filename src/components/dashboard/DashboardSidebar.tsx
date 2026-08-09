@@ -34,6 +34,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
     { href: "/dashboard/admin/chat", label: "Chats", icon: "fa-solid fa-comments" },
     { href: "/dashboard/admin/payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
     { href: "/dashboard/admin/transactions", label: "Transactions", icon: "fa-solid fa-receipt" },
+    { href: "/dashboard/admin/applications", label: "Applications", icon: "fa-solid fa-inbox" },
     { href: "/dashboard/admin/onboarding", label: "Onboarding", icon: "fa-solid fa-user-plus" },
   ],
   teammate: [

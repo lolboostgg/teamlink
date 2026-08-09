@@ -14,6 +14,20 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 25;
 
+// Who is actually on the roster.
+//
+// Demoting somebody deliberately keeps their Teammate row — orders, reviews
+// and earnings all point at it, so it can never just be deleted (see
+// admin/users/actions.ts). The row surviving is correct; this page treating
+// it as roster membership was not, and a demoted account went on being
+// listed as a teammate forever. Membership is the linked account's role.
+//
+// userId: null is kept on purpose: some legacy roster rows were never linked
+// to an account at all, and they are still real teammates.
+const ON_ROSTER: Prisma.TeammateWhereInput = {
+  OR: [{ userId: null }, { user: { is: { role: "TEAMMATE" } } }],
+};
+
 type Props = { searchParams: Promise<{ q?: string; availability?: string; page?: string }> };
 
 export default async function AdminTeammatesPage({ searchParams }: Props) {
@@ -21,28 +35,37 @@ export default async function AdminTeammatesPage({ searchParams }: Props) {
   const q = params.q?.trim().slice(0, 100) ?? "";
   const availability = params.availability === "online" || params.availability === "offline" ? params.availability : undefined;
 
+  // AND rather than a spread: the search below brings its own OR, and two
+  // OR keys in one object would silently overwrite each other.
   const where: Prisma.TeammateWhereInput = {
-    ...(availability ? { available: availability === "online" } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" as const } },
-            { user: { is: { email: { contains: q, mode: "insensitive" as const } } } },
-            { user: { is: { discordUsername: { contains: q, mode: "insensitive" as const } } } },
-            ...(/^#?\d+$/.test(q) ? [{ teammateNo: Number.parseInt(q.replace("#", ""), 10) }] : []),
-          ],
-        }
-      : {}),
+    AND: [
+      ON_ROSTER,
+      ...(availability ? [{ available: availability === "online" }] : []),
+      ...(q
+        ? [
+            {
+              OR: [
+                { name: { contains: q, mode: "insensitive" as const } },
+                { user: { is: { email: { contains: q, mode: "insensitive" as const } } } },
+                { user: { is: { discordUsername: { contains: q, mode: "insensitive" as const } } } },
+                ...(/^#?\d+$/.test(q) ? [{ teammateNo: Number.parseInt(q.replace("#", ""), 10) }] : []),
+              ],
+            },
+          ]
+        : []),
+    ],
   };
 
+  // Every tile counts the roster, not the table — otherwise "Teammates" says
+  // 14 while the list below it shows 12.
   const [total, rosterSize, availableCount, linkedCount, listedCount] = await Promise.all([
     prisma.teammate.count({ where }),
-    prisma.teammate.count(),
-    prisma.teammate.count({ where: { available: true } }),
-    prisma.teammate.count({ where: { userId: { not: null } } }),
+    prisma.teammate.count({ where: ON_ROSTER }),
+    prisma.teammate.count({ where: { AND: [ON_ROSTER, { available: true }] } }),
+    prisma.teammate.count({ where: { AND: [ON_ROSTER, { userId: { not: null } }] } }),
     // gameSlugs is a Json array — "listed for at least one game" is simply
     // "not the empty array", which Postgres can answer without loading rows.
-    prisma.teammate.count({ where: { NOT: { gameSlugs: { equals: [] } } } }),
+    prisma.teammate.count({ where: { AND: [ON_ROSTER, { NOT: { gameSlugs: { equals: [] } } }] } }),
   ]);
 
   const { page, pageCount, skip, take } = paginate(params.page, total, PAGE_SIZE);

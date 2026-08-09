@@ -39,9 +39,16 @@ export function TeammateSidebarProfile({ teammate }: { teammate: TeammateSidebar
   return (
     <section className={`teammate-sidebar-profile${online ? " is-online" : ""}`} aria-label="Teammate status">
       <Link href="/dashboard/teammate/profile" className="teammate-sidebar-profile__identity" title={teammate.name}>
+        {/* The clip is its own element so the presence dot can be a sibling
+            of it rather than a child: the round overflow:hidden that keeps a
+            zoomed picture inside the circle was cutting the dot in half. */}
         <span className="teammate-sidebar-profile__avatar">
-          <SafeAvatarImage src={teammate.avatarUrl} frame={teammate} />
-          <span className="teammate-sidebar-profile__presence" aria-hidden="true" />
+          <span className="teammate-sidebar-profile__avatar-clip">
+            <SafeAvatarImage src={teammate.avatarUrl} frame={teammate} />
+          </span>
+          <span className="teammate-sidebar-profile__presence" aria-hidden="true">
+            <span className="teammate-sidebar-profile__presence-pulse" aria-hidden="true" />
+          </span>
         </span>
         <span className="teammate-sidebar-profile__name">{teammate.name}</span>
       </Link>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/marketing/PageHero";
 import { Reveal } from "@/components/ui/Reveal";
-import { ApplyForm } from "@/app/(marketing)/become-a-teammate/ApplyForm";
+import { ApplyWizardProvider, ApplyButton } from "@/app/(marketing)/become-a-teammate/ApplyWizard";
 import { GAMES } from "@/lib/games";
 
 export const metadata: Metadata = {
@@ -80,7 +80,8 @@ const FAQ = [
 
 export default function BecomeATeammatePage() {
   return (
-    <main className="section">
+    <ApplyWizardProvider>
+      <main className="section">
       <div className="container">
         <PageHero
           eyebrow="Become a teammate"
@@ -88,9 +89,9 @@ export default function BecomeATeammatePage() {
           sub="Go available when you sit down, take the orders that suit you, and get paid per session at the rate you accepted."
         >
           <div className="page-hero__cta">
-            <a href="#apply" className="btn btn--vivid btn--lg">
+            <ApplyButton className="btn btn--vivid btn--lg">
               <i className="fa-solid fa-bolt" aria-hidden="true" /> Apply now
-            </a>
+            </ApplyButton>
             <Link href="/games" className="btn btn--ghost btn--lg">
               See what people book
             </Link>
@@ -143,11 +144,32 @@ export default function BecomeATeammatePage() {
         <Reveal>
           <section className="about-block" id="apply">
             <h2 className="about-block__title">Apply</h2>
-            <div className="panel panel--wide">
-              <p className="panel__sub">
-                Everything here goes straight to the team. Nothing is public, and we do not pass it on.
-              </p>
-              <ApplyForm />
+            <div className="apply-invite">
+              <div className="apply-invite__glow" aria-hidden="true" />
+              <div className="apply-invite__body">
+                <h3>Four short steps, about two minutes.</h3>
+                <p>
+                  Who you are, the games you play, when you are around. Everything goes straight to the team — nothing
+                  is public, and we do not pass it on.
+                </p>
+                <ApplyButton className="btn btn--vivid btn--lg">
+                  <i className="fa-solid fa-bolt" aria-hidden="true" /> Start your application
+                </ApplyButton>
+              </div>
+              <ol className="apply-invite__steps" aria-hidden="true">
+                <li>
+                  <span>1</span> About you
+                </li>
+                <li>
+                  <span>2</span> Your games
+                </li>
+                <li>
+                  <span>3</span> Availability
+                </li>
+                <li>
+                  <span>4</span> Review
+                </li>
+              </ol>
             </div>
           </section>
         </Reveal>
@@ -166,6 +188,7 @@ export default function BecomeATeammatePage() {
           </section>
         </Reveal>
       </div>
-    </main>
+      </main>
+    </ApplyWizardProvider>
   );
 }

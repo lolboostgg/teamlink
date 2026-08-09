@@ -4,16 +4,22 @@ import { headers } from "next/headers";
 import { COMPANY } from "@/lib/company";
 import { sendMail } from "@/lib/notify/mail";
 import { notifyAdmins } from "@/lib/notifications/service";
+import { prisma } from "@/lib/db";
+import { inviteState } from "@/lib/teammateInvites";
+import { countryName } from "@/lib/countries";
+import { getGameBySlug } from "@/lib/games";
 
 /**
  * The two public, unauthenticated forms: applying to be a teammate, and
  * contacting support without an account.
  *
- * Both land in the same place — a mail to the support inbox plus a bell for
- * every admin. There is deliberately no table behind them: a new Prisma model
- * needs a migration run against the live database before the code that reads
- * it deploys, and an application form is not worth that coupling. The inbox is
- * the record, and it is the inbox the team already lives in.
+ * A teammate application is a row (see TeammateApplication) because somebody
+ * has to work through them: accept, decline, or delete, from
+ * /dashboard/admin/applications. A contact message is not — it is a
+ * conversation, and it belongs in the inbox the team already lives in.
+ *
+ * Both also ring every admin's bell, so nothing waits on a mailbox being
+ * configured in a given environment.
  */
 
 export interface SubmitResult {
@@ -120,7 +126,8 @@ export interface TeammateApplicationInput {
   email: string;
   discord: string;
   country: string;
-  games: string;
+  /** Game slugs, so the admin list can render the same icons as the site. */
+  games: string[];
   ranks: string;
   hours: string;
   experience: string;
@@ -128,19 +135,55 @@ export interface TeammateApplicationInput {
   website?: string;
 }
 
+/**
+ * One address, one application.
+ *
+ * Three different things can already own an email, and each deserves its own
+ * answer — "you already applied" is useless to somebody who is *already a
+ * teammate* and has simply forgotten. A client account with the same address
+ * is fine and deliberately not checked: plenty of teammates buy sessions too.
+ */
+async function emailIsTaken(email: string): Promise<string | null> {
+  const [existing, account, invites] = await Promise.all([
+    prisma.teammateApplication.findUnique({ where: { email }, select: { status: true } }),
+    prisma.user.findUnique({ where: { email }, select: { role: true } }),
+    prisma.teammateInvite.findMany({
+      where: { email },
+      select: { usedAt: true, revokedAt: true, expiresAt: true },
+    }),
+  ]);
+
+  if (account?.role === "TEAMMATE" || account?.role === "ADMIN") {
+    return "That email already has a teammate account. Sign in instead — or write to us if you cannot get in.";
+  }
+  if (existing?.status === "PENDING") {
+    return "We already have an application from this address. Give us a couple of days to get to it.";
+  }
+  if (existing?.status === "INVITED") {
+    return "You have already been accepted — your invite link is in your inbox. Check spam, or ask us to resend it.";
+  }
+  if (existing) {
+    return "We have looked at an application from this address already. Write to us if something has changed.";
+  }
+  if (invites.some((invite) => inviteState(invite) === "open")) {
+    return "There is already an open invite for that address — check your inbox.";
+  }
+  return null;
+}
+
 export async function submitTeammateApplication(raw: TeammateApplicationInput): Promise<SubmitResult> {
   if (clean(raw.website, LIMITS.short)) return { ok: true }; // honeypot: look successful, do nothing
 
   const name = clean(raw.name, LIMITS.short);
-  const email = clean(raw.email, LIMITS.short);
+  const email = clean(raw.email, LIMITS.short).toLowerCase();
   const discord = clean(raw.discord, LIMITS.short);
   const country = clean(raw.country, LIMITS.short);
-  const games = clean(raw.games, LIMITS.medium);
+  const games = (Array.isArray(raw.games) ? raw.games : []).slice(0, 20).map((g) => clean(g, 60)).filter(Boolean);
   const ranks = clean(raw.ranks, LIMITS.medium);
   const hours = clean(raw.hours, LIMITS.short);
   const experience = clean(raw.experience, LIMITS.long);
 
-  if (!name || !email || !discord || !games) {
+  if (!name || !email || !discord || games.length === 0) {
     return { ok: false, error: "Name, email, Discord and the games you play are all needed." };
   }
   if (!EMAIL.test(email)) return { ok: false, error: "That email address doesn't look right." };
@@ -148,14 +191,34 @@ export async function submitTeammateApplication(raw: TeammateApplicationInput): 
     return { ok: false, error: "That's a few applications in a row — give it a few minutes." };
   }
 
+  const taken = await emailIsTaken(email);
+  if (taken) return { ok: false, error: taken };
+
+  try {
+    await prisma.teammateApplication.create({
+      data: { name, email, discord, country: country || null, games, ranks: ranks || null, hours: hours || null, experience: experience || null },
+    });
+  } catch (error) {
+    // Two submissions racing past emailIsTaken land here on the unique index.
+    // The applicant gets the same answer either way.
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+      return { ok: false, error: "We already have an application from this address." };
+    }
+    throw error;
+  }
+
+  // The row stores codes and slugs; a mail is read by a person, so it gets
+  // the names.
+  const gameNames = games.map((slug) => getGameBySlug(slug)?.name ?? slug).join(", ");
+
   return deliver({
     subject: `Teammate application — ${name}`,
     rows: [
       ["Name", name],
       ["Email", email],
       ["Discord", discord],
-      ["Country", country],
-      ["Games", games],
+      ["Country", countryName(country) ?? country],
+      ["Games", gameNames],
       ["Ranks", ranks],
       ["Hours per week", hours],
     ],
@@ -163,8 +226,8 @@ export async function submitTeammateApplication(raw: TeammateApplicationInput): 
     notification: {
       type: "teammate.application",
       title: "New teammate application",
-      body: `${name} (${discord}) — ${games}`,
-      href: "/dashboard/admin/onboarding",
+      body: `${name} (${discord}) — ${gameNames}`,
+      href: "/dashboard/admin/applications",
     },
   });
 }

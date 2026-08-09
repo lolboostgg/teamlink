@@ -14,8 +14,8 @@ interface Props {
   meta?: ReactNode;
 }
 
-// Shared big-card markup (key art + name) used by the horizontal sliders
-// (GamesPageSlider), the full non-scrolling grid (GamesFullGrid), and
+// Shared big-card markup (key art + name) used by the full non-scrolling
+// grid (GamesFullGrid), the 404 game picks, and
 // matches GameSwitcherBar's hero-carousel cards exactly — same
 // heroCardBackground art source, so a game looks identical everywhere
 // it's picked from instead of using a differently-cropped banner here.

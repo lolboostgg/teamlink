@@ -61,6 +61,7 @@ model User {
   favoriteTeammates  FavoriteTeammate[]
   invitesCreated     TeammateInvite[]    @relation("InvitesCreated")
   inviteUsed         TeammateInvite?     @relation("InviteUsed")
+  applicationsReviewed TeammateApplication[] @relation("ApplicationsReviewed")
   payoutsProcessed   PayoutRequest[]     @relation("PayoutsProcessed")
   /** Stripe's customer object, created lazily on first checkout. */
   stripeCustomerId   String?             @unique
@@ -189,6 +190,41 @@ model GameAccount {
  * also what actually matters — the link can be forwarded to a hundred people
  * and still only ever create one account.
  */
+enum ApplicationStatus {
+  PENDING
+  INVITED
+  DECLINED
+}
+
+// Somebody asking to be a teammate, from the public form at
+// /become-a-teammate. An admin turns a row here into a TeammateInvite, which
+// is still the only thing that can create a teammate account.
+//
+// email is unique on purpose: it is the whole duplicate check. Re-applying
+// after a decline means an admin deleting the row first, which is the
+// deliberate "you may try again" gesture rather than a silent free-for-all.
+model TeammateApplication {
+  id           String            @id @default(cuid())
+  name         String
+  email        String            @unique
+  discord      String
+  country      String?
+  /** Game slugs the applicant picked, as a JSON array of strings. */
+  games        Json
+  ranks        String?
+  hours        String?
+  experience   String?           @db.Text
+  status       ApplicationStatus @default(PENDING)
+  /** The invite an accepted application produced, so the two stay linked. */
+  inviteId     String?
+  reviewedAt   DateTime?
+  reviewedById String?
+  reviewedBy   User?             @relation("ApplicationsReviewed", fields: [reviewedById], references: [id])
+  createdAt    DateTime          @default(now())
+
+  @@index([status, createdAt])
+}
+
 model TeammateInvite {
   id           String    @id @default(cuid())
   /** The random secret in the URL. */

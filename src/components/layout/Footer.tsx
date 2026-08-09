@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { PAYMENT_ICONS } from "@/lib/payments";
-import { SOCIALS, SOCIAL_GLYPHS } from "@/lib/company";
+import { COMPANY, SOCIALS, SOCIAL_GLYPHS } from "@/lib/company";
 
 // Every entry here now resolves to a real page. That is the rule for this
 // list: a footer link is a promise the site keeps, and "Pricing" pointing at
@@ -54,6 +54,19 @@ export function Footer() {
                 </a>
               ))}
             </div>
+
+            {/* Spelled out rather than reduced to an icon: Font Awesome has
+                no Trustpilot mark, and a lone star next to the socials reads
+                as "favourites", not "reviews". */}
+            <a
+              className="site-footer__trustpilot"
+              href={COMPANY.trustpilot}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <i className="fa-solid fa-star" aria-hidden="true" />
+              Reviews on Trustpilot
+            </a>
           </div>
 
           <div className="site-footer__nav">
