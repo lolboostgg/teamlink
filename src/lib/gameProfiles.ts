@@ -234,6 +234,96 @@ const GAME_PROFILE_LIST: GameProfileConfig[] = [
       ],
     },
   },
+
+  // ── The newly listed games ────────────────────────────────────────────
+  //
+  // Roles only, no rank ladders. A config is what makes a game appear as a
+  // tab in the teammate profile (see TeammateProfileForm), and the tab is
+  // what lets a teammate be listed for it at all — so without an entry here
+  // nobody could take a Minecraft or a Hangout order, whatever the catalogue
+  // said.
+  //
+  // The ranks are left out rather than invented: Minecraft and Hangout have
+  // no ladder to speak of, and for the rest a made-up tier list would show up
+  // at checkout as a real question with wrong answers. The rank row hides
+  // itself when a game has none (see CheckoutIngameStep), so this is a
+  // complete state, not a half-finished one. Add ladders per game as they
+  // are decided.
+  {
+    slug: "counter-strike-2",
+    roles: {
+      label: "Roles",
+      options: [
+        { value: "entry", label: "Entry", glyph: "fa-solid fa-bolt" },
+        { value: "awper", label: "AWPer", glyph: "fa-solid fa-crosshairs" },
+        { value: "support", label: "Support", glyph: "fa-solid fa-kit-medical" },
+        { value: "igl", label: "IGL", glyph: "fa-solid fa-chess-king" },
+        { value: "lurker", label: "Lurker", glyph: "fa-solid fa-user-secret" },
+      ],
+    },
+  },
+  {
+    slug: "cod-black-ops-7",
+    roles: {
+      label: "Modes",
+      options: [
+        { value: "warzone", label: "Warzone", glyph: "fa-solid fa-parachute-box" },
+        { value: "rebirth", label: "Rebirth", glyph: "fa-solid fa-island-tropical" },
+        { value: "multiplayer", label: "Multiplayer", glyph: "fa-solid fa-crosshairs" },
+        { value: "ranked", label: "Ranked", glyph: "fa-solid fa-trophy" },
+      ],
+    },
+  },
+  {
+    slug: "clash-royale",
+    roles: {
+      label: "Specialities",
+      options: [
+        { value: "ladder", label: "Ladder push", glyph: "fa-solid fa-arrow-trend-up" },
+        { value: "challenges", label: "Challenges", glyph: "fa-solid fa-flag" },
+        { value: "deck-building", label: "Deck building", glyph: "fa-solid fa-layer-group" },
+        { value: "2v2", label: "2v2", glyph: "fa-solid fa-user-group" },
+      ],
+    },
+  },
+  {
+    slug: "minecraft",
+    roles: {
+      label: "Specialities",
+      options: [
+        { value: "survival", label: "Survival", glyph: "fa-solid fa-tree" },
+        { value: "building", label: "Building", glyph: "fa-solid fa-cubes" },
+        { value: "redstone", label: "Redstone", glyph: "fa-solid fa-bolt" },
+        { value: "pvp", label: "PvP", glyph: "fa-solid fa-khanda" },
+        { value: "minigames", label: "Minigames", glyph: "fa-solid fa-dice" },
+      ],
+    },
+  },
+  {
+    slug: "meccha-chameleon",
+    roles: {
+      label: "Specialities",
+      options: [
+        { value: "casual", label: "Casual", glyph: "fa-solid fa-face-smile" },
+        { value: "competitive", label: "Competitive", glyph: "fa-solid fa-trophy" },
+        { value: "coaching", label: "Coaching", glyph: "fa-solid fa-graduation-cap" },
+      ],
+    },
+  },
+  {
+    // No game behind it, so the "roles" are what the person is good at being.
+    slug: "hangout",
+    roles: {
+      label: "Good at",
+      options: [
+        { value: "chatting", label: "Chatting", glyph: "fa-solid fa-comments" },
+        { value: "listening", label: "Listening", glyph: "fa-solid fa-ear-listen" },
+        { value: "gaming", label: "Any game", glyph: "fa-solid fa-gamepad" },
+        { value: "watching", label: "Watch together", glyph: "fa-solid fa-tv" },
+        { value: "music", label: "Music", glyph: "fa-solid fa-headphones" },
+      ],
+    },
+  },
 ];
 
 export const GAME_PROFILES: Record<string, GameProfileConfig> = Object.fromEntries(
