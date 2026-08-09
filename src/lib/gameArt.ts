@@ -5,8 +5,17 @@ const EXTENSIONS: Record<string, string> = {
   "teamfight-tactics": "jpg",
 };
 
+// Same escape hatch as BACKGROUND_FILE_OVERRIDES below: a banner whose plain
+// `/games/{slug}.webp` URL is unusable gets served under a different name.
+// Hangout's was requested before its art was deployed, so Cloudflare cached
+// the /games/[slug] route's 404 for that URL with a one-year s-maxage — the
+// file is live, the URL is not. A new filename is a new cache key.
+const BANNER_FILE_OVERRIDES: Record<string, string> = {
+  hangout: "hangout-key-art.webp",
+};
+
 export function localGameBanner(slug: string): string {
-  return `/games/${slug}.${EXTENSIONS[slug] ?? "webp"}`;
+  return `/games/${BANNER_FILE_OVERRIDES[slug] ?? `${slug}.${EXTENSIONS[slug] ?? "webp"}`}`;
 }
 
 // Square logo mark for the same game, used wherever a compact badge/icon
