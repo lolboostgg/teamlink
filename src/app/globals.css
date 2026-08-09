@@ -53,7 +53,15 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --container: 1220px;
-  --header-h: 96px;
+  /* Fluid rather than fixed. A 96px bar is right on a desktop monitor and is
+     an eighth of a 13" laptop's screen — the same number that made the site
+     feel oversized at 100% zoom. Everything that positions against the header
+     reads this, so one value moves them all. */
+  --header-h: clamp(64px, 5.4vw, 96px);
+  /* The vertical rhythm between sections, on the same principle: 120px is a
+     desktop number, and on a laptop it meant a third of the fold was empty
+     before the content started. */
+  --section-y: clamp(56px, 8vw, 120px);
   --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.55);
   --font-heading: var(--font-display), Impact, "Arial Narrow", sans-serif;
@@ -313,7 +321,18 @@ ul {
 .container {
   max-width: var(--container);
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 clamp(16px, 3vw, 24px);
+}
+
+/* Nothing on this site is meant to be reached by scrolling sideways. Without
+   this a single element that refuses to shrink — a nowrap price, a button row,
+   a card strip — drags the whole page wide and every section below it looks
+   mis-indented. `clip` rather than `hidden`: hidden on the root creates a
+   scroll container and quietly breaks `position: sticky` on the header. */
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 /* ── Motion utilities ───────────────────────────────────────── */
@@ -644,10 +663,14 @@ ul {
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
-  padding: 10px 20px;
+  padding: 10px clamp(14px, 3vw, 20px);
   display: flex;
   align-items: center;
-  gap: 32px;
+  /* The gap was a fixed 32px between the logo and the controls, which on a
+     narrow phone was 32px the Login button did not have — so it left the
+     screen. It is a minimum here, not a reservation. */
+  gap: clamp(10px, 3vw, 32px);
+  min-width: 0;
 }
 
 /* Once the page moves, the bar earns a background — full width now rather
@@ -672,15 +695,39 @@ ul {
 }
 
 /* The header is the one place these read as primary furniture rather than
-   controls tucked into a corner, so they take the larger size here. */
+   controls tucked into a corner, so they take the larger size here — but
+   only where there is room for it. */
 .site-header__actions .btn--sm {
   padding: 11px 20px;
   font-size: 14px;
+  white-space: nowrap;
+}
+
+.site-header__actions { min-width: 0; }
+
+@media (max-width: 700px) {
+  .site-header__actions .btn--sm {
+    padding: 9px 13px;
+    font-size: 13px;
+  }
+  /* The lockup is the brand and the controls are the job. On a phone the
+     mark alone still says whose site this is, and gives the buttons the
+     ~110px they were missing. */
+  .site-header .logo__lockup {
+    height: 38px;
+  }
+}
+
+@media (max-width: 430px) {
+  /* "Login" says it; the icon was decoration competing for the same row. */
+  .site-header__actions .btn--sm > i {
+    display: none;
+  }
 }
 
 /* ── Section heading pattern ────────────────────────────────── */
 .section {
-  padding: 120px 0;
+  padding: var(--section-y) 0;
 }
 
 .section--tight {
@@ -740,16 +787,30 @@ ul {
      ambient fade a long, gradual run instead of cutting off within a
      couple hundred pixels. */
   margin-top: calc(-1 * var(--offset-h, var(--header-h)));
-  min-height: 100vh;
-  padding: calc(64px + var(--offset-h, var(--header-h))) 0 100px;
+  /* svh, not vh: on mobile browsers vh is the *largest* viewport, measured
+     with the URL bar retracted, so a full-height hero is always taller than
+     what is actually on screen and the game cards start below the fold.
+     Capped as well as fluid — past about 900px of height the hero stops
+     gaining anything and just pushes the rest of the page further away. */
+  min-height: min(100svh, 900px);
+  padding: calc(clamp(28px, 5vh, 64px) + var(--offset-h, var(--header-h))) 0 clamp(48px, 9vh, 100px);
   display: flex;
   align-items: center;
   text-align: center;
   overflow: hidden;
 }
 
+/* min-width: 0 is the whole fix for the hero on a phone.
+   .hero is a flex container, so this is a flex item, and a flex item's
+   default min-width is `auto` — it refuses to shrink below its widest
+   content. That content is the game-card strip, about 1200px of it. So on a
+   390px screen the column became 1200px wide, and the headline, sub, buttons
+   and trust badge were all dutifully centred inside a box that started far
+   off the left edge. Nothing was wrong with any of them; they were centred in
+   the wrong container. */
 .hero > .container {
   width: 100%;
+  min-width: 0;
 }
 
 .hero__scroll-cue {
@@ -874,8 +935,9 @@ ul {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 28px;
+  margin-bottom: clamp(18px, 3vh, 28px);
 }
 
 .hero__cta .btn--vivid {
@@ -893,9 +955,10 @@ ul {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  max-width: 100%;
   font-size: 13px;
   color: var(--text-muted);
-  margin-bottom: 48px;
+  margin-bottom: clamp(24px, 5vh, 48px);
 }
 
 .hero__trust-stars {
@@ -907,15 +970,30 @@ ul {
    bold score, the same production-quality grammar embedded review-platform
    widgets (Trustpilot etc.) use, without borrowing their name/logo since
    QUP.gg has no real account there. Honestly labeled "Verified Reviews". */
+/* Wraps rather than pushing the page wide. Both halves are nowrap on
+   purpose — a rating split over two lines stops reading as a rating — so
+   without this the badge's min-content width alone was enough to give the
+   whole homepage a horizontal scrollbar on a phone. */
 .trust-badge {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 18px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px clamp(8px, 2vw, 12px);
+  max-width: 100%;
+  padding: 11px clamp(12px, 3vw, 18px);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* The divider only makes sense while the two halves share a line. */
+@media (max-width: 430px) {
+  .trust-badge__source {
+    padding-left: 0;
+    border-left: 0;
+  }
 }
 
 .trust-badge__stars {
@@ -967,8 +1045,13 @@ ul {
   color: var(--hue-green);
 }
 
-@media (max-width: 480px) {
-  .trust-badge__source span {
+/* The badge wraps now, so the label no longer has to be sacrificed to keep
+   it on one line — and hiding only the text left a green tick sitting after
+   a divider with nothing to verify, which reads as a rendering fault rather
+   than a tidy-up. Below the narrowest sizes the whole claim goes, count and
+   all; a rating without a source is still a rating. */
+@media (max-width: 380px) {
+  .trust-badge__source {
     display: none;
   }
 }
@@ -985,7 +1068,14 @@ ul {
   position: relative;
   max-width: 1300px;
   margin: 0 auto;
+  /* The track below scrolls, but a scroll container is still a flex/grid item
+     that reports its content width unless told otherwise. Without this the
+     strip hands its full length back up the tree and stretches whatever is
+     holding it. */
+  min-width: 0;
 }
+
+.hero-carousel__track { min-width: 0; }
 
 .hero-carousel__track {
   display: flex;
@@ -1405,15 +1495,15 @@ ul {
   }
 }
 
+/* Two columns all the way down to the narrowest phone. A single column meant
+   eight full-width posters and about four screens of scrolling to see a
+   catalogue of eight — on the page whose entire job is letting you compare
+   them. At 390px a column is still ~175px, which is wider than the card is
+   in the desktop hero. */
 @media (max-width: 700px) {
   .games-full-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 460px) {
-  .games-full-grid {
-    grid-template-columns: 1fr;
+    gap: clamp(10px, 3vw, 28px);
   }
 }
 
