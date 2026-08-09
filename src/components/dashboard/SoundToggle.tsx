@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { playSound, soundsEnabled, setSoundsEnabled, SOUND_PREF_EVENT } from "@/lib/notificationSound";
+import { playSound, soundsEnabled, setSoundsEnabled, stopAllSounds, SOUND_PREF_EVENT } from "@/lib/notificationSound";
 
 /**
  * Mute switch for the notification cues, in the dashboard header.
@@ -23,7 +23,14 @@ export function SoundToggle() {
   const [enabled, setEnabled] = useState(true);
 
   useEffect(() => {
-    const sync = () => setEnabled(soundsEnabled());
+    const sync = () => {
+      const on = soundsEnabled();
+      setEnabled(on);
+      // Muting in another tab has to stop this tab's audio too — each tab
+      // holds its own <audio> elements, and only the tab that was clicked
+      // ran setSoundsEnabled.
+      if (!on) stopAllSounds();
+    };
     sync();
     window.addEventListener(SOUND_PREF_EVENT, sync);
     // Another tab changing it counts too.

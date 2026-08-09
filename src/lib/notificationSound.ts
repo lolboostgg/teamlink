@@ -53,6 +53,11 @@ export function setSoundsEnabled(enabled: boolean): void {
   if (typeof window === "undefined") return;
   if (enabled) window.localStorage.removeItem(MUTE_KEY);
   else window.localStorage.setItem(MUTE_KEY, "1");
+  // Silence means now, not "from the next one on". The order alert is a
+  // several-second recording that repeats while a request is open, so turning
+  // the switch off mid-clip used to leave it playing to the end — which is
+  // precisely the moment somebody reaches for the switch.
+  if (!enabled) stopAllSounds();
   window.dispatchEvent(new CustomEvent(SOUND_PREF_EVENT));
 }
 
@@ -73,7 +78,19 @@ const RECORDINGS: Partial<Record<SoundName, string>> = {
 // some browsers, and this one repeats every few seconds while an alert is up.
 const players = new Map<string, HTMLAudioElement>();
 
+/** Cuts every recording off wherever it is. */
+export function stopAllSounds(): void {
+  for (const audio of players.values()) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
+}
+
 function playRecording(src: string): boolean {
+  // Checked again here, not only in playSound: this is the last point before
+  // sound actually leaves the machine, and the switch has to hold even if a
+  // future caller reaches the recording by another route.
+  if (!soundsEnabled()) return true;
   try {
     let audio = players.get(src);
     if (!audio) {

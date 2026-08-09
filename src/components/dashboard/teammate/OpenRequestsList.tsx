@@ -139,28 +139,24 @@ function RequestCard({
   return (
     <article className={`request-card${expired ? " is-expired" : ""}`}>
       <header className="request-card__head">
-        {/* The rank emblem where the game icon used to be. Which game it is
-            already appears on the right; the rank is the thing that decides
-            whether the order is worth taking, and an emblem lands faster than
-            a word does. The game icon falls in behind it as a corner mark so
-            neither answer is missing. */}
-        <span className="request-card__badge">
-          {rankArt ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={rankArt} alt="" className="request-card__rank-art" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
-          )}
-          {rankArt && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={gameIcon(order.gameSlug)} alt="" className="request-card__badge-game" />
-          )}
-        </span>
+        {/* Both marks, not one instead of the other: the game says what this
+            is, the rank says whether it is worth taking, and swapping the
+            first for the second only moved the gap. Unranked orders have no
+            emblem at all, which is why the game icon stays the anchor. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
         <div className="request-card__who">
-          <div className="request-card__rank">{rank ?? "Unranked"}</div>
-          <div className="request-card__name">{order.customerLabel}</div>
-          {order.ignRegion && <div className="request-card__region">{order.ignRegion.toUpperCase()}</div>}
+          <div className="request-card__rank">
+            {rankArt && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={rankArt} alt="" className="request-card__rank-art" />
+            )}
+            <span>{rank ?? "Unranked"}</span>
+          </div>
+          <div className="request-card__name">
+            {order.customerLabel}
+            {order.ignRegion && <span className="request-card__region">{order.ignRegion.toUpperCase()}</span>}
+          </div>
         </div>
         <div className="request-card__order">
           <span className="request-card__order-no">#{order.orderNo}</span>
@@ -185,17 +181,25 @@ function RequestCard({
       {(roles.length > 0 || asks.length > 0) && (
         <div className="request-card__brief">
           {roles.length > 0 && (
-            <span className="request-card__lanes" title={`Lanes: ${roles.map((r) => r.label).join(", ")}`}>
-              {roles.map((role) =>
-                role.icon ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={role.value} src={role.icon} alt={role.label} />
-                ) : (
-                  <span key={role.value} className="request-card__lane-text">
-                    {role.label}
-                  </span>
-                ),
-              )}
+            <span className="request-card__ask request-card__lanes">
+              <i className="fa-solid fa-map-signs" aria-hidden="true" />
+              <span>
+                <small>Lanes</small>
+                {/* Labelled and named, not two bare glyphs in a dark chip —
+                    a row of unlabelled marks reads as decoration and gets
+                    skipped, which defeats the point of showing it. */}
+                <strong className="request-card__lane-list">
+                  {roles.map((role) => (
+                    <span key={role.value} className="request-card__lane">
+                      {role.icon && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={role.icon} alt="" />
+                      )}
+                      {role.label}
+                    </span>
+                  ))}
+                </strong>
+              </span>
             </span>
           )}
           {asks.map((ask) => (

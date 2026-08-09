@@ -11461,43 +11461,27 @@ a.notification-panel__item:hover {
   object-fit: cover;
 }
 
-/* The rank emblem, with the game mark tucked into its corner — the two
-   answers a teammate needs before anything else, in one object. */
-.request-card__badge {
-  position: relative;
-  flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
-  display: grid;
-  place-items: center;
-}
-
+/* Sits on the rank line itself, at the size of the text it belongs to — the
+   emblem and the word are one statement, not two things to look at. */
 .request-card__rank-art {
-  width: 56px;
-  height: 56px;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
   object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
-}
-
-.request-card__badge-game {
-  position: absolute;
-  right: -3px;
-  bottom: -3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  border: 2px solid var(--dash-surface);
-  object-fit: cover;
+  filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.5));
 }
 
 .request-card__who { min-width: 0; }
 
 .request-card__region {
-  margin-top: 2px;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-faint);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
 }
 
 /* What the customer asked for. Sits between the hard facts and the buttons,
@@ -11513,25 +11497,23 @@ a.notification-panel__item:hover {
   border-top: 1px solid var(--dash-line);
 }
 
-.request-card__lanes {
+.request-card__lane-list {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 10px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.04);
+  gap: 9px;
+  flex-wrap: wrap;
 }
 
-.request-card__lanes img {
-  width: 19px;
-  height: 19px;
+.request-card__lane {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.request-card__lane img {
+  width: 15px;
+  height: 15px;
   object-fit: contain;
-}
-
-.request-card__lane-text {
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 700;
 }
 
 .request-card__ask {
@@ -11570,6 +11552,9 @@ a.notification-panel__item:hover {
 
 /* The rank leads: it is what decides whether the order is worth taking. */
 .request-card__rank {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-size: 22px;
   font-weight: 900;
   line-height: 1.15;

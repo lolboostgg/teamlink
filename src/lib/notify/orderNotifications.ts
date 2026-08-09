@@ -4,7 +4,6 @@ import {
   orderConfirmationMail,
   orderCompletedMail,
   orderCancelledMail,
-  teammateAssignedMail,
 } from "@/lib/notify/templates";
 import { postToTeammateChannel, sendDiscordDms, ACCENT } from "@/lib/notify/discordNotify";
 import { sanitizeNotificationPrefs, type NotificationChannel } from "@/lib/notificationPrefs";
@@ -140,39 +139,21 @@ async function pingTeammates(order: DispatchedOrder): Promise<void> {
 }
 
 /**
- * A teammate was picked. The customer already sees this live on the order
- * screen, so this is only for whoever tabbed away.
+ * A teammate was picked.
+ *
+ * No longer mails. The customer is on the order screen watching this happen —
+ * it updates live — and the ones who tabbed away come back to the same screen
+ * still saying it. A mail for it landed in the gap between paying and playing,
+ * which is minutes, and it was the single most common thing in a customer's
+ * inbox from us. Mail is now the receipt, the outcome and the refund; the
+ * things somebody needs to find again months later.
+ *
+ * Kept as a function rather than deleted at the call sites: assignment is
+ * exactly the kind of event that earns a push notification later, and this is
+ * where that would go.
  */
-export async function notifyTeammateAssigned(orderId: string): Promise<void> {
-  try {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: {
-        clientUser: { select: { email: true, name: true, notificationPrefs: true } },
-        candidates: { where: { selected: true }, select: { teammate: { select: { name: true } } } },
-      },
-    });
-    if (!order) return;
-
-    const to = order.clientUser?.email ?? order.guestEmail;
-    if (!to) return;
-    if (order.clientUser && !wantsOrderUpdates(order.clientUser.notificationPrefs, "email")) return;
-
-    const names = order.candidates.map((c) => c.teammate.name);
-    if (names.length === 0) return;
-
-    await sendMail({
-      to,
-      ...teammateAssignedMail({
-        orderNo: order.orderNo,
-        gameName: order.gameName,
-        teammateNames: names,
-        url: orderUrl(order),
-      }),
-    });
-  } catch (err) {
-    console.error("[notify] assignment notification failed:", orderId, err);
-  }
+export async function notifyTeammateAssigned(_orderId: string): Promise<void> {
+  return;
 }
 
 

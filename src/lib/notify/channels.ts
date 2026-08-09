@@ -19,9 +19,11 @@ import { sanitizeNotificationPrefs, type NotificationChannel } from "@/lib/notif
  * again months later, and it is the only channel that survives someone
  * uninstalling Discord. Everything gets the bell regardless; it costs nothing.
  *
- * Customer-facing mail is deliberately thin. Every mail nobody wanted is a
- * spam click, and spam clicks cost us the deliverability of the mails that
- * actually matter.
+ * Mail is deliberately thin, and thinner still since it was measured. Every
+ * mail nobody wanted is a spam click, and spam clicks cost us the
+ * deliverability of the ones that matter — the receipt and the refund notice.
+ * What a type is *allowed* to send is only half the rule; who is receiving it
+ * is the other half, and that lives in EMAIL_BY_ROLE below.
  */
 interface ChannelPolicy {
   discord?: boolean;
@@ -30,12 +32,48 @@ interface ChannelPolicy {
   topic?: "orders" | "balance" | "promotions";
 }
 
+/**
+ * Who may be emailed about what, by the recipient's own role.
+ *
+ * The policy table below says what a *type* can do; this says what a *person*
+ * should get, and both have to agree before a mail is sent. It exists because
+ * the same event reaches different people through the same entry:
+ * notifyAdmins() fans an order completion out with the identical type the
+ * customer gets, so every admin was mailed about every finished order —
+ * hundreds of mails a week to people who live in the dashboard and can see
+ * the same thing on a page.
+ *
+ * An allow-list rather than a block-list, so a new event type is silent to
+ * everyone until somebody decides otherwise. Getting that wrong in the other
+ * direction is how a product starts mailing people by accident.
+ */
+const EMAIL_BY_ROLE: Record<string, ReadonlySet<string>> = {
+  // Nothing, ever. An admin is looking at the dashboard the event happened
+  // on; mail adds no information and buries the mails that do.
+  ADMIN: new Set(),
+
+  // Money leaving the platform, and nothing else. A teammate lives in the
+  // dispatch panel and on Discord — an order to answer is worth a DM and is
+  // worthless as mail, since it has expired by the time it is read.
+  TEAMMATE: new Set(["payout.paid", "payout.rejected"]),
+
+  // Money and outcomes: what was paid, what it produced, and what came back.
+  // The confirmation and the session-complete mails are sent from
+  // orderNotifications.ts, where the order detail is to hand.
+  CLIENT: new Set(["order.abandoned", "order.refund_due"]),
+};
+
+function mayEmail(role: string | undefined, type: string): boolean {
+  return EMAIL_BY_ROLE[role ?? "CLIENT"]?.has(type) ?? false;
+}
+
 const POLICY: Record<string, ChannelPolicy> = {
   // ── Teammate side ────────────────────────────────────────────
-  // Five minutes unanswered is a nudge; half an hour means Discord wasn't
-  // read either, so it escalates to mail.
+  // Both are Discord nudges. The escalation used to reach for mail after half
+  // an hour, which is well past the point an unread message is still actionable
+  // — it arrived as a record of something already missed.
   "order.unread": { discord: true, topic: "orders" },
-  "order.unread_escalated": { discord: true, email: true, topic: "orders" },
+  "order.unread_escalated": { discord: true, topic: "orders" },
   "order.reviewed": { discord: true, topic: "orders" },
 
   // Money in, not money out — a tip is the customer saying thank you and is
@@ -47,9 +85,10 @@ const POLICY: Record<string, ChannelPolicy> = {
   "payout.rejected": { discord: true, email: true, topic: "balance" },
 
   // ── Customer side ────────────────────────────────────────────
-  // "Your teammate is here" is mailed from orderNotifications.ts instead,
-  // where the session details are to hand.
-  "order.completed": { email: true, topic: "orders" },
+  // order.completed is bell-only here on purpose: notifyOrderCompleted sends
+  // the real mail, with the review ask in it, and this entry was sending a
+  // second plain one alongside it to the same person for the same event.
+  "order.completed": {},
   "order.abandoned": { email: true, topic: "orders" },
 
   // Money owed to somebody who cannot be paid automatically. Mailed as well
@@ -117,7 +156,7 @@ export async function deliverExternally(userId: string, notice: Notice): Promise
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, name: true, discordId: true, notificationPrefs: true },
+      select: { email: true, name: true, discordId: true, notificationPrefs: true, role: true },
     });
     if (!user) return;
 
@@ -138,7 +177,15 @@ export async function deliverExternally(userId: string, notice: Notice): Promise
       );
     }
 
-    if (policy.email && user.email && wants(user.notificationPrefs, policy.topic, "email")) {
+    // Both gates, not either: the type has to allow mail *and* this recipient
+    // has to be someone we mail about it. The preference check stays on top of
+    // both — a customer who turned order mail off still gets nothing.
+    if (
+      policy.email &&
+      mayEmail(user.role, notice.type) &&
+      user.email &&
+      wants(user.notificationPrefs, policy.topic, "email")
+    ) {
       jobs.push(
         sendMail({
           to: user.email,
