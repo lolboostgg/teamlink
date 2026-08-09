@@ -29,10 +29,17 @@ export function getRoleMeta(role: DashboardRole): DashboardRoleMeta {
  * their own bookings and an admin could not look at the product they run.
  *
  * It is a widening, not a free-for-all: nothing here lets a client reach the
- * admin panel. An account gets its own dashboard plus the ones strictly below
- * it, and the teammate dashboard only if a Teammate row actually exists —
- * without one, that dashboard has nothing to show and every panel on it would
- * be reading a profile that was never created.
+ * admin panel. An account gets its own dashboard plus the ones below it.
+ *
+ * An admin always gets the teammate one, whether or not they have a Teammate
+ * row of their own — seeing what a teammate sees is most of the reason to
+ * open it, and gating it on having a roster profile hid it from exactly the
+ * people who run the roster. The pages there already handle a missing profile
+ * (see dashboard/teammate/page.tsx); the layout says so plainly rather than
+ * leaving an admin to wonder why every panel reads zero.
+ *
+ * A non-admin still needs the row: without one there is nothing to show and
+ * nothing they could do there anyway.
  */
 export function accessibleDashboards(
   role: string | undefined | null,
@@ -46,7 +53,7 @@ export function accessibleDashboards(
         : ["client"];
 
   return keys
-    .filter((key) => key !== "teammate" || hasTeammateProfile)
+    .filter((key) => key !== "teammate" || role === "ADMIN" || hasTeammateProfile)
     .map((key) => getRoleMeta(key));
 }
 

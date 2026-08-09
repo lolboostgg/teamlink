@@ -71,8 +71,11 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
             </td>
             <td><span className="admin-user-balance admin-user-balance--earned"><span className="admin-user-balance__icon"><i className="fa-solid fa-coins" /></span><span className="admin-user-balance__copy"><strong>€{t.balanceEUR.toFixed(2)}</strong><small>Earnings</small></span></span></td>
             <td>
+              {/* "ready", not "available": this column answers whether the
+                  dispatcher may send them an order, and "available" reads as
+                  a fact about the person rather than a switch they set. */}
               <span className={`dashboard-pill ${t.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>
-                {t.available ? "available" : "unavailable"}
+                {t.available ? "ready" : "unavailable"}
               </span>
             </td>
             <td>

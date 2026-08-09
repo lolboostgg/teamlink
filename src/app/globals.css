@@ -3928,6 +3928,52 @@ ul {
   align-self: flex-start;
 }
 
+/* "You are looking at this as somebody else" — the banner the dashboards use
+   to explain a view that would otherwise look broken or empty. */
+.dashboard-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border-radius: var(--dash-radius);
+  border: 1px solid rgba(70, 104, 255, 0.26);
+  background: rgba(70, 104, 255, 0.08);
+}
+
+.dashboard-notice > i {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(70, 104, 255, 0.16);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.dashboard-notice > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dashboard-notice strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.dashboard-notice span {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.dashboard-notice a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .account-ban-notice {
   display: flex;
   align-items: center;

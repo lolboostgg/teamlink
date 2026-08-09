@@ -123,7 +123,7 @@ export function TeammateDetail({
             <span
               className={`dashboard-pill ${teammate.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}
             >
-              {teammate.available ? "available" : "unavailable"}
+              {teammate.available ? "ready" : "unavailable"}
             </span>
           </h1>
 

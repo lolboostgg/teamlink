@@ -146,7 +146,7 @@ export function AccountDetail({ account, teammate, orders, viewerId }: { account
             <span className={`account-role account-role--${account.role.toLowerCase()}`}>{account.role}</span>
             {teammate && (
               <span className={`dashboard-pill ${teammate.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>
-                {teammate.available ? "available" : "unavailable"}
+                {teammate.available ? "ready" : "unavailable"}
               </span>
             )}
             {account.bannedAt && <span className="dashboard-pill dashboard-pill--danger">banned</span>}
