@@ -69,3 +69,11 @@ next-env.d.ts
 /.claude/skills/prisma-*
 /.windsurf/skills/prisma-*
 /skills-lock.json
+
+# Raw art dumps: 431 banners and 279 icons covering hundreds of games we do
+# not list. Curated files are copied into public/games/ under their slug (see
+# lib/gameArt.ts); the dumps themselves stay on disk and out of the repo,
+# same as the /assets dump above.
+/banner
+/game-icons
+/banner*.jpg
