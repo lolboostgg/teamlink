@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { auth } from "@/auth";
 import { getAccountDetail } from "@/lib/admin/accounts";
 import { readGameProfiles } from "@/lib/teammateProfile";
 import { AccountDetail } from "@/components/dashboard/admin/AccountDetail";
@@ -19,7 +20,7 @@ interface Props {
 
 export default async function AdminAccountPage({ params }: Props) {
   const { id } = await params;
-  const detail = await getAccountDetail(id);
+  const [detail, session] = await Promise.all([getAccountDetail(id), auth()]);
   if (!detail) notFound();
 
   const { user, teammate } = detail;
@@ -31,6 +32,7 @@ export default async function AdminAccountPage({ params }: Props) {
         <i className="fa-solid fa-arrow-left" aria-hidden="true" /> Back to users
       </Link>
       <AccountDetail
+        viewerId={session?.user?.id ?? null}
         orders={detail.orders.map((order) => ({ id: order.id, orderNo: order.orderNo, gameSlug: order.gameSlug, gameName: order.gameName, option: order.option, status: order.status, priceEUR: order.priceEUR.toString(), createdAt: order.createdAt.getTime(), teammateName: order.candidates[0]?.teammate.name ?? null, teammateAvatarUrl: order.candidates[0]?.teammate.avatarUrl ?? null }))}
         account={{
           id: user.id,
@@ -43,6 +45,8 @@ export default async function AdminAccountPage({ params }: Props) {
           discordUsername: user.discordUsername,
           discordAvatar: user.discordAvatar,
           creditBalanceCents: user.creditBalanceCents,
+          bannedAt: user.bannedAt?.getTime() ?? null,
+          bannedReason: user.bannedReason,
           createdAt: user.createdAt.getTime(),
           orderCount: detail.orderCount,
           completedCount: detail.completedCount,

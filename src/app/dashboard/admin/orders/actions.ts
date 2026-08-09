@@ -3,9 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { publish } from "@/lib/events/bus";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
-import { forceCompleteOrder, DispatchError } from "@/lib/dispatch/service";
+import { forceCompleteOrder, DispatchError, publishOrderChange } from "@/lib/dispatch/service";
 import { settleCancelledOrder } from "@/lib/orderRefunds";
 
 /**
@@ -88,8 +87,9 @@ export async function adminCancelOrder(
     // Outside the transaction: it talks to Stripe and to a mail server.
     const outcome = await settleCancelledOrder(order, "cancelled_by_admin", overrideCents);
 
-    await publish({ topic: "orders", key: orderId, userIds: [] });
-    await publish({ topic: "dispatch", key: orderId, userIds: [] });
+    // Everyone on the order, not admins only — this is the customer's own
+    // cancellation landing, and they were the one person it never reached.
+    await publishOrderChange(orderId);
     // By number, since that is the URL the page is served at — revalidating
     // the id would name a path nobody is looking at.
     revalidatePath(`/dashboard/admin/orders/${order.orderNo}`);

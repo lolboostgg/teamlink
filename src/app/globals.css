@@ -53,7 +53,7 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --container: 1220px;
-  --header-h: 72px;
+  --header-h: 96px;
   --shadow-card: 0 16px 40px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.55);
   --font-heading: var(--font-display), Impact, "Arial Narrow", sans-serif;
@@ -592,6 +592,19 @@ ul {
   object-fit: contain;
 }
 
+/* Bigger in the site header than anywhere else: there it is the brand, and
+   it sets the weight of the whole bar. In the footer and the sidebar it is a
+   marker on a page that has already said what it is, and the same size would
+   just shout. */
+.site-header .logo__lockup {
+  height: 56px;
+}
+
+.site-header .logo__mark {
+  height: 44px;
+  width: 44px;
+}
+
 /* Sticky sits on .site-topbar, the wrapper one level up (see SiteTopbar) —
    a sticky element only travels inside its own parent, and that wrapper is
    the header's own height, so sticking it here meant not sticking at all. */
@@ -602,6 +615,7 @@ ul {
 }
 
 .site-header {
+  position: relative;
   height: var(--header-h);
   display: flex;
   align-items: center;
@@ -610,9 +624,23 @@ ul {
   border-bottom: 1px solid transparent;
 }
 
-/* Bare over the hero: no pill, no border, no frosting — just the logo and
-   the actions sitting on the artwork. */
+/* Still no bar at rest, but not nothing either: a scrim that fades out well
+   before the header ends gives the logo and the account controls something to
+   sit on without drawing an edge across the artwork. It is also what keeps
+   them legible over a bright key-art frame — the hero background changes with
+   the hovered game, and some of them are very light up top. */
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 170%;
+  background: linear-gradient(180deg, rgba(4, 6, 13, 0.78), rgba(4, 6, 13, 0.34) 55%, rgba(4, 6, 13, 0));
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
 .site-header__inner {
+  position: relative;
   width: 100%;
   max-width: var(--container);
   margin: 0 auto;
@@ -631,11 +659,23 @@ ul {
   backdrop-filter: blur(16px);
 }
 
+/* The frosting takes over from the scrim rather than stacking on it. */
+.site-header.is-scrolled::before {
+  opacity: 0;
+}
+
 .site-header__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-left: auto;
+}
+
+/* The header is the one place these read as primary furniture rather than
+   controls tucked into a corner, so they take the larger size here. */
+.site-header__actions .btn--sm {
+  padding: 11px 20px;
+  font-size: 14px;
 }
 
 /* ── Section heading pattern ────────────────────────────────── */
@@ -3880,6 +3920,52 @@ ul {
   letter-spacing: -0.02em;
 }
 
+/* Top-right of the header card, the same corner the teammate page puts its
+   own Actions menu in — an admin looking at a person shouldn't have to learn
+   where the controls live twice. */
+.account-header__actions {
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+.account-ban-notice {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border-radius: var(--dash-radius);
+  border: 1px solid rgba(224, 82, 82, 0.28);
+  background: rgba(224, 82, 82, 0.09);
+}
+
+.account-ban-notice > i {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(224, 82, 82, 0.16);
+  color: #ff8f8f;
+}
+
+.account-ban-notice > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-ban-notice strong {
+  color: #ff9b9b;
+  font-size: 12.5px;
+}
+
+.account-ban-notice span {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
 .account-header__avatar img {
   width: 72px;
   height: 72px;
@@ -4084,12 +4170,38 @@ ul {
 }
 
 .account-overview__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-faint);
   margin-bottom: 10px;
+}
+
+.account-overview__title i {
+  color: var(--accent);
+  font-size: 11px;
+}
+
+/* The overview reads as cards now rather than two lists side by side under a
+   single hairline — with the numbers moved up into the stat tiles, what is
+   left here is reference detail and it should look like reference detail. */
+.account-overview__card {
+  padding: 16px;
+  border-radius: var(--dash-radius);
+  border: 1px solid var(--dash-line);
+  background: rgba(255, 255, 255, 0.014);
+}
+
+.account-facts a {
+  color: var(--text);
+}
+
+.account-facts a:hover {
+  color: var(--accent);
 }
 
 .account-facts > div {
@@ -12508,7 +12620,11 @@ a.notification-panel__item:hover {
 .admin-order-chat__connection { display: flex; align-items: center; gap: 7px; color: var(--text-faint); }
 .admin-order-chat__connection span { height: 1px; flex: 1; background: var(--dash-line); }
 .admin-order-chat__connection i { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: rgba(255, 255, 255, .04); font-size: 8px; }
-.admin-order-chat__messages { min-height: 96px; max-height: 510px; display: flex; flex-direction: column; gap: 9px; padding: 17px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+/* A fixed height, not min/max: the transcript used to size the panel, so the
+   whole order page moved down depending on how chatty an order had been, and
+   a long one pushed the audit column out of view. It scrolls inside its own
+   box now, opened at the newest message (see AdminOrderChatScroll). */
+.admin-order-chat__messages { height: 420px; display: flex; flex-direction: column; gap: 9px; padding: 17px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
 .admin-order-chat__message { width: fit-content; max-width: min(72%, 620px); display: flex; align-items: flex-end; gap: 8px; }
 /* Teammate and admin both sit on the right — the customer is the one
    voice coming from the other side. */
@@ -13176,9 +13292,11 @@ a.notification-panel__item:hover {
 /* Admin profile details stay information-dense instead of nesting large cards. */
 .profile-tabs--page { gap: 16px; }
 .profile-tabs--page .profile-tab { padding-inline: 2px; background: transparent; }
-.account-overview { gap: 0; border: 1px solid var(--dash-line); border-radius: 11px; overflow: hidden; }
-.account-overview > div { padding: 14px; }
-.account-overview > div + div { border-left: 1px solid var(--dash-line); }
+/* The single hairline-divided slab this used to be is gone — the cards carry
+   their own edges now (see .account-overview__card), and a client account
+   only ever filled one of the two columns, which left the divider hanging
+   down the middle of nothing. */
+.account-overview { gap: 14px; }
 .admin-account-orders { overflow-x: auto; }
 .admin-account-orders .dashboard-table { min-width: 760px; }
 .admin-profile-orders { min-width: 1020px; }
@@ -13878,7 +13996,8 @@ a.notification-panel__item:hover {
 
 .teammate-actions__menu button:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
 .teammate-actions__menu button > i { width: 26px; height: 26px; display: grid; place-items: center; flex-shrink: 0; border-radius: 8px; background: rgba(79, 112, 255, 0.12); color: var(--accent); font-size: 10px; }
-.teammate-actions__menu button:last-child > i { background: rgba(224, 82, 82, 0.12); color: #ff8080; }
+.teammate-actions__menu button:last-child > i,
+.teammate-actions__menu button.is-danger > i { background: rgba(224, 82, 82, 0.12); color: #ff8080; }
 .teammate-actions__menu button span { display: flex; flex-direction: column; gap: 1px; }
 .teammate-actions__menu strong { color: var(--text); font-size: 12.5px; }
 .teammate-actions__menu small { color: var(--text-faint); font-size: 10px; }
@@ -14714,6 +14833,35 @@ a.notification-panel__item:hover {
   font-weight: 800;
   color: var(--success);
   font-variant-numeric: tabular-nums;
+}
+
+/* Separates the dashboard list from the items around it. Empty when it is
+   only closing the group off, so the rule has to survive having no text. */
+.sidebar-account__section {
+  margin: 6px 4px 3px;
+  padding-top: 7px;
+  border-top: 1px solid var(--dash-line);
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sidebar-account__section:empty {
+  margin-bottom: 0;
+  padding-top: 0;
+}
+
+.sidebar-account__item.is-current {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.sidebar-account__check {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 10px;
 }
 
 .sidebar-account__item {

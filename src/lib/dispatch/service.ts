@@ -63,7 +63,7 @@ export class DispatchError extends Error {}
  * Addressed to the people actually on the order plus every admin; never
  * throws, since a missed notification must not fail the transition.
  */
-async function publishOrderChange(orderId: string) {
+export async function publishOrderChange(orderId: string) {
   try {
     const [order, admins] = await Promise.all([
       prisma.order.findUnique({

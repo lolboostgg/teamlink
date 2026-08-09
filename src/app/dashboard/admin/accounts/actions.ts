@@ -12,6 +12,111 @@ async function requireAdmin() {
   if (session?.user?.role !== "ADMIN") {
     throw new Error("Forbidden — admin only.");
   }
+  return session.user.id;
+}
+
+/**
+ * Moves a customer's store credit by hand.
+ *
+ * The mirror of adjustTeammateBalance, against the other ledger: a client's
+ * money lives in CreditTransaction with User.creditBalanceCents as the
+ * denormalised running total, so both move in one transaction or neither
+ * does. ADMIN_ADJUST already existed as a type — this is the first thing to
+ * write one.
+ *
+ * A reason is mandatory. It lands in the customer's own transaction history,
+ * and a balance that changed with no explanation is a support ticket.
+ */
+export async function adjustClientCredit(input: {
+  userId: string;
+  /** Always positive; `direction` carries the sign. */
+  amountEUR: number;
+  direction: "add" | "deduct";
+  reason: string;
+}) {
+  await requireAdmin();
+
+  const reason = input.reason.trim().slice(0, 300);
+  if (!reason) throw new Error("Give a reason — the customer sees it.");
+
+  const cents = Math.round(Math.abs(input.amountEUR) * 100);
+  if (!Number.isFinite(cents) || cents <= 0) throw new Error("Enter an amount greater than zero.");
+  const signed = input.direction === "deduct" ? -cents : cents;
+
+  await prisma.$transaction(async (tx) => {
+    const user = await tx.user.findUnique({ where: { id: input.userId }, select: { creditBalanceCents: true } });
+    if (!user) throw new Error("Unknown account.");
+
+    // A deduction may not push the balance below zero: nothing in checkout can
+    // settle a negative store credit, so it would just be a number that quietly
+    // eats the customer's next top-up.
+    if (signed < 0 && cents > user.creditBalanceCents) {
+      throw new Error(`Their balance is only €${(user.creditBalanceCents / 100).toFixed(2)}.`);
+    }
+
+    await tx.creditTransaction.create({
+      data: { userId: input.userId, type: "ADMIN_ADJUST", amountCents: signed, note: reason },
+    });
+    await tx.user.update({
+      where: { id: input.userId },
+      data: { creditBalanceCents: { increment: signed } },
+    });
+  });
+
+  const amount = (cents / 100).toFixed(2);
+  await notifyUser(input.userId, {
+    type: input.direction === "deduct" ? "credit.deducted" : "credit.added",
+    title: input.direction === "deduct" ? `€${amount} removed from your balance` : `€${amount} added to your balance`,
+    body: reason,
+    href: "/dashboard/client/wallet",
+  });
+
+  await revalidateAccount(input.userId);
+  revalidatePath("/dashboard/admin/users");
+  revalidatePath("/dashboard/client/wallet");
+}
+
+/**
+ * Locks an account out, or lets it back in.
+ *
+ * The ban is a column on the user rather than a deletion: orders, reviews and
+ * the ledger all still point at them, and a support conversation six weeks
+ * later needs the account to still exist. Enforced in three places, because
+ * one is not enough — `authorize` and `signIn` stop a new sign-in, and the
+ * throttled re-read in the jwt callback drops the session the person is using
+ * right now (see auth.ts).
+ */
+export async function setAccountBanned(userId: string, banned: boolean, reason: string) {
+  const adminId = await requireAdmin();
+  if (userId === adminId) throw new Error("You can't ban your own account.");
+
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  if (!target) throw new Error("Unknown account.");
+  // Not a hierarchy we can express safely: an admin locking out another admin
+  // is how a project ends up with nobody who can unlock anything.
+  if (banned && target.role === "ADMIN") throw new Error("Admin accounts can't be banned from here.");
+
+  const note = reason.trim().slice(0, 300);
+  if (banned && !note) throw new Error("Give a reason — it's what they're shown when they try to sign in.");
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: banned ? { bannedAt: new Date(), bannedReason: note } : { bannedAt: null, bannedReason: null },
+  });
+
+  // Only worth telling them about being let back in — a banned account can't
+  // read its notifications, and the reason reaches them at the sign-in form.
+  if (!banned) {
+    await notifyUser(userId, {
+      type: "account.unbanned",
+      title: "Your account has been reinstated",
+      body: "You can sign in and book again.",
+      href: "/dashboard/client",
+    });
+  }
+
+  await revalidateAccount(userId);
+  revalidatePath("/dashboard/admin/users");
 }
 
 // Same cost factor as registration (api/auth/register) so a reset password

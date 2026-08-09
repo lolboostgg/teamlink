@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { SidebarAccountMenu } from "@/components/dashboard/SidebarAccountMenu";
 import { TeammateSidebarProfile, type TeammateSidebarData } from "@/components/dashboard/teammate/TeammateSidebarProfile";
+import type { DashboardRoleMeta } from "@/lib/roles";
 
 // Client dashboard has its own tab strip instead (see
 // ClientDashboardNav.tsx) — it no longer uses this shell/sidebar at all.
@@ -52,12 +53,15 @@ export function DashboardSidebar({
   accountName = null,
   accountAvatarUrl = null,
   onboardingPending = false,
+  dashboards = [],
 }: {
   teammate?: TeammateSidebarData | null;
   /** The signed-in account itself — an admin or client has no teammate row. */
   accountName?: string | null;
   accountAvatarUrl?: string | null;
   onboardingPending?: boolean;
+  /** Every dashboard this account may open — see lib/roles.ts. */
+  dashboards?: DashboardRoleMeta[];
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -148,6 +152,8 @@ export function DashboardSidebar({
           balanceEUR={teammate ? teammate.balanceEUR : null}
           profileHref={role === "admin" ? "/dashboard/admin/profile" : "/dashboard/teammate/profile"}
           collapsed={collapsed}
+          dashboards={dashboards}
+          currentDashboard={role}
         />
       </div>
     </aside>

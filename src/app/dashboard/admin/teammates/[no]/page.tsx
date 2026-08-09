@@ -90,6 +90,8 @@ export default async function AdminTeammatePage({ params }: Props) {
                 discordUsername: user.discordUsername,
                 discordAvatar: user.discordAvatar,
                 creditBalanceCents: user.creditBalanceCents,
+                bannedAt: user.bannedAt?.getTime() ?? null,
+                bannedReason: user.bannedReason,
                 createdAt: user.createdAt.getTime(),
                 orderCount: 0,
                 completedCount: 0,

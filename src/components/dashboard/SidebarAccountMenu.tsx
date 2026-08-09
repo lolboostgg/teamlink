@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
+import type { DashboardRole, DashboardRoleMeta } from "@/lib/roles";
 
 /**
  * The account control at the foot of the sidebar.
@@ -27,6 +28,8 @@ export function SidebarAccountMenu({
   balanceEUR: initialBalanceEUR,
   profileHref,
   collapsed,
+  dashboards,
+  currentDashboard,
 }: {
   name: string;
   role: string;
@@ -35,6 +38,9 @@ export function SidebarAccountMenu({
   balanceEUR: number | null;
   profileHref: string;
   collapsed: boolean;
+  /** Every dashboard this account may open — see lib/roles.ts. */
+  dashboards: DashboardRoleMeta[];
+  currentDashboard: DashboardRole;
 }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -103,6 +109,33 @@ export function SidebarAccountMenu({
             <i className="fa-solid fa-user" aria-hidden="true" />
             My profile
           </Link>
+
+          {/* One account is often several things — an admin who also takes
+              orders, a teammate who books their own duo. Only rendered when
+              there is somewhere else to go, so a plain client never sees an
+              empty switcher. */}
+          {dashboards.length > 1 && (
+            <>
+              <div className="sidebar-account__section">Dashboards</div>
+              {dashboards.map((entry) => {
+                const isCurrent = entry.role === currentDashboard;
+                return (
+                  <Link
+                    key={entry.role}
+                    href={entry.href}
+                    className={`sidebar-account__item${isCurrent ? " is-current" : ""}`}
+                    role="menuitem"
+                    aria-current={isCurrent ? "page" : undefined}
+                  >
+                    <i className={entry.icon} aria-hidden="true" />
+                    {entry.label}
+                    {isCurrent && <i className="fa-solid fa-check sidebar-account__check" aria-hidden="true" />}
+                  </Link>
+                );
+              })}
+              <div className="sidebar-account__section" />
+            </>
+          )}
           <Link href="/" transitionTypes={["dashboard-exit"]} className="sidebar-account__item" role="menuitem">
             <i className="fa-solid fa-arrow-left" aria-hidden="true" />
             Back to site

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/db";
 import { discordAvatarUrl } from "@/lib/discord";
 import { loadOnboardingSubject } from "@/lib/teammateGate";
 import { isOnboardingComplete } from "@/lib/teammateOnboarding";
+import { accessibleDashboards } from "@/lib/roles";
 
 // Sibling of the (marketing) route group, so /dashboard/* gets its own
 // shell (sidebar + topbar) instead of inheriting the marketing Header/
@@ -112,6 +113,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             accountName={account?.name ?? null}
             accountAvatarUrl={accountAvatar}
             onboardingPending={onboardingPending}
+            dashboards={accessibleDashboards(session?.user?.role, Boolean(teammate))}
           />
           <div className="dashboard-shell__main">
             <DashboardTopbar avatarUrl={teammateProfile?.avatarUrl ?? accountAvatar} />

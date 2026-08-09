@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Discord from "next-auth/providers/discord";
 import Google from "next-auth/providers/google";
@@ -29,6 +29,19 @@ const ROLE_RECHECK_SECONDS = 10;
 function sessionSafeAvatar(value: string | null | undefined): string | null {
   if (!value || value.startsWith("data:")) return null;
   return value.length <= 2_000 ? value : null;
+}
+
+/**
+ * Thrown by `authorize` for a banned account.
+ *
+ * A subclass rather than `return null`, because null is "wrong password" and
+ * the sign-in form has to be able to tell the two apart — somebody who was
+ * banned typing their correct password deserves better than being told their
+ * details are wrong forever. `code` is what reaches the client as
+ * `?error=`, so it stays terse and non-quoting.
+ */
+export class BannedAccountError extends CredentialsSignin {
+  code = "banned";
 }
 
 // The union of the Discord and Google profile fields we actually read.
@@ -71,6 +84,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const valid = await bcrypt.compare(password, user.passwordHash);
           if (!valid) return null;
 
+          // Checked after the password on purpose: answering "this account is
+          // banned" to any address anyone types would turn the sign-in form
+          // into a way of asking us which accounts exist.
+          if (user.bannedAt) throw new BannedAccountError();
+
           const twoFactor = readTwoFactor(user.notificationPrefs);
           if (twoFactor) {
             const secret = decryptTwoFactorSecret(twoFactor.secret);
@@ -99,6 +117,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const remember = credentials?.remember !== "false";
           return { id: user.id, email: user.email, name: user.name, image: sessionSafeAvatar(user.avatarUrl), role: user.role, remember };
         } catch (err) {
+          // A refusal we meant (a ban) has to travel; only genuine failures
+          // get swallowed below. Without this the throw above would be logged
+          // as a database problem and answered with "wrong password".
+          if (err instanceof CredentialsSignin) throw err;
           // Logged server-side instead of surfacing raw DB errors through
           // NextAuth's generic CredentialsSignin error — check the
           // Hostinger app logs for the real cause (same class of issue as
@@ -151,6 +173,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const verified = oauth?.email_verified ?? oauth?.verified;
       if (verified === false) return "/?authError=unverified_email";
 
+      // The credentials path throws instead (see authorize); this one has a
+      // redirect available, so it says so on the way back to the site.
+      const existing = await prisma.user.findUnique({ where: { email }, select: { bannedAt: true } });
+      if (existing?.bannedAt) return "/?authError=banned";
+
       return true;
     },
 
@@ -186,12 +213,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const fresh = await prisma.user.findUnique({
             where: { id: token.id as string },
-            select: { role: true, name: true, avatarUrl: true },
+            select: { role: true, name: true, avatarUrl: true, bannedAt: true },
           });
           // A deleted account keeps whatever the token already said; the
           // route guards still reject it, and failing the callback here
           // would sign everyone out on a transient database blip.
           if (fresh) {
+            // A ban has to reach the sessions that already exist, or it only
+            // stops someone from signing in *again* — which is no lockout at
+            // all for the account that is signed in right now. Returning null
+            // drops the session on the next request that touches auth, so the
+            // worst case is ROLE_RECHECK_SECONDS of extra access.
+            if (fresh.bannedAt) return null;
             token.role = fresh.role;
             token.name = fresh.name;
             token.picture = sessionSafeAvatar(fresh.avatarUrl);

@@ -4,7 +4,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
-import { assignWinners, reconcileOrder } from "@/lib/dispatch/service";
+import { assignWinners, reconcileOrder, publishOrderChange } from "@/lib/dispatch/service";
+import { notifyUser } from "@/lib/notifications/service";
 import { sendWave, resetForRetry } from "@/lib/dispatch/waves";
 import { settleCancelledOrder } from "@/lib/orderRefunds";
 
@@ -39,7 +40,7 @@ export async function setMatchingPaused(orderId: string, paused: boolean): Promi
       DISPATCH_EVENT.ADMIN,
       paused ? `Matching paused by ${admin}.` : `Matching resumed by ${admin}.`,
     );
-    await publish({ topic: "orders", key: orderId, userIds: [] });
+    await publishOrderChange(orderId);
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -129,8 +130,29 @@ export async function forceSelect(orderId: string, teammateId: string): Promise<
       });
     });
 
-    await publish({ topic: "orders", key: orderId, userIds: [] });
-    await publish({ topic: "dispatch", key: orderId, userIds: [] });
+    // Addressed to everyone on the order, not `userIds: []` — that reaches
+    // admins only (see lib/events/bus.ts), so the teammate who had just been
+    // put on an order learned about it from their slow fallback poll, up to a
+    // minute later. The push is what makes DispatchFlow route them straight
+    // into the order room; without it the assignment simply didn't arrive.
+    await publishOrderChange(orderId);
+
+    // The bell as well as the push: a teammate who had the dashboard closed
+    // gets mail/Discord out of this (see notify/channels.ts) instead of
+    // finding the order whenever they next happen to look.
+    const [teammate, order] = await Promise.all([
+      prisma.teammate.findUnique({ where: { id: teammateId }, select: { userId: true } }),
+      prisma.order.findUnique({ where: { id: orderId }, select: { orderNo: true, gameName: true } }),
+    ]);
+    if (teammate?.userId && order) {
+      await notifyUser(teammate.userId, {
+        type: "order.assigned",
+        title: `You're on order #${order.orderNo}`,
+        body: `${admin} put you on this ${order.gameName} order — the customer is waiting in the chat.`,
+        href: `/dashboard/teammate/session/${order.orderNo}`,
+      });
+    }
+
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -162,7 +184,7 @@ export async function removeCandidate(orderId: string, teammateId: string): Prom
         { teammateId },
       );
     });
-    await publish({ topic: "orders", key: orderId, userIds: [] });
+    await publishOrderChange(orderId);
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -182,7 +204,7 @@ export async function extendSelection(orderId: string, seconds = 60): Promise<Re
       data: { selectionDeadline: new Date(base + seconds * 1000) },
     });
     await logDispatch(prisma, orderId, DISPATCH_EVENT.ADMIN, `${admin} gave the customer ${seconds}s more to pick.`);
-    await publish({ topic: "orders", key: orderId, userIds: [] });
+    await publishOrderChange(orderId);
     return { ok: true };
   } catch (err) {
     return fail(err);
@@ -240,8 +262,7 @@ export async function cancelDispatch(orderId: string): Promise<Result> {
       return before?.status === "AWAITING_PAYMENT" || before?.status === "CANCELLED" ? null : row;
     });
     if (cancelled) await settleCancelledOrder(cancelled, "cancelled_by_admin");
-    await publish({ topic: "orders", key: orderId, userIds: [] });
-    await publish({ topic: "dispatch", key: orderId, userIds: [] });
+    await publishOrderChange(orderId);
     return { ok: true };
   } catch (err) {
     return fail(err);

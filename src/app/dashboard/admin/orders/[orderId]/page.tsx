@@ -5,6 +5,7 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { AvatarIcon } from "@/components/ui/AvatarIcon";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import { AdminOrderReply } from "@/components/dashboard/admin/AdminOrderReply";
+import { AdminOrderChatScroll } from "@/components/dashboard/admin/AdminOrderChatScroll";
 import { AdminOrderControls } from "@/components/dashboard/admin/AdminOrderControls";
 
 export const dynamic = "force-dynamic";
@@ -107,7 +108,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           <div className="admin-order-chat__connection"><span /><strong>#{order.orderNo}</strong><span /></div>
           <div className="admin-order-chat__person admin-order-chat__person--teammate"><span><small>Teammate</small><strong>{teammateName}</strong></span><span className="chat-list__avatar"><AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} avatarUrl={teammateAvatar} frame={teammateFrame} /></span></div>
         </header>
-        <div className="admin-order-chat__messages">
+        <AdminOrderChatScroll>
           {messages.length === 0 && <div className="chat-thread__empty"><i className="fa-regular fa-comments" /><p>No persisted chat messages yet.</p></div>}
           {messages.map((message) => {
             const fromTeammate = message.sender === "teammate";
@@ -119,7 +120,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               {(fromTeammate || fromAdmin) && <span className="admin-order-chat__avatar">{fromAdmin ? <i className="fa-solid fa-shield-halved" /> : <AvatarIcon seed={`teammate-${selected?.teammateId ?? "none"}`} avatarUrl={teammateAvatar} frame={teammateFrame} />}</span>}
             </article>;
           })}
-        </div>
+        </AdminOrderChatScroll>
         <AdminOrderReply conversationKey={conversationKey} orderNo={order.orderNo} />
       </div>}
     </section>

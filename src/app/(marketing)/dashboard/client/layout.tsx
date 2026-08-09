@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { dashboardHrefForRole } from "@/lib/roles";
 import { DashboardAuthGate } from "@/components/dashboard/DashboardAuthGate";
 import { ClientDashboardNav } from "@/components/dashboard/client/ClientDashboardNav";
 import { ClientDashboardContent } from "@/components/dashboard/client/ClientDashboardContent";
@@ -12,12 +10,11 @@ import { ClientDashboardContent } from "@/components/dashboard/client/ClientDash
 // separate walled-off panel.
 export default async function ClientDashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  // Signed-in but the wrong role (a teammate/admin account) — send them to
-  // their own dashboard instead of showing the client one. Signed-out
-  // visitors fall through to DashboardAuthGate's lock screen below.
-  if (session && session.user.role !== "CLIENT") {
-    redirect(dashboardHrefForRole(session.user.role));
-  }
+  // No role check any more: every signed-in account may open this one. A
+  // teammate books duos of their own and an admin has to be able to see the
+  // product they run — both used to be bounced straight back out, which meant
+  // their own orders were unreachable from the account that placed them.
+  // Signed-out visitors fall through to DashboardAuthGate's lock screen below.
 
   // initiallyAuthenticated stops the "log in to view your dashboard" flash
   // for signed-in visitors without a second nested SessionProvider — see

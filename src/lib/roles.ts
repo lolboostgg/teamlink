@@ -19,10 +19,49 @@ export function getRoleMeta(role: DashboardRole): DashboardRoleMeta {
   return ROLE_BY_KEY.get(role) ?? DASHBOARD_ROLES[0];
 }
 
+/**
+ * Every dashboard this account may open, in the order they should be offered.
+ *
+ * One person is often several things here — an admin who also takes orders, a
+ * teammate who books their own duo — and the account they sign in with is the
+ * same one either way. Until now the role picked exactly one dashboard and
+ * bounced them out of the other two, which meant a teammate could not see
+ * their own bookings and an admin could not look at the product they run.
+ *
+ * It is a widening, not a free-for-all: nothing here lets a client reach the
+ * admin panel. An account gets its own dashboard plus the ones strictly below
+ * it, and the teammate dashboard only if a Teammate row actually exists —
+ * without one, that dashboard has nothing to show and every panel on it would
+ * be reading a profile that was never created.
+ */
+export function accessibleDashboards(
+  role: string | undefined | null,
+  hasTeammateProfile: boolean,
+): DashboardRoleMeta[] {
+  const keys: DashboardRole[] =
+    role === "ADMIN"
+      ? ["admin", "teammate", "client"]
+      : role === "TEAMMATE"
+        ? ["teammate", "client"]
+        : ["client"];
+
+  return keys
+    .filter((key) => key !== "teammate" || hasTeammateProfile)
+    .map((key) => getRoleMeta(key));
+}
+
+/** Whether this account may open a particular dashboard at all. */
+export function canOpenDashboard(
+  role: string | undefined | null,
+  hasTeammateProfile: boolean,
+  target: DashboardRole,
+): boolean {
+  return accessibleDashboards(role, hasTeammateProfile).some((entry) => entry.role === target);
+}
+
 // Maps the real account role (User.role in prisma/schema.prisma — CLIENT /
-// TEAMMATE / ADMIN) to that account's own dashboard — used to send anyone
-// who lands on a dashboard route that isn't theirs back to the one that is,
-// instead of a 3-way demo switcher anyone could click through.
+// TEAMMATE / ADMIN) to that account's own dashboard — where a sign-in lands
+// and where anyone who asks for a dashboard they may not open is sent.
 export function dashboardHrefForRole(role: string | undefined | null): string {
   switch (role) {
     case "ADMIN":

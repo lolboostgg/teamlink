@@ -13,6 +13,7 @@ import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import { DiscordTag } from "@/components/dashboard/DiscordTag";
 import { TeammateProfileForm, type TeammateProfileFormValue } from "@/components/dashboard/TeammateProfileForm";
 import { updateTeammateProfile } from "@/app/dashboard/admin/teammates/actions";
+import { AccountActionsMenu } from "@/components/dashboard/admin/AccountActionsMenu";
 import { removeUserTwoFactor, setUserPassword, updateAccountDetails, reviewVerification } from "@/app/dashboard/admin/accounts/actions";
 import { PAYOUT_LABELS, describePayoutMethod, PAYOUT_FIELDS, type PayoutMethodType } from "@/lib/payoutMethods";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -30,6 +31,8 @@ export interface AccountSummary {
   discordUsername: string | null;
   discordAvatar: string | null;
   creditBalanceCents: number;
+  bannedAt: number | null;
+  bannedReason: string | null;
   createdAt: number;
   orderCount: number;
   completedCount: number;
@@ -106,7 +109,7 @@ function StatTile({ label, value, sub, icon }: { label: string; value: string; s
   );
 }
 
-export function AccountDetail({ account, teammate, orders }: { account: AccountSummary; teammate: TeammateSummary | null; orders: AccountOrderRow[] }) {
+export function AccountDetail({ account, teammate, orders, viewerId }: { account: AccountSummary; teammate: TeammateSummary | null; orders: AccountOrderRow[]; viewerId: string | null }) {
   const { showToast } = useToast();
   const [section, setSection] = useState<Section>("overview");
 
@@ -146,6 +149,7 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
                 {teammate.available ? "available" : "unavailable"}
               </span>
             )}
+            {account.bannedAt && <span className="dashboard-pill dashboard-pill--danger">banned</span>}
           </h1>
 
           <div className="account-header__meta">
@@ -183,9 +187,34 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
             </div>
           )}
         </div>
+
+        <div className="account-header__actions">
+          <AccountActionsMenu
+            userId={account.id}
+            name={teammate?.name || account.name || account.email}
+            creditBalanceCents={account.creditBalanceCents}
+            banned={Boolean(account.bannedAt)}
+            isSelf={viewerId === account.id}
+            isAdminAccount={account.role === "ADMIN"}
+          />
+        </div>
       </header>
 
-      {teammate && <div className="account-stats">
+      {account.bannedAt && (
+        <div className="account-ban-notice">
+          <i className="fa-solid fa-ban" aria-hidden="true" />
+          <div>
+            <strong>Banned {DATE.format(account.bannedAt)}</strong>
+            <span>{account.bannedReason || "No reason recorded."}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Every account gets the tiles now, not only teammates. A client page
+          was four rows of a definition list and nothing else — the numbers an
+          admin opens the page for (what they are owed, what they have spent)
+          were the hardest things on it to find. */}
+      <div className="account-stats">
         <StatTile
           icon="fa-solid fa-wallet"
           label="Store credit"
@@ -208,9 +237,17 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
             />
           </>
         ) : (
-          <StatTile icon="fa-solid fa-star" label="Reviews written" value={String(account.reviewCount)} />
+          <>
+            <StatTile
+              icon="fa-solid fa-circle-check"
+              label="Completed"
+              value={String(account.completedCount)}
+              sub={account.orderCount > 0 ? `${Math.round((account.completedCount / account.orderCount) * 100)}% of their orders` : undefined}
+            />
+            <StatTile icon="fa-solid fa-star" label="Reviews written" value={String(account.reviewCount)} />
+          </>
         )}
-      </div>}
+      </div>
 
       <nav className="profile-tabs profile-tabs--page" aria-label="Account sections">
         {sections.map((s) => (
@@ -289,9 +326,14 @@ export function AccountDetail({ account, teammate, orders }: { account: AccountS
 function OverviewPanel({ account, teammate }: { account: AccountSummary; teammate: TeammateSummary | null }) {
   return (
     <div className="account-overview">
-      {!teammate && <div><div className="account-overview__title">Client</div><dl className="account-facts"><div><dt>Store credit</dt><dd>{EUR.format(account.creditBalanceCents / 100)}</dd></div><div><dt>Orders</dt><dd>{account.orderCount}</dd></div><div><dt>Completed</dt><dd>{account.completedCount}</dd></div><div><dt>Reviews written</dt><dd>{account.reviewCount}</dd></div></dl></div>}
-      <div>
-        <div className="account-overview__title">Account</div>
+      {/* The store-credit/orders/completed/reviews block that used to sit here
+          is gone: it repeated, in small grey type, the four numbers the tiles
+          above now carry. What is left is the identity of the account, which
+          is the one thing the tiles can't show. */}
+      <div className="account-overview__card">
+        <div className="account-overview__title">
+          <i className="fa-solid fa-id-card" aria-hidden="true" /> Identity
+        </div>
         <dl className="account-facts">
           <div>
             <dt>Account</dt>
@@ -299,11 +341,15 @@ function OverviewPanel({ account, teammate }: { account: AccountSummary; teammat
           </div>
           <div>
             <dt>Role</dt>
-            <dd>{account.role}</dd>
+            <dd>
+              <span className={`account-role account-role--${account.role.toLowerCase()}`}>{account.role}</span>
+            </dd>
           </div>
           <div>
             <dt>Email</dt>
-            <dd>{account.email}</dd>
+            <dd>
+              <a href={`mailto:${account.email}`}>{account.email}</a>
+            </dd>
           </div>
           <div>
             <dt>Discord</dt>
@@ -319,12 +365,24 @@ function OverviewPanel({ account, teammate }: { account: AccountSummary; teammat
             <dt>Joined</dt>
             <dd>{DATE.format(account.createdAt)}</dd>
           </div>
+          <div>
+            <dt>Access</dt>
+            <dd>
+              {account.bannedAt ? (
+                <span className="dashboard-pill dashboard-pill--danger">banned {DATE.format(account.bannedAt)}</span>
+              ) : (
+                <span className="dashboard-pill dashboard-pill--success">active</span>
+              )}
+            </dd>
+          </div>
         </dl>
       </div>
 
       {teammate && (
-        <div>
-          <div className="account-overview__title">Teammate</div>
+        <div className="account-overview__card">
+          <div className="account-overview__title">
+            <i className="fa-solid fa-headset" aria-hidden="true" /> Teammate
+          </div>
           <dl className="account-facts">
             <div>
               <dt>Timezone</dt>
