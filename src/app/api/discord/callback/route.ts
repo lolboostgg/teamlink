@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
   if (!discordUser?.id) return back(request, returnTo, "error");
 
   // discordId is unique — one Discord account can't be attached to two
-  // TeamLink accounts, otherwise a DM couldn't be attributed to one person.
+  // QUP.gg accounts, otherwise a DM couldn't be attributed to one person.
   const taken = await prisma.user.findUnique({ where: { discordId: discordUser.id }, select: { id: true } });
   if (taken && taken.id !== session.user.id) {
     return back(request, returnTo, "already_linked");

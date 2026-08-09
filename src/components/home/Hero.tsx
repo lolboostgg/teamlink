@@ -51,8 +51,10 @@ export function Hero({ game: gameProp }: Props) {
             <span className="pulse-dot" aria-hidden="true" /> Matched in under 2 minutes
           </span>
 
+          {/* The brand's own line. "Queue" carries the accent because it is
+              the word the name is built out of — QUP, queue up. */}
           <h1 className="hero__title">
-            Play with a pro <span className="hero__title-accent">teammate</span>, right now.
+            Ready. <span className="hero__title-accent">Queue.</span> Play.
           </h1>
 
           <p className="hero__sub">

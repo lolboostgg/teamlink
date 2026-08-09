@@ -1,4 +1,4 @@
-/* TeamLink.gg design system — one stylesheet, flat color (no gradient text
+/* QUP.gg design system — one stylesheet, flat color (no gradient text
    or gradient buttons), modest corner radii. Inter for body copy, Bebas
    Neue for headline/display moments (see --font-display). Dark navy base
    color intentionally close to lolboost.gg's palette per brief, textured
@@ -571,19 +571,25 @@ ul {
   gap: 10px;
 }
 
-.logo__word {
-  font-size: 19px;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  color: #fff;
-  white-space: nowrap;
+/* Both are drawn from the brand PNGs (see components/brand/Logo.tsx). Height
+   is what's fixed and the width follows, because the lockup and the bare mark
+   have very different aspect ratios and every place that shows either of them
+   is really deciding how tall the header row is. */
+/* Taller than the text wordmark it replaces, because it is not comparable:
+   the lockup's height is the glowing mark, and the lettering beside it only
+   reaches about half of that. Matching the old 19px word means sizing the
+   whole image to roughly twice it. */
+.logo__lockup {
+  height: 42px;
+  width: auto;
+  display: block;
 }
 
-.logo__word-accent {
-  background: linear-gradient(90deg, #22d3ee, #a855f7);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+.logo__mark {
+  height: 36px;
+  width: 36px;
+  display: block;
+  object-fit: contain;
 }
 
 /* Sticky sits on .site-topbar, the wrapper one level up (see SiteTopbar) —
@@ -860,7 +866,7 @@ ul {
 /* Rating widget — a single row of individually-rendered star tiles plus a
    bold score, the same production-quality grammar embedded review-platform
    widgets (Trustpilot etc.) use, without borrowing their name/logo since
-   TeamLink has no real account there. Honestly labeled "Verified Reviews". */
+   QUP.gg has no real account there. Honestly labeled "Verified Reviews". */
 .trust-badge {
   display: inline-flex;
   align-items: center;
@@ -1941,7 +1947,7 @@ ul {
 /* Same eyebrow + Bebas Neue title voice as the rest of the landing page
    (hero headline, "Loved by players everywhere") — the booking section
    used to jump straight into small uppercase tab labels with no display
-   heading at all, which read as generic rather than TeamLink's own. */
+   heading at all, which read as generic rather than QUP.gg's own. */
 .booking-heading__eyebrow {
   display: block;
 }
@@ -8158,6 +8164,15 @@ ul {
 .session-screen__chat-wrap {
   grid-column: 2;
   grid-row: 2;
+}
+
+/* .dashboard-panel carries an 18px bottom margin for the stacked flow it was
+   written for. In this grid the row gap already does that job, so the two
+   were adding up: 38px of dead space between the status strip and the chat
+   below it, and another 18px hanging off the bottom of the column. The gap
+   is the one that decides here. */
+.session-screen__grid .dashboard-panel {
+  margin-bottom: 0;
 }
 
 .session-screen__progress-status {

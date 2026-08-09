@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { LanguageCode } from "@/lib/i18n";
 
-const STORAGE_KEY = "teamlink:language";
+const STORAGE_KEY = "qup:language";
 
 interface LanguageContextValue {
   language: LanguageCode;

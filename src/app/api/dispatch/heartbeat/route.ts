@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
+import { markTeammatePresent } from "@/lib/dispatch/presence";
 
 export const dynamic = "force-dynamic";
 
@@ -22,14 +22,11 @@ export async function POST() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ ok: false }, { status: 401 });
 
-  const now = new Date();
-  // updateMany rather than a lookup and then an update: this runs on every
-  // online teammate on a timer, and it has no business costing two queries.
-  // A user with no teammate row simply matches nothing.
-  await prisma.teammate.updateMany({
-    where: { userId: session.user.id },
-    data: { lastSeenAt: now },
-  });
+  // Still one statement for a panel that has been open all along — see
+  // markTeammatePresent. It also restarts the wait clock for a panel that has
+  // been away, so closing the page and coming back does not present the
+  // teammate with the hours they spent not being there.
+  await markTeammatePresent(session.user.id, new Date());
 
   return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
 }

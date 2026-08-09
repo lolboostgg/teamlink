@@ -64,6 +64,10 @@ export function TeammateCard({ teammate, gameSlug, isCenter, isFirstAccepted, is
         <span className="pick-card__name">{teammate.name}</span>
         {laneOptions.length ? (
           <span className="pick-card__lanes" aria-label={`Lanes: ${laneOptions.map((lane) => lane.label).join(", ")}`}>
+            {/* Lane marks are SVGs (public/lol/roles/), which next/image
+                refuses to optimize without dangerouslyAllowSVG — and a vector
+                has nothing to optimize. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             {laneOptions.map((lane) => lane.icon && <img key={lane.value} src={lane.icon} alt={lane.label} title={lane.label} />)}
           </span>
         ) : (

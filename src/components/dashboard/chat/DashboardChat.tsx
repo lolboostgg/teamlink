@@ -21,7 +21,19 @@ export function DashboardChat({ conversations, from }: Props) {
 
   const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
   const { messages, refresh } = useConversationMessages(active?.conversationKey);
-  const readOnly = Boolean(active?.lockedAt && active.lockedAt <= Date.now());
+
+  // A thread locks itself once its order has been closed long enough. Read off
+  // a clock held in state rather than Date.now() during render: a thread left
+  // open used to keep accepting messages past its own deadline until some
+  // unrelated re-render happened to notice.
+  const lockedAt = active?.lockedAt ?? null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (lockedAt === null || lockedAt <= now) return;
+    const timer = setTimeout(() => setNow(Date.now()), lockedAt - now);
+    return () => clearTimeout(timer);
+  }, [lockedAt, now]);
+  const readOnly = lockedAt !== null && lockedAt <= now;
 
   // Two rAFs (not one) so this runs after the browser has actually laid out
   // the new message, not just after React committed it — one frame is often

@@ -314,6 +314,16 @@ const RANK_COLORS: Record<string, string> = {
   champion: "#b366ff",
 };
 
+/**
+ * Where the Riot lookup for one particular `ign|region` got to. The key is
+ * part of the state on purpose: it is what lets the render decide whether the
+ * answer still describes what is in the box.
+ */
+type RiotFeedback =
+  | { key: string; status: "checking" }
+  | { key: string; status: "error"; message: string }
+  | { key: string; status: "result"; result: RiotLookupResult };
+
 export interface IngameIdentity {
   ign: string;
   region: string;
@@ -364,15 +374,30 @@ export function CheckoutIngameStep({
   const [rank, setRank] = useState<string | null>(null);
   const [division, setDivision] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [riotChecking, setRiotChecking] = useState(false);
-  const [riotError, setRiotError] = useState<string | null>(null);
-  const [riotResult, setRiotResult] = useState<RiotLookupResult | null>(null);
+  // The lookup's state carries the `ign|region` it belongs to, so a verdict
+  // can never be shown under a name it wasn't about — the three separate flags
+  // this replaced had to be cleared by hand on every path that changed the
+  // input, and the debounce window in between showed the previous answer.
+  const [riot, setRiot] = useState<RiotFeedback | null>(null);
   // Tracks the last `ign|region` a lookup actually ran for. A "found" result
   // rewrites `ign` to Riot's canonical Name#TAG casing below, which would
   // otherwise immediately re-trigger the debounce effect on its own output.
   const lastRiotKeyRef = useRef<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  // What is currently worth looking up: a full Name#TAG on a game Riot can
+  // answer for, or nothing at all.
+  const riotKey = (() => {
+    if (!RIOT_VERIFY_GAMES.has(gameSlug)) return null;
+    const trimmed = ign.trim();
+    const parts = trimmed.split("#");
+    if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) return null;
+    return `${trimmed}|${region}`;
+  })();
+  // Only ever the answer to what is in the box right now.
+  const riotFeedback = riot && riot.key === riotKey ? riot : null;
+  const riotResult = riotFeedback?.status === "result" ? riotFeedback.result : null;
 
   useEffect(() => {
     if (!canSave) return;
@@ -396,21 +421,16 @@ export function CheckoutIngameStep({
   // completed for, which is what stops a "found" result's own canonical
   // rewrite of `ign` from immediately triggering another lookup.
   useEffect(() => {
-    if (!RIOT_VERIFY_GAMES.has(gameSlug)) return;
+    // Nothing to look up until the box holds a full Name#TAG. No state is
+    // cleared here — `riotFeedback` below already ignores an answer whose key
+    // doesn't match what is currently typed.
+    if (!riotKey) return;
+    const key = riotKey;
     const trimmed = ign.trim();
-    const parts = trimmed.split("#");
-    if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
-      setRiotChecking(false);
-      setRiotError(null);
-      setRiotResult(null);
-      return;
-    }
-    const key = `${trimmed}|${region}`;
     if (key === lastRiotKeyRef.current) return;
 
     const timer = setTimeout(() => {
-      setRiotChecking(true);
-      setRiotError(null);
+      setRiot({ key, status: "checking" });
       const timedOut = new Promise<never>((_, reject) => {
         // Generous, because the lookup chains several Riot calls and each
         // one retries — the server gives up well before this does.
@@ -419,38 +439,36 @@ export function CheckoutIngameStep({
       Promise.race([verifyRiotAccount(trimmed, region), timedOut]).then((response) => {
         if (!response.ok) {
           lastRiotKeyRef.current = key;
-          setRiotChecking(false);
-          setRiotError(response.error);
-          setRiotResult(null);
+          setRiot({ key, status: "error", message: response.error });
           return;
         }
         const { result } = response;
+        // A found account rewrites the box to Riot's canonical casing, so the
+        // answer has to be filed under that spelling — otherwise the render
+        // below reads it as belonging to a different name and hides it.
+        let resultKey = key;
         if (result.status === "found") {
           const canonicalIgn = `${result.gameName}#${result.tagLine}`;
-          lastRiotKeyRef.current = `${canonicalIgn}|${region}`;
+          resultKey = `${canonicalIgn}|${region}`;
           setIgn(canonicalIgn);
           setRank(result.rank);
           setDivision(result.division);
-        } else {
-          lastRiotKeyRef.current = key;
         }
-        setRiotChecking(false);
-        setRiotResult(result);
+        lastRiotKeyRef.current = resultKey;
+        setRiot({ key: resultKey, status: "result", result });
       }).catch((err: unknown) => {
         lastRiotKeyRef.current = key;
-        setRiotChecking(false);
         // Deliberately distinct from the server's own failure text: the two
         // used to share one string, so there was no telling which side had
         // actually given up.
         const reason = err instanceof Error && err.message === "timeout" ? "timed out" : "couldn't be reached";
         console.error("[riot] client lookup failed", err);
-        setRiotError(`Lookup ${reason}. (client)`);
-        setRiotResult(null);
+        setRiot({ key, status: "error", message: `Lookup ${reason}. (client)` });
       });
     }, 650);
 
     return () => clearTimeout(timer);
-  }, [ign, region, gameSlug]);
+  }, [riotKey, ign, region]);
 
   function toggleRole(value: string) {
     setRoles((current) => (current.includes(value) ? current.filter((entry) => entry !== value) : [...current, value]));
@@ -512,16 +530,6 @@ export function CheckoutIngameStep({
   }
 
   const accentColor = (rank && RANK_COLORS[rank]) || "var(--accent)";
-
-  const riotFeedback = !RIOT_VERIFY_GAMES.has(gameSlug)
-    ? null
-    : riotChecking
-      ? "checking"
-      : riotError
-        ? "error"
-        : riotResult
-          ? "result"
-          : null;
 
   // A confirmed account settles the rank — including Unranked, which is a
   // real answer rather than a missing one — so asking for it again would
@@ -606,19 +614,17 @@ export function CheckoutIngameStep({
 
           {/* Outside the two-column grid above: cramped into one column the
               name, level and badge all wrapped onto their own lines. */}
-          {riotFeedback === "checking" && (
+          {riotFeedback?.status === "checking" && (
             <p className="riot-line">
               <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /> Looking up your account…
             </p>
           )}
-          {riotFeedback === "error" && (
+          {riotFeedback?.status === "error" && (
             <p className="riot-line is-error">
-              <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {riotError}
+              <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {riotFeedback.message}
             </p>
           )}
-          {riotFeedback === "result" && riotResult && (
-            <RiotResultCard result={riotResult} region={region} rankLabel={riotRankLabel} />
-          )}
+          {riotResult && <RiotResultCard result={riotResult} region={region} rankLabel={riotRankLabel} />}
 
           {rankOptions.length > 0 && !rankFromRiot && (
             <div className="form-row form-row--section">

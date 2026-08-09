@@ -4,7 +4,7 @@ import { Logo } from "@/components/brand/Logo";
 import { openInvite, inviteState } from "@/lib/teammateInvites";
 import { JoinForm } from "@/app/join/[token]/JoinForm";
 
-export const metadata: Metadata = { title: "Join TeamLink" };
+export const metadata: Metadata = { title: "Join QUP.gg" };
 export const dynamic = "force-dynamic";
 
 const DEAD_COPY: Record<string, { title: string; body: string }> = {
@@ -43,7 +43,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
           <h1>{copy.title}</h1>
           <p>{copy.body}</p>
           <Link href="/" className="btn btn--ghost btn--sm">
-            Back to TeamLink
+            Back to QUP.gg
           </Link>
         </div>
       </main>
@@ -59,7 +59,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
         </span>
         <h1>Create your teammate account</h1>
         <p>
-          You&rsquo;ve been invited to join the TeamLink roster. Pick your login below &mdash; you&rsquo;ll set up your
+          You&rsquo;ve been invited to join the QUP.gg roster. Pick your login below &mdash; you&rsquo;ll set up your
           games, languages and verification in the next step.
         </p>
 

@@ -316,24 +316,28 @@ function AssignControl({
   onAssign: (teammateId: string, name: string) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<
-    { id: string; name: string; rating: number; available: boolean; busy: boolean; games: string[] }[]
-  >([]);
+  const [results, setResults] = useState<{
+    term: string;
+    rows: { id: string; name: string; rating: number; available: boolean; busy: boolean; games: string[] }[];
+  }>({ term: "", rows: [] });
+
+  const term = query.trim();
+  // Results belong to the term they were fetched for. Kept together rather
+  // than cleared from the effect, so the list can never show one search's
+  // answers under another search's text.
+  const visibleResults = results.term === term ? results.rows : [];
 
   useEffect(() => {
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
+    if (term.length < 2) return;
     // Debounced: this fires per keystroke otherwise, against a LIKE query.
     const t = setTimeout(() => {
-      void fetch(`/api/admin/teammates/search?q=${encodeURIComponent(query.trim())}`, { cache: "no-store" })
+      void fetch(`/api/admin/teammates/search?q=${encodeURIComponent(term)}`, { cache: "no-store" })
         .then((res) => (res.ok ? res.json() : { teammates: [] }))
-        .then((data) => setResults(data.teammates ?? []))
-        .catch(() => setResults([]));
+        .then((data) => setResults({ term, rows: data.teammates ?? [] }))
+        .catch(() => setResults({ term, rows: [] }));
     }, 250);
     return () => clearTimeout(t);
-  }, [query]);
+  }, [term]);
 
   return (
     <div className="dispatch-tool">
@@ -348,10 +352,10 @@ function AssignControl({
         onChange={(event) => setQuery(event.target.value)}
       />
       <ul className="dispatch-tool__results">
-        {query.trim().length >= 2 && results.length === 0 && (
+        {term.length >= 2 && results.term === term && visibleResults.length === 0 && (
           <li className="dispatch-tool__empty">Nobody by that name.</li>
         )}
-        {results.map((teammate) => (
+        {visibleResults.map((teammate) => (
           <li key={teammate.id}>
             <span className="dispatch-tool__name">{teammate.name}</span>
             <span className="dispatch-tool__flags">

@@ -21,18 +21,18 @@ const bebasNeue = Bebas_Neue({
   variable: "--font-display",
 });
 
-// PLACEHOLDER — the name and domain aren't settled (teamlink.gg is taken), so
-// this points at the subdomain the site runs on today. It only needs to be a
-// valid absolute URL: every relative OG/Twitter image is resolved against it,
-// and without it Next.js falls back to localhost and link previews break.
-// Swap the literal (or set APP_URL) once the real domain is decided.
+// The name is settled (QUP.gg) but this still points at the host the site
+// actually answers on. Every relative OG/Twitter image is resolved against it,
+// so it has to be a domain that is really serving — pointing it at one whose
+// DNS hasn't landed yet doesn't fail loudly, it just makes every link preview
+// come up blank. Set APP_URL, or swap the literal, the day qup.gg is live.
 const siteUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? "https://gaming.lolboost.gg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "TeamLink.gg: find your next teammate today",
-    template: "%s | TeamLink.gg",
+    default: "QUP.gg — Ready. Queue. Play.",
+    template: "%s | QUP.gg",
   },
   description: "Book a skilled, verified teammate to play with in under two minutes.",
 };

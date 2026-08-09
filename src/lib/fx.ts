@@ -35,7 +35,7 @@ export interface FxSnapshot {
 
 const WANTED = new Set(CURRENCIES.map((entry) => entry.code));
 
-const globalForFx = globalThis as unknown as { teamlinkFx?: FxSnapshot; teamlinkFxInflight?: Promise<FxSnapshot> };
+const globalForFx = globalThis as unknown as { qupFx?: FxSnapshot; qupFxInflight?: Promise<FxSnapshot> };
 
 function fallback(): FxSnapshot {
   return {
@@ -69,12 +69,12 @@ function parse(xml: string): { rates: RateTable; date: string | null } {
 }
 
 export async function getFxSnapshot(): Promise<FxSnapshot> {
-  const cached = globalForFx.teamlinkFx;
+  const cached = globalForFx.qupFx;
   if (cached && Date.now() - cached.fetchedAt < REFRESH_MS) return cached;
   // Collapses a burst of concurrent requests into one upstream fetch.
-  if (globalForFx.teamlinkFxInflight) return globalForFx.teamlinkFxInflight;
+  if (globalForFx.qupFxInflight) return globalForFx.qupFxInflight;
 
-  globalForFx.teamlinkFxInflight = (async () => {
+  globalForFx.qupFxInflight = (async () => {
     try {
       const response = await fetch(ECB_URL, {
         next: { revalidate: 21_600 },
@@ -87,18 +87,18 @@ export async function getFxSnapshot(): Promise<FxSnapshot> {
       if (Object.keys(rates).length < 5) throw new Error("ECB payload had too few rates");
 
       const snapshot: FxSnapshot = { rates: { ...fallback().rates, ...rates }, date, source: "ECB", fetchedAt: Date.now() };
-      globalForFx.teamlinkFx = snapshot;
+      globalForFx.qupFx = snapshot;
       return snapshot;
     } catch {
       // Serve the previous snapshot if we have one, otherwise the static
       // table. A currency switcher must never be the reason a page fails.
-      const previous = globalForFx.teamlinkFx;
+      const previous = globalForFx.qupFx;
       if (previous) return { ...previous, fetchedAt: Date.now() };
       return fallback();
     } finally {
-      globalForFx.teamlinkFxInflight = undefined;
+      globalForFx.qupFxInflight = undefined;
     }
   })();
 
-  return globalForFx.teamlinkFxInflight;
+  return globalForFx.qupFxInflight;
 }

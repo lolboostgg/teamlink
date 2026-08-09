@@ -79,12 +79,17 @@ export function BookingWidget({ game }: Props) {
   // the previous game has to be reset here — otherwise switching from LoL
   // to a game without a "Ranked" category could leave `selected` pointing
   // at an option that's no longer in the visible list at all.
-  useEffect(() => {
+  //
+  // During render, not in an effect: the effect reset ran after the new game
+  // had already painted once, so switching games flashed the previous game's
+  // mode and price for a frame before correcting itself.
+  const [bookedSlug, setBookedSlug] = useState(game.slug);
+  if (bookedSlug !== game.slug) {
+    setBookedSlug(game.slug);
     setActiveCategory(bookingCategories[0].category);
     setSelected(bookingCategories[0].options[0]);
     setGroupSize(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.slug]);
+  }
 
   // Picking a 1-on-1 mode (Duo, Coach, ...) after having raised the group
   // size on a Flex-style mode must not silently keep booking (and pricing)

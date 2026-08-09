@@ -20,6 +20,8 @@
  * their own names as alt text. See SOCIALS.
  */
 
+import { COMPANY, SOCIALS as COMPANY_SOCIALS } from "@/lib/company";
+
 const BG = "#060811";
 const CARD = "#0d1120";
 const PANEL = "#131829";
@@ -34,22 +36,6 @@ const GOLD = "#f5b301";
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,Helvetica,sans-serif";
 
 /**
- * Who is writing, and from where.
- *
- * Transactional mail into the EU and UK is expected to identify its sender,
- * and a footer naming a real company at a real address is also the cheapest
- * thing you can do both for deliverability and for a reader deciding whether
- * this is a phishing attempt.
- */
-const COMPANY = {
-  legalName: "LB Gaming Services LTD",
-  address: "71-75 Shelton Street, London, United Kingdom",
-  site: "https://gaming.lolboost.gg",
-  discord: "https://discord.gg/lolboost",
-  support: "support@lolboost.gg",
-};
-
-/**
  * `icon` is a hosted PNG, deliberately.
  *
  * An icon font cannot work here — mail clients drop external stylesheets and
@@ -62,12 +48,7 @@ const COMPANY = {
  * Images are also the one thing a client may refuse to load at all, so each
  * link carries its name as alt text and reads as a word if nothing arrives.
  */
-const SOCIALS: { label: string; url: string; icon: string }[] = [
-  { label: "Discord", url: COMPANY.discord, icon: "discord" },
-  { label: "Instagram", url: "https://instagram.com/lolboost.gg", icon: "instagram" },
-  { label: "TikTok", url: "https://tiktok.com/@lolboost.gg", icon: "tiktok" },
-  { label: "X", url: "https://x.com/lolboostgg", icon: "x" },
-];
+const SOCIALS = COMPANY_SOCIALS;
 
 function escapeHtml(value: string): string {
   return value
@@ -176,7 +157,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
     (social) =>
       `<td style="padding:0 7px;">
          <a href="${social.url}" style="text-decoration:none;" title="${escapeHtml(social.label)}">
-           <img src="${COMPANY.site}/email/social/${social.icon}.png" width="20" height="20" alt="${escapeHtml(social.label)}"
+           <img src="${COMPANY.site}/email/social/${social.key}.png" width="20" height="20" alt="${escapeHtml(social.label)}"
                 style="display:block;width:20px;height:20px;border:0;outline:none;color:${MUTED};font-size:11px;font-weight:700;">
          </a>
        </td>`,
@@ -206,11 +187,15 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
             </tr>
             <tr>
               <td align="center" style="padding:28px 30px 0;font-family:${FONT};">
+                <!-- Still set as type, not the brand PNG: see the note at the
+                     top of this file. A masthead built from a remote image is
+                     a broken-image icon exactly where the brand should be, for
+                     every reader whose client blocks images on first open. -->
                 <div style="font-size:26px;font-weight:900;letter-spacing:-.02em;color:${TEXT};">
-                  TeamLink<span style="color:${CYAN};">.GG</span>
+                  QUP<span style="color:${CYAN};">.GG</span>
                 </div>
                 <div style="margin-top:5px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${FAINT};">
-                  Find your next teammate
+                  Ready. Queue. Play.
                 </div>
               </td>
             </tr>
@@ -479,7 +464,7 @@ export function plainNoticeMail(input: {
     heading: input.heading,
     intro: input.body,
     rows: [],
-    ctaLabel: "Open TeamLink",
+    ctaLabel: "Open QUP.gg",
     ctaUrl: input.url,
     footnote: input.name
       ? `Sent to ${input.name} because it affects your account. You can turn these off in your notification settings.`

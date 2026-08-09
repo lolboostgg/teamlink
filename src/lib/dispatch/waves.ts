@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { ranksForGame } from "@/lib/gameRanks";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
+import { PRESENCE_MAX_AGE_MS } from "@/lib/dispatch/presence";
 
 /**
  * Wave dispatch.
@@ -51,21 +52,11 @@ export const WAVE_WINDOW_MS = 15_000;
  */
 export const POOL_RETRY_MS = 15_000;
 
-/**
- * How stale a teammate's last beat may be and still count as online.
- *
- * The online switch alone is not enough to go on: somebody flips it, shuts
- * the laptop, and stays online forever. The panel beats every 45s (see
- * useDispatchState); this allows several missed beats, because browsers
- * throttle timers in a background tab and a teammate waiting for work
- * usually has the dashboard behind whatever they are doing meanwhile.
- *
- * Generous, deliberately. A wave costs fifteen seconds to discover that
- * somebody isn't there, and the dispatcher moves on by itself — so inviting
- * one stale teammate is cheap, while wrongly excluding a real one who was
- * simply in a background tab is not.
- */
-const HEARTBEAT_MAX_AGE_MS = 180_000;
+// Who counts as being at their desk is one question with one answer — the
+// same one the idle clock restarts on (lib/dispatch/presence.ts). If these
+// two ever disagreed, a teammate could sit accruing "time waiting" for a
+// dispatcher that had already written them off as gone.
+const HEARTBEAT_MAX_AGE_MS = PRESENCE_MAX_AGE_MS;
 
 type Client = Prisma.TransactionClient | typeof prisma;
 

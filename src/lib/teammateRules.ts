@@ -20,7 +20,7 @@ export const TEAMMATE_RULES: RuleGroup[] = [
       "Do not be toxic or derogatory toward anyone in the game — teammates, opponents or the customer.",
       "Do not complete the order without saying anything to the customer after the last game is finished.",
       "Reply within a few minutes while an order is running. If you have to step away, say so first.",
-      "Keep it on TeamLink. Asking a customer to pay or book outside the platform ends the account.",
+      "Keep it on QUP.gg. Asking a customer to pay or book outside the platform ends the account.",
     ],
   },
   {

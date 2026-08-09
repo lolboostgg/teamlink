@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { getTeammateDispatchView, MAX_CANDIDATES } from "@/lib/dispatch/service";
 import { deriveServerPhase } from "@/lib/dispatch/phase";
+import { presenceUpdate } from "@/lib/dispatch/presence";
 
 export const dynamic = "force-dynamic";
 
@@ -21,14 +22,19 @@ export async function GET() {
   const now = new Date();
   // The live poll doubles as a throttled panel heartbeat. This distinguishes
   // a genuinely open panel from an account whose online toggle was left on.
+  //
+  // Throttled, but the decision itself is made from the row we already hold,
+  // so noticing that the panel was away costs nothing. It has to be made here
+  // as well as in the heartbeat endpoint: both fire when the dashboard mounts,
+  // and whichever the server sees first is the one that has to catch it.
+  let availableSince = teammate.availableSince;
   if (!teammate.lastSeenAt || now.getTime() - teammate.lastSeenAt.getTime() >= 15_000) {
-    await prisma.teammate.update({
-      where: { id: teammate.id },
-      data: {
-        lastSeenAt: now,
-        ...(teammate.available && !teammate.availableSince ? { availableSince: now } : {}),
-      },
-    });
+    const data = presenceUpdate(teammate, now);
+    await prisma.teammate.update({ where: { id: teammate.id }, data });
+    // Read back from what we just wrote, not from the row as it was loaded:
+    // the poll that notices the panel is back is the same poll that has to
+    // report the restarted clock, or it shows the old figure once more first.
+    if (data.availableSince) availableSince = data.availableSince;
   }
 
   const rows = await getTeammateDispatchView(teammate.id);
@@ -39,7 +45,7 @@ export async function GET() {
   // been waiting six hours, and a clock that says otherwise turns "time
   // waiting" into "time the tab was open" — which is neither what the
   // teammate wants to know nor what the dispatcher rewards.
-  const waitingSince = [teammate.availableSince, teammate.lastAssignedAt]
+  const waitingSince = [availableSince, teammate.lastAssignedAt]
     .filter((date): date is Date => Boolean(date))
     .sort((a, b) => b.getTime() - a.getTime())[0];
 

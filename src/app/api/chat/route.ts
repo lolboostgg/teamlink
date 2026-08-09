@@ -6,8 +6,8 @@ import { publish } from "@/lib/events/bus";
 export const dynamic = "force-dynamic";
 
 type ChatSide = "client" | "teammate" | "admin";
-const globalPresence = globalThis as typeof globalThis & { teamlinkChatTyping?: Map<string, Partial<Record<ChatSide, number>>> };
-const typingPresence = globalPresence.teamlinkChatTyping ??= new Map();
+const globalPresence = globalThis as typeof globalThis & { qupChatTyping?: Map<string, Partial<Record<ChatSide, number>>> };
+const typingPresence = globalPresence.qupChatTyping ??= new Map();
 
 interface ConversationAccess {
   /** Which side the reader is *on this order* — null when they aren't on it at all. */

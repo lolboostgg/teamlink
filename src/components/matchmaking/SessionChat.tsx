@@ -107,10 +107,11 @@ export function SessionChat({
     };
   }, [conversationKey, messages.length, otherTyping]);
 
+  const lastMessageId = messages.at(-1)?.id;
   useEffect(() => {
     const frame = requestAnimationFrame(() => endRef.current?.scrollIntoView({ block: "end" }));
     return () => cancelAnimationFrame(frame);
-  }, [conversationKey, messages.at(-1)?.id, otherTyping]);
+  }, [conversationKey, lastMessageId, otherTyping]);
 
   useEffect(() => {
     markConversationRead(conversationKey, viewer);

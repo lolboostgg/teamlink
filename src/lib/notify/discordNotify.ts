@@ -17,7 +17,7 @@
  */
 
 const API = "https://discord.com/api/v10";
-const USER_AGENT = "TeamLink (https://gaming.lolboost.gg, 1.0)";
+const USER_AGENT = "QUP.gg (https://gaming.lolboost.gg, 1.0)";
 
 export interface DiscordEmbedField {
   name: string;
@@ -36,7 +36,7 @@ export interface DiscordMessage {
   color?: number;
 }
 
-/** TeamLink accent (#4066ff) as Discord wants it. */
+/** The QUP.gg accent (#4066ff) as Discord wants it. */
 export const ACCENT = 0x4066ff;
 
 function buildPayload(message: DiscordMessage) {

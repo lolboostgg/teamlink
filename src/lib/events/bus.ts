@@ -19,7 +19,15 @@ import { Client } from "pg";
  * which keeps authorization in exactly one place.
  */
 
-export const PG_CHANNEL = "teamlink_events";
+/**
+ * Both ends of LISTEN/NOTIFY have to name the same channel, so instances
+ * running either side of a rename don't hear each other: during the rollout
+ * that changes this string, cross-instance delivery falls back to local-only
+ * until the last old instance is gone. Harmless — the polling fallback in
+ * useLiveSync covers exactly this — but it is why the name is a constant and
+ * not spelled out at both call sites.
+ */
+export const PG_CHANNEL = "qup_events";
 
 export type EventTopic = "orders" | "notifications" | "chat" | "dispatch";
 
@@ -40,17 +48,17 @@ type Bus = {
   publisher?: Client;
 };
 
-const globalForBus = globalThis as unknown as { teamlinkBus?: Bus };
+const globalForBus = globalThis as unknown as { qupBus?: Bus };
 
 function bus(): Bus {
-  if (!globalForBus.teamlinkBus) {
+  if (!globalForBus.qupBus) {
     const emitter = new EventEmitter();
     // One process can hold many concurrent SSE streams; the default cap of 10
     // would log a spurious leak warning well before that is a real problem.
     emitter.setMaxListeners(0);
-    globalForBus.teamlinkBus = { emitter };
+    globalForBus.qupBus = { emitter };
   }
-  return globalForBus.teamlinkBus;
+  return globalForBus.qupBus;
 }
 
 function dispatchLocally(event: LiveEvent) {

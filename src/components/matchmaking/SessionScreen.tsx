@@ -112,7 +112,6 @@ export function SessionScreen({ orderId, accessToken }: Props) {
     if (order?.status !== "completed") return;
     let cancelled = false;
     void loadTip(order.id).then((tip) => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (tip && !cancelled) setTipSent(tip.amountEUR);
     });
     return () => {
@@ -409,11 +408,11 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                 <i className="fa-solid fa-star" aria-hidden="true" />
               </span>
               <div className="session-complete__review-label">Review us on Trustpilot</div>
-              <div className="session-complete__trustpilot-title">How was your TeamLink experience?</div>
+              <div className="session-complete__trustpilot-title">How was your QUP.gg experience?</div>
               <p className="session-complete__discount-sub">Your feedback helps players find teammates they can trust.</p>
               <div className="session-complete__stars session-complete__stars--trustpilot">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <a key={n} href="https://www.trustpilot.com/evaluate/lolboost.gg" target="_blank" rel="noreferrer" aria-label={`Review TeamLink with ${n} stars`}>
+                  <a key={n} href="https://www.trustpilot.com/evaluate/lolboost.gg" target="_blank" rel="noreferrer" aria-label={`Review QUP.gg with ${n} stars`}>
                     <i className="fa-solid fa-star" aria-hidden="true" />
                   </a>
                 ))}

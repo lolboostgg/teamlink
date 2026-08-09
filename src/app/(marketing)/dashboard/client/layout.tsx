@@ -8,7 +8,7 @@ import { ClientDashboardContent } from "@/components/dashboard/client/ClientDash
 // Unlike the admin/teammate dashboards (src/app/dashboard/layout.tsx), the
 // client dashboard has no shell of its own — it lives inside the real
 // site's Header/Footer (see (marketing)/layout.tsx) with just a tab strip
-// for its own sub-pages, so it reads as part of teamlink.gg rather than a
+// for its own sub-pages, so it reads as part of qup.gg rather than a
 // separate walled-off panel.
 export default async function ClientDashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();

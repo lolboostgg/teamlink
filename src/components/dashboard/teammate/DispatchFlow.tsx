@@ -8,11 +8,11 @@ import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { withdrawDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { useToast } from "@/components/ui/ToastProvider";
 
-const NOT_SELECTED_ACK_KEY = "teamlink:acknowledged-not-selected";
+const NOT_SELECTED_ACK_KEY = "qup:acknowledged-not-selected";
 // Orders we've already sent the teammate into the session room for. Without
 // this the redirect below re-fires on every navigation, which locks them
 // inside the session room for as long as the order sits in ASSIGNED.
-const SESSION_ROUTED_KEY = "teamlink:routed-to-session";
+const SESSION_ROUTED_KEY = "qup:routed-to-session";
 
 function acknowledgedItems(key: string): string[] {
   if (typeof window === "undefined") return [];
@@ -68,8 +68,6 @@ export function DispatchFlow() {
   // routed once" marker is stored under, so an order that changes neither
   // still counts as the same one.
   const stateOrderNo = state.order?.orderNo;
-  const stateOrderGameName = state.order?.gameName;
-  const stateOrderOption = state.order?.option;
 
   // The incoming-request modal is gone. Requests are answered in one place —
   // /dashboard/teammate/requests — and nothing else announces them: a dialog

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useDispatchState } from "@/lib/dispatch/useDispatchState";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
@@ -47,10 +47,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user?.id);
-  const { phase, order, refresh } = useDispatchState(session?.user?.role === "TEAMMATE");
+  const { phase, order, refresh, fetchedAt } = useDispatchState(session?.user?.role === "TEAMMATE");
   const [stored, setStored] = useState<FeedNotification[]>([]);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
-  const [announced, setAnnounced] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  // Which notification has already had its sound, and whether the feed has
+  // settled after the first read. Refs, not state: nothing on screen depends
+  // on them, and as state they only caused a second render per poll.
+  const announcedRef = useRef<string | null>(null);
+  const adoptedRef = useRef(false);
 
   const load = useCallback(async () => {
     if (!signedIn) return;
@@ -59,6 +64,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const data = await res.json();
       setStored(data.notifications ?? []);
+      setLoaded(true);
     } catch {
       // A dropped poll is not worth surfacing; the next tick retries.
     }
@@ -77,15 +83,25 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }
 
   // A newly arrived unread notification gets one sound, not one per poll.
+  //
+  // The backlog waiting at sign-in is adopted silently — nobody wants a burst
+  // of chimes for things that happened yesterday. That used to be keyed on the
+  // first notification ever seen, which meant an account arriving with an empty
+  // feed swallowed the sound of its *first real* notification too; it is keyed
+  // on the first completed read now, so only the backlog is quiet.
   useEffect(() => {
+    if (!loaded) return;
     const newest = stored.find((n) => !n.read);
-    if (!newest || announced === newest.id) return;
-    if (announced !== null) {
-      playSound(soundForType(newest.type));
-      if (newest.type === "order.completed") showToast(newest.body || newest.title, "success");
+    if (!adoptedRef.current) {
+      adoptedRef.current = true;
+      announcedRef.current = newest?.id ?? null;
+      return;
     }
-    setAnnounced(newest.id);
-  }, [stored, announced, showToast]);
+    if (!newest || announcedRef.current === newest.id) return;
+    announcedRef.current = newest.id;
+    playSound(soundForType(newest.type));
+    if (newest.type === "order.completed") showToast(newest.body || newest.title, "success");
+  }, [stored, loaded, showToast]);
 
   const notifications: FeedNotification[] = useMemo(() => {
     const invite: FeedNotification[] =
@@ -98,13 +114,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
               body: `${order.customerLabel} · ${order.option}`,
               href: null,
               read: false,
-              createdAt: Date.now(),
+              // The read that surfaced this invite, rather than a clock read
+              // during render. An invite lives for seconds, so "as of the last
+              // poll" is as good as exact and doesn't drift on every re-render.
+              createdAt: fetchedAt,
               actionable: true,
             },
           ]
         : [];
     return [...invite, ...stored];
-  }, [phase, order, stored]);
+  }, [phase, order, stored, fetchedAt]);
 
   const unreadCount = notifications.filter((n) => !n.read && !seenIds.has(n.id)).length;
 
@@ -125,7 +144,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       accept: (id) => respondToDispatchAction(id, true).then(refresh),
       decline: (id) => respondToDispatchAction(id, false).then(refresh),
     }),
-    [notifications, refresh, load],
+    // `unreadCount` also depends on `seenIds`, which nothing else here does:
+    // leaving it out froze the bell's badge on the count from the last time
+    // `notifications` changed, so dismissing one didn't clear it.
+    [notifications, unreadCount, refresh, load],
   );
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

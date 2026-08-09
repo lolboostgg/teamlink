@@ -27,7 +27,10 @@ export async function beginTwoFactorSetup() {
   const session = await auth();
   if (!session?.user?.id || !session.user.email) throw new Error("You need to be signed in.");
   const secret = createTwoFactorSecret();
-  return { secret, uri: `otpauth://totp/TeamLink:${encodeURIComponent(session.user.email)}?secret=${secret}&issuer=TeamLink&digits=6&period=30` };
+  // Label and issuer are what the authenticator app lists the entry under.
+  // Only new enrolments are affected — the secret is what verifies a code, so
+  // anyone already set up keeps working under the old name until they re-add.
+  return { secret, uri: `otpauth://totp/QUP.gg:${encodeURIComponent(session.user.email)}?secret=${secret}&issuer=QUP.gg&digits=6&period=30` };
 }
 
 export async function enableTwoFactor(input: { secret: string; code: string }) {

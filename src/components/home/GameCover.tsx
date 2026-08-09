@@ -30,6 +30,10 @@ export function GameCover({ game, showName, compact, className, iconMode }: Prop
       style={style}
     >
       {!broken && (
+        // Local art that is already the size it renders at — 285×380-ish
+        // banners, 40×40 icons, all webp/png. next/image would add an
+        // optimizer round-trip per request and hand back the same bytes.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           className={iconMode ? "game-cover__icon-img" : "game-cover__img"}
           src={iconMode ? gameIcon(game.slug) : localGameBanner(game.slug)}

@@ -39,10 +39,10 @@ const CUES: Record<string, { tones: Tone[]; type?: OscillatorType }> = {
 
 export type SoundName = keyof typeof CUES;
 
-const MUTE_KEY = "teamlink-sounds-muted";
+const MUTE_KEY = "qup-sounds-muted";
 /** Fired when the preference changes, so a toggle anywhere on the page
  * updates every other copy of it. */
-export const SOUND_PREF_EVENT = "teamlink-sound-pref";
+export const SOUND_PREF_EVENT = "qup-sound-pref";
 
 export function soundsEnabled(): boolean {
   if (typeof window === "undefined") return true;

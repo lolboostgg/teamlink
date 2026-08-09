@@ -41,7 +41,7 @@ function getTransport(): Transporter | null {
 
 /** Display name + address the mails come from. */
 function from(): string {
-  return process.env.SMTP_FROM || `TeamLink <${process.env.SMTP_USER}>`;
+  return process.env.SMTP_FROM || `QUP.gg <${process.env.SMTP_USER}>`;
 }
 
 interface MailInput {

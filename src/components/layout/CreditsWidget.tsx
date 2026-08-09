@@ -42,11 +42,10 @@ export function CreditsWidget() {
   // it — a booking, a tip, a replay — or being refunded left the header
   // showing a stale figure until the next full reload. Orders are what move
   // it, and the fallback poll covers the changes that publish nothing.
+  // Reads once on mount too — usePoll runs its task immediately — so there is
+  // no separate mount effect here; there used to be, and it made every page
+  // load ask for the balance twice.
   useLiveSync("orders", loadBalance, 20_000);
-
-  useEffect(() => {
-    void loadBalance();
-  }, [loadBalance]);
 
   useEffect(() => {
     if (!open) return;

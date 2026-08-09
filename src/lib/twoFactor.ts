@@ -6,6 +6,11 @@ export type TwoFactorRecord = { enabled: true; secret: string };
 export type LoginActivityRecord = { ip: string; device: string; location: string; at: string };
 
 function encryptionKey() {
+  // Deliberately NOT renamed with the rest of the brand. This string is key
+  // material, not a label: it is what every stored 2FA secret was encrypted
+  // under on any machine that never set AUTH_SECRET, and changing it would
+  // turn those secrets into undecryptable bytes rather than into a new name.
+  // Production sets AUTH_SECRET, so the literal only ever backs local dev.
   return createHash("sha256").update(process.env.AUTH_SECRET ?? "teamlink-development-secret").digest();
 }
 

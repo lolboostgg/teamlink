@@ -44,7 +44,15 @@ export function SidebarAccountMenu({
   // nowhere the teammate could see it — the balance was the one thing on the
   // panel that needed a reload to be true.
   const [balanceEUR, setBalanceEUR] = useState(initialBalanceEUR);
-  useEffect(() => setBalanceEUR(initialBalanceEUR), [initialBalanceEUR]);
+  // Re-seeding on a new server render, done during render rather than in an
+  // effect: the effect painted one frame of the old figure first, which on a
+  // navigation right after an order closed is exactly the number that had just
+  // stopped being true.
+  const [seededFrom, setSeededFrom] = useState(initialBalanceEUR);
+  if (seededFrom !== initialBalanceEUR) {
+    setSeededFrom(initialBalanceEUR);
+    setBalanceEUR(initialBalanceEUR);
+  }
 
   const hasBalance = initialBalanceEUR !== null;
   const loadBalance = useCallback(async () => {

@@ -132,7 +132,7 @@ export async function deliverExternally(userId: string, notice: Notice): Promise
           description: notice.body ?? "",
           fields: notice.fields,
           linkUrl: url,
-          linkLabel: "Open TeamLink",
+          linkLabel: "Open QUP.gg",
           color: look.color,
         }),
       );

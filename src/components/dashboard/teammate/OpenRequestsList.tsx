@@ -97,8 +97,15 @@ function RequestCard({
   onRespond: (orderId: string, accept: boolean) => void;
 }) {
   const { order, msLeft, acceptedCount } = request;
+  // Counts down locally between reads, and re-seeds whenever the server sends
+  // a fresh figure — during render, so a card never shows a second of the
+  // previous poll's clock after a new one has arrived.
   const [left, setLeft] = useState(msLeft);
-  useEffect(() => setLeft(msLeft), [msLeft]);
+  const [seededFrom, setSeededFrom] = useState(msLeft);
+  if (seededFrom !== msLeft) {
+    setSeededFrom(msLeft);
+    setLeft(msLeft);
+  }
   useEffect(() => {
     const t = setInterval(() => setLeft((value) => Math.max(0, value - 1000)), 1000);
     return () => clearInterval(t);
@@ -190,13 +197,16 @@ function IdlePanel({
   offline: boolean;
 }) {
   // Measured against the server's clock at the last read and advanced
-  // locally, so a browser running behind doesn't invent waiting time.
-  const skew = serverNow ? serverNow - Date.now() : 0;
-  const [now, setNow] = useState(() => Date.now() + skew);
+  // locally, so a browser running behind doesn't invent waiting time. The
+  // skew is taken inside the effect: comparing clocks during render made the
+  // offset depend on when React happened to re-render, which is the one thing
+  // it must not depend on.
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
+    const skew = serverNow ? serverNow - Date.now() : 0;
     const t = setInterval(() => setNow(Date.now() + skew), 1000);
     return () => clearInterval(t);
-  }, [skew]);
+  }, [serverNow]);
 
   if (offline || !waitingSince) {
     return (
@@ -239,6 +249,10 @@ function AlertPermission() {
   const [state, setState] = useState<NotificationPermission | "unsupported">("granted");
 
   useEffect(() => {
+    // Deliberate: the permission only exists in the browser, so it cannot be
+    // read during the server render or as an initial value without a
+    // hydration mismatch. Same one-time correction as PromoBanner.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
   }, []);
 

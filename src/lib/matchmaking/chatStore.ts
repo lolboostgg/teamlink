@@ -20,9 +20,9 @@ export interface ChatMessage {
   readBy?: ("client" | "teammate" | "admin")[];
 }
 
-const KEY = "teamlink:chat-messages";
-const CHANNEL_NAME = "teamlink-chat";
-const PRESENCE_KEY = "teamlink:chat-presence";
+const KEY = "qup:chat-messages";
+const CHANNEL_NAME = "qup-chat";
+const PRESENCE_KEY = "qup:chat-presence";
 let channel: BroadcastChannel | null = null;
 
 function getChannel(): BroadcastChannel | null {
@@ -101,7 +101,7 @@ async function persistMessage(message: ChatMessage): Promise<void> {
 function dropMessage(key: string, id: string): void {
   if (typeof window === "undefined") return;
   writeAll(readAll().filter((m) => m.id !== id));
-  window.dispatchEvent(new CustomEvent("teamlink-chat-rejected", { detail: { key, id } }));
+  window.dispatchEvent(new CustomEvent("qup-chat-rejected", { detail: { key, id } }));
 }
 
 export function sendChatMessage(key: string, from: "client" | "teammate" | "admin", text: string): void {

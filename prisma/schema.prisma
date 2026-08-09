@@ -10,9 +10,9 @@ datasource db {
   provider = "postgresql"
 }
 
-// Real accounts — replaces the mock "teamlink:authenticated" localStorage
-// flag once auth is wired up (phase 2). Nullable relations to Order/Review
-// below let those keep working before every caller has a real User yet.
+// Real accounts, backing NextAuth. Nullable relations to Order/Review below
+// are what let a guest check out without one — not a leftover from the mock
+// auth this replaced.
 model User {
   id                 String   @id @default(cuid())
   // Human-facing account number (#813), handed out in registration order to

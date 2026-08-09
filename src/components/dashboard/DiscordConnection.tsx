@@ -19,7 +19,7 @@ export interface DiscordConnectionProps {
 const STATUS_MESSAGES: Record<string, { text: string; tone: "success" | "error" }> = {
   linked: { text: "Discord connected.", tone: "success" },
   cancelled: { text: "Discord connection cancelled.", tone: "error" },
-  already_linked: { text: "That Discord account is already linked to another TeamLink account.", tone: "error" },
+  already_linked: { text: "That Discord account is already linked to another QUP.gg account.", tone: "error" },
   invalid_state: { text: "That link expired — please try again.", tone: "error" },
   not_configured: { text: "Discord isn't set up on the server yet.", tone: "error" },
   error: { text: "Couldn't reach Discord. Please try again.", tone: "error" },

@@ -11,6 +11,8 @@ import { TeammateSidebarProfile, type TeammateSidebarData } from "@/components/d
 // ClientDashboardNav.tsx) — it no longer uses this shell/sidebar at all.
 type ShellRole = "admin" | "teammate";
 
+const COLLAPSED_KEY = "qup:dashboard-sidebar-collapsed";
+
 const ONBOARDING_HREF = "/dashboard/teammate/onboarding";
 // Kept in step with ONBOARDING_ALLOWED_PATHS in lib/teammateOnboarding.ts —
 // these are the pages the checklist itself links to.
@@ -69,11 +71,21 @@ export function DashboardSidebar({
       ? [{ href: ONBOARDING_HREF, label: "Finish setup", icon: "fa-solid fa-list-check" }, ...baseSections]
       : baseSections;
 
-  useEffect(() => setCollapsed(window.localStorage.getItem("teamlink:dashboard-sidebar-collapsed") === "true"), []);
+  // Starts expanded and corrects on mount: localStorage does not exist during
+  // the server render, and guessing wrong there is a hydration mismatch on
+  // every load. The storage listener carries the choice between tabs, which is
+  // the whole point of persisting it in the first place.
+  useEffect(() => {
+    const sync = () => setCollapsed(window.localStorage.getItem(COLLAPSED_KEY) === "true");
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
   function toggleCollapsed() {
     setCollapsed((current) => {
       const next = !current;
-      window.localStorage.setItem("teamlink:dashboard-sidebar-collapsed", String(next));
+      window.localStorage.setItem(COLLAPSED_KEY, String(next));
       return next;
     });
   }

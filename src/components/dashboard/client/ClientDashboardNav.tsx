@@ -13,7 +13,7 @@ const SECTIONS = [
 
 // Sits right under the real site header instead of a separate dashboard
 // shell — this is the client dashboard's only chrome of its own, a plain
-// tab strip, so the page still reads as part of teamlink.gg rather than a
+// tab strip, so the page still reads as part of qup.gg rather than a
 // walled-off admin panel.
 export function ClientDashboardNav() {
   const pathname = usePathname();

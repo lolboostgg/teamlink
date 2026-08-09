@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-const KEY = "teamlink:lastGame";
+const KEY = "qup:lastGame";
 
 export function setLastGameSlug(slug: string): void {
   try {

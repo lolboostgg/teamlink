@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { DispatchStateView } from "@/lib/dispatch/phase";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 
@@ -50,7 +50,10 @@ const HEARTBEAT_MS = 45_000;
 export function useDispatchState(enabled = true) {
   const [state, setState] = useState(EMPTY);
   const [error, setError] = useState<string | null>(null);
-  const lastFetch = useRef(Date.now());
+  // When `state` was read. State rather than a ref because the countdown below
+  // is computed during render, and a ref read there is both a rule violation
+  // and a genuine staleness trap — a ref written after a poll doesn't re-render.
+  const [fetchedAt, setFetchedAt] = useState(0);
 
   const load = useCallback(async () => {
     if (!enabled) return;
@@ -58,7 +61,7 @@ export function useDispatchState(enabled = true) {
       const res = await fetch("/api/dispatch/state", { cache: "no-store" });
       if (!res.ok) return;
       const data = (await res.json()) as StateResponse;
-      lastFetch.current = Date.now();
+      setFetchedAt(Date.now());
       setState({ ...EMPTY, ...data });
     } catch {
       // A dropped poll is not worth surfacing — the next tick retries.
@@ -109,11 +112,14 @@ export function useDispatchState(enabled = true) {
     return () => clearInterval(t);
   }, [urgent]);
 
-  const msLeft = urgent ? Math.max(0, state.msLeft - (now - lastFetch.current)) : state.msLeft;
+  const msLeft = urgent && fetchedAt ? Math.max(0, state.msLeft - (now - fetchedAt)) : state.msLeft;
 
   return {
     ...state,
     msLeft,
+    /** When the server was last read — a timestamp callers can date live
+     * dispatch state by without reaching for a clock during render. */
+    fetchedAt,
     error,
     setError,
     refresh: load,

@@ -33,10 +33,13 @@ export function OrdersStatusSelect({ name, value, options, onChange }: Props) {
     return () => document.removeEventListener("mousedown", close);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
+  // Opening puts the keyboard cursor on whatever is currently selected. Done
+  // here rather than in an effect, so the first frame of the open menu already
+  // highlights the right row.
+  function openMenu() {
     setActiveIndex(Math.max(0, options.findIndex((option) => option.value === currentValue)));
-  }, [currentValue, open, options]);
+    setOpen(true);
+  }
 
   function select(index: number) {
     const option = options[index];
@@ -53,7 +56,7 @@ export function OrdersStatusSelect({ name, value, options, onChange }: Props) {
     }
     if (!open && ["Enter", " ", "ArrowDown"].includes(event.key)) {
       event.preventDefault();
-      setOpen(true);
+      openMenu();
       return;
     }
     if (!open) return;
@@ -77,7 +80,7 @@ export function OrdersStatusSelect({ name, value, options, onChange }: Props) {
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listId}
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={handleKeyDown}
       >
         <span className="orders-status-select__label">Status</span>

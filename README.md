@@ -1,6 +1,10 @@
-# TeamLink.gg
+# QUP.gg
+
+**Ready. Queue. Play.**
 
 A duo-teammate booking platform — book a skilled, verified teammate to play with in under two minutes. Inspired by [tapin.gg](https://tapin.gg) and [eloboost.gg](https://eloboost.gg), built as a standalone Next.js project (not a migration of any existing site).
+
+The name is short for *Queue Up*. It was called TeamLink.gg until that domain turned out to be taken; the brand marks live in `public/brand/` and the written form is `QUP.gg` everywhere.
 
 ## Design system
 

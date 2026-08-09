@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const STORAGE_KEY = "teamlink:promo-dismissed";
+const STORAGE_KEY = "qup:promo-dismissed";
 
 // Evergreen, honest promo strip — a flat high-contrast color band for
 // visual pop against the dark starfield theme (tapin.gg leans on a bright

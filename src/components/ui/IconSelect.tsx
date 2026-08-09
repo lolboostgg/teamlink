@@ -31,50 +31,59 @@ export function IconSelect({ label, value, options, placeholder = "Not set", sea
     () => (needle ? options.filter((o) => `${o.label} ${o.value}`.toLowerCase().includes(needle)) : options),
     [options, needle],
   );
+  // The list shrinks as you type, so the stored cursor can point past its end.
+  // Clamped on read rather than corrected in an effect — the effect rendered
+  // one frame with the stale index before fixing it.
+  const activeIndex = Math.min(active, Math.max(0, filtered.length - 1));
 
   useEffect(() => {
     if (!open) return;
     function onDocPointerDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      if (rootRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+      setQuery("");
     }
     document.addEventListener("mousedown", onDocPointerDown);
     return () => document.removeEventListener("mousedown", onDocPointerDown);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) setQuery("");
-  }, [open]);
+  // Opening starts on the current selection; the filter box always starts empty.
+  function openList() {
+    setQuery("");
+    setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+    setOpen(true);
+  }
 
-  // Keep the keyboard cursor inside the filtered list — it shrinks as you type.
-  useEffect(() => {
-    if (open) setActive(Math.max(0, filtered.findIndex((o) => o.value === value)));
-  }, [open, filtered, value]);
+  function close() {
+    setOpen(false);
+    setQuery("");
+  }
 
   function commit(index: number) {
     const option = filtered[index];
     if (!option) return;
     onChange(option.value === value ? null : option.value);
-    setOpen(false);
+    close();
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Escape") {
-      setOpen(false);
+      close();
       return;
     }
     if (!open && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown")) {
       e.preventDefault();
-      setOpen(true);
+      openList();
       return;
     }
     if (!open) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
       if (filtered.length === 0) return;
-      setActive((i) => (i + (e.key === "ArrowDown" ? 1 : filtered.length - 1)) % filtered.length);
+      setActive((activeIndex + (e.key === "ArrowDown" ? 1 : filtered.length - 1)) % filtered.length);
     } else if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      commit(active);
+      commit(activeIndex);
     }
   }
 
@@ -87,7 +96,7 @@ export function IconSelect({ label, value, options, placeholder = "Not set", sea
         aria-expanded={open}
         aria-controls={listId}
         aria-label={label}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? close() : openList())}
         onKeyDown={onKeyDown}
       >
         {selected?.icon ? (
@@ -108,7 +117,10 @@ export function IconSelect({ label, value, options, placeholder = "Not set", sea
             value={query}
             placeholder={`Search ${label.toLowerCase()}…`}
             aria-label={`Search ${label}`}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActive(0);
+            }}
             onKeyDown={(e) => {
               // Space has to stay typable here, so only the navigation keys pass through.
               if (e.key === "Escape" || e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp") onKeyDown(e);
@@ -126,7 +138,7 @@ export function IconSelect({ label, value, options, placeholder = "Not set", sea
                 type="button"
                 role="option"
                 aria-selected={o.value === value}
-                className={`icon-select__option${i === active ? " is-active" : ""}${
+                className={`icon-select__option${i === activeIndex ? " is-active" : ""}${
                   o.value === value ? " is-selected" : ""
                 }`}
                 onMouseEnter={() => setActive(i)}

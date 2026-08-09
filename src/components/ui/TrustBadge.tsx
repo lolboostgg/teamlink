@@ -1,7 +1,7 @@
 // A real rating widget — a row of individually-rendered star tiles plus a
 // bold score, matched to the production quality of embedded review-platform
 // widgets (Trustpilot etc.) without pretending to be one we don't actually
-// have. Honestly labeled as TeamLink's own verified-session rating.
+// have. Honestly labeled as QUP.gg's own verified-session rating.
 export function TrustBadge({ reviews = "2,400+" }: { reviews?: string }) {
   return (
     <div className="trust-badge">

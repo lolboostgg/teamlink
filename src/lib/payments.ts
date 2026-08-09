@@ -51,7 +51,7 @@ export const PAYMENT_METHODS: PaymentMethodMeta[] = [
   {
     key: "credits",
     label: "Credits",
-    brandLabel: "TeamLink Credits",
+    brandLabel: "QUP.gg Credits",
     icon: "fa-solid fa-coins",
     feePercent: 0,
     feeFixedEUR: 0,

@@ -194,7 +194,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
       <Modal open={mode !== null} onClose={close} labelledBy="auth-modal-title">
         <div className="auth-modal">
           <h2 id="auth-modal-title" className="auth-modal__title">
-            {twoFactorStep ? "Verify it’s you" : mode === "login" ? "Log in to TeamLink" : "Create your account"}
+            {twoFactorStep ? "Verify it’s you" : mode === "login" ? "Log in to QUP.gg" : "Create your account"}
           </h2>
           <p className="auth-modal__sub">
             {twoFactorStep ? "Enter the six-digit code from your authenticator app." : mode === "login"

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { COMPANY, supportMailto } from "@/lib/company";
 
 /**
  * The dead end you reach with a link to an order that isn't there.
@@ -32,14 +33,18 @@ export function OrderNotFound({ subject = "order" }: { subject?: "order" | "sess
         <div className="lost-card__hint">
           <i className="fa-solid fa-headset" aria-hidden="true" />
           <span>
-            Still stuck? <Link href="/contact">Contact us</Link> with your order number and we&rsquo;ll sort it out.
+            {/* This used to point at /contact, a page that does not exist —
+                a dead end offered to the one visitor who is already lost and,
+                being a guest, has no account to fall back on. */}
+            Still stuck? Email <a href={supportMailto(`Missing ${subject}`)}>{COMPANY.support}</a> with your{" "}
+            {subject} number and we&rsquo;ll sort it out.
           </span>
         </div>
       </div>
 
       <div className="lost-card__actions">
         <Link href="/" className="btn btn--vivid">
-          Back to TeamLink
+          Back to QUP.gg
         </Link>
         <Link href="/games" className="btn btn--ghost">
           Browse games

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { formatCurrency, type CurrencyCode, type RateTable } from "@/lib/currency";
 
-const STORAGE_KEY = "teamlink:currency";
+const STORAGE_KEY = "qup:currency";
 
 interface CurrencyContextValue {
   currency: CurrencyCode;

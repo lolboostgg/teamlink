@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { PAYMENT_ICONS } from "@/lib/payments";
+import { SOCIALS, SOCIAL_GLYPHS, supportMailto } from "@/lib/company";
 
 const FOOTER_NAV = [
   {
     title: "Product",
     links: [
       { label: "Games", href: "/games" },
-      { label: "How it works", href: "/how-it-works" },
+      // The section exists, on the landing page (see home/HowItWorks.tsx) —
+      // only the standalone page it pointed at never did.
+      { label: "How it works", href: "/#how-it-works" },
       { label: "Pricing", href: "/games" },
       { label: "Become a Teammate", href: "/become-a-teammate" },
     ],
@@ -18,7 +21,10 @@ const FOOTER_NAV = [
       { label: "About", href: "/about" },
       { label: "Blog", href: "/blog" },
       { label: "Careers", href: "/careers" },
-      { label: "Contact", href: "/contact" },
+      // The one link in this column that goes somewhere today. A "Contact"
+      // that 404s is worse than no contact link at all — the people who click
+      // it are the ones who already have a problem.
+      { label: "Contact", href: supportMailto("QUP.gg support") },
     ],
   },
   {
@@ -31,13 +37,6 @@ const FOOTER_NAV = [
   },
 ];
 
-const SOCIALS = [
-  { icon: "fa-brands fa-discord", href: "/discord", label: "Discord" },
-  { icon: "fa-brands fa-x-twitter", href: "/twitter", label: "X" },
-  { icon: "fa-brands fa-instagram", href: "/instagram", label: "Instagram" },
-  { icon: "fa-brands fa-tiktok", href: "/tiktok", label: "TikTok" },
-];
-
 export function Footer() {
   const year = new Date().getFullYear();
 
@@ -47,11 +46,11 @@ export function Footer() {
         <div className="site-footer__top">
           <div className="site-footer__brand">
             <Logo />
-            <p className="site-footer__tagline">Find your next teammate, today.</p>
+            <p className="site-footer__tagline">Ready. Queue. Play.</p>
             <div className="site-footer__social">
               {SOCIALS.map((s) => (
-                <a key={s.href} href={s.href} aria-label={s.label}>
-                  <i className={s.icon} aria-hidden="true" />
+                <a key={s.url} href={s.url} aria-label={s.label} target="_blank" rel="noreferrer noopener">
+                  <i className={SOCIAL_GLYPHS[s.key]} aria-hidden="true" />
                 </a>
               ))}
             </div>
@@ -64,13 +63,17 @@ export function Footer() {
                 <ul>
                   {col.links.map((link) => (
                     <li key={link.href + link.label}>
-                      {/* prefetch={false}: most of these routes don't exist
-                          yet, and the footer sits in the viewport on every
-                          page — Next prefetched all of them on sight, so
-                          each load fired a burst of 404s. */}
-                      <Link href={link.href} prefetch={false}>
-                        {link.label}
-                      </Link>
+                      {link.href.startsWith("mailto:") ? (
+                        <a href={link.href}>{link.label}</a>
+                      ) : (
+                        /* prefetch={false}: most of these routes don't exist
+                           yet, and the footer sits in the viewport on every
+                           page — Next prefetched all of them on sight, so
+                           each load fired a burst of 404s. */
+                        <Link href={link.href} prefetch={false}>
+                          {link.label}
+                        </Link>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -86,7 +89,7 @@ export function Footer() {
         </div>
 
         <div className="site-footer__bottom">
-          <span>© {year} TeamLink.gg. All rights reserved.</span>
+          <span>© {year} QUP.gg. All rights reserved.</span>
           <span>Not affiliated with Riot Games, Epic Games, or any game publisher.</span>
         </div>
       </div>

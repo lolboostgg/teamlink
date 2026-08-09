@@ -27,7 +27,7 @@ export async function purchaseCredits(
   try {
     const checkout = await startCheckout({
       amountEUR: pkg.payEUR,
-      description: `TeamLink credits · €${pkg.payEUR}${pkg.bonusEUR > 0 ? ` (+€${pkg.bonusEUR} bonus)` : ""}`,
+      description: `QUP.gg credits · €${pkg.payEUR}${pkg.bonusEUR > 0 ? ` (+€${pkg.bonusEUR} bonus)` : ""}`,
       returnPath: "/dashboard/client/wallet",
       kind: "CREDITS",
       methods: method === "paypal" ? ["paypal"] : ["card"],

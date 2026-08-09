@@ -10,7 +10,7 @@ export function BentoFeatures() {
       <div className="container">
         <Reveal>
           <div className="section__head section__head--center">
-            <div className="section__eyebrow">Why TeamLink</div>
+            <div className="section__eyebrow">Why QUP.gg</div>
             <h2 className="section__title">Why players choose us.</h2>
           </div>
         </Reveal>
@@ -41,7 +41,7 @@ export function BentoFeatures() {
                   <PriceTag amountEUR={54.99} className="bento-card__price bento-card__price--old" />
                 </div>
                 <div className="bento-card__price-row">
-                  <span>TeamLink.gg</span>
+                  <span>QUP.gg</span>
                   <PriceTag amountEUR={38.99} className="bento-card__price" />
                 </div>
               </div>
