@@ -16153,3 +16153,164 @@ a.notification-panel__item:hover {
   white-space: normal;
   text-overflow: initial;
 }
+
+/* ---------------------------------------------------------------------------
+   404 — the site-wide dead end (see app/not-found.tsx).
+
+   Built as a real page rather than a bare sentence: same ambient game
+   backdrop and headline treatment as the hero, so a mistyped URL still
+   looks like QUP.gg, and the way out is the booking entry point instead of
+   a lone "back to home" link. The oversized numeral is decoration only
+   (aria-hidden) — the visible headline carries the message.
+   ------------------------------------------------------------------------- */
+.notfound {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  /* minmax(0, 1fr), not the implicit auto track: an auto track is sized by
+     its content's max-content width, which on a phone is the longest
+     unwrapped sentence — the copy and the game cards ran off the right
+     edge. This pins the track to the viewport and lets the text wrap. */
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  /* Fills the fold minus the chrome so the footer sits just below it,
+     rather than a short card floating in a tall empty page. */
+  min-height: calc(100svh - var(--offset-h, var(--header-h)));
+  padding: clamp(48px, 8vw, 96px) 0 clamp(56px, 9vw, 110px);
+  text-align: center;
+}
+
+.notfound__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 32%, rgba(6, 8, 17, 0.35) 0%, rgba(6, 8, 17, 0.9) 68%);
+}
+
+/* Sits behind the copy, not above it: big enough to read as a graphic and
+   faint enough that the headline stays the thing you read first. */
+.notfound__code {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 0;
+  transform: translate(-50%, -58%);
+  font-family: var(--font-heading);
+  font-size: clamp(200px, 34vw, 460px);
+  line-height: 0.8;
+  letter-spacing: 0.02em;
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(243, 244, 248, 0.075);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* width:100% is load-bearing: .container carries `margin: 0 auto`, and auto
+   margins on a grid item cancel the default stretch — the container sized
+   itself to its text instead of its max-width, squeezing the game cards to
+   a third of their width. */
+.notfound__inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
+.notfound__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.notfound__eyebrow i {
+  color: var(--hue-gold);
+}
+
+.notfound__title {
+  margin: 20px auto 0;
+  max-width: 16ch;
+  font-family: var(--font-heading);
+  font-size: clamp(38px, 7vw, 78px);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.notfound__title-accent {
+  color: var(--cta-vivid);
+}
+
+.notfound__sub {
+  max-width: 56ch;
+  margin: 16px auto 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.notfound__cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.notfound__picks {
+  margin-top: clamp(36px, 6vw, 58px);
+}
+
+.notfound__picks-label {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Wide enough that the cards match the hero carousel's ~220px and the long
+   names still fit on one line — at 780px they were narrow enough to clip
+   "League of Legends" to an ellipsis. */
+.notfound__picks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+/* .hero-card is a fixed-width carousel card; in this grid it stretches to
+   the column and keeps its own 3/4 portrait ratio. */
+.notfound__picks-card {
+  width: 100%;
+}
+
+.notfound__help {
+  margin-top: clamp(32px, 5vw, 48px);
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.notfound__help a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .notfound__picks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 400px;
+  }
+}
