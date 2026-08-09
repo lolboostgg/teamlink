@@ -23,6 +23,14 @@ interface Props {
 // banner key art already has each game's logo baked in, so the wordmark was
 // just doubling up the branding (and doing it inconsistently, since only
 // some games had a dedicated wordmark asset).
+/** Steps down so the longest names still fit a card on one line. */
+function nameSize(name: string): string {
+  if (name.length <= 13) return "14px";
+  if (name.length <= 17) return "12.5px";
+  if (name.length <= 21) return "11px";
+  return "10px";
+}
+
 export function GameShowcaseCard({ game, onHover, className = "", meta }: Props) {
   return (
     <Link
@@ -35,7 +43,14 @@ export function GameShowcaseCard({ game, onHover, className = "", meta }: Props)
       <img className="hero-card__bg" src={heroCardBackground(game.slug)} alt="" loading="lazy" />
       <span className="hero-card__scrim" aria-hidden="true" />
       <div className="hero-card__footer">
-        <span className="hero-card__name-text">{game.name}</span>
+        {/* One line, always. "COD: Black Ops 7" wrapped onto two and pushed
+            the card's own bottom edge past the art; the long names are the
+            new ones, so this only gets worse as the catalogue grows. CSS
+            cannot shrink text to fit, so the size steps down by length —
+            deterministic, and no measuring pass that reflows after paint. */}
+        <span className="hero-card__name-text" style={{ fontSize: nameSize(game.name) }}>
+          {game.name}
+        </span>
         {meta && <span className="hero-card__meta">{meta}</span>}
       </div>
     </Link>

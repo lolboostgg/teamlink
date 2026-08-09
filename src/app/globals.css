@@ -1276,13 +1276,18 @@ body {
   margin-bottom: 4px;
 }
 
+/* One line. The size comes from the component, stepped by name length (see
+   nameSize in GameShowcaseCard) — ellipsis is the backstop for a name longer
+   than anything in the catalogue today, not the normal case. */
 .hero-card__name-text {
   display: block;
-  font-size: 14px;
   font-weight: 800;
   color: #fff;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── The /games listing card ──

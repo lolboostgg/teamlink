@@ -244,6 +244,134 @@ const APEX_CATEGORIES: BookingCategory[] = [
   },
 ];
 
+const CS2_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Bundles",
+    options: [
+      { name: "Pistol Round", description: "Play for 3 hours with our best teammates", price: 24.99, originalPrice: 31.99, eta: "3 min away", unit: "/3 hours", maxTeammates: 1 },
+      { name: "Full Buy", description: "Play for 5 hours with our best teammates", price: 39.99, originalPrice: 49.99, eta: "3 min away", unit: "/5 hours", maxTeammates: 1 },
+      { name: "Overtime", description: "Play for 7 hours with our best teammates", price: 49.99, originalPrice: 62.99, eta: "4 min away", unit: "/7 hours", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo Casual", description: "Play with our best teammates", price: 4.99, eta: "3 min away", unit: "/game", maxTeammates: 4 },
+      { name: "Duo Premier", description: "Play with our best teammates", price: 6.99, eta: "2 min away", unit: "/game", maxTeammates: 4 },
+      { name: "Duo FACEIT", description: "Play with our best teammates", price: 8.99, eta: "2 min away", unit: "/game", maxTeammates: 4 },
+    ],
+  },
+  {
+    category: "Social",
+    options: [
+      { name: "Gamer Girl", description: "Hangout and meet with our best girl teammates", price: 6.49, eta: "4 min away", unit: "/game", maxTeammates: 4 },
+    ],
+  },
+  {
+    category: "Coaching",
+    options: [
+      { name: "Coach", description: "Get coached by our top teammates", price: 14.99, eta: "2 min away", unit: "/game", maxTeammates: 1 },
+    ],
+  },
+];
+
+// The stepper in the reference goes to nine, so these are not duo-only.
+const MECCHA_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Bundles",
+    options: [
+      { name: "Chromatic Hour", description: "Play 1 hour with our best teammates", price: 9.99, eta: "4 min away", unit: "/1 hour", maxTeammates: 9 },
+      { name: "Master Disguise", description: "Play 3 hours with our best teammates", price: 24.99, eta: "3 min away", unit: "/3 hours", maxTeammates: 9 },
+      { name: "Full Camouflage", description: "Play 5 hours with our best teammates", price: 39.99, eta: "3 min away", unit: "/5 hours", maxTeammates: 9 },
+    ],
+  },
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo", description: "Play with our best teammates", price: 4.99, eta: "3 min away", unit: "/30 min", maxTeammates: 9 },
+    ],
+  },
+];
+
+// NOTE: the reference also prices this by trophy bracket — 0-8k included,
+// then +$1 / +$2 / +$3 up to 15k. Nothing in BookingOption can express a
+// surcharge tied to a second choice, so that is not modelled here and the
+// prices below are the base bracket. It needs a real decision about how
+// rank-based pricing works before it goes in.
+const CLASH_ROYALE_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Team Up",
+    options: [
+      { name: "Trophy Road", description: "Play 5 Trophy Road games with a pro teammate who will climb on your account to push trophies efficiently", price: 4.99, eta: "3 min away", unit: "/5 games", maxTeammates: 1 },
+      { name: "Ranked", description: "Play 5 ranked games with an Ultimate Champion teammate climbing on your account to boost your standing", price: 6.99, eta: "3 min away", unit: "/5 games", maxTeammates: 1 },
+      { name: "Duo Ultra", description: "Team up for 2v2 matches alongside an Ultimate Champion teammate for maximum synergy and fast wins", price: 4.99, eta: "3 min away", unit: "/5 games", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Coaching",
+    options: [
+      { name: "Coach", description: "Get coached by an Ultimate Champion teammate", price: 6.99, eta: "3 min away", unit: "/30 min", maxTeammates: 1 },
+      { name: "Deck Mastery", description: "Work with an Ultimate Champion teammate to fix, refine and build new decks suited to your playstyle", price: 7.99, eta: "4 min away", unit: "/30 min", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Events",
+    options: [
+      { name: "Grand Challenge", description: "Have an Ultimate Champion teammate complete a full Grand Challenge on your account for the best rewards", price: 24.99, eta: "4 min away", unit: "/challenge", maxTeammates: 1 },
+      { name: "Classic Challenge", description: "Let an Ultimate Champion teammate complete a full Classic Challenge for consistent wins and solid rewards", price: 11.99, eta: "2 min away", unit: "/challenge", maxTeammates: 1 },
+      { name: "Mega Challenge", description: "Join an Ultimate Champion teammate for the Mega Challenge event", price: 4.99, eta: "4 min away", unit: "/5 games", maxTeammates: 1 },
+    ],
+  },
+];
+
+const MINECRAFT_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Bundles",
+    options: [
+      { name: "Explorer Pack", description: "Play 3 hours of Duo Ultra with a verified pro", price: 32.99, originalPrice: 41.99, eta: "3 min away", unit: "/3 hours", maxTeammates: 1 },
+      { name: "Adventurer Pack", description: "Play 5 hours of Duo Ultra with a verified pro", price: 49.99, originalPrice: 62.99, eta: "4 min away", unit: "/5 hours", maxTeammates: 1 },
+      { name: "Marathon Pack", description: "Play 7 hours of Duo Ultra with a verified pro", price: 69.99, originalPrice: 87.99, eta: "3 min away", unit: "/7 hours", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Team Up",
+    options: [
+      { name: "Duo Survival", description: "Play the classic Minecraft experience with a verified pro", price: 7.99, eta: "2 min away", unit: "/45 min", maxTeammates: 1 },
+      { name: "Duo Ultra", description: "Extended session with a verified pro", price: 12.99, eta: "3 min away", unit: "/45 min", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Social",
+    options: [
+      { name: "Gamer Girl", description: "Hangout and meet with our best girl teammates", price: 6.49, eta: "3 min away", unit: "/30 min", maxTeammates: 4 },
+    ],
+  },
+  {
+    category: "Coaching",
+    options: [
+      { name: "Coaching", description: "Get coached by a verified pro", price: 14.99, eta: "3 min away", unit: "/45 min", maxTeammates: 1 },
+    ],
+  },
+];
+
+const COD_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Ranked",
+    options: [
+      { name: "Warzone Ranked", description: "Play Warzone Ranked with a top tier teammate", price: 11.99, eta: "3 min away", unit: "/60 min", maxTeammates: 1 },
+      { name: "Rebirth Ranked", description: "Play Rebirth Ranked with a top tier teammate", price: 11.99, eta: "4 min away", unit: "/60 min", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Normal",
+    options: [
+      { name: "Warzone Duo", description: "Play Warzone Normal with a top tier teammate", price: 9.99, eta: "2 min away", unit: "/60 min", maxTeammates: 1 },
+      { name: "Rebirth Duo", description: "Play Rebirth Normal with a top tier teammate", price: 9.99, eta: "4 min away", unit: "/60 min", maxTeammates: 1 },
+      { name: "Multiplayer Normal", description: "Play Multiplayer Normal with a top tier teammate", price: 9.99, eta: "2 min away", unit: "/60 min", maxTeammates: 1 },
+    ],
+  },
+];
+
 /** No game at all — the teammate is the product. */
 const HANGOUT_CATEGORIES: BookingCategory[] = [
   {
@@ -262,6 +390,11 @@ const CATALOG_BY_GAME: Record<string, BookingCategory[]> = {
   "league-of-legends": LOL_CATEGORIES,
   fortnite: FORTNITE_CATEGORIES,
   hangout: HANGOUT_CATEGORIES,
+  "counter-strike-2": CS2_CATEGORIES,
+  "meccha-chameleon": MECCHA_CATEGORIES,
+  "clash-royale": CLASH_ROYALE_CATEGORIES,
+  minecraft: MINECRAFT_CATEGORIES,
+  "cod-black-ops-7": COD_CATEGORIES,
   valorant: VALORANT_CATEGORIES,
   "marvel-rivals": MARVEL_RIVALS_CATEGORIES,
   "teamfight-tactics": TFT_CATEGORIES,
@@ -286,6 +419,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Coaching: "var(--hue-purple)",
   Bundles: "var(--hue-cyan)",
   Hangout: "var(--hue-pink)",
+  Events: "var(--hue-green)",
+  Normal: "var(--accent)",
 };
 
 /** The category a booked mode belongs to, resolved from its name alone. */
