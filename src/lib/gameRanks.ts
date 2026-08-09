@@ -34,6 +34,16 @@ export function rankHasDivisions(rank: string | null): boolean {
 }
 
 /**
+ * The bottom of every ladder.
+ *
+ * Not the absence of a rank — a real option with a real place (index 0 in
+ * every numbered ladder) and art of its own, which is why a customer who
+ * hasn't placed yet still has an emblem to show. Anywhere a stored rank can
+ * be missing should fall back to this rather than printing the word.
+ */
+export const UNRANKED = "unranked";
+
+/**
  * The rank's own artwork, where the game has any.
  *
  * A rank badge is the thing a teammate actually reads on an incoming request

@@ -6,7 +6,7 @@ import type { DispatchOrderView } from "@/lib/dispatch/phase";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
-import { formatRank, rankIcon } from "@/lib/gameRanks";
+import { formatRank, rankIcon, UNRANKED } from "@/lib/gameRanks";
 import { getGameProfileConfig, type ProfileOption } from "@/lib/gameProfiles";
 import { playSound, stopSound } from "@/lib/notificationSound";
 import { ackDispatchAlert } from "@/lib/dispatch/ack";
@@ -123,8 +123,13 @@ function RequestCard({
   // The row stays on screen for the moment between the clock running out and
   // the next read dropping it — vanishing mid-reach is its own confusion.
   const expired = left <= 0;
-  const rank = formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null);
-  const rankArt = rankIcon(order.gameSlug, order.ignRank ?? null);
+  // A missing rank is the game's own Unranked, not the absence of one — it
+  // sits at the bottom of the ladder with an emblem like every other tier.
+  // Printing the bare word instead was what left these cards without art, on
+  // exactly the orders a teammate most wants to recognise at a glance.
+  const rankValue = order.ignRank ?? UNRANKED;
+  const rank = formatRank(order.gameSlug, rankValue, order.ignDivision ?? null);
+  const rankArt = rankIcon(order.gameSlug, rankValue);
   const roles = roleOptionsFor(order.gameSlug, order.ignRoles ?? []);
 
   // What the customer said they wanted, in the order it matters when you are
