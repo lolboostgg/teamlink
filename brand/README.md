@@ -8,6 +8,12 @@ and `src/app/favicon.ico`.
 | --- | --- |
 | `qup-lockup-source.png` | The mark plus the `Up.gg` wordmark, on transparency |
 | `qup-mark-source.png` | The mark on its own |
+| `social-image-source.png` | The link-preview card, 1731×909 |
+
+`social-image-source.png` becomes `src/app/opengraph-image.jpg` and its
+`twitter-image.jpg` twin at 1200×630 — the size every scraper crops to — and
+at ~105 KB, because WhatsApp quietly skips preview images much above 300 KB
+and the 2.2 MB original is well past that.
 
 Both arrive with a wide transparent margin, which is most of their weight. The
 shipped assets are trimmed to the ink, resized, and palette-encoded; that cuts

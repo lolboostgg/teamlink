@@ -28,13 +28,38 @@ const bebasNeue = Bebas_Neue({
 // come up blank. Set APP_URL, or swap the literal, the day qup.gg is live.
 const siteUrl = process.env.APP_URL ?? process.env.AUTH_URL ?? "https://gaming.lolboost.gg";
 
+const TITLE = "QUP.gg — Ready. Queue. Play.";
+const DESCRIPTION = "Book a skilled, verified teammate to play with in under two minutes.";
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "QUP.gg — Ready. Queue. Play.",
+    default: TITLE,
     template: "%s | QUP.gg",
   },
-  description: "Book a skilled, verified teammate to play with in under two minutes.",
+  description: DESCRIPTION,
+
+  // What Discord, WhatsApp, iMessage and the rest read when the link is
+  // pasted. Spelled out rather than inherited: Next fills in og:image from
+  // app/opengraph-image.jpg on its own, but it does not turn `title` and
+  // `description` into og:title/og:description — without these a shared link
+  // unfurls as a picture with the bare domain under it.
+  openGraph: {
+    type: "website",
+    siteName: "QUP.gg",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: siteUrl,
+    locale: "en_US",
+  },
+
+  // summary_large_image is the difference between the artwork filling the
+  // card and a thumbnail the size of a favicon next to the text.
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
