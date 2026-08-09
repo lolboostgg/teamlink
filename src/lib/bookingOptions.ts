@@ -89,6 +89,34 @@ export function getBookingCategories(gameSlug: string): BookingCategory[] {
   return CATALOG_BY_GAME[gameSlug] ?? DEFAULT_CATEGORIES;
 }
 
+/**
+ * Each category's accent, from the curated hue set (see globals.css :root).
+ *
+ * Lifted out of BookingWidget, which owned the only copy — so a mode was
+ * pink while a customer was choosing it and plain grey everywhere after. The
+ * colour is part of how a mode is recognised; it should survive the booking.
+ */
+export const CATEGORY_COLORS: Record<string, string> = {
+  "Team Up": "var(--accent)",
+  Ranked: "var(--hue-gold)",
+  Social: "var(--hue-pink)",
+  Coaching: "var(--hue-purple)",
+};
+
+/** The category a booked mode belongs to, resolved from its name alone. */
+export function categoryForOption(gameSlug: string, name: string): string | null {
+  for (const cat of getBookingCategories(gameSlug)) {
+    if (cat.options.some((o) => o.name === name)) return cat.category;
+  }
+  return null;
+}
+
+/** The accent for a booked mode, for anywhere that shows one after checkout. */
+export function optionColor(gameSlug: string, name: string): string | null {
+  const category = categoryForOption(gameSlug, name);
+  return category ? CATEGORY_COLORS[category] ?? null : null;
+}
+
 export function getBookingOption(gameSlug: string, name: string): BookingOption | undefined {
   for (const cat of getBookingCategories(gameSlug)) {
     const match = cat.options.find((o) => o.name === name);

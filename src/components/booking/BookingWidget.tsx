@@ -6,7 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/CheckoutIngameStep";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
-import { getBookingCategories, type BookingOption } from "@/lib/bookingOptions";
+import { getBookingCategories, CATEGORY_COLORS, type BookingOption } from "@/lib/bookingOptions";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
@@ -45,16 +45,6 @@ const CATEGORY_FAQ: Record<string, { q: string; a: string }> = {
     q: "How does a coaching session work?",
     a: "Your coach reviews your gameplay live on voice or text and helps you improve in real time, not just after the fact.",
   },
-};
-
-// Each category gets its own accent instead of every option card looking
-// identical bar the price — same curated hue set already used for icon
-// badges elsewhere in the design system (see globals.css :root comment).
-const CATEGORY_COLORS: Record<string, string> = {
-  "Team Up": "var(--accent)",
-  Ranked: "var(--hue-gold)",
-  Social: "var(--hue-pink)",
-  Coaching: "var(--hue-purple)",
 };
 
 // Which specific teammate you get is decided by the live dispatch/pick flow

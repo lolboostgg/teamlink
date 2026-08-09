@@ -11500,19 +11500,21 @@ a.notification-panel__item:hover {
 .request-card__lane-list {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .request-card__lane {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
+/* Big enough to recognise the lane by its shape without reading the word
+   next to it — at 15px these were two grey smudges. */
 .request-card__lane img {
-  width: 15px;
-  height: 15px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
 }
 

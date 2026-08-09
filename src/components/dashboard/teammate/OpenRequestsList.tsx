@@ -8,6 +8,7 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
 import { formatRank, rankIcon, UNRANKED } from "@/lib/gameRanks";
 import { getGameProfileConfig, type ProfileOption } from "@/lib/gameProfiles";
+import { optionColor } from "@/lib/bookingOptions";
 import { playSound, stopSound } from "@/lib/notificationSound";
 import { ackDispatchAlert } from "@/lib/dispatch/ack";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -71,11 +72,24 @@ export function OpenRequestsList() {
   );
 }
 
-function Fact({ label, value, strong }: { label: string; value: ReactNode; strong?: boolean }) {
+function Fact({
+  label,
+  value,
+  strong,
+  color,
+}: {
+  label: string;
+  value: ReactNode;
+  strong?: boolean;
+  /** Overrides the value's colour — used to carry a mode's own accent. */
+  color?: string | null;
+}) {
   return (
     <div className={`request-fact${strong ? " request-fact--strong" : ""}`}>
       <span className="request-fact__label">{label}</span>
-      <span className="request-fact__value">{value}</span>
+      <span className="request-fact__value" style={color ? { color } : undefined}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -175,7 +189,11 @@ function RequestCard({
 
       <div className="request-card__facts">
         <Fact label="Games" value={String(order.gamesBooked)} strong />
-        <Fact label="Mode" value={order.option} />
+        {/* The mode carries the colour it was booked under — Gamer Girl is
+            pink on the booking widget and was plain grey the moment it
+            reached a teammate, which is the one place it has to be told
+            apart at a glance from every other order in the queue. */}
+        <Fact label="Mode" value={order.option} color={optionColor(order.gameSlug, order.option)} />
         <Fact
           label="Team"
           value={order.teammatesRequested === 1 ? "Solo" : `${order.teammatesRequested} teammates`}
