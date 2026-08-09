@@ -5,7 +5,8 @@ import {
   orderCompletedMail,
   orderCancelledMail,
 } from "@/lib/notify/templates";
-import { postToTeammateChannel, sendDiscordDms, ACCENT } from "@/lib/notify/discordNotify";
+import { postToTeammateChannel, ACCENT } from "@/lib/notify/discordNotify";
+import { formatRank } from "@/lib/gameRanks";
 import { sanitizeNotificationPrefs, type NotificationChannel } from "@/lib/notificationPrefs";
 
 /**
@@ -56,13 +57,6 @@ export async function notifyOrderDispatched(orderId: string): Promise<void> {
       where: { id: orderId },
       include: {
         clientUser: { select: { email: true, name: true, notificationPrefs: true } },
-        candidates: {
-          select: {
-            teammate: {
-              select: { name: true, user: { select: { discordId: true, notificationPrefs: true } } },
-            },
-          },
-        },
       },
     });
     if (!order) return;
@@ -78,15 +72,22 @@ export async function notifyOrderDispatched(orderId: string): Promise<void> {
 interface DispatchedOrder {
   id: string;
   orderNo: number;
+  gameSlug: string;
   gameName: string;
   option: string;
   priceEUR: unknown;
+  teammatePayoutEUR: unknown;
   teammatesRequested: number;
+  gamesBooked: number;
   guestEmail: string | null;
   ign: string | null;
   ignRegion: string | null;
+  ignRank: string | null;
+  ignDivision: string | null;
+  vibe: string | null;
+  conversationPref: string | null;
+  playStylePref: string | null;
   clientUser: { email: string; name: string | null; notificationPrefs: unknown } | null;
-  candidates: { teammate: { name: string; user: { discordId: string | null; notificationPrefs: unknown } | null } }[];
 }
 
 async function mailCustomer(order: DispatchedOrder): Promise<void> {
@@ -108,34 +109,49 @@ async function mailCustomer(order: DispatchedOrder): Promise<void> {
   await sendMail({ to, ...mail });
 }
 
+/**
+ * The staff channel post for an order that just went out to dispatch.
+ *
+ * Webhook only. It used to DM every invited teammate the same embed, which
+ * was the wrong channel for it twice over: an invitation expires in seconds
+ * and a DM cannot be answered, so by the time anyone read it the order had
+ * moved on — and it meant a teammate's DMs were mostly other people's orders
+ * rather than anything about their own account. Invitations belong in the
+ * dispatch panel, which pushes them live and has the buttons.
+ *
+ * So this is the operations feed: everything an admin would otherwise open
+ * the dashboard to find out. Deliberately the fullest embed the product
+ * sends — the opposite of the teammate DMs, which are one line each.
+ */
 async function pingTeammates(order: DispatchedOrder): Promise<void> {
-  const message = {
-    title: "New order",
-    description: `A **${order.option}** session on **${order.gameName}** is looking for ${
-      order.teammatesRequested === 1 ? "a teammate" : `${order.teammatesRequested} teammates`
-    }.`,
+  const rank = formatRank(order.gameSlug, order.ignRank, order.ignDivision);
+  const seats = order.teammatesRequested === 1 ? "1 teammate" : `${order.teammatesRequested} teammates`;
+
+  // Only what was actually answered. A row of "—" is not information, and on
+  // a phone it is what pushes the useful rows off the card.
+  const asked = [
+    order.vibe && `Vibe · ${order.vibe}`,
+    order.conversationPref && `Comms · ${order.conversationPref}`,
+    order.playStylePref && `Play style · ${order.playStylePref}`,
+  ].filter(Boolean);
+
+  await postToTeammateChannel({
+    title: "🔔 New request incoming",
+    description: `**${order.option}** on **${order.gameName}** — looking for ${seats}.`,
     fields: [
       { name: "Order", value: `#${order.orderNo}`, inline: true },
-      { name: "Game", value: order.gameName, inline: true },
-      { name: "Mode", value: order.option, inline: true },
-      ...(order.ign ? [{ name: "Player", value: `${order.ign}${order.ignRegion ? ` (${order.ignRegion})` : ""}`, inline: false }] : []),
+      { name: "Rank", value: rank ?? "Unranked", inline: true },
+      { name: "Region", value: order.ignRegion ? order.ignRegion.toUpperCase() : "Any", inline: true },
+      { name: "Games", value: String(order.gamesBooked), inline: true },
+      { name: "Price", value: `€${Number(order.priceEUR).toFixed(2)}`, inline: true },
+      { name: "Payout", value: `€${Number(order.teammatePayoutEUR).toFixed(2)}`, inline: true },
+      ...(order.ign ? [{ name: "Player", value: order.ign, inline: false }] : []),
+      ...(asked.length > 0 ? [{ name: "Asked for", value: asked.join("\n"), inline: false }] : []),
     ],
-    linkUrl: `${appUrl()}/dashboard/teammate`,
-    linkLabel: "Open dashboard",
+    linkUrl: `${appUrl()}/dashboard/admin/orders/${order.orderNo}`,
+    linkLabel: "Open in admin",
     color: ACCENT,
-  };
-
-  // The broadcast goes out regardless of who was invited — the channel is how
-  // the roster sees there is work, and a declined invite frees the slot for
-  // whoever reads it there.
-  const channelPost = postToTeammateChannel(message);
-
-  const discordIds = order.candidates
-    .map((c) => c.teammate.user)
-    .filter((user) => user?.discordId && wantsOrderUpdates(user.notificationPrefs, "discord"))
-    .map((user) => user!.discordId!);
-
-  await Promise.allSettled([channelPost, sendDiscordDms(discordIds, message)]);
+  });
 }
 
 /**

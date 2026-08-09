@@ -10373,8 +10373,14 @@ body {
   margin-right: 8px;
 }
 
+/* Was display:none below 700px, revealed only at desktop width. That left a
+   signed-in visitor on a phone with no account menu and no route to their
+   dashboard at all — the header showed a logo and a currency switcher and
+   nothing else. It is the avatar alone down there (see the 920px rule on
+   .profile-account-trigger), and the trigger opens on click, so it works
+   under a thumb. */
 .header-utilities__dashboard {
-  display: none;
+  display: inline-flex;
 }
 
 .credits-widget {
@@ -10493,11 +10499,6 @@ body {
   margin-top: 12px;
 }
 
-@media (min-width: 700px) {
-  .header-utilities__dashboard {
-    display: inline-flex;
-  }
-}
 
 .profile-avatar-btn {
   width: 36px;

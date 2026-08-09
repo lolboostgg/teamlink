@@ -69,6 +69,12 @@ function mayEmail(role: string | undefined, type: string): boolean {
 
 const POLICY: Record<string, ChannelPolicy> = {
   // ── Teammate side ────────────────────────────────────────────
+  //
+  // A teammate's DMs are about their own account and nothing else: their
+  // rating, their money, and a customer waiting on a reply. Orders on offer
+  // are not in here on purpose — an invitation lives for seconds and cannot
+  // be answered from a DM, so it was noise by the time it arrived, and it
+  // buried the messages that were actually about them.
   // Both are Discord nudges. The escalation used to reach for mail after half
   // an hour, which is well past the point an unread message is still actionable
   // — it arrived as a record of something already missed.
@@ -165,11 +171,15 @@ export async function deliverExternally(userId: string, notice: Notice): Promise
     const jobs: Promise<unknown>[] = [];
 
     if (policy.discord && user.discordId && wants(user.notificationPrefs, policy.topic, "discord")) {
+      // Deliberately plain: a title, one line, a link. No field table — the
+      // fields are for the operations feed in the staff channel, where an
+      // admin is triaging several orders at once. A teammate reading "your
+      // payout was sent" does not need it laid out in three columns, and a
+      // DM that looks like a report is one that gets skimmed.
       jobs.push(
         sendDiscordDm(user.discordId, {
           title: `${look.emoji} ${notice.title}`,
           description: notice.body ?? "",
-          fields: notice.fields,
           linkUrl: url,
           linkLabel: "Open QUP.gg",
           color: look.color,
