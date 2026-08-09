@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { PAYMENT_ICONS } from "@/lib/payments";
-import { SOCIALS, SOCIAL_GLYPHS, supportMailto } from "@/lib/company";
+import { SOCIALS, SOCIAL_GLYPHS } from "@/lib/company";
 
+// Every entry here now resolves to a real page. That is the rule for this
+// list: a footer link is a promise the site keeps, and "Pricing" pointing at
+// the games grid was the last one that did not — pricing lives on each game's
+// booking panel, so the honest link is the one already above it.
 const FOOTER_NAV = [
   {
     title: "Product",
@@ -11,7 +15,6 @@ const FOOTER_NAV = [
       // The section exists, on the landing page (see home/HowItWorks.tsx) —
       // only the standalone page it pointed at never did.
       { label: "How it works", href: "/#how-it-works" },
-      { label: "Pricing", href: "/games" },
       { label: "Become a Teammate", href: "/become-a-teammate" },
     ],
   },
@@ -21,10 +24,7 @@ const FOOTER_NAV = [
       { label: "About", href: "/about" },
       { label: "Blog", href: "/blog" },
       { label: "Careers", href: "/careers" },
-      // The one link in this column that goes somewhere today. A "Contact"
-      // that 404s is worse than no contact link at all — the people who click
-      // it are the ones who already have a problem.
-      { label: "Contact", href: supportMailto("QUP.gg support") },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
@@ -63,17 +63,13 @@ export function Footer() {
                 <ul>
                   {col.links.map((link) => (
                     <li key={link.href + link.label}>
-                      {link.href.startsWith("mailto:") ? (
-                        <a href={link.href}>{link.label}</a>
-                      ) : (
-                        /* prefetch={false}: most of these routes don't exist
-                           yet, and the footer sits in the viewport on every
-                           page — Next prefetched all of them on sight, so
-                           each load fired a burst of 404s. */
-                        <Link href={link.href} prefetch={false}>
-                          {link.label}
-                        </Link>
-                      )}
+                      {/* prefetch={false}: the footer is in the viewport on
+                          every page, so the default would prefetch ten
+                          low-intent routes on every single load. The cost of
+                          not doing it is one navigation nobody notices. */}
+                      <Link href={link.href} prefetch={false}>
+                        {link.label}
+                      </Link>
                     </li>
                   ))}
                 </ul>

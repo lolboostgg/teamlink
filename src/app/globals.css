@@ -16314,3 +16314,859 @@ a.notification-panel__item:hover {
     max-width: 400px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Content pages — about, blog, careers, contact, become-a-teammate, legal.
+
+   One kit shared by all six rather than a bespoke layer each: they are the
+   same handful of shapes (a masthead, prose, a card grid, a form panel) and
+   six private stylesheets is how a site ends up with four heading scales.
+   Everything here composes with .section / .container / .btn / .form-row.
+   ------------------------------------------------------------------------- */
+
+/* Reading measure for long-form pages. Legal text and blog posts at the full
+   1220px container run to ~150 characters a line, which nobody finishes. */
+.container--narrow {
+  max-width: 760px;
+}
+
+.page-hero {
+  max-width: 720px;
+  margin: 0 auto 44px;
+  text-align: center;
+}
+
+.page-hero--left {
+  margin-left: 0;
+  text-align: left;
+}
+
+.page-hero__eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.page-hero__title {
+  font-family: var(--font-heading);
+  font-size: clamp(32px, 5vw, 54px);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.page-hero__sub {
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.page-hero__meta {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.page-hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+
+.back-link:hover {
+  color: var(--text);
+}
+
+/* ── Long-form body copy ────────────────────────────────────── */
+.prose {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--text-muted);
+}
+
+.prose section + section {
+  margin-top: 34px;
+}
+
+.prose section:first-of-type {
+  margin-top: 34px;
+}
+
+.prose h2 {
+  margin-bottom: 12px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.prose p + p,
+.prose ul {
+  margin-top: 12px;
+}
+
+.prose ul {
+  padding-left: 20px;
+}
+
+.prose li + li {
+  margin-top: 8px;
+}
+
+.prose li::marker {
+  color: var(--accent);
+}
+
+.prose a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+}
+
+/* The intro sits above the numbered sections and carries the summary, so it
+   is set a size up — the part most people read instead of the rest. */
+.prose__lead {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.prose__lead + .prose__lead {
+  margin-top: 12px;
+}
+
+/* ── Legal: the other two documents, always one click away ──── */
+.legal-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-switch__link {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.legal-switch__link:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.legal-switch__link.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+/* ── Blocks and card grids ──────────────────────────────────── */
+.about-block {
+  margin-top: clamp(48px, 7vw, 80px);
+}
+
+.about-block__title {
+  margin-bottom: 22px;
+  font-family: var(--font-heading);
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--border);
+}
+
+.stat-strip__item {
+  padding: 24px 18px;
+  text-align: center;
+  background: var(--bg-elevated);
+}
+
+.stat-strip__item b {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.stat-strip__item span {
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+.value-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.value-grid--compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.value-card {
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.value-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  /* Falls back to the house accent, so a card that does not bother picking a
+     colour still looks deliberate. */
+  background: color-mix(in srgb, var(--item-color, var(--accent)) 14%, transparent);
+  color: var(--item-color, var(--accent));
+  font-size: 17px;
+}
+
+.value-card h3 {
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.value-card p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+/* ── About: dated timeline ──────────────────────────────────── */
+.timeline {
+  list-style: none;
+  border-left: 1px solid var(--border);
+  padding-left: 26px;
+}
+
+.timeline__item {
+  position: relative;
+}
+
+.timeline__item + .timeline__item {
+  margin-top: 26px;
+}
+
+.timeline__item::before {
+  content: "";
+  position: absolute;
+  left: -31px;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--bg);
+}
+
+.timeline__year {
+  display: block;
+  margin-bottom: 4px;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  color: var(--accent);
+}
+
+.timeline__item h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.timeline__item p {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.about-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+/* ── Numbered steps and checklists ──────────────────────────── */
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  list-style: none;
+}
+
+.step-grid__item {
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.step-grid__num {
+  display: block;
+  margin-bottom: 10px;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  color: var(--accent);
+}
+
+.step-grid__item h3 {
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.step-grid__item p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.check-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 26px;
+  list-style: none;
+}
+
+.check-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.check-list i {
+  margin-top: 3px;
+  color: var(--hue-green);
+}
+
+/* ── Q&A. Plain, not an accordion: every answer here is two lines, and a
+   disclosure that hides two lines is a click for nothing. ──────────────── */
+.qa-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 34px;
+}
+
+.qa-item h3 {
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.qa-item p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+/* ── Careers ────────────────────────────────────────────────── */
+.role-list {
+  display: grid;
+  gap: 16px;
+}
+
+.role-card {
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  scroll-margin-top: calc(var(--header-h) + 20px);
+}
+
+.role-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.role-card__title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.role-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.role-card__tags span {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.role-card__summary {
+  margin-top: 16px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.role-card__cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 34px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.role-card__cols h4 {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.role-card__cols ul {
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.role-card__cols li + li {
+  margin-top: 6px;
+}
+
+.role-card__cols li::marker {
+  color: var(--accent);
+}
+
+.cta-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px;
+  margin-top: clamp(48px, 7vw, 80px);
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.cta-panel h2 {
+  margin-bottom: 8px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.cta-panel p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.cta-panel a:not(.btn) {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.cta-panel .btn {
+  margin-top: 14px;
+}
+
+/* ── Blog ───────────────────────────────────────────────────── */
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.post-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.post-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.post-card--lead {
+  padding: 34px;
+  background: var(--bg-elevated-2);
+}
+
+.post-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.post-card__tag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.post-card__title {
+  margin-top: 14px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.post-card--lead .post-card__title {
+  font-size: clamp(22px, 2.6vw, 30px);
+}
+
+.post-card__excerpt {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.post-card__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  /* Pins the link to the bottom so cards of different heights still line
+     their affordance up along one row. */
+  margin-top: auto;
+  padding-top: 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.post-card__more i {
+  transition: transform 0.2s ease;
+}
+
+.post-card:hover .post-card__more i {
+  transform: translateX(3px);
+}
+
+.post-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 48px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border);
+}
+
+.post-next__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.post-next__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.post-next__link:hover {
+  color: var(--accent);
+}
+
+/* ── Contact ────────────────────────────────────────────────── */
+.contact-layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.contact-layout__aside {
+  display: grid;
+  gap: 14px;
+}
+
+.contact-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.contact-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--item-color, var(--accent)) 14%, transparent);
+  color: var(--item-color, var(--accent));
+}
+
+.contact-card h3 {
+  margin-bottom: 5px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.contact-card p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.contact-card a {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.contact-hours {
+  padding: 20px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.contact-hours h4 {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.contact-hours ul {
+  list-style: none;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.contact-hours li + li {
+  margin-top: 6px;
+}
+
+.contact-hours b {
+  color: var(--text);
+}
+
+.contact-legal {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* ── Form panels ────────────────────────────────────────────── */
+.panel {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.panel--wide {
+  max-width: 780px;
+}
+
+.panel__title {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.panel__sub {
+  margin: 6px 0 22px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.panel-form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+/* Off-screen rather than display:none — a bot that skips hidden inputs still
+   fills this one, which is the whole point (see actions/applications.ts). */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chip-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.chip.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.form-error {
+  margin: 4px 0 14px;
+  font-size: 13.5px;
+  color: var(--danger);
+}
+
+.form-note {
+  margin-top: 14px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+.form-done {
+  padding: 34px 26px;
+  text-align: center;
+}
+
+.form-done__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  background: rgba(47, 191, 113, 0.14);
+  color: var(--hue-green);
+  font-size: 20px;
+}
+
+.form-done h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.form-done p {
+  max-width: 46ch;
+  margin: 8px auto 0;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+/* ── Narrower screens ───────────────────────────────────────── */
+@media (max-width: 980px) {
+  .value-grid--compact,
+  .post-grid,
+  .step-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contact-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .value-grid,
+  .value-grid--compact,
+  .post-grid,
+  .step-grid,
+  .check-list,
+  .qa-list,
+  .role-card__cols,
+  .cta-panel,
+  .panel-form .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel,
+  .post-card--lead,
+  .role-card,
+  .cta-panel {
+    padding: 20px;
+  }
+}
