@@ -129,19 +129,24 @@ export function ApplicationsBoard({ applications }: { applications: ApplicationV
         </div>
       </div>
 
-      <div className="application-filters">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            className={`table-filter-pill${filter === f.key ? " is-active" : ""}`}
-            aria-pressed={filter === f.key}
-            onClick={() => setFilter(f.key)}
-          >
-            {f.label}
-            <span>{counts[f.key]}</span>
-          </button>
-        ))}
+      {/* The same segmented control the tables use (see TableFilterPills) —
+          buttons rather than links, because this filter is local state and
+          not worth a navigation. */}
+      <div className="filter-pills">
+        <div className="filter-pills__group" role="group" aria-label="Filter applications">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              className={`filter-pill filter-pill--button${filter === f.key ? " is-active" : ""}`}
+              aria-pressed={filter === f.key}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+              <span className="filter-pill__count">{counts[f.key]}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {visible.length === 0 ? (

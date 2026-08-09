@@ -8,10 +8,10 @@ interface Props {
   children?: ReactNode;
 }
 
-// The masthead every content page opens with (about, blog, careers, contact,
-// legal). One component so the six of them cannot drift apart a heading size
-// at a time — the homepage sections stay on .section__head, which this
-// deliberately mirrors rather than replaces.
+// The masthead every content page opens with (about, blog, contact, legal).
+// One component so they cannot drift apart a heading size at a time — the
+// homepage sections stay on .section__head, which this deliberately mirrors
+// rather than replaces.
 export function PageHero({ eyebrow, title, sub, children }: Props) {
   return (
     <header className="page-hero">

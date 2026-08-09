@@ -14402,6 +14402,34 @@ a.notification-panel__item:hover {
 .filter-pill.is-active { background: var(--accent); color: #fff; }
 .filter-pill.is-active:hover { background: var(--accent); }
 
+/* Same pill where the filter is local state rather than a URL — a <button>
+   brings its own border, background and font, all of which have to go. */
+.filter-pill--button {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* The tally rides inside the pill. As a bare number next to the label it
+   read as part of the label ("Waiting 3"). */
+.filter-pill__count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.filter-pill.is-active .filter-pill__count {
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+}
+
 /* ── Admin actions on a teammate ─────────────────────────────────────── */
 
 /* Pinned to the header's top-right rather than inline, so it sits clear of
@@ -16299,11 +16327,12 @@ a.notification-panel__item:hover {
 }
 
 /* ---------------------------------------------------------------------------
-   Content pages — about, blog, careers, contact, become-a-teammate, legal.
+   Content pages — about, blog, contact, become-a-teammate, legal.
 
-   One kit shared by all six rather than a bespoke layer each: they are the
-   same handful of shapes (a masthead, prose, a card grid, a form panel) and
-   six private stylesheets is how a site ends up with four heading scales.
+   One kit shared by all of them rather than a bespoke layer each: they are
+   the same handful of shapes (a masthead, prose, a card grid, a form panel)
+   and five private stylesheets is how a site ends up with four heading
+   scales.
    Everything here composes with .section / .container / .btn / .form-row.
    ------------------------------------------------------------------------- */
 
@@ -16684,120 +16713,6 @@ a.notification-panel__item:hover {
   color: var(--text-muted);
 }
 
-/* ── Careers ────────────────────────────────────────────────── */
-.role-list {
-  display: grid;
-  gap: 16px;
-}
-
-.role-card {
-  padding: 26px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-  scroll-margin-top: calc(var(--header-h) + 20px);
-}
-
-.role-card__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.role-card__title {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.role-card__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.role-card__tags span {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  font-size: 12px;
-  color: var(--text-faint);
-}
-
-.role-card__summary {
-  margin-top: 16px;
-  font-size: 14.5px;
-  line-height: 1.65;
-  color: var(--text-muted);
-}
-
-.role-card__cols {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 34px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
-}
-
-.role-card__cols h4 {
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.role-card__cols ul {
-  padding-left: 18px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-muted);
-}
-
-.role-card__cols li + li {
-  margin-top: 6px;
-}
-
-.role-card__cols li::marker {
-  color: var(--accent);
-}
-
-.cta-panel {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 26px;
-  margin-top: clamp(48px, 7vw, 80px);
-  padding: 30px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-}
-
-.cta-panel h2 {
-  margin-bottom: 8px;
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.cta-panel p {
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--text-muted);
-}
-
-.cta-panel a:not(.btn) {
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.cta-panel .btn {
-  margin-top: 14px;
-}
-
 /* ── Blog ───────────────────────────────────────────────────── */
 .post-grid {
   display: grid;
@@ -17140,16 +17055,12 @@ a.notification-panel__item:hover {
   .step-grid,
   .check-list,
   .qa-list,
-  .role-card__cols,
-  .cta-panel,
   .panel-form .form-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .panel,
-  .post-card--lead,
-  .role-card,
-  .cta-panel {
+  .post-card--lead {
     padding: 20px;
   }
 }
@@ -17707,13 +17618,6 @@ a.notification-panel__item:hover {
 }
 
 /* ── Admin: application queue ───────────────────────────────── */
-.application-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
 .application-list {
   display: grid;
   gap: 12px;
@@ -17903,15 +17807,6 @@ a.notification-panel__item:hover {
 .value-card:hover .value-card__icon,
 .contact-card:hover .contact-card__icon {
   transform: scale(1.08) rotate(-4deg);
-}
-
-.role-card {
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.role-card:hover {
-  border-color: var(--border-strong);
-  background: var(--bg-elevated-2);
 }
 
 .check-list li i {
