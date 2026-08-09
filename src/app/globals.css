@@ -11461,7 +11461,112 @@ a.notification-panel__item:hover {
   object-fit: cover;
 }
 
+/* The rank emblem, with the game mark tucked into its corner — the two
+   answers a teammate needs before anything else, in one object. */
+.request-card__badge {
+  position: relative;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+}
+
+.request-card__rank-art {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+.request-card__badge-game {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--dash-surface);
+  object-fit: cover;
+}
+
 .request-card__who { min-width: 0; }
+
+.request-card__region {
+  margin-top: 2px;
+  color: var(--text-faint);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* What the customer asked for. Sits between the hard facts and the buttons,
+   which is where a teammate is actually deciding — the whole point is that
+   it costs a glance to read before the Accept, not a click after it. */
+.request-card__brief {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 11px 0 0;
+  margin-top: 11px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.request-card__lanes {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.request-card__lanes img {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+}
+
+.request-card__lane-text {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.request-card__ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 11px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.request-card__ask > i {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.request-card__ask span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.request-card__ask small {
+  color: var(--text-faint);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.request-card__ask strong {
+  color: var(--text);
+  font-size: 11.5px;
+  text-transform: capitalize;
+}
 
 /* The rank leads: it is what decides whether the order is worth taking. */
 .request-card__rank {

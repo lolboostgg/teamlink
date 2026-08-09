@@ -1,5 +1,39 @@
 import { prisma } from "@/lib/db";
 import { getCreditPackage } from "@/lib/credits";
+import { Prisma } from "@/generated/prisma/client";
+
+/**
+ * Puts store credit back after a spend that led nowhere.
+ *
+ * Balance and ledger move together, and the ledger's unique
+ * (userId, orderId, REFUND) index makes a repeat a no-op rather than a second
+ * credit — the same trade lib/orderRefunds.ts makes, for the same reason: a
+ * retried action and two open tabs both send this twice.
+ */
+export async function refundCreditsToUser(
+  userId: string,
+  amountEUR: number,
+  note: string,
+  orderId: string,
+): Promise<boolean> {
+  const cents = Math.round(amountEUR * 100);
+  if (cents <= 0) return false;
+
+  try {
+    await prisma.$transaction([
+      prisma.creditTransaction.create({
+        data: { userId, orderId, type: "REFUND", amountCents: cents, note },
+      }),
+      prisma.user.update({ where: { id: userId }, data: { creditBalanceCents: { increment: cents } } }),
+    ]);
+    return true;
+  } catch (err) {
+    // The unique index rejecting a duplicate is the mechanism working, not a
+    // failure: this spend has already been paid back.
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") return false;
+    throw err;
+  }
+}
 
 /**
  * Grants a bought credit package.

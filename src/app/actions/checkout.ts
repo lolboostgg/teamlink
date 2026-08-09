@@ -10,6 +10,7 @@ import { findRedeemableCoupon, reserveCoupon, releaseCouponForOrder } from "@/li
 import { startCheckout } from "@/lib/stripeCheckout";
 import { settleCheckoutSession } from "@/lib/fulfilment";
 import { spendCredits } from "@/app/actions/credits";
+import { refundCreditsToUser } from "@/lib/creditsServer";
 
 export interface PlaceOrderInput {
   gameSlug: string;
@@ -264,7 +265,24 @@ export async function placeReplayCheckout(
       await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
       return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
     }
-    await activateOrderAfterPayment(order.id);
+
+    // The balance is already gone by this point. If releasing the order into
+    // dispatch then fails, the customer has paid for a session that does not
+    // exist and the only thing they were told was "try again" — so the money
+    // goes back before anything is said, and the failure is logged with the
+    // order id rather than disappearing into a server-action digest.
+    try {
+      await activateOrderAfterPayment(order.id);
+    } catch (err) {
+      console.error(`[replay] dispatch failed for order ${order.id}, refunding credits:`, err);
+      await refundCreditsToUser(userId!, priceEUR, `Refund · replay could not start`, order.id);
+      await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
+      return {
+        ok: false,
+        error: "We couldn't start that session, so nothing was charged — your balance is untouched.",
+      };
+    }
+
     return { ok: true, redirect: orderPath(order) };
   }
 

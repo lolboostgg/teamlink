@@ -107,6 +107,7 @@ type CandidateRow = {
     ignRegion: string | null;
     ignRank: string | null;
     ignDivision: string | null;
+    ignRoles: unknown;
     dispatchDeadline: Date;
     selectionDeadline: Date | null;
     candidates: { status: string; teammateId: string; selected: boolean; isPrimary: boolean }[];
@@ -149,6 +150,10 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
     ignRegion: order.ignRegion,
     ignRank: order.ignRank,
     ignDivision: order.ignDivision,
+    // Lanes travel with the invitation too. Deciding whether to take an order
+    // is partly "can I play what they need", and answering that after
+    // accepting is answering it too late.
+    ignRoles: (order.ignRoles as string[] | null) ?? [],
     games: order.games,
   };
 }

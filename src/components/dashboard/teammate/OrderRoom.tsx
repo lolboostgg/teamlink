@@ -30,6 +30,10 @@ import type { DispatchOrderView } from "@/lib/dispatch/phase";
 import { formatRank } from "@/lib/gameRanks";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
 
+// Where a teammate lands once an order is off their plate — the queue, not
+// the overview.
+const NEXT_ORDER_HREF = "/dashboard/teammate/requests";
+
 /**
  * A value you are meant to paste somewhere else.
  *
@@ -234,7 +238,7 @@ export function OrderRoom({ orderId }: { orderId: string }) {
     }
     if (approve) {
       showToast("Session cancelled.", "success");
-      router.replace("/dashboard/teammate");
+      router.replace(NEXT_ORDER_HREF);
       return;
     }
     showToast("Cancellation declined — the session continues.", "info");
@@ -620,7 +624,11 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                     }
                     setConfirming(false);
                     showToast("Order completed.", "success");
-                    router.replace("/dashboard/teammate");
+                    // Straight back to the queue, not the overview. A teammate
+                    // who just finished is the one most likely to take the
+                    // next order, and the overview is a page they have to
+                    // leave again before they can.
+                    router.replace(NEXT_ORDER_HREF);
                   })
                 }
               >

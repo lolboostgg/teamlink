@@ -6,7 +6,8 @@ import type { DispatchOrderView } from "@/lib/dispatch/phase";
 import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchActions";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { gameIcon } from "@/lib/gameArt";
-import { formatRank } from "@/lib/gameRanks";
+import { formatRank, rankIcon } from "@/lib/gameRanks";
+import { getGameProfileConfig, type ProfileOption } from "@/lib/gameProfiles";
 import { playSound, stopSound } from "@/lib/notificationSound";
 import { ackDispatchAlert } from "@/lib/dispatch/ack";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -79,6 +80,13 @@ function Fact({ label, value, strong }: { label: string; value: ReactNode; stron
   );
 }
 
+/** The lanes the customer asked for, as the game's own marks where it has any. */
+function roleOptionsFor(gameSlug: string, values: string[]): ProfileOption[] {
+  if (values.length === 0) return [];
+  const options = getGameProfileConfig(gameSlug)?.roles?.options ?? [];
+  return values.map((value) => options.find((option) => option.value === value) ?? { value, label: value });
+}
+
 /**
  * One open request, with its own clock.
  *
@@ -116,17 +124,43 @@ function RequestCard({
   // the next read dropping it — vanishing mid-reach is its own confusion.
   const expired = left <= 0;
   const rank = formatRank(order.gameSlug, order.ignRank ?? null, order.ignDivision ?? null);
+  const rankArt = rankIcon(order.gameSlug, order.ignRank ?? null);
+  const roles = roleOptionsFor(order.gameSlug, order.ignRoles ?? []);
+
+  // What the customer said they wanted, in the order it matters when you are
+  // deciding whether to take them. Empty entries drop out rather than showing
+  // a row of dashes — an unanswered preference is not information.
+  const asks = [
+    { icon: "fa-solid fa-face-smile", label: "Vibe", value: order.vibe },
+    { icon: "fa-solid fa-microphone", label: "Comms", value: order.conversationPref },
+    { icon: "fa-solid fa-chess", label: "Play style", value: order.playStylePref },
+  ].filter((entry) => Boolean(entry.value));
 
   return (
     <article className={`request-card${expired ? " is-expired" : ""}`}>
       <header className="request-card__head">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
+        {/* The rank emblem where the game icon used to be. Which game it is
+            already appears on the right; the rank is the thing that decides
+            whether the order is worth taking, and an emblem lands faster than
+            a word does. The game icon falls in behind it as a corner mark so
+            neither answer is missing. */}
+        <span className="request-card__badge">
+          {rankArt ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={rankArt} alt="" className="request-card__rank-art" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={gameIcon(order.gameSlug)} alt="" className="request-card__icon" />
+          )}
+          {rankArt && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={gameIcon(order.gameSlug)} alt="" className="request-card__badge-game" />
+          )}
+        </span>
         <div className="request-card__who">
-          {/* The rank is the first thing a teammate reads — it decides
-              whether the order is one they want at all. */}
           <div className="request-card__rank">{rank ?? "Unranked"}</div>
           <div className="request-card__name">{order.customerLabel}</div>
+          {order.ignRegion && <div className="request-card__region">{order.ignRegion.toUpperCase()}</div>}
         </div>
         <div className="request-card__order">
           <span className="request-card__order-no">#{order.orderNo}</span>
@@ -147,6 +181,34 @@ function RequestCard({
         />
         <Fact label="You earn" value={<PriceTag amountEUR={order.payoutEUR} />} strong />
       </div>
+
+      {(roles.length > 0 || asks.length > 0) && (
+        <div className="request-card__brief">
+          {roles.length > 0 && (
+            <span className="request-card__lanes" title={`Lanes: ${roles.map((r) => r.label).join(", ")}`}>
+              {roles.map((role) =>
+                role.icon ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={role.value} src={role.icon} alt={role.label} />
+                ) : (
+                  <span key={role.value} className="request-card__lane-text">
+                    {role.label}
+                  </span>
+                ),
+              )}
+            </span>
+          )}
+          {asks.map((ask) => (
+            <span key={ask.label} className="request-card__ask">
+              <i className={ask.icon} aria-hidden="true" />
+              <span>
+                <small>{ask.label}</small>
+                <strong>{ask.value}</strong>
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
 
       <footer className="request-card__foot">
         <span className="request-card__accepted">

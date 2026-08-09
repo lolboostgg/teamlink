@@ -33,6 +33,19 @@ export function rankHasDivisions(rank: string | null): boolean {
   return !WITHOUT_DIVISIONS.has(rank.toLowerCase());
 }
 
+/**
+ * The rank's own artwork, where the game has any.
+ *
+ * A rank badge is the thing a teammate actually reads on an incoming request
+ * — it decides whether the order is one they want at all — and a word in a
+ * list is far slower to take in than the emblem they already know from the
+ * client. Null for games we hold no art for; the label stays the fallback.
+ */
+export function rankIcon(gameSlug: string, rank: string | null): string | null {
+  if (!rank) return null;
+  return ranksForGame(gameSlug).find((option) => option.value === rank)?.icon ?? null;
+}
+
 /** "Gold IV", or just "Master" where divisions don't apply. */
 export function formatRank(gameSlug: string, rank: string | null, division: string | null): string | null {
   if (!rank) return null;
