@@ -30,7 +30,7 @@ export interface CommunityStats {
     reviewCount: number;
     sessions: number;
   }[];
-  activeTeammates: {
+  carouselTeammates: {
     id: string;
     name: string;
     avatarUrl: string | null;
@@ -59,12 +59,12 @@ export const EMPTY_COMMUNITY_STATS: CommunityStats = {
   distribution: [5, 4, 3, 2, 1].map((rating) => ({ rating, count: 0 })),
   completedSessions: 0,
   ratedTeammates: [],
-  activeTeammates: [],
+  carouselTeammates: [],
   recentReviews: [],
 };
 
 export async function getCommunityStats(): Promise<CommunityStats> {
-  const [total, average, byRating, completedSessions, teammates, activeTeammates, recentReviews] = await Promise.all([
+  const [total, average, byRating, completedSessions, teammates, carouselTeammates, recentReviews] = await Promise.all([
     prisma.review.count(),
     prisma.review.aggregate({ _avg: { rating: true } }),
     prisma.review.groupBy({ by: ["rating"], _count: true }),
@@ -79,7 +79,6 @@ export async function getCommunityStats(): Promise<CommunityStats> {
     }),
     prisma.teammate.findMany({
       where: {
-        available: true,
         OR: [{ user: { is: null } }, { user: { is: { bannedAt: null } } }],
       },
       select: {
@@ -90,7 +89,7 @@ export async function getCommunityStats(): Promise<CommunityStats> {
         avatarFocusY: true,
         avatarZoom: true,
       },
-      orderBy: [{ lastSeenAt: "desc" }, { name: "asc" }],
+      orderBy: [{ sessionsCount: "desc" }, { name: "asc" }],
       take: 20,
     }),
     prisma.review.findMany({
@@ -122,7 +121,7 @@ export async function getCommunityStats(): Promise<CommunityStats> {
       reviewCount: t._count.reviewsReceived,
       sessions: t.sessionsCount,
     })),
-    activeTeammates,
+    carouselTeammates,
     recentReviews: recentReviews.map((review) => ({
       id: review.id,
       rating: review.rating,

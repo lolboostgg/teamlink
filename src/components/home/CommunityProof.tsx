@@ -72,8 +72,8 @@ export function CommunityProof() {
   if (!stats || stats.recentReviews.length === 0 || stats.averageRating === null) return null;
 
   const arrangedReviews = spreadTeammates(stats.recentReviews).map((review, index) => {
-    if (!stats.activeTeammates.length) return review;
-    const teammate = stats.activeTeammates[index % stats.activeTeammates.length];
+    if (!stats.carouselTeammates.length) return review;
+    const teammate = stats.carouselTeammates[index % stats.carouselTeammates.length];
     return {
       ...review,
       teammateName: teammate.name,

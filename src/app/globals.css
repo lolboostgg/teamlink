@@ -18661,7 +18661,7 @@ a.notification-panel__item:hover {
 .proof-carousel__track {
   display: flex;
   width: max-content;
-  animation: trustReviewsLeft 36s linear infinite;
+  animation: trustReviewsLeft 58s linear infinite;
 }
 
 .proof-carousel__viewport.is-reverse .proof-carousel__track {
