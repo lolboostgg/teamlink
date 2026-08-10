@@ -73,6 +73,42 @@ model User {
   gameAccounts         GameAccount[]
   couponsOwned         Coupon[]              @relation("CouponsOwned")
   tipsSent             Tip[]                 @relation("TipsSent")
+  blogPosts            BlogPost[]            @relation("BlogPostAuthor")
+}
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?    @db.Text
+  gameSlug    String?    @unique
+  iconUrl     String?    @db.Text
+  posts       BlogPost[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model BlogPost {
+  id              String       @id @default(cuid())
+  slug            String       @unique
+  title           String
+  excerpt         String       @db.Text
+  content         String       @db.Text
+  coverImageUrl   String?      @db.Text
+  coverImageAlt   String?
+  seoTitle        String?
+  seoDescription  String?      @db.Text
+  published       Boolean      @default(false)
+  publishedAt     DateTime?
+  categoryId      String
+  category        BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  authorId        String
+  author          User         @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([published, publishedAt])
+  @@index([categoryId, published, publishedAt])
 }
 
 /**
