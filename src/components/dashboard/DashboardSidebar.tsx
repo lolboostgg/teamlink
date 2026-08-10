@@ -13,6 +13,8 @@ import type { TranslationKey } from "@/lib/translations";
 // Client dashboard has its own tab strip instead (see
 // ClientDashboardNav.tsx) — it no longer uses this shell/sidebar at all.
 type ShellRole = "admin" | "teammate";
+type AdminRole = "SUPPORT" | "OPERATIONS" | "FINANCE" | "SUPERADMIN";
+type AdminPermission = "support" | "operations" | "finance" | "security";
 
 const COLLAPSED_KEY = "qup:dashboard-sidebar-collapsed";
 
@@ -58,6 +60,32 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   ],
 };
 
+const ADMIN_SECTION_PERMISSION: Record<string, AdminPermission | null> = {
+  "/dashboard/admin": null,
+  "/dashboard/admin/analytics": "finance",
+  "/dashboard/admin/users": "operations",
+  "/dashboard/admin/teammates": "operations",
+  "/dashboard/admin/sanctions": "operations",
+  "/dashboard/admin/dispatch": "operations",
+  "/dashboard/admin/orders": "support",
+  "/dashboard/admin/chat": "support",
+  "/dashboard/admin/payouts": "finance",
+  "/dashboard/admin/disputes": "support",
+  "/dashboard/admin/transactions": "finance",
+  "/dashboard/admin/applications": "operations",
+  "/dashboard/admin/onboarding": "operations",
+  "/dashboard/admin/audit": "security",
+  "/dashboard/admin/staff": "security",
+  "/dashboard/admin/security": "security",
+};
+
+const ADMIN_GRANTS: Record<AdminRole, ReadonlySet<AdminPermission>> = {
+  SUPPORT: new Set(["support"]),
+  OPERATIONS: new Set(["support", "operations"]),
+  FINANCE: new Set(["support", "finance"]),
+  SUPERADMIN: new Set(["support", "operations", "finance", "security"]),
+};
+
 const NAV_KEYS: Partial<Record<string, TranslationKey>> = {
   Overview: "nav.overview", Analytics: "nav.analytics", Users: "nav.users", Teammates: "nav.teammates",
   Sanctions: "nav.sanctions", "Live dispatch": "nav.dispatch", "Orders & sessions": "nav.ordersSessions",
@@ -89,9 +117,15 @@ export function DashboardSidebar({
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const role: ShellRole = pathname.startsWith("/dashboard/admin") ? "admin" : "teammate";
-  const baseSections = role === "admin" && adminRole !== "SUPERADMIN"
-    ? SECTIONS.admin.filter((section) => section.href !== "/dashboard/admin/staff")
-    : SECTIONS[role];
+  const scopedAdminRole: AdminRole = adminRole === "SUPPORT" || adminRole === "OPERATIONS" || adminRole === "FINANCE"
+    ? adminRole
+    : "SUPERADMIN";
+  const baseSections = role === "admin"
+    ? SECTIONS.admin.filter((section) => {
+        const permission = ADMIN_SECTION_PERMISSION[section.href];
+        return permission === null || (permission !== undefined && ADMIN_GRANTS[scopedAdminRole].has(permission));
+      })
+    : SECTIONS.teammate;
   // While the checklist is open, the sidebar becomes the checklist plus the
   // three pages it sends you to. Everything else is rendered locked rather
   // than hidden, so it's obvious the panel exists and what unlocks it.
