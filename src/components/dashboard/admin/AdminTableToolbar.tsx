@@ -20,6 +20,7 @@ interface Props {
   filters?: Filter[];
   /** Some tables filter but have nothing worth searching by. */
   searchable?: boolean;
+  filterDisplay?: "select" | "pills";
 }
 
 /**
@@ -35,6 +36,7 @@ export function AdminTableToolbar({
   searchLabel = "Search",
   filters = [],
   searchable = true,
+  filterDisplay = "select",
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -99,19 +101,32 @@ export function AdminTableToolbar({
       </label>
       )}
 
-      {filters.map((entry) => (
-        <OrdersStatusSelect
-          key={entry.param}
-          value={values[entry.param] ?? ""}
-          options={entry.options}
-          onChange={(next) => {
-            const updated = { ...valuesRef.current, [entry.param]: next };
-            valuesRef.current = updated;
-            setValues(updated);
-            navigate(query, updated);
-          }}
-        />
-      ))}
+      {filters.map((entry) => {
+        const change = (next: string) => {
+          const updated = { ...valuesRef.current, [entry.param]: next };
+          valuesRef.current = updated;
+          setValues(updated);
+          navigate(query, updated);
+        };
+        return filterDisplay === "pills" ? (
+          <div className="admin-filter-pills" role="group" aria-label={`Filter by ${entry.param}`} key={entry.param}>
+            {entry.options.map((option) => (
+              <button
+                type="button"
+                key={option.value}
+                className={`admin-filter-pill${(values[entry.param] ?? "") === option.value ? " is-active" : ""}`}
+                aria-pressed={(values[entry.param] ?? "") === option.value}
+                onClick={() => change(option.value)}
+              >
+                {option.icon && <i className={option.icon} aria-hidden="true" />}
+                {option.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <OrdersStatusSelect key={entry.param} value={values[entry.param] ?? ""} options={entry.options} onChange={change} />
+        );
+      })}
 
       {(query || anyFilterSet) && (
         <Link

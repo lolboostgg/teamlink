@@ -33,14 +33,16 @@ type Props = { searchParams: Promise<{ q?: string; availability?: string; page?:
 export default async function AdminTeammatesPage({ searchParams }: Props) {
   const params = await searchParams;
   const q = params.q?.trim().slice(0, 100) ?? "";
-  const availability = params.availability === "online" || params.availability === "offline" ? params.availability : undefined;
+  const availability = ["online", "offline", "banned"].includes(params.availability ?? "") ? params.availability : undefined;
 
   // AND rather than a spread: the search below brings its own OR, and two
   // OR keys in one object would silently overwrite each other.
   const where: Prisma.TeammateWhereInput = {
     AND: [
       ON_ROSTER,
-      ...(availability ? [{ available: availability === "online" }] : []),
+      ...(availability === "online" ? [{ available: true, user: { is: { bannedAt: null } } }] : []),
+      ...(availability === "offline" ? [{ available: false, user: { is: { bannedAt: null } } }] : []),
+      ...(availability === "banned" ? [{ user: { is: { bannedAt: { not: null } } } }] : []),
       ...(q
         ? [
             {
@@ -90,6 +92,7 @@ export default async function AdminTeammatesPage({ searchParams }: Props) {
     discordUsername: t.user?.discordUsername ?? null,
     discordAvatar: t.user?.discordAvatar ?? null,
     balanceEUR: Number(t.balanceEUR),
+    bannedAt: t.user?.bannedAt?.getTime() ?? null,
   }));
 
   const hrefFor = (nextPage: number) => {
@@ -125,6 +128,7 @@ export default async function AdminTeammatesPage({ searchParams }: Props) {
           initialQuery={q}
           placeholder="Search name, email, Discord or roster no…"
           searchLabel="Search teammates"
+          filterDisplay="pills"
           filters={[{
             param: "availability",
             value: availability ?? "",
@@ -132,6 +136,7 @@ export default async function AdminTeammatesPage({ searchParams }: Props) {
               { value: "", label: "Any availability", icon: "fa-solid fa-layer-group" },
               { value: "online", label: "Available", icon: "fa-solid fa-circle-check" },
               { value: "offline", label: "Offline", icon: "fa-regular fa-circle" },
+              { value: "banned", label: "Banned", icon: "fa-solid fa-ban" },
             ],
           }]}
         />

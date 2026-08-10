@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
-import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import { COMPANY } from "@/lib/company";
 import type { CommunityStats } from "@/lib/community";
 
@@ -83,26 +81,31 @@ export function CommunityProof() {
             </Reveal>
           </div>
 
-          {stats.ratedTeammates.length > 0 && (
-            <Reveal className="proof__people" delay={120}>
+          {stats.recentReviews.length > 0 && (
+            <Reveal className="proof-reviews" delay={120}>
               <div className="proof__people-head">
-                <div><span className="proof__people-kicker">Top rated</span><h3>Teammates players loved</h3></div>
-                <Link href="/games" className="proof__cta">Find your teammate <i className="fa-solid fa-arrow-right" aria-hidden="true" /></Link>
+                <div><span className="proof__people-kicker">Latest reviews</span><h3>Rated by verified players</h3></div>
+                <span className="proof-reviews__hint"><i className="fa-solid fa-circle-check" aria-hidden="true" /> Completed sessions only</span>
               </div>
-              <ul className="proof__list">
-                {stats.ratedTeammates.map((teammate, index) => (
-                  <li className="proof-person" key={teammate.id}>
-                    <span className="proof-person__rank">{String(index + 1).padStart(2, "0")}</span>
-                    <span className="proof-person__avatar"><SafeAvatarImage src={teammate.avatarUrl} frame={teammate} /></span>
-                    <span className="proof-person__body">
-                      <span className="proof-person__name">{teammate.name}</span>
-                      <span className="proof-person__meta">{teammate.reviewCount} verified {teammate.reviewCount === 1 ? "rating" : "ratings"}</span>
-                    </span>
-                    <span className="proof-person__rating"><i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(2).replace(/0$/, "")}</span>
-                    {teammate.sessions > 0 && <span className="proof-person__sessions">{teammate.sessions} sessions</span>}
-                  </li>
-                ))}
-              </ul>
+              <div className="proof-reviews__viewport">
+                <div className="proof-reviews__track">
+                  {[0, 1].map((copy) => (
+                    <div className="proof-reviews__set" key={copy} aria-hidden={copy === 1 || undefined}>
+                      {stats.recentReviews.map((review) => (
+                        <article className="proof-review" key={`${copy}-${review.id}`}>
+                          <div className="proof-review__stars" aria-label={`${review.rating} out of 5 stars`}>
+                            {Array.from({ length: 5 }).map((_, index) => <span className={index < review.rating ? "is-filled" : ""} key={index}><i className="fa-solid fa-star" /></span>)}
+                          </div>
+                          <strong>{review.rating}/5 session rating</strong>
+                          <p>{review.gameName} · {review.option}</p>
+                          <span className="proof-review__with">Played with <b>{review.teammateName}</b></span>
+                          <footer><span><i className="fa-solid fa-circle-check" /> {review.clientName}</span><time>{new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(review.createdAt))}</time></footer>
+                        </article>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </Reveal>
           )}
         </div>

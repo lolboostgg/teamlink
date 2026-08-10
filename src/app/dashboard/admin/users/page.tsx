@@ -112,6 +112,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           initialQuery={q}
           placeholder="Search name, email, Discord or account no…"
           searchLabel="Search users"
+          filterDisplay="pills"
           filters={[{
             param: "role",
             value: role ?? "",

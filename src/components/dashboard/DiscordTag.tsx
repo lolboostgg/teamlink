@@ -1,3 +1,5 @@
+"use client";
+
 import { discordAvatarUrl } from "@/lib/discord";
 
 /**
@@ -20,12 +22,15 @@ export function DiscordTag({
 
   return (
     <span className="discord-tag" title={discordId}>
-      {avatar ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={avatar} alt="" />
-      ) : (
+      <span className="discord-tag__mark" aria-hidden="true">
         <i className="fa-brands fa-discord" aria-hidden="true" />
-      )}
+        {avatar && (
+          // A cached Discord avatar hash can expire. The brand mark remains
+          // underneath and is revealed if the CDN image fails.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatar} alt="" onError={(event) => { event.currentTarget.hidden = true; }} />
+        )}
+      </span>
       {discordUsername ?? discordId}
     </span>
   );

@@ -30,6 +30,15 @@ export interface CommunityStats {
     reviewCount: number;
     sessions: number;
   }[];
+  recentReviews: {
+    id: string;
+    rating: number;
+    gameName: string;
+    option: string;
+    teammateName: string;
+    clientName: string;
+    createdAt: string;
+  }[];
 }
 
 export const EMPTY_COMMUNITY_STATS: CommunityStats = {
@@ -39,10 +48,11 @@ export const EMPTY_COMMUNITY_STATS: CommunityStats = {
   distribution: [5, 4, 3, 2, 1].map((rating) => ({ rating, count: 0 })),
   completedSessions: 0,
   ratedTeammates: [],
+  recentReviews: [],
 };
 
 export async function getCommunityStats(): Promise<CommunityStats> {
-  const [total, average, byRating, completedSessions, teammates] = await Promise.all([
+  const [total, average, byRating, completedSessions, teammates, recentReviews] = await Promise.all([
     prisma.review.count(),
     prisma.review.aggregate({ _avg: { rating: true } }),
     prisma.review.groupBy({ by: ["rating"], _count: true }),
@@ -54,6 +64,15 @@ export async function getCommunityStats(): Promise<CommunityStats> {
       include: { _count: { select: { reviewsReceived: true } } },
       orderBy: [{ rating: "desc" }],
       take: 6,
+    }),
+    prisma.review.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      include: {
+        teammate: { select: { name: true } },
+        clientUser: { select: { name: true } },
+        order: { select: { gameName: true, option: true, customerLabel: true } },
+      },
     }),
   ]);
 
@@ -75,6 +94,15 @@ export async function getCommunityStats(): Promise<CommunityStats> {
       rating: t.rating,
       reviewCount: t._count.reviewsReceived,
       sessions: t.sessionsCount,
+    })),
+    recentReviews: recentReviews.map((review) => ({
+      id: review.id,
+      rating: review.rating,
+      gameName: review.order.gameName,
+      option: review.order.option,
+      teammateName: review.teammate.name,
+      clientName: review.clientUser?.name || review.order.customerLabel || "Verified player",
+      createdAt: review.createdAt.toISOString(),
     })),
   };
 }

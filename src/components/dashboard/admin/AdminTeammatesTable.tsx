@@ -17,6 +17,7 @@ export interface AdminTeammateRow {
   discordUsername: string | null;
   discordAvatar: string | null;
   balanceEUR: number;
+  bannedAt: number | null;
 }
 
 // Editing moved out of a modal and onto the teammate profile page
@@ -46,7 +47,10 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
         </tr>
       </thead>
       <tbody>
-        {teammates.map((t) => (
+        {teammates.map((t) => {
+          const visibleGames = t.gameSlugs.slice(0, 6);
+          const hiddenGames = t.gameSlugs.length - visibleGames.length;
+          return (
           <tr key={t.id}>
             <td className="dashboard-table__no">#{t.teammateNo}</td>
             <td className="dashboard-table__primary">
@@ -60,10 +64,11 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
             </td>
             <td>
               {t.gameSlugs.length ? (
-                <span className="game-mark-stack">
-                  {t.gameSlugs.map((slug) => (
-                    <GameMark key={slug} slug={slug} size={26} />
+                <span className="game-mark-stack game-mark-stack--compact" aria-label={`${t.gameSlugs.length} games`}>
+                  {visibleGames.map((slug) => (
+                    <GameMark key={slug} slug={slug} size={23} />
                   ))}
+                  {hiddenGames > 0 && <span className="game-mark-more" title={`${hiddenGames} more games`}>+{hiddenGames}</span>}
                 </span>
               ) : (
                 "—"
@@ -74,8 +79,8 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
               {/* "ready", not "available": this column answers whether the
                   dispatcher may send them an order, and "available" reads as
                   a fact about the person rather than a switch they set. */}
-              <span className={`dashboard-pill ${t.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>
-                {t.available ? "ready" : "unavailable"}
+              <span className={`dashboard-pill ${t.bannedAt ? "dashboard-pill--danger" : t.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}>
+                {t.bannedAt ? "banned" : t.available ? "ready" : "unavailable"}
               </span>
             </td>
             <td>
@@ -84,7 +89,8 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
               </Link>
             </td>
           </tr>
-        ))}
+          );
+        })}
       </tbody>
     </table>
   );
