@@ -82,6 +82,14 @@ const POLICY: Record<string, ChannelPolicy> = {
   "order.unread_escalated": { discord: true, topic: "orders" },
   "order.reviewed": { discord: true, topic: "orders" },
 
+  // The customer picked *them*, and is now sitting in a lobby waiting for an
+  // invite. This is the opposite case to a dispatch invitation: that one
+  // lives for fifteen seconds and cannot be answered from a DM, so it stays
+  // out of here — this one has already been decided, and the longer it takes
+  // to reach somebody who is mid-game the worse the session starts. It was
+  // bell-only, which a teammate in a fullscreen client never sees.
+  "order.assigned": { discord: true, topic: "orders" },
+
   // Money in, not money out — a tip is the customer saying thank you and is
   // worth hearing about while the good mood is still there.
   "tip.received": { discord: true, topic: "balance" },
@@ -145,6 +153,7 @@ const PRESENTATION: Record<string, { emoji: string; color: number }> = {
   "order.cancel_requested": { emoji: "\u{1F6D1}", color: 0xe5484d },
   "order.refund_due": { emoji: "\u{1F4B3}", color: 0xf5a524 },
   "order.abandoned": { emoji: "\u{1F4A4}", color: 0xf5a524 },
+  "order.assigned": { emoji: "\u{1F3AF}", color: 0x2fbf71 },
   "order.unread": { emoji: "\u{1F4AC}", color: 0x4066ff },
   "order.unread_escalated": { emoji: "\u{1F4AC}", color: 0xf5a524 },
 };

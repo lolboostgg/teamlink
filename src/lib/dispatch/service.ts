@@ -5,7 +5,10 @@ import { notifyUser, notifyAdmins } from "@/lib/notifications/service";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
 import { issueSessionRewardCoupon } from "@/lib/couponsServer";
-import { notifyTeammateAssigned, notifyOrderCompleted } from "@/lib/notify/orderNotifications";
+import { notifyTeammateAssigned, notifyOrderCompleted, appUrl } from "@/lib/notify/orderNotifications";
+import { postToTeammateChannel } from "@/lib/notify/discordNotify";
+import { sendMail } from "@/lib/notify/mail";
+import { plainNoticeMail } from "@/lib/notify/templates";
 import { settleCancelledOrder, type RefundOutcome } from "@/lib/orderRefunds";
 import { captureOrderPayment } from "@/lib/orderPayments";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
@@ -224,6 +227,9 @@ async function runReconcileTransaction(orderId: string, now: Date) {
   // believes the variable holds its initialiser afterwards, narrows it to
   // null, and then types every property read as `never`.
   const waved: WaveResult[] = [];
+  // Set when this pass is the one that runs the pool dry, so the call to
+  // Discord happens after the transaction commits rather than inside it.
+  let poolJustExhausted: { orderNo: number; gameName: string; priceEUR: number } | null = null;
 
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
@@ -360,6 +366,15 @@ async function runReconcileTransaction(orderId: string, now: Date) {
           const next = await sendWave(tx, orderId, now);
           if (next.exhausted) {
             await tx.order.update({ where: { id: orderId }, data: { poolExhaustedAt: now } });
+            // Only on the null -> exhausted edge. The retry branch above sets
+            // the same column every POOL_RETRY_MS, and announcing there would
+            // repost the same order into the channel every few minutes for as
+            // long as it went unanswered.
+            poolJustExhausted = {
+              orderNo: order.orderNo,
+              gameName: order.gameName,
+              priceEUR: Number(order.priceEUR),
+            };
           } else {
             waved.push(next);
           }
@@ -402,6 +417,15 @@ async function runReconcileTransaction(orderId: string, now: Date) {
     await settleCancelledOrder({ id: orderId, ...ended.noMatch }, "no_match");
   }
 
+  // Everyone eligible has now been asked and nobody took it. The dispatcher
+  // keeps retrying on its own, but until somebody comes online it is retrying
+  // against the same empty pool — so the order goes where teammates who are
+  // not in the panel will still see it. This is revenue that otherwise
+  // expires quietly.
+  if (poolJustExhausted) {
+    await announceUnclaimedOrder(poolJustExhausted);
+  }
+
   // The one event where a poll interval is the difference between taking an
   // order and losing it: a wave is eight seconds long.
   const sentWave = waved[0];
@@ -428,6 +452,41 @@ async function runReconcileTransaction(orderId: string, now: Date) {
 }
 
 /**
+ * An order nobody eligible could take, into the teammate channel.
+ *
+ * The dispatcher does not give up — it releases the lapsed invitations and
+ * asks the same pool again a few minutes later — but until somebody comes
+ * online that is a retry against an empty room. A post reaches the teammates
+ * who are not sitting in the dispatch panel, which is most of them most of
+ * the time.
+ *
+ * Deliberately a channel post and not a DM: nobody has been invited to this
+ * order, so there is no one person it belongs to.
+ *
+ * Best-effort, like every other outbound: a missed post must not fail the
+ * dispatch pass that produced it.
+ */
+async function announceUnclaimedOrder(order: {
+  orderNo: number;
+  gameName: string;
+  priceEUR: number;
+}): Promise<void> {
+  try {
+    await postToTeammateChannel({
+      title: `Order waiting · ${order.gameName}`,
+      description:
+        `Nobody available has taken order #${order.orderNo} yet. Go online and it is yours — ` +
+        `the order is still open and pays €${order.priceEUR.toFixed(2)}.`,
+      color: 0xf5a524,
+      linkUrl: `${appUrl()}/dashboard/teammate/requests`,
+      linkLabel: "Open requests",
+    });
+  } catch {
+    // The announcement failing must not take the dispatch pass with it.
+  }
+}
+
+/**
  * The bells for an abandoned assignment. The customer's mail is sent by
  * settleCancelledOrder(); this is the in-app half, and the admin line.
  *
@@ -449,6 +508,11 @@ async function announceAbandonedOrder(
         ? `${amount} refunded to the customer`
         : "nothing was owed";
 
+  // An account holder gets the bell and, through it, the mail. A guest has
+  // neither — no user row means notifyUser() cannot be called at all — so
+  // this used to be the one cancellation a guest was never told about. They
+  // are the people it matters most to: no dashboard to check, no order list
+  // to notice it in, and money that has just moved.
   if (order.clientUserId) {
     await notifyUser(order.clientUserId, {
       type: "order.abandoned",
@@ -456,6 +520,8 @@ async function announceAbandonedOrder(
       body: `Order #${order.orderNo} was cancelled and ${amount} is back in your balance as credit.`,
       href: "/dashboard/client/wallet",
     });
+  } else {
+    await mailGuestAbandoned(orderId, order.orderNo, refund);
   }
   await notifyAdmins({
     type: "order.abandoned",
@@ -463,6 +529,39 @@ async function announceAbandonedOrder(
     body: `#${order.orderNo} sat assigned without a session — ${settled}.`,
     href: `/dashboard/admin/orders/${order.orderNo}`,
   });
+}
+
+/**
+ * The abandoned-order mail for an order with no account behind it.
+ *
+ * settleCancelledOrder() already mails the cancellation, which a guest does
+ * receive; this is the notification half, which they did not, because every
+ * path to it runs through notifyUser() and a guest has no user id. Sent
+ * straight to the address on the order instead.
+ */
+async function mailGuestAbandoned(orderId: string, orderNo: number, refund: RefundOutcome): Promise<void> {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: { guestEmail: true, gameName: true, accessToken: true },
+    });
+    if (!order?.guestEmail) return;
+
+    const amount = `€${(refund.cents / 100).toFixed(2)}`;
+    const body = refund.problem
+      ? `Order #${orderNo} was cancelled because the session never started. The refund needs doing by hand and we are on it — you do not have to chase us.`
+      : `Order #${orderNo} was cancelled because the session never started, and ${amount} is on its way back to the card you paid with. It usually lands within a few working days.`;
+
+    const mail = plainNoticeMail({
+      name: null,
+      heading: "Your session never started",
+      body,
+      url: order.accessToken ? `${appUrl()}/order/${order.accessToken}` : appUrl(),
+    });
+    await sendMail({ to: order.guestEmail, ...mail });
+  } catch {
+    // Best-effort, like the rest of the outbound in this file.
+  }
 }
 
 /** Tells the picked teammates the order is theirs. */

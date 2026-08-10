@@ -18287,25 +18287,6 @@ a.notification-panel__item:hover {
   color: var(--text-faint);
 }
 
-.privacy-facts__link {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 18px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--hue-green);
-}
-
-.privacy-facts__link i {
-  font-size: 10px;
-  transition: transform 0.15s ease;
-}
-
-.privacy-facts__link:hover i {
-  transform: translateX(3px);
-}
-
 /* ---------------------------------------------------------------------------
    Chat card: the order room's own chrome rather than two floating bubbles.
 
@@ -18553,74 +18534,6 @@ img.bento-chat__avatar {
   object-fit: contain;
 }
 
-/* Privacy: what we keep, against what we never take. */
-.privacy-keeps {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.privacy-keeps__title {
-  display: block;
-  margin-bottom: 9px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.privacy-keeps dl {
-  display: grid;
-  gap: 6px;
-}
-
-.privacy-keeps dl > div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 11.5px;
-}
-
-.privacy-keeps dt {
-  color: var(--text-muted);
-}
-
-.privacy-keeps dd {
-  color: var(--text);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-/* Support: the windows, then where to reach us. */
-.support-times {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
-  list-style: none;
-}
-
-.support-times li {
-  display: grid;
-  grid-template-columns: 82px minmax(0, 1fr);
-  gap: 10px;
-  align-items: baseline;
-}
-
-.support-times b {
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--hue-gold);
-  font-variant-numeric: tabular-nums;
-}
-
-.support-times span {
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: var(--text-faint);
-}
-
 .support-where {
   display: flex;
   flex-wrap: wrap;
@@ -18645,100 +18558,6 @@ img.bento-chat__avatar {
 .support-where i {
   font-size: 10px;
   color: var(--text-faint);
-}
-
-/* Real-time updates: the gap between the clicks, as a clock. */
-.bento-timeline {
-  display: grid;
-  gap: 0;
-  margin-top: 14px;
-  list-style: none;
-}
-
-.bento-timeline li {
-  position: relative;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 7px 0 7px 18px;
-  font-size: 11.5px;
-  color: var(--text-faint);
-}
-
-/* The rail is drawn on the marker, not behind the row, so the last step has
-   no line dangling below it. */
-.bento-timeline li::before {
-  content: "";
-  position: absolute;
-  left: 2px;
-  top: 12px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1.5px solid var(--border-strong);
-  background: var(--bg-elevated);
-}
-
-.bento-timeline li + li::after {
-  content: "";
-  position: absolute;
-  left: 5px;
-  top: -6px;
-  height: 18px;
-  border-left: 1px solid var(--border);
-}
-
-.bento-timeline li.is-done::before {
-  border-color: var(--hue-green);
-  background: var(--hue-green);
-}
-
-.bento-timeline li.is-done {
-  color: var(--text-muted);
-}
-
-.bento-timeline b {
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-/* The price card's own footer: the badge it always had, now beside the
-   document that backs it, over the methods the money can arrive by. */
-.bento-pay {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.bento-pay__label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-/* PaymentStrip is built to bleed to a card's edges and sit flush on its
-   bottom — that is what it does in the booking sidebar's sticky footer. Here
-   it is an inline row halfway up a card, so the bleed margins, the backdrop
-   and the rounded corners all have to come off, or it lands on top of the
-   badge below it. */
-.bento-pay .trust-points__payments--bare {
-  justify-content: flex-start;
-  margin: 0;
-  padding: 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  border-radius: 0;
-}
-
-.bento-pay .trust-points__payment-icons {
-  flex-wrap: wrap;
-  font-size: 17px;
 }
 
 .bento-card__foot {
@@ -18829,23 +18648,6 @@ img.bento-chat__avatar {
   line-height: 1.45;
 }
 
-.privacy-keeps {
-  margin-top: 13px;
-  padding-top: 11px;
-}
-
-.privacy-keeps dl {
-  gap: 4px;
-}
-
-.privacy-keeps dl > div {
-  font-size: 11px;
-}
-
-.privacy-facts__link {
-  margin-top: 13px;
-}
-
 /* Price: the figure block and the strip below it. */
 .bento-card__price-compare {
   margin-top: 10px;
@@ -18857,38 +18659,8 @@ img.bento-chat__avatar {
   font-size: 12px;
 }
 
-.bento-pay {
-  margin-top: 12px;
-  padding-top: 11px;
-}
-
-.bento-pay .trust-points__payment-icons {
-  font-size: 15px;
-  gap: 10px;
-}
-
 .bento-card__foot {
   margin-top: 12px;
-}
-
-/* Support: two columns that fit on one line each. */
-.support-times {
-  gap: 7px;
-  margin-top: 12px;
-}
-
-.support-times li {
-  grid-template-columns: 74px minmax(0, 1fr);
-  gap: 8px;
-}
-
-.support-times b {
-  font-size: 12px;
-}
-
-.support-times span {
-  font-size: 11px;
-  line-height: 1.4;
 }
 
 .support-where {
@@ -18912,24 +18684,6 @@ img.bento-chat__avatar {
 .bento-alert__icon {
   width: 24px;
   height: 24px;
-}
-
-.bento-timeline {
-  margin-top: 10px;
-}
-
-.bento-timeline li {
-  padding: 5px 0 5px 16px;
-  font-size: 11px;
-}
-
-.bento-timeline li::before {
-  top: 10px;
-}
-
-.bento-timeline li + li::after {
-  top: -5px;
-  height: 15px;
 }
 
 /* Chat: the thread, not the bubbles. */

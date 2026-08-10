@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { PriceTag } from "@/components/currency/PriceTag";
-import { PaymentStrip } from "@/components/ui/TrustPoints";
 import { GAMES } from "@/lib/games";
 import { priceFromEUR } from "@/lib/bookingOptions";
 import { rankIcon } from "@/lib/gameRanks";
@@ -64,35 +63,6 @@ export function BentoFeatures() {
                   </span>
                 </li>
               </ul>
-              {/* The other half of the claim. Saying what we never take is
-                  only credible next to what we do keep and for how long —
-                  these are the retention periods from the Privacy Policy,
-                  not a rounder version of them. */}
-              <div className="privacy-keeps">
-                <span className="privacy-keeps__title">What we do keep</span>
-                <dl>
-                  <div>
-                    <dt>Your account</dt>
-                    <dd>while it exists</dd>
-                  </div>
-                  <div>
-                    <dt>Orders and receipts</dt>
-                    <dd>6 years — tax law</dd>
-                  </div>
-                  <div>
-                    <dt>Session chat</dt>
-                    <dd>12 months</dd>
-                  </div>
-                  <div>
-                    <dt>Security logs</dt>
-                    <dd>90 days</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <Link className="privacy-facts__link" href="/legal/privacy">
-                Read the policy <i className="fa-solid fa-arrow-right" aria-hidden="true" />
-              </Link>
             </div>
           </Reveal>
 
@@ -121,11 +91,6 @@ export function BentoFeatures() {
                 </div>
               </div>
 
-              <div className="bento-pay">
-                <span className="bento-pay__label">Pay however you like</span>
-                <PaymentStrip />
-              </div>
-
               <div className="bento-card__foot">
                 <span className="bento-card__badge">Cancel free until matched</span>
                 <Link className="bento-card__link" href="/legal/refunds">
@@ -142,22 +107,6 @@ export function BentoFeatures() {
               </div>
               <h3>Tier-1 support</h3>
               <p>Real people who play these games. No bots, no copy-paste.</p>
-              {/* The same windows the contact page publishes, so the two
-                  cannot promise different things. */}
-              <ul className="support-times">
-                <li>
-                  <b>&lt; 1 h</b>
-                  <span>15:00–01:00 CET, every day</span>
-                </li>
-                <li>
-                  <b>Next morning</b>
-                  <span>anything sent overnight</span>
-                </li>
-                <li>
-                  <b>Same day</b>
-                  <span>refunds, once we have the order number</span>
-                </li>
-              </ul>
               <div className="support-where">
                 <span>
                   <i className="fa-brands fa-discord" aria-hidden="true" /> Discord
@@ -191,22 +140,6 @@ export function BentoFeatures() {
                   <small>just now · tap to open</small>
                 </span>
               </div>
-              {/* What "real-time" is actually worth: the gap between the
-                  clicks. Two minutes, written as two minutes. */}
-              <ol className="bento-timeline">
-                <li className="is-done">
-                  <span>Order placed</span>
-                  <b>21:02</b>
-                </li>
-                <li className="is-done">
-                  <span>Teammate accepted</span>
-                  <b>21:04</b>
-                </li>
-                <li>
-                  <span>In the lobby</span>
-                  <b>21:07</b>
-                </li>
-              </ol>
             </div>
           </Reveal>
 
