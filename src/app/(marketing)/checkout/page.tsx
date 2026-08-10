@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getGameBySlug } from "@/lib/games";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { TrustBadge } from "@/components/ui/TrustBadge";
+import { getCommunityStats } from "@/lib/community";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -27,6 +28,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
   const option = params.option ?? "Duo";
   const teammates = Number(params.teammates ?? 1);
   const total = Number(params.total ?? 4.99);
+  const community = await getCommunityStats();
 
   return (
     <main className="checkout-page section-relative">
@@ -35,7 +37,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
       <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <div className="checkout-header">
           <h1 className="checkout-title">Checkout</h1>
-          <TrustBadge />
+          <TrustBadge score={community.averageRating} reviews={community.reviews} />
         </div>
 
         <CheckoutForm

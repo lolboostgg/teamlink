@@ -144,7 +144,14 @@ export function BookingWidget({ game }: Props) {
         {status === "authenticated" && (
           <Reveal>
             <button type="button" className="booking-edit-account" onClick={() => setEditAccountOpen(true)}>
-              <i className="fa-solid fa-user-pen" aria-hidden="true" /> Edit account
+              <span className="booking-edit-account__icon" aria-hidden="true">
+                <i className="fa-solid fa-user-pen" />
+              </span>
+              <span className="booking-edit-account__copy">
+                <strong>Your in-game account</strong>
+                <small>IGN, region and role &mdash; change it before you book</small>
+              </span>
+              <i className="fa-solid fa-chevron-right booking-edit-account__go" aria-hidden="true" />
             </button>
           </Reveal>
         )}
@@ -336,15 +343,12 @@ export function BookingWidget({ game }: Props) {
               )}
             </div>
 
-            {/* The live wait used to sit as a lone chip under the heading on
-                the left; here it stands right next to the price, which is
-                where someone is actually deciding whether to book now. */}
-            <div className="booking-queue">
-              <span className="booking-queue__label">
-                <span className="pulse-dot" aria-hidden="true" /> Queue right now
-              </span>
-              <span className="booking-queue__value">{etaShort}</span>
-            </div>
+            {/* Availability, once. The "queue right now" chip and the roster
+                were two answers to the same question sitting a few pixels
+                apart, and together they pushed the card past the height it
+                was built for — which is how the total ended up printed over
+                the last step. */}
+            <LiveTeammates gameSlug={game.slug} gameName={game.name} eta={etaShort} />
 
             {/* Fills the card down to the sticky footer — and since this is a
                 real sequence, the numbering carries information rather than
@@ -363,10 +367,6 @@ export function BookingWidget({ game }: Props) {
                 </li>
               ))}
             </ol>
-
-            {/* Who actually shows up, answered before the money rather than
-                after it. Real rows or nothing — see LiveTeammates. */}
-            <LiveTeammates gameSlug={game.slug} gameName={game.name} />
 
             <TrustPoints compact payments={false} />
           </div>

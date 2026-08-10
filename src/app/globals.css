@@ -2216,26 +2216,6 @@ body {
   text-transform: uppercase;
 }
 
-.booking-edit-account {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 14px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-
-.booking-edit-account:hover {
-  border-color: var(--accent);
-  color: var(--text);
-  background: var(--accent-soft);
-}
 
 .booking-edit-account i {
   color: var(--accent);
@@ -18008,24 +17988,451 @@ a.notification-panel__item:hover {
   color: var(--text-faint);
 }
 
-/* ── Bento cards: the two that were mostly air ──────────────────
-   "Privacy first" and "Real-time updates" put their content at the top and
-   their chips at the bottom of a tall cell, leaving a hole in the middle.
-   Pushing the trailing element down with auto margin was what created it;
-   centring the content block closes it without changing any copy. */
-.bento-card {
-  justify-content: center;
+
+
+/* ---------------------------------------------------------------------------
+   Reviews, "why players choose us", and the reworked booking sidebar blocks.
+   ------------------------------------------------------------------------- */
+
+/* ── The rating summary that replaced the invented testimonials ── */
+.proof {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 300px;
+  gap: 18px;
+  align-items: stretch;
 }
 
-.bento-card__chips {
+.proof > * {
+  padding: 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.proof__score {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.proof__average {
+  font-family: var(--font-heading);
+  font-size: clamp(46px, 6vw, 64px);
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.proof__stars {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--hue-gold);
+  font-size: 15px;
+}
+
+.proof__stars .is-empty {
+  color: rgba(255, 255, 255, 0.14);
+}
+
+.proof__score-sub {
+  margin-top: 12px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.proof__score-sub b {
+  color: var(--text);
+}
+
+.proof__score-note {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* The distribution is the part that makes an average believable: it shows
+   how the stars actually fell rather than asking anyone to take one number
+   on faith. */
+.proof__bars {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 9px;
+}
+
+.proof__bar {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 12px;
+}
+
+.proof__bar-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.proof__bar-label i {
+  color: var(--hue-gold);
+  font-size: 9px;
+}
+
+.proof__bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.proof__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--hue-gold);
+  /* Zero-count rows would otherwise be invisible, and "no one gave us two
+     stars" is worth showing. */
+  min-width: 3px;
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.proof__bar-count {
+  font-size: 12px;
+  color: var(--text-faint);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.proof__disclosure {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+.proof__disclosure a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.proof__people-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.proof__list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  list-style: none;
+}
+
+.proof-person {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.proof-person__avatar {
+  display: block;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.proof-person__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.proof-person__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.proof-person__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.proof-person__meta {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.proof-person__meta i {
+  color: var(--hue-gold);
+  margin-right: 3px;
+}
+
+.proof__cta {
   margin-top: 18px;
 }
 
-/* ── Community marquee: stop it bleeding off both edges ─────────
-   The track ran full-bleed, so the first and last card were always cut and
-   no single testimonial could be read end to end. A mask fades them out
-   instead of slicing them. */
-.marquee {
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+@media (max-width: 1080px) {
+  .proof {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .proof__people {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .proof {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Why players choose us ──────────────────────────────────── */
+.claims {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+/* Reveal wraps each card, so the card has to fill its wrapper or a short
+   one leaves the row ragged. */
+.claims > * {
+  height: 100%;
+}
+
+.claim-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.claim-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.claim-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--item-color, var(--accent)) 14%, transparent);
+  color: var(--item-color, var(--accent));
+  font-size: 17px;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.claim-card:hover .claim-card__icon {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+.claim-card h3 {
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.claim-card p {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.price-promise {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 30px;
+  margin-top: 16px;
+  padding: 28px 30px;
+  border: 1px solid color-mix(in srgb, var(--hue-green) 26%, var(--border));
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+}
+
+.price-promise__copy h3 {
+  font-family: var(--font-heading);
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.price-promise__copy p {
+  max-width: 62ch;
+  margin-top: 10px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.price-promise__figures {
+  display: flex;
+  gap: 1px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--border);
+}
+
+.price-promise__figures > div {
+  padding: 14px 20px;
+  background: var(--bg-elevated-2);
+  text-align: center;
+}
+
+.price-promise__figures dt {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.price-promise__figures dd {
+  margin-top: 6px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.price-promise__nil {
+  color: var(--hue-green);
+}
+
+@media (max-width: 1080px) {
+  .claims {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .price-promise {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .price-promise__figures {
+    flex-wrap: wrap;
+  }
+
+  .price-promise__figures > div {
+    flex: 1 0 auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .claims {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Booking sidebar: availability block and the account button ── */
+.live-roster__eta {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.live-roster.is-quiet {
+  border-style: dashed;
+}
+
+.live-roster__quiet {
+  margin-top: 8px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
+/* The one route back into your own in-game details from this page. As a grey
+   pill above the heading it read as a footnote; it is a row you can see now. */
+.booking-edit-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.booking-edit-account:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  transform: translateY(-1px);
+}
+
+.booking-edit-account__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.booking-edit-account__copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.booking-edit-account__copy strong {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.booking-edit-account__copy small {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.booking-edit-account__go {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+  transition: transform 0.15s ease;
+}
+
+.booking-edit-account:hover .booking-edit-account__go {
+  transform: translateX(2px);
+  color: var(--text);
 }

@@ -10,6 +10,9 @@ import { useLastGameSlug } from "@/lib/lastGame";
 import { getPreviousPathname } from "@/lib/routeHistory";
 
 interface Props {
+  /** Real rating figures, read server-side so the badge never corrects itself. */
+  reviews?: number | null;
+  averageRating?: number | null;
   // Explicit on /games/[slug] (pinned to the URL); omitted on the homepage,
   // where it falls back to the last-selected game (or GAMES[0]) instead —
   // same component, same layout, just a different active game either way.
@@ -20,7 +23,7 @@ interface Props {
 // carousel -> the full booking panel (modes, teammate picker, price/CTA
 // sidebar), all in one place. /games/[slug] renders this exact same
 // composition pinned to a specific game — see games/[slug]/layout.tsx.
-export function Hero({ game: gameProp }: Props) {
+export function Hero({ game: gameProp, reviews = null, averageRating = null }: Props) {
   const lastSlug = useLastGameSlug();
   const game = gameProp ?? (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
   const [hoverSlug, setHoverSlug] = useState<string | null>(null);
@@ -75,7 +78,7 @@ export function Hero({ game: gameProp }: Props) {
           </div>
 
           <div className="hero__trust">
-            <TrustBadge />
+            <TrustBadge score={averageRating} reviews={reviews} />
           </div>
 
           <GameSwitcherBar games={GAMES} activeSlug={game.slug} onHover={setHoverSlug} />
