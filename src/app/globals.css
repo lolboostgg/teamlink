@@ -6011,6 +6011,7 @@ body {
 }
 
 .game-mark-more {
+  position: relative;
   display: grid;
   place-items: center;
   min-width: 24px;
@@ -6024,6 +6025,37 @@ body {
   font-size: 9px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+.game-mark-more::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  z-index: 80;
+  left: 50%;
+  bottom: calc(100% + 9px);
+  width: max-content;
+  max-width: 280px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #151824;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .42);
+  color: var(--text);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity .14s ease, transform .14s ease;
+}
+
+.game-mark-more:hover::after,
+.game-mark-more:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .game-mark-row {

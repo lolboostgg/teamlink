@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GameMark } from "@/components/dashboard/GameMark";
 import { DiscordTag } from "@/components/dashboard/DiscordTag";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
+import { GAMES } from "@/lib/games";
 
 export interface AdminTeammateRow {
   id: string;
@@ -49,7 +50,11 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
       <tbody>
         {teammates.map((t) => {
           const visibleGames = t.gameSlugs.slice(0, 6);
-          const hiddenGames = t.gameSlugs.length - visibleGames.length;
+          const hiddenGameSlugs = t.gameSlugs.slice(visibleGames.length);
+          const hiddenGames = hiddenGameSlugs.length;
+          const hiddenGameNames = hiddenGameSlugs
+            .map((slug) => GAMES.find((game) => game.slug === slug)?.name ?? slug)
+            .join(", ");
           return (
           <tr key={t.id}>
             <td className="dashboard-table__no">#{t.teammateNo}</td>
@@ -68,7 +73,16 @@ export function AdminTeammatesTable({ teammates }: { teammates: AdminTeammateRow
                   {visibleGames.map((slug) => (
                     <GameMark key={slug} slug={slug} size={23} />
                   ))}
-                  {hiddenGames > 0 && <span className="game-mark-more" title={`${hiddenGames} more games`}>+{hiddenGames}</span>}
+                  {hiddenGames > 0 && (
+                    <span
+                      className="game-mark-more"
+                      tabIndex={0}
+                      aria-label={`${hiddenGames} more games: ${hiddenGameNames}`}
+                      data-tooltip={hiddenGameNames}
+                    >
+                      +{hiddenGames}
+                    </span>
+                  )}
                 </span>
               ) : (
                 "—"
