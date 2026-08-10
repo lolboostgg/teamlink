@@ -7,6 +7,8 @@ import { Logo } from "@/components/brand/Logo";
 import { SidebarAccountMenu } from "@/components/dashboard/SidebarAccountMenu";
 import { TeammateSidebarProfile, type TeammateSidebarData } from "@/components/dashboard/teammate/TeammateSidebarProfile";
 import type { DashboardRoleMeta } from "@/lib/roles";
+import { useLanguage } from "@/components/language/LanguageProvider";
+import type { TranslationKey } from "@/lib/translations";
 
 // Client dashboard has its own tab strip instead (see
 // ClientDashboardNav.tsx) — it no longer uses this shell/sidebar at all.
@@ -56,6 +58,15 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
   ],
 };
 
+const NAV_KEYS: Partial<Record<string, TranslationKey>> = {
+  Overview: "nav.overview", Analytics: "nav.analytics", Users: "nav.users", Teammates: "nav.teammates",
+  Sanctions: "nav.sanctions", "Live dispatch": "nav.dispatch", "Orders & sessions": "nav.ordersSessions",
+  Orders: "nav.orders", Chats: "nav.chats", Payouts: "nav.payouts", Disputes: "nav.disputes",
+  Transactions: "nav.transactions", Applications: "nav.applications", Onboarding: "nav.onboarding",
+  "Admin activity": "nav.audit", "Admin roles": "nav.roles", Security: "nav.security",
+  Payments: "nav.wallet", "Game profile": "nav.gameProfiles", Connections: "nav.profile", "Support tickets": "nav.support",
+};
+
 export function DashboardSidebar({
   teammate,
   accountName = null,
@@ -75,6 +86,7 @@ export function DashboardSidebar({
   adminRole?: string | null;
 }) {
   const pathname = usePathname();
+  const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
   const role: ShellRole = pathname.startsWith("/dashboard/admin") ? "admin" : "teammate";
   const baseSections = role === "admin" && adminRole !== "SUPERADMIN"
@@ -87,6 +99,7 @@ export function DashboardSidebar({
     role === "teammate" && onboardingPending
       ? [{ href: ONBOARDING_HREF, label: "Finish setup", icon: "fa-solid fa-list-check" }, ...baseSections]
       : baseSections;
+  const labelFor = (label: string) => NAV_KEYS[label] ? t(NAV_KEYS[label]) : label;
 
   // Starts expanded and corrects on mount: localStorage does not exist during
   // the server render, and guessing wrong there is a hydration mismatch on
@@ -129,10 +142,10 @@ export function DashboardSidebar({
                 key={s.href}
                 className="dashboard-sidebar__nav-link is-locked"
                 aria-disabled="true"
-                title={collapsed ? `${s.label} — finish your setup first` : "Finish your setup first"}
+                title={collapsed ? labelFor(s.label) : "Finish your setup first"}
               >
                 <i className={s.icon} aria-hidden="true" />
-                <span>{s.label}</span>
+                <span>{labelFor(s.label)}</span>
                 <i className="fa-solid fa-lock dashboard-sidebar__lock" aria-hidden="true" />
               </span>
             );
@@ -143,10 +156,10 @@ export function DashboardSidebar({
               key={s.href}
               href={s.href}
               className={`dashboard-sidebar__nav-link${active ? " is-active" : ""}`}
-              title={collapsed ? s.label : undefined}
+              title={collapsed ? labelFor(s.label) : undefined}
             >
               <i className={s.icon} aria-hidden="true" />
-              <span>{s.label}</span>
+              <span>{labelFor(s.label)}</span>
             </Link>
           );
         })}

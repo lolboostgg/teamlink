@@ -8,6 +8,7 @@ import { BookingWidget } from "@/components/booking/BookingWidget";
 import { GAMES, getGameBySlug, type Game } from "@/lib/games";
 import { useLastGameSlug } from "@/lib/lastGame";
 import { getPreviousPathname } from "@/lib/routeHistory";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 interface Props {
   // Explicit on /games/[slug] (pinned to the URL); omitted on the homepage,
@@ -21,6 +22,7 @@ interface Props {
 // sidebar), all in one place. /games/[slug] renders this exact same
 // composition pinned to a specific game — see games/[slug]/layout.tsx.
 export function Hero({ game: gameProp }: Props) {
+  const { t } = useLanguage();
   const lastSlug = useLastGameSlug();
   const game = gameProp ?? (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
   const [hoverSlug, setHoverSlug] = useState<string | null>(null);
@@ -48,17 +50,17 @@ export function Hero({ game: gameProp }: Props) {
 
         <div className="container" style={{ position: "relative", zIndex: 1 }}>
           <span className="hero__eyebrow">
-            <span className="pulse-dot" aria-hidden="true" /> Matched in under 2 minutes
+            <span className="pulse-dot" aria-hidden="true" /> {t("home.matched")}
           </span>
 
           {/* The brand's own line. "Queue" carries the accent because it is
               the word the name is built out of — QUP, queue up. */}
           <h1 className="hero__title">
-            Ready. <span className="hero__title-accent">Queue.</span> Play.
+            {t("home.tagline")}
           </h1>
 
           <p className="hero__sub">
-            Pick a game, pick a mode, and get matched in under two minutes. No downloads, no waiting rooms.
+            {t("home.intro")}
           </p>
 
           <div className="hero__cta">
@@ -67,10 +69,10 @@ export function Hero({ game: gameProp }: Props) {
               className="btn btn--vivid btn--lg"
               onClick={() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
-              <i className="fa-solid fa-bolt" aria-hidden="true" /> Play now
+              <i className="fa-solid fa-bolt" aria-hidden="true" /> {t("home.playNow")}
             </button>
             <a href="#how-it-works" className="btn btn--ghost btn--lg">
-              How it works
+              {t("home.how")}
             </a>
           </div>
 
@@ -88,7 +90,7 @@ export function Hero({ game: gameProp }: Props) {
         <button
           type="button"
           className="hero__scroll-cue"
-          aria-label="Scroll to booking"
+          aria-label={t("home.scrollBooking")}
           onClick={() => document.getElementById("booking")?.scrollIntoView({ behavior: "smooth", block: "start" })}
         >
           <i className="fa-solid fa-chevron-down" aria-hidden="true" />

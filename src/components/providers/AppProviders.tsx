@@ -9,6 +9,7 @@ import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { TeammatesSync } from "@/components/providers/TeammatesSync";
 import { NotificationProvider } from "@/components/dashboard/NotificationProvider";
 import { ScrollToTopOnReload } from "@/components/layout/ScrollToTopOnReload";
+import type { LanguageCode } from "@/lib/i18n";
 
 // Single composition point for every app-wide client Context, mounted once
 // in the root layout. ToastProvider sits outermost since AuthModalProvider
@@ -16,13 +17,13 @@ import { ScrollToTopOnReload } from "@/components/layout/ScrollToTopOnReload";
 // useSession() work in AuthModalProvider (real accounts, see src/auth.ts)
 // — otherwise order doesn't matter functionally, kept stable so provider
 // nesting in devtools is predictable.
-export function AppProviders({ children }: { children: ReactNode }) {
+export function AppProviders({ children, initialLanguage }: { children: ReactNode; initialLanguage: LanguageCode }) {
   return (
     <ToastProvider>
       <ScrollToTopOnReload />
       <SessionProvider>
         <CurrencyProvider>
-          <LanguageProvider>
+          <LanguageProvider initialLanguage={initialLanguage}>
             <AuthModalProvider>
               <NotificationProvider>
                 <TeammatesSync />

@@ -6,11 +6,13 @@ import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { GAMES, getGameBySlug } from "@/lib/games";
 import { gameBackground } from "@/lib/gameArt";
 import { useLastGameSlug } from "@/lib/lastGame";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 export function CtaBand() {
   const { open } = useAuthModal();
   const lastSlug = useLastGameSlug();
   const game = (lastSlug ? getGameBySlug(lastSlug) : undefined) ?? GAMES[0];
+  const { t } = useLanguage();
 
   return (
     <section className="cta-band section-relative" style={{ backgroundImage: `url(${gameBackground(game.slug)})` }}>
@@ -18,14 +20,14 @@ export function CtaBand() {
 
       <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <Reveal>
-          <h2 className="cta-band__title">Ready to find your teammate?</h2>
-          <p className="cta-band__sub">Get matched in under two minutes, no commitment, cancel anytime.</p>
+          <h2 className="cta-band__title">{t("cta.title")}</h2>
+          <p className="cta-band__sub">{t("cta.text")}</p>
           <div className="cta-band__actions">
             <Link className="btn btn--primary" href="/games">
-              Browse games
+              {t("cta.games")}
             </Link>
             <button type="button" className="btn btn--outline" onClick={() => open("signup")}>
-              Create free account
+              {t("cta.account")}
             </button>
           </div>
         </Reveal>

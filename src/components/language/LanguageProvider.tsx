@@ -23,8 +23,8 @@ export function useLanguage() {
 // Identical shape to CurrencyProvider. Deliberately exposes no t()/translate
 // function — scope is the switcher UI + persisted selection, not content
 // translation.
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<LanguageCode>("en");
+export function LanguageProvider({ children, initialLanguage = "en" }: { children: ReactNode; initialLanguage?: LanguageCode }) {
+  const [language, setLanguageState] = useState<LanguageCode>(initialLanguage);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY) as LanguageCode | null;
@@ -36,6 +36,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback((code: LanguageCode) => {
     setLanguageState(code);
     window.localStorage.setItem(STORAGE_KEY, code);
+    document.cookie = `${STORAGE_KEY}=${code}; Path=/; Max-Age=31536000; SameSite=Lax`;
   }, []);
 
   useEffect(() => {
