@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { PriceTag } from "@/components/currency/PriceTag";
+import { PaymentStrip } from "@/components/ui/TrustPoints";
 import { GAMES } from "@/lib/games";
 import { priceFromEUR } from "@/lib/bookingOptions";
+import { rankIcon } from "@/lib/gameRanks";
 
 // The cheapest session actually on sale, read from the catalogue rather than
 // typed in — a hardcoded figure is exactly how the old one drifted away from
@@ -62,6 +64,32 @@ export function BentoFeatures() {
                   </span>
                 </li>
               </ul>
+              {/* The other half of the claim. Saying what we never take is
+                  only credible next to what we do keep and for how long —
+                  these are the retention periods from the Privacy Policy,
+                  not a rounder version of them. */}
+              <div className="privacy-keeps">
+                <span className="privacy-keeps__title">What we do keep</span>
+                <dl>
+                  <div>
+                    <dt>Your account</dt>
+                    <dd>while it exists</dd>
+                  </div>
+                  <div>
+                    <dt>Orders and receipts</dt>
+                    <dd>6 years — tax law</dd>
+                  </div>
+                  <div>
+                    <dt>Session chat</dt>
+                    <dd>12 months</dd>
+                  </div>
+                  <div>
+                    <dt>Security logs</dt>
+                    <dd>90 days</dd>
+                  </div>
+                </dl>
+              </div>
+
               <Link className="privacy-facts__link" href="/legal/privacy">
                 Read the policy <i className="fa-solid fa-arrow-right" aria-hidden="true" />
               </Link>
@@ -87,8 +115,23 @@ export function BentoFeatures() {
                   <span>Added at checkout</span>
                   <span className="bento-card__price bento-card__price--nil">&euro;0.00</span>
                 </div>
+                <div className="bento-card__price-row">
+                  <span>Charged before a teammate accepts</span>
+                  <span className="bento-card__price bento-card__price--nil">Nothing</span>
+                </div>
               </div>
-              <span className="bento-card__badge">Cancel free until matched</span>
+
+              <div className="bento-pay">
+                <span className="bento-pay__label">Pay however you like</span>
+                <PaymentStrip />
+              </div>
+
+              <div className="bento-card__foot">
+                <span className="bento-card__badge">Cancel free until matched</span>
+                <Link className="bento-card__link" href="/legal/refunds">
+                  Refund policy <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+                </Link>
+              </div>
             </div>
           </Reveal>
 
@@ -98,7 +141,34 @@ export function BentoFeatures() {
                 <i className="fa-solid fa-headset" aria-hidden="true" />
               </div>
               <h3>Tier-1 support</h3>
-              <p>Real humans, no bots, no ChatGPT copy-paste answers.</p>
+              <p>Real people who play these games. No bots, no copy-paste from a language model.</p>
+              {/* The same windows the contact page publishes, so the two
+                  cannot promise different things. */}
+              <ul className="support-times">
+                <li>
+                  <b>&lt; 1 h</b>
+                  <span>15:00–01:00 CET, every day</span>
+                </li>
+                <li>
+                  <b>Next morning</b>
+                  <span>anything sent overnight</span>
+                </li>
+                <li>
+                  <b>Same day</b>
+                  <span>refunds, once we have the order number</span>
+                </li>
+              </ul>
+              <div className="support-where">
+                <span>
+                  <i className="fa-brands fa-discord" aria-hidden="true" /> Discord
+                </span>
+                <span>
+                  <i className="fa-solid fa-comments" aria-hidden="true" /> Order chat
+                </span>
+                <span>
+                  <i className="fa-solid fa-envelope" aria-hidden="true" /> Email
+                </span>
+              </div>
             </div>
           </Reveal>
 
@@ -121,6 +191,22 @@ export function BentoFeatures() {
                   <small>just now · tap to open</small>
                 </span>
               </div>
+              {/* What "real-time" is actually worth: the gap between the
+                  clicks. Two minutes, written as two minutes. */}
+              <ol className="bento-timeline">
+                <li className="is-done">
+                  <span>Order placed</span>
+                  <b>21:02</b>
+                </li>
+                <li className="is-done">
+                  <span>Teammate accepted</span>
+                  <b>21:04</b>
+                </li>
+                <li>
+                  <span>In the lobby</span>
+                  <b>21:07</b>
+                </li>
+              </ol>
             </div>
           </Reveal>
 
@@ -140,13 +226,19 @@ export function BentoFeatures() {
                   page was cleaned up to stop doing. */}
               <div className="bento-chat">
                 <div className="bento-chat__head">
-                  <span className="bento-chat__avatar" aria-hidden="true">
-                    <i className="fa-solid fa-user" />
-                  </span>
+                  {/* The roster's own default avatar, so the demo is dressed
+                      in the same furniture the real order room uses. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="bento-chat__avatar" src="/avatars/default.webp" alt="" />
                   <span className="bento-chat__who">
-                    <b>Your teammate</b>
+                    <b>Kayzen</b>
                     <small>
-                      <span className="bento-chat__dot" /> online · Grandmaster
+                      <span className="bento-chat__dot" /> online ·{" "}
+                      <span className="bento-chat__rank">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={rankIcon("league-of-legends", "grandmaster") ?? ""} alt="" />
+                        Grandmaster
+                      </span>
                     </small>
                   </span>
                   <span className="bento-chat__order">#1042</span>
