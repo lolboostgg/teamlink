@@ -85,7 +85,7 @@ export default async function AdminTransactionsPage({ searchParams }: Props) {
   return (
     <>
       <StatGrid>
-        <StatCard icon="fa-solid fa-arrow-down-to-line" label="Topped up" value={sumFor(CreditTxType.TOPUP)} currency color="var(--hue-green)" />
+        <StatCard icon="fa-solid fa-download" label="Topped up" value={sumFor(CreditTxType.TOPUP)} currency color="var(--hue-green)" />
         <StatCard icon="fa-solid fa-gift" label="Bonus granted" value={sumFor(CreditTxType.BONUS)} currency color="var(--hue-purple)" />
         <StatCard icon="fa-solid fa-cart-shopping" label="Spent on orders" value={Math.abs(sumFor(CreditTxType.SPEND))} currency color="var(--accent)" />
         <StatCard icon="fa-solid fa-rotate-left" label="Refunded" value={sumFor(CreditTxType.REFUND)} currency color="var(--hue-gold)" />
@@ -110,7 +110,7 @@ export default async function AdminTransactionsPage({ searchParams }: Props) {
             value: type ?? "",
             options: [
               { value: "", label: "All types", icon: "fa-solid fa-layer-group" },
-              { value: CreditTxType.TOPUP, label: "Top-ups", icon: "fa-solid fa-arrow-down-to-line" },
+              { value: CreditTxType.TOPUP, label: "Top-ups", icon: "fa-solid fa-download" },
               { value: CreditTxType.BONUS, label: "Bonuses", icon: "fa-solid fa-gift" },
               { value: CreditTxType.SPEND, label: "Spend", icon: "fa-solid fa-cart-shopping" },
               { value: CreditTxType.REFUND, label: "Refunds", icon: "fa-solid fa-rotate-left" },

@@ -4,11 +4,13 @@ import { PageHero } from "@/components/marketing/PageHero";
 import { Reveal } from "@/components/ui/Reveal";
 import { COMPANY } from "@/lib/company";
 import { GAMES } from "@/lib/games";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "About",
   description: "Who runs QUP.gg, why it exists, and the rules we hold ourselves to.",
-};
+  path: "/about",
+});
 
 // Facts, not adjectives. Anything that would go stale silently (a headcount,
 // a revenue figure) is deliberately absent; the game count reads from the

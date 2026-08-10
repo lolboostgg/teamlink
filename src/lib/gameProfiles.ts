@@ -268,7 +268,7 @@ const GAME_PROFILE_LIST: GameProfileConfig[] = [
       label: "Modes",
       options: [
         { value: "warzone", label: "Warzone", glyph: "fa-solid fa-parachute-box" },
-        { value: "rebirth", label: "Rebirth", glyph: "fa-solid fa-island-tropical" },
+        { value: "rebirth", label: "Rebirth", glyph: "fa-solid fa-umbrella-beach" },
         { value: "multiplayer", label: "Multiplayer", glyph: "fa-solid fa-crosshairs" },
         { value: "ranked", label: "Ranked", glyph: "fa-solid fa-trophy" },
       ],

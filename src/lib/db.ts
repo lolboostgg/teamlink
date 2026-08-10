@@ -24,9 +24,20 @@ function createPrismaClient(): PrismaClient {
     // environment variables — .env is gitignored and never gets deployed).
     throw new Error("DATABASE_URL is not set.");
   }
-  // Supabase's transaction pooler (port 6543 in DATABASE_URL) — built for
-  // exactly this "many short-lived connections from a Next.js app" shape,
-  // unlike the Hostinger MySQL hourly connection cap this replaced.
+  // Which pooler we are actually on, read from the URL rather than assumed.
+  //
+  // This used to be a comment claiming port 6543 while DATABASE_URL sat on
+  // 5432, and the two modes want opposite pool sizes:
+  //
+  // - 6543, transaction mode: the connection goes back to the pool between
+  //   statements, so `max` is a throughput knob. Ten is generous.
+  // - 5432, session mode: each client holds its connection for as long as it
+  //   lives, so `max` is a hard reservation out of a project-wide ceiling.
+  //   Ten per instance is how two processes become an outage.
+  //
+  // Deriving it means moving DATABASE_URL between the two is a config change
+  // and not also a silent code bug.
+  const transactionPooler = /:6543(\/|$|\?)/.test(process.env.DATABASE_URL);
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
     // A sleeping/unreachable pooler must fail quickly. Without these pg can
@@ -36,18 +47,11 @@ function createPrismaClient(): PrismaClient {
     idleTimeoutMillis: 30_000,
     query_timeout: 8_000,
     statement_timeout: 8_000,
-    // Sized for the transaction pooler (port 6543, ?pgbouncer=true), which
-    // hands a connection back between statements instead of holding one per
-    // client. That is what makes this number a throughput setting again
-    // rather than a share of a hard ceiling: on the session pooler, 15
-    // clients was the whole budget and two processes at 10 each were already
-    // an outage.
-    //
     // Every dashboard page is force-dynamic and runs several queries per
     // render, so too small a pool shows up as requests queueing behind each
-    // other. If EMAXCONNSESSION ever returns, DATABASE_URL is back on the
-    // session pooler — check the port before touching this.
-    max: 10,
+    // other — but on the session pooler a large one is borrowed from every
+    // other instance, and EMAXCONNSESSION is what that looks like.
+    max: transactionPooler ? 10 : 4,
   });
   return new PrismaClient({ adapter });
 }

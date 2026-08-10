@@ -2,6 +2,8 @@ import { ViewTransition } from "react";
 import { SiteTopbar } from "@/components/layout/SiteTopbar";
 import { Footer } from "@/components/layout/Footer";
 import { RouteTracker } from "@/components/layout/RouteTracker";
+import { StructuredData } from "@/components/seo/StructuredData";
+import { organisationSchema, websiteSchema } from "@/lib/seo";
 
 // Marketing chrome (Header/Footer) lives here instead of the root layout so
 // /dashboard/* gets its own shell. The ViewTransition below is the "flying
@@ -14,6 +16,11 @@ import { RouteTracker } from "@/components/layout/RouteTracker";
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="site-shell">
+      {/* Who we are, once per public page. Every other schema on the site
+          references this node by @id rather than repeating it. It lives here
+          and not in the root layout so the dashboards, which are noindex
+          territory, do not carry it. */}
+      <StructuredData schemas={[organisationSchema(), websiteSchema()]} />
       <RouteTracker />
       <SiteTopbar />
       <ViewTransition

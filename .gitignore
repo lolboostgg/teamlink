@@ -64,6 +64,9 @@ next-env.d.ts
 
 /src/generated/prisma
 
+# Font Awesome subset, rebuilt by scripts/build-icon-css.mjs on every dev/build.
+/src/app/generated
+
 # Agent-facing Prisma reference docs, auto-installed by `prisma init` for
 # three different AI tool conventions at once — pure documentation, not
 # project content, kept on disk locally but not worth the repo noise.

@@ -3,11 +3,13 @@ import Link from "next/link";
 import { PageHero } from "@/components/marketing/PageHero";
 import { Reveal } from "@/components/ui/Reveal";
 import { POSTS, formatPostDate } from "@/lib/blog";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Blog",
   description: "How the platform works, how to play better, and what we are changing.",
-};
+  path: "/blog",
+});
 
 export default function BlogIndexPage() {
   const [lead, ...rest] = POSTS;

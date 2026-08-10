@@ -4,11 +4,13 @@ import { PageHero } from "@/components/marketing/PageHero";
 import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "@/app/(marketing)/contact/ContactForm";
 import { COMPANY, supportMailto } from "@/lib/company";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Contact",
   description: "Reach QUP.gg support, our Discord, or the team — and what to expect back.",
-};
+  path: "/contact",
+});
 
 export default function ContactPage() {
   return (

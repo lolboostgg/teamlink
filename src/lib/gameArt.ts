@@ -44,20 +44,25 @@ export function gameBackground(slug: string): string {
   return `/games/backgrounds/${BACKGROUND_FILE_OVERRIDES[slug] ?? `${slug}.${BACKGROUND_EXTENSIONS[slug] ?? "webp"}`}`;
 }
 
-const BACKGROUND_VIDEO_EXTENSIONS: Record<string, string> = {
-  "league-of-legends": "webm",
-  "teamfight-tactics": "webm",
-  "marvel-rivals": "mp4",
-  valorant: "mp4",
-};
+/**
+ * Games with a looping ambient clip.
+ *
+ * One format and one naming convention now, where there used to be four
+ * files across two containers. They are VP9/WebM, 720p, audio stripped (the
+ * player is muted, so every audio byte was waste), and encoded for what they
+ * actually are: a backdrop at 30% brightness behind text. Marvel Rivals was
+ * 1080p H.264 at 6.3 Mbit/s — 46.7 MB for one hover.
+ *
+ * The `-loop` suffix is not decoration. The old names are in Cloudflare's
+ * cache with a four-hour TTL, and a new name is the only way the saving
+ * reaches anybody today rather than this evening.
+ */
+const BACKGROUND_VIDEOS = new Set(["league-of-legends", "teamfight-tactics", "marvel-rivals", "valorant"]);
 
-// A handful of games get a looping ambient clip instead of a still — same
-// blitz.gg-style hero treatment, muted/no controls (see AmbientGameBackground).
 // Null means "no clip for this game", not "no background" — gameBackground()
 // still covers every game.
 export function gameBackgroundVideo(slug: string): string | null {
-  const ext = BACKGROUND_VIDEO_EXTENSIONS[slug];
-  return ext ? `/games/backgrounds/${slug}.${ext}` : null;
+  return BACKGROUND_VIDEOS.has(slug) ? `/games/backgrounds/${slug}-loop.webm` : null;
 }
 
 // Art for every "choose game" card (hero carousel, /games grid, teammate

@@ -23,6 +23,13 @@ export function AmbientGameBackground({ slug }: { slug: string | null }) {
           {videoSrc && (
             // Same blitz.gg-style ambient clip, minus sound — muted is also
             // what lets it autoplay at all in every browser.
+            // preload="none" so nothing is fetched before the element is
+            // actually in play. With autoPlay set the browser still pulls
+            // what it needs to start, so this is a hint rather than a
+            // guarantee — the real saving was the files themselves (see
+            // BACKGROUND_VIDEOS in lib/gameArt.ts). The poster is the same
+            // still every other game gets, so the backdrop is never empty
+            // while the clip is on its way.
             <video
               className="ambient-bg__video"
               src={videoSrc}
@@ -31,7 +38,7 @@ export function AmbientGameBackground({ slug }: { slug: string | null }) {
               muted
               loop
               playsInline
-              preload="auto"
+              preload="none"
             />
           )}
         </div>

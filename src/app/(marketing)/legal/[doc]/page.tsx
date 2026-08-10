@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PageHero } from "@/components/marketing/PageHero";
 import { LEGAL_DOCS, LEGAL_SLUGS, getLegalDoc } from "@/lib/legal";
 import { COMPANY, supportMailto } from "@/lib/company";
+import { pageMetadata } from "@/lib/seo";
 
 interface Props {
   params: Promise<{ doc: string }>;
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { doc } = await params;
   const legal = getLegalDoc(doc);
   if (!legal) return {};
-  return { title: legal.title, description: legal.description };
+  return pageMetadata({ title: legal.title, description: legal.description, path: `/legal/${legal.slug}` });
 }
 
 export default async function LegalPage({ params }: Props) {

@@ -3,11 +3,13 @@ import { GAMES } from "@/lib/games";
 import { GamesSearchGrid } from "@/components/home/GamesSearchGrid";
 import { onlineTeammatesByGame } from "@/lib/gameAvailability";
 import { priceFromEUR, modeCount } from "@/lib/bookingOptions";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "All Games",
-  description: "Book a teammate for any of our supported games.",
-};
+  description: "Every game you can book a verified QUP.gg teammate for, with live availability and the price each one starts at.",
+  path: "/games",
+});
 
 // Cached and refreshed on a minute, not rendered per visitor: the online
 // count is the only live thing on the page and nobody browsing a catalogue

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, Bebas_Neue } from "next/font/google";
-import "@fortawesome/fontawesome-free/css/all.min.css";
+// Font Awesome, cut down to the icons this codebase draws — generated at
+// build time by scripts/build-icon-css.mjs, which scans src/ so the two can
+// never drift. 88 KB of stylesheet for 174 icons became 28 KB.
+import "./generated/fontawesome.css";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { Starfield } from "@/components/ui/Starfield";

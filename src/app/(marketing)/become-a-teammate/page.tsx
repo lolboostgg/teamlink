@@ -4,11 +4,13 @@ import { PageHero } from "@/components/marketing/PageHero";
 import { Reveal } from "@/components/ui/Reveal";
 import { ApplyWizardProvider, ApplyButton } from "@/app/(marketing)/become-a-teammate/ApplyWizard";
 import { GAMES } from "@/lib/games";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Become a Teammate",
-  description: "Get paid to play the games you already play. Apply to take QUP.gg sessions.",
-};
+  description: "Get paid to play the games you already play. Apply to take QUP.gg sessions — you choose when, and the rate you accept is the rate you get.",
+  path: "/become-a-teammate",
+});
 
 const REASONS = [
   {

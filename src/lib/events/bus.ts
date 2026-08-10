@@ -81,7 +81,20 @@ function dispatchLocally(event: LiveEvent) {
  * shares whatever Prisma uses, which is right for a single connection string.
  */
 function busConnectionString(): string | undefined {
-  return process.env.EVENTS_DATABASE_URL ?? process.env.DATABASE_URL;
+  const url = process.env.EVENTS_DATABASE_URL ?? process.env.DATABASE_URL;
+
+  // The failure this guards against has no symptom: LISTEN on a
+  // transaction-mode pooler succeeds, delivers nothing across instances, and
+  // the polling fallback quietly covers for it. Somebody would only notice as
+  // a vague "the dashboards feel laggy". Said out loud at startup instead.
+  if (!process.env.EVENTS_DATABASE_URL && url && /:6543(\/|$|\?)/.test(url)) {
+    console.warn(
+      "[events] DATABASE_URL is the transaction pooler (6543), which drops LISTEN. " +
+        "Cross-instance delivery is off; set EVENTS_DATABASE_URL to a session (5432) connection.",
+    );
+  }
+
+  return url;
 }
 
 /**

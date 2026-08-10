@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { POSTS, getPost, formatPostDate } from "@/lib/blog";
+import { StructuredData } from "@/components/seo/StructuredData";
+import { absoluteUrl, blogPostingSchema } from "@/lib/seo";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -15,10 +17,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return {};
+  const url = absoluteUrl(`/blog/${post.slug}`);
   return {
     title: post.title,
     description: post.excerpt,
-    openGraph: { type: "article", title: post.title, description: post.excerpt, publishedTime: post.date },
+    alternates: { canonical: url },
+    openGraph: { type: "article", url, title: post.title, description: post.excerpt, publishedTime: post.date },
   };
 }
 
@@ -48,6 +52,17 @@ export default async function PostPage({ params }: Props) {
           <h1 className="page-hero__title">{post.title}</h1>
           <p className="page-hero__sub">{post.excerpt}</p>
         </header>
+
+        <StructuredData
+          schemas={[
+            blogPostingSchema({
+              title: post.title,
+              description: post.excerpt,
+              slug: post.slug,
+              datePublished: post.date,
+            }),
+          ]}
+        />
 
         <article className="prose">
           {post.body.map((section, i) => (
