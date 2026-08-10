@@ -8,6 +8,8 @@ import { discordDisplayName } from "@/lib/discord";
 import { decryptTwoFactorSecret, readLoginActivity, readTwoFactor, verifyTwoFactorCode } from "@/lib/twoFactor";
 import { PRESENCE_WRITE_AFTER_MS } from "@/lib/accountPresence";
 import { Prisma } from "@/generated/prisma/client";
+import { enforceRateLimit } from "@/lib/admin/rateLimit";
+import { adminSessionActive, createAdminSession } from "@/lib/admin/sessions";
 
 // Credentials provider requires JWT sessions (NextAuth can't use database
 // sessions with it) — that also means no Account/Session/VerificationToken
@@ -78,12 +80,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
 
+        const forwarded = request.headers.get("x-forwarded-for") ?? request.headers.get("cf-connecting-ip") ?? "Unknown IP";
+        const ip = forwarded.split(",")[0].trim();
+        const userAgent = request.headers.get("user-agent") ?? "Unknown device";
+
         try {
+          await enforceRateLimit(`login:${email}:${ip}`, 10, 15 * 60_000);
           const user = await prisma.user.findUnique({ where: { email } });
-          if (!user?.passwordHash) return null;
+          if (!user?.passwordHash) {
+            await prisma.loginEvent.create({ data: { email, successful: false, ipAddress: ip, userAgent, reason: "Invalid credentials" } });
+            return null;
+          }
 
           const valid = await bcrypt.compare(password, user.passwordHash);
-          if (!valid) return null;
+          if (!valid) {
+            await prisma.loginEvent.create({ data: { userId: user.id, email, successful: false, ipAddress: ip, userAgent, reason: "Invalid credentials" } });
+            return null;
+          }
 
           // Checked after the password on purpose: answering "this account is
           // banned" to any address anyone types would turn the sign-in form
@@ -97,9 +110,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (!secret || !verifyTwoFactorCode(secret, otp)) return null;
           }
 
-          const forwarded = request.headers.get("x-forwarded-for") ?? request.headers.get("cf-connecting-ip") ?? "Unknown IP";
-          const ip = forwarded.split(",")[0].trim();
-          const userAgent = request.headers.get("user-agent") ?? "Unknown device";
           const device = /mobile|android|iphone/i.test(userAgent) ? "Mobile device" : /macintosh|mac os/i.test(userAgent) ? "Mac" : /windows/i.test(userAgent) ? "Windows PC" : "Desktop device";
           const browser = /edg\//i.test(userAgent) ? "Edge" : /chrome\//i.test(userAgent) ? "Chrome" : /firefox\//i.test(userAgent) ? "Firefox" : /safari\//i.test(userAgent) ? "Safari" : "Web browser";
           const rawCity = request.headers.get("x-vercel-ip-city") ?? request.headers.get("cf-ipcity");
@@ -111,12 +121,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const security = prefs._security && typeof prefs._security === "object" ? prefs._security as Record<string, unknown> : {};
           const previous = readLoginActivity(prefs).filter((login) => login.ip !== ip || login.device !== entry.device);
           await prisma.user.update({ where: { id: user.id }, data: { notificationPrefs: { ...prefs, _security: { ...security, loginActivity: [entry, ...previous].slice(0, 8) } } as Prisma.InputJsonObject } });
+          const prior = await prisma.loginEvent.findFirst({ where: { userId: user.id, successful: true }, orderBy: { createdAt: "desc" }, select: { ipAddress: true } });
+          await prisma.loginEvent.create({ data: { userId: user.id, email, successful: true, suspicious: Boolean(prior?.ipAddress && prior.ipAddress !== ip), ipAddress: ip, userAgent } });
 
           // Stashed on the returned user object so the jwt() callback below
           // can read it on initial sign-in (only `authorize` sees the raw
           // credentials) — not a real User field, just a one-shot carrier.
           const remember = credentials?.remember !== "false";
-          return { id: user.id, email: user.email, name: user.name, image: sessionSafeAvatar(user.avatarUrl), role: user.role, remember };
+          return { id: user.id, email: user.email, name: user.name, image: sessionSafeAvatar(user.avatarUrl), role: user.role, remember, loginIp: ip, loginUserAgent: userAgent };
         } catch (err) {
           // A refusal we meant (a ban) has to travel; only genuine failures
           // get swallowed below. Without this the throw above would be logged
@@ -176,8 +188,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // The credentials path throws instead (see authorize); this one has a
       // redirect available, so it says so on the way back to the site.
-      const existing = await prisma.user.findUnique({ where: { email }, select: { bannedAt: true } });
+      const existing = await prisma.user.findUnique({ where: { email }, select: { bannedAt: true, role: true } });
       if (existing?.bannedAt) return "/?authError=banned";
+      // Admin access always passes through our credentials + authenticator
+      // challenge. OAuth proves the provider account, but cannot prove that
+      // QUP.gg's mandatory admin TOTP challenge was completed.
+      if (existing?.role === "ADMIN") return "/?authError=admin_credentials_required";
 
       return true;
     },
@@ -237,6 +253,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // drops the session on the next request that touches auth, so the
             // worst case is ROLE_RECHECK_SECONDS of extra access.
             if (fresh.bannedAt) return null;
+            if (fresh.role === "ADMIN" && token.adminSessionToken && !(await adminSessionActive(String(token.adminSessionToken)))) return null;
             token.role = fresh.role;
             token.name = fresh.name;
             token.picture = sessionSafeAvatar(fresh.avatarUrl);
@@ -253,6 +270,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "credentials") {
         token.id = user.id!;
         token.role = user.role;
+        if (user.role === "ADMIN") token.adminSessionToken = await createAdminSession(user.id!, (user as { loginIp?: string }).loginIp, (user as { loginUserAgent?: string }).loginUserAgent);
         // "Remember me" unchecked -> shorten this token's own expiry below
         // the session-wide 30-day maxAge. The default JWT encoder honors an
         // explicit exp claim if one's already set, so this makes the
@@ -319,6 +337,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       token.id = dbUser.id;
       token.role = dbUser.role;
+      if (dbUser.role === "ADMIN") token.adminSessionToken = await createAdminSession(dbUser.id);
       token.name = dbUser.name;
       token.picture = sessionSafeAvatar(dbUser.avatarUrl);
       return token;

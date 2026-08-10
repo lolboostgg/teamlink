@@ -1,6 +1,5 @@
 "use server";
 
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
@@ -8,6 +7,7 @@ import { assignWinners, reconcileOrder, publishOrderChange } from "@/lib/dispatc
 import { notifyUser } from "@/lib/notifications/service";
 import { sendWave, resetForRetry } from "@/lib/dispatch/waves";
 import { settleCancelledOrder } from "@/lib/orderRefunds";
+import { requireAdmin as requireScopedAdmin } from "@/lib/admin/access";
 
 /**
  * Manual controls over a live dispatch.
@@ -20,9 +20,8 @@ import { settleCancelledOrder } from "@/lib/orderRefunds";
 type Result = { ok: true } | { ok: false; error: string };
 
 async function requireAdmin(): Promise<string> {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") throw new Error("Forbidden — admin only.");
-  return session.user.name ?? session.user.email ?? "an admin";
+  const { user } = await requireScopedAdmin("operations");
+  return user.name ?? user.email ?? "an admin";
 }
 
 function fail(err: unknown): Result {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getAnalytics, resolvePeriod, type Metric } from "@/lib/admin/analytics";
 import { AnalyticsRange } from "@/components/dashboard/admin/AnalyticsRange";
 import { gameIcon } from "@/lib/gameArt";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Analytics" };
 export const dynamic = "force-dynamic";
@@ -98,6 +99,7 @@ export default async function AdminAnalyticsPage({ searchParams }: Props) {
 
   return (
     <>
+      <div className="admin-export-row"><Link href="/api/admin/exports/revenue" className="btn btn--ghost btn--sm"><i className="fa-solid fa-file-csv" /> Revenue, fees & net CSV</Link></div>
       <div className="analytics-head">
         <div>
           <h1 className="analytics-head__title">Analytics</h1>

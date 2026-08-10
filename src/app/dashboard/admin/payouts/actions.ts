@@ -1,17 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { payoutBreakdown } from "@/lib/payouts";
 import { notifyUser } from "@/lib/notifications/service";
-
-async function requireAdmin() {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") throw new Error("Admins only.");
-  return session.user.id;
-}
+import { writeAudit } from "@/lib/admin/audit";
+import { requireSensitiveAdmin } from "@/lib/admin/reauth";
+import { requireAdmin as requireScopedAdmin } from "@/lib/admin/access";
 
 /**
  * Settles a payout request: books it against the ledger and takes it off the
@@ -22,8 +18,9 @@ async function requireAdmin() {
  * asked on the 10th with €50 and finished four more orders by the 15th gets
  * the €60 they actually have.
  */
-export async function markPayoutPaid(requestId: string, adminNote: string) {
-  const adminId = await requireAdmin();
+export async function markPayoutPaid(requestId: string, adminNote: string, password: string, otp: string) {
+  const { user } = await requireSensitiveAdmin(password, otp, "finance");
+  const adminId = user.id;
 
   const result = await prisma.$transaction(async (tx) => {
     const request = await tx.payoutRequest.findUnique({
@@ -74,7 +71,7 @@ export async function markPayoutPaid(requestId: string, adminNote: string) {
       },
     });
 
-    return { userId: request.teammate.userId, requestNo: request.requestNo, net };
+    return { userId: request.teammate.userId, teammateId: request.teammate.id, requestNo: request.requestNo, net, gross, oldBalance: balance };
   });
 
   if (result.userId) {
@@ -85,13 +82,14 @@ export async function markPayoutPaid(requestId: string, adminNote: string) {
       href: "/dashboard/teammate/payments",
     });
   }
+  await writeAudit({ actorId: adminId, action: "payout.paid", entityType: "PayoutRequest", entityId: requestId, reason: adminNote, before: { status: "PENDING", balanceEUR: result.oldBalance }, after: { status: "PAID", netEUR: result.net, balanceEUR: result.oldBalance - result.gross } });
 
   revalidatePath("/dashboard/admin/payouts");
   revalidatePath("/dashboard/teammate/payments");
 }
 
 export async function rejectPayout(requestId: string, adminNote: string) {
-  const adminId = await requireAdmin();
+  const adminId = (await requireScopedAdmin("finance")).user.id;
 
   const request = await prisma.payoutRequest.findUnique({
     where: { id: requestId },
@@ -109,6 +107,7 @@ export async function rejectPayout(requestId: string, adminNote: string) {
       processedAt: new Date(),
     },
   });
+  await writeAudit({ actorId: adminId, action: "payout.rejected", entityType: "PayoutRequest", entityId: requestId, reason: adminNote, before: { status: request.status }, after: { status: "REJECTED" } });
 
   // Nothing was debited, so the balance is untouched and they can re-request.
   if (request.teammate.userId) {

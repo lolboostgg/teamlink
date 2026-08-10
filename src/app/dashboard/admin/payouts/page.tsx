@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -108,6 +109,7 @@ export default async function AdminPayoutsPage({ searchParams }: Props) {
               teammate&rsquo;s ledger and takes it off their balance
             </div>
           </div>
+          <Link href="/api/admin/exports/payouts" className="btn btn--ghost btn--sm"><i className="fa-solid fa-download" /> Export CSV</Link>
         </div>
 
         <AdminTableToolbar

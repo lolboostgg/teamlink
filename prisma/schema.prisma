@@ -14,28 +14,29 @@ datasource db {
 // are what let a guest check out without one — not a leftover from the mock
 // auth this replaced.
 model User {
-  id                 String   @id @default(cuid())
+  id                 String     @id @default(cuid())
   // Human-facing account number (#813), handed out in registration order to
   // clients and teammates alike — the id everything user-visible refers to,
   // including the admin profile URL. The cuid stays the DB-internal key.
-  accountNo          Int      @unique @default(autoincrement())
-  email              String   @unique
+  accountNo          Int        @unique @default(autoincrement())
+  email              String     @unique
   name               String?
-  avatarUrl          String?  @db.Text
+  avatarUrl          String?    @db.Text
   // Where the picture sits in its frame, same as on Teammate — see
   // lib/avatarFrame.ts.
-  avatarFocusX       Int      @default(50)
-  avatarFocusY       Int      @default(50)
-  avatarZoom         Int      @default(100)
+  avatarFocusX       Int        @default(50)
+  avatarFocusY       Int        @default(50)
+  avatarZoom         Int        @default(100)
   passwordHash       String?
   // Discord link. discordId is the immutable snowflake we'd address a DM to;
   // the username/avatar are only a display cache, so a rename on Discord's
   // side shows up the next time the account is re-linked.
-  discordId          String?  @unique
+  discordId          String?    @unique
   discordUsername    String?
   discordAvatar      String?
   discordLinkedAt    DateTime?
-  role               Role     @default(CLIENT)
+  role               Role       @default(CLIENT)
+  adminRole          AdminRole?
   /// Set by an admin to lock an account out. Nullable rather than a boolean
   /// so the row also says *when* — a ban is the kind of thing someone asks
   /// about weeks later. The reason is shown to the person on the sign-in
@@ -48,33 +49,34 @@ model User {
   /// Teammate.lastSeenAt is the separate, much tighter signal the dispatcher
   /// uses to decide who can be sent an order.
   lastSeenAt         DateTime?
-  creditBalanceCents Int      @default(0)
+  creditBalanceCents Int        @default(0)
   // { [topic]: { email, discord, sms } } — see lib/notificationPrefs.ts.
   notificationPrefs  Json?
-  createdAt          DateTime @default(now())
+  createdAt          DateTime   @default(now())
 
-  teammate           Teammate?           @relation("UserTeammate")
-  ordersAsClient     Order[]             @relation("ClientOrders")
-  reviewsWritten     Review[]            @relation("ReviewsWritten")
-  creditTransactions CreditTransaction[]
-  notifications      Notification[]
-  favoriteTeammates  FavoriteTeammate[]
-  invitesCreated     TeammateInvite[]    @relation("InvitesCreated")
-  inviteUsed         TeammateInvite?     @relation("InviteUsed")
+  teammate             Teammate?             @relation("UserTeammate")
+  ordersAsClient       Order[]               @relation("ClientOrders")
+  reviewsWritten       Review[]              @relation("ReviewsWritten")
+  creditTransactions   CreditTransaction[]
+  notifications        Notification[]
+  favoriteTeammates    FavoriteTeammate[]
+  invitesCreated       TeammateInvite[]      @relation("InvitesCreated")
+  inviteUsed           TeammateInvite?       @relation("InviteUsed")
   applicationsReviewed TeammateApplication[] @relation("ApplicationsReviewed")
-  payoutsProcessed   PayoutRequest[]     @relation("PayoutsProcessed")
-  /** Stripe's customer object, created lazily on first checkout. */
-  stripeCustomerId   String?             @unique
-  savedCards         SavedCard[]
-  charges            Charge[]
-  gameAccounts       GameAccount[]
-  couponsOwned       Coupon[]            @relation("CouponsOwned")
-  tipsSent           Tip[]               @relation("TipsSent")
+  payoutsProcessed     PayoutRequest[]       @relation("PayoutsProcessed")
+  /**
+   * Stripe's customer object, created lazily on first checkout.
+   */
+  stripeCustomerId     String?               @unique
+  savedCards           SavedCard[]
+  charges              Charge[]
+  gameAccounts         GameAccount[]
+  couponsOwned         Coupon[]              @relation("CouponsOwned")
+  tipsSent             Tip[]                 @relation("TipsSent")
 }
 
 /**
  * A card (or wallet) the customer told Stripe to keep for later.
- *
  * Only the identifiers and the display crumbs live here — the number never
  * touches this database. Charging later means sending Stripe the payment
  * method id, which is useless to anyone who does not also hold our secret key.
@@ -122,7 +124,6 @@ enum ChargeKind {
 
 /**
  * One attempt to take money, mirrored from Stripe.
- *
  * Stripe stays the source of truth for whether money moved; this table exists
  * so the app can answer "what did this customer pay for" without calling the
  * API, and so a webhook has somewhere to land. The unique payment-intent id
@@ -132,7 +133,9 @@ model Charge {
   id                    String       @id @default(cuid())
   userId                String?
   user                  User?        @relation(fields: [userId], references: [id])
-  /** Set for guest checkouts, which have no account behind them. */
+  /**
+   * Set for guest checkouts, which have no account behind them.
+   */
   guestEmail            String?
   orderId               String?
   order                 Order?       @relation(fields: [orderId], references: [id])
@@ -171,9 +174,13 @@ model GameAccount {
   ign       String
   region    String
   roles     Json
-  /** Current rank on the ladder from lib/gameProfiles, e.g. "emerald". */
+  /**
+   * Current rank on the ladder from lib/gameProfiles, e.g. "emerald".
+   */
   rank      String?
-  /** IV–I, only for tiers that have sub-divisions. */
+  /**
+   * IV–I, only for tiers that have sub-divisions.
+   */
   division  String?
   isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -183,7 +190,6 @@ model GameAccount {
 
 /**
  * A one-time link that lets someone register themselves as a teammate.
- *
  * Deliberately consumed on *registration*, not on opening: a link posted in
  * Discord is fetched by the unfurl bot before a human ever sees it, so an
  * open counter would burn the invite before it was used. Capping signups is
@@ -209,13 +215,17 @@ model TeammateApplication {
   email        String            @unique
   discord      String
   country      String?
-  /** Game slugs the applicant picked, as a JSON array of strings. */
+  /**
+   * Game slugs the applicant picked, as a JSON array of strings.
+   */
   games        Json
   ranks        String?
   hours        String?
   experience   String?           @db.Text
   status       ApplicationStatus @default(PENDING)
-  /** The invite an accepted application produced, so the two stay linked. */
+  /**
+   * The invite an accepted application produced, so the two stay linked.
+   */
   inviteId     String?
   reviewedAt   DateTime?
   reviewedById String?
@@ -227,15 +237,21 @@ model TeammateApplication {
 
 model TeammateInvite {
   id           String    @id @default(cuid())
-  /** The random secret in the URL. */
+  /**
+   * The random secret in the URL.
+   */
   token        String    @unique
-  /** Free-text reminder of who this was meant for. */
+  /**
+   * Free-text reminder of who this was meant for.
+   */
   note         String?
   email        String?
   createdById  String
   createdBy    User      @relation("InvitesCreated", fields: [createdById], references: [id])
   expiresAt    DateTime
-  /** Informational only — never gates anything, see the note above. */
+  /**
+   * Informational only — never gates anything, see the note above.
+   */
   openCount    Int       @default(0)
   usedAt       DateTime?
   usedByUserId String?   @unique
@@ -250,15 +266,15 @@ model TeammateInvite {
 // that concerns the admins fans out to one row per admin, so read state is
 // per person rather than shared.
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String
   title     String
-  body      String?  @db.Text
+  body      String?   @db.Text
   href      String?
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId, readAt])
 }
@@ -307,23 +323,165 @@ enum Role {
   ADMIN
 }
 
+enum AdminRole {
+  SUPPORT
+  OPERATIONS
+  FINANCE
+  SUPERADMIN
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  reason     String?  @db.Text
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId])
+}
+
+enum DisputeStatus {
+  OPEN
+  INVESTIGATING
+  WAITING
+  RESOLVED
+}
+
+enum DisputeResolution {
+  REFUND
+  PARTIAL_REFUND
+  CREDIT
+  REJECTED
+  OTHER
+  TEAMMATE_NO_SHOW
+}
+
+model Dispute {
+  id             String             @id @default(cuid())
+  orderId        String?
+  openedById     String
+  openedByRole   Role
+  assigneeId     String?
+  title          String
+  description    String             @db.Text
+  status         DisputeStatus      @default(OPEN)
+  resolution     DisputeResolution?
+  resolutionNote String?            @db.Text
+  amountEUR      Decimal?           @db.Decimal(10, 2)
+  resolvedAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  notes          DisputeNote[]
+
+  @@index([status, updatedAt])
+  @@index([orderId])
+  @@index([openedById])
+}
+
+model DisputeNote {
+  id        String   @id @default(cuid())
+  disputeId String
+  dispute   Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  authorId  String
+  internal  Boolean  @default(true)
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([disputeId, createdAt])
+}
+
+enum SanctionType {
+  WARNING
+  TEMP_SUSPENSION
+  BAN
+}
+
+enum SanctionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+model TeammateSanction {
+  id           String         @id @default(cuid())
+  teammateId   String
+  type         SanctionType
+  status       SanctionStatus @default(ACTIVE)
+  reason       String
+  internalNote String?        @db.Text
+  startsAt     DateTime       @default(now())
+  endsAt       DateTime?
+  createdById  String?
+  revokedById  String?
+  revokedAt    DateTime?
+  createdAt    DateTime       @default(now())
+
+  @@index([teammateId, status])
+  @@index([endsAt])
+}
+
+model AdminSession {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  ipAddress  String?
+  userAgent  String?
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, revokedAt])
+}
+
+model LoginEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  email      String
+  successful Boolean
+  suspicious Boolean  @default(false)
+  ipAddress  String?
+  userAgent  String?
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([userId, createdAt])
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
 // The booster/duo-partner roster — currently the static TEAMMATES array in
 // src/lib/teammates.ts. `available` folds in what used to be the separate
 // lib/availability.ts localStorage flag (that store had nothing else to key
 // off of besides "the one demo teammate", so it lives on the row now).
 model Teammate {
-  id             String   @id
+  id             String    @id
   // Roster number shown in the admin list. Separate from User.accountNo
   // because some legacy roster rows were never linked to an account.
-  teammateNo     Int      @unique @default(autoincrement())
-  userId         String?  @unique
-  user           User?    @relation("UserTeammate", fields: [userId], references: [id])
+  teammateNo     Int       @unique @default(autoincrement())
+  userId         String?   @unique
+  user           User?     @relation("UserTeammate", fields: [userId], references: [id])
   name           String
   avatarInitials String
-  tagline        String?  @db.Text
+  tagline        String?   @db.Text
   timezone       String?
-  rating         Float    @default(5.0)
-  sessionsCount  Int      @default(0)
+  rating         Float     @default(5.0)
+  sessionsCount  Int       @default(0)
   gameSlugs      Json
   languages      Json
   // Per-game profile map: { [gameSlug]: { rank, roles[], pool[] } } — see
@@ -334,16 +492,16 @@ model Teammate {
   lolRank        String?
   lolChampions   Json?
   lolLanes       Json?
-  avatarUrl      String?  @db.Text
+  avatarUrl      String?   @db.Text
   // How the uploaded picture sits inside whatever frame it is drawn in — the
   // focal point as a percentage of the image, plus a zoom in percent. Set in
   // the profile editor by dragging the picture around, the way every social
   // network lets you place your own photo, and applied as object-position /
   // scale wherever an avatar is rendered.
-  avatarFocusX   Int      @default(50)
-  avatarFocusY   Int      @default(50)
-  avatarZoom     Int      @default(100)
-  available      Boolean  @default(true)
+  avatarFocusX   Int       @default(50)
+  avatarFocusY   Int       @default(50)
+  avatarZoom     Int       @default(100)
+  available      Boolean   @default(true)
   availableSince DateTime?
   /// Regions this teammate plays in, e.g. ["euw","eune"]. Empty or null means
   /// no restriction — an order for any region may reach them.
@@ -356,21 +514,21 @@ model Teammate {
   lastSeenAt     DateTime?
   lastDispatchAt DateTime?
   lastAssignedAt DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime  @default(now())
 
   // Running total of everything in `earnings`. Kept as a column so the
   // dashboards don't have to sum the ledger on every request; it is only
   // ever written in the same transaction as the ledger row.
-  balanceEUR     Decimal  @default(0) @db.Decimal(10, 2)
+  balanceEUR Decimal @default(0) @db.Decimal(10, 2)
 
-  candidacies       DispatchCandidate[]
-  reviewsReceived   Review[]
-  verification      TeammateVerification?
-  payoutMethods     PayoutMethod[]
-  favoredBy         FavoriteTeammate[]
-  earnings          TeammateEarning[]
-  payoutRequests    PayoutRequest[]
-  tipsReceived      Tip[]                @relation("TipsReceived")
+  candidacies     DispatchCandidate[]
+  reviewsReceived Review[]
+  verification    TeammateVerification?
+  payoutMethods   PayoutMethod[]
+  favoredBy       FavoriteTeammate[]
+  earnings        TeammateEarning[]
+  payoutRequests  PayoutRequest[]
+  tipsReceived    Tip[]                 @relation("TipsReceived")
 }
 
 enum TeammateEarningType {
@@ -428,21 +586,21 @@ enum VerificationStatus {
 // public URLs — they're only ever served through short-lived signed links,
 // see lib/storage.ts.
 model TeammateVerification {
-  id           String             @id @default(cuid())
-  teammateId   String             @unique
-  teammate     Teammate           @relation(fields: [teammateId], references: [id], onDelete: Cascade)
-  fullName     String?
-  dateOfBirth  String?
-  address      String?
-  country      String?
-  idFrontPath  String?
-  idBackPath   String?
-  selfiePath   String?
-  status       VerificationStatus @default(UNSUBMITTED)
-  reviewNote   String?            @db.Text
-  submittedAt  DateTime?
-  reviewedAt   DateTime?
-  updatedAt    DateTime           @updatedAt
+  id          String             @id @default(cuid())
+  teammateId  String             @unique
+  teammate    Teammate           @relation(fields: [teammateId], references: [id], onDelete: Cascade)
+  fullName    String?
+  dateOfBirth String?
+  address     String?
+  country     String?
+  idFrontPath String?
+  idBackPath  String?
+  selfiePath  String?
+  status      VerificationStatus @default(UNSUBMITTED)
+  reviewNote  String?            @db.Text
+  submittedAt DateTime?
+  reviewedAt  DateTime?
+  updatedAt   DateTime           @updatedAt
 }
 
 enum PayoutMethodType {
@@ -476,7 +634,6 @@ enum PayoutRequestStatus {
 
 /**
  * A teammate asking for their balance to be sent out.
- *
  * `amountEUR` is null when they asked for their full available balance. That
  * is stored as intent rather than as a number on purpose: requests are
  * processed on a schedule, and between asking on the 10th and being paid on
@@ -491,20 +648,22 @@ model PayoutRequest {
   payoutMethodId String
   payoutMethod   PayoutMethod        @relation(fields: [payoutMethodId], references: [id])
   amountEUR      Decimal?            @db.Decimal(10, 2)
-  /** Frozen at request time so a later fee change can't alter a quoted payout. */
+  /**
+   * Frozen at request time so a later fee change can't alter a quoted payout.
+   */
   feePercent     Decimal             @db.Decimal(5, 2)
   note           String?
   status         PayoutRequestStatus @default(PENDING)
 
   // Filled in when it is actually settled.
-  grossEUR       Decimal?            @db.Decimal(10, 2)
-  feeEUR         Decimal?            @db.Decimal(10, 2)
-  netEUR         Decimal?            @db.Decimal(10, 2)
-  adminNote      String?
-  processedById  String?
-  processedBy    User?               @relation("PayoutsProcessed", fields: [processedById], references: [id])
-  processedAt    DateTime?
-  createdAt      DateTime            @default(now())
+  grossEUR      Decimal?  @db.Decimal(10, 2)
+  feeEUR        Decimal?  @db.Decimal(10, 2)
+  netEUR        Decimal?  @db.Decimal(10, 2)
+  adminNote     String?
+  processedById String?
+  processedBy   User?     @relation("PayoutsProcessed", fields: [processedById], references: [id])
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
 
   @@index([teammateId, createdAt])
   @@index([status])
@@ -531,23 +690,23 @@ enum OrderStatus {
 // columns here: which candidates are "the team" is just
 // DispatchCandidate.selected/isPrimary on this order's candidate rows.
 model Order {
-  id                  String    @id @default(cuid())
-  orderNo             Int       @unique @default(autoincrement())
+  id                  String      @id @default(cuid())
+  orderNo             Int         @unique @default(autoincrement())
   /// Secret handle this order is reachable by from the outside: the checkout
   /// URL, the live order screen, and the links in confirmation mails. Kept
   /// separate from `id` because `id` is what every internal API route is
   /// keyed by — handing it out would make every such route guessable from a
   /// link a customer might paste anywhere.
-  accessToken         String?   @unique
+  accessToken         String?     @unique
   clientUserId        String?
-  clientUser          User?     @relation("ClientOrders", fields: [clientUserId], references: [id])
+  clientUser          User?       @relation("ClientOrders", fields: [clientUserId], references: [id])
   customerLabel       String
   gameSlug            String
   gameName            String
   option              String
-  priceEUR            Decimal   @db.Decimal(10, 2)
-  teammatesRequested  Int       @default(1)
-  gamesBooked         Int       @default(1)
+  priceEUR            Decimal     @db.Decimal(10, 2)
+  teammatesRequested  Int         @default(1)
+  gamesBooked         Int         @default(1)
   requestedTeammateId String?
   status              OrderStatus @default(SEARCHING)
   /// Kept for the columns and screens written against it, but no longer a
@@ -555,7 +714,7 @@ model Order {
   /// so this is set far ahead and never used to fail an order.
   dispatchDeadline    DateTime
   /// Which invite wave the order is on. 0 until the first one goes out.
-  dispatchWave        Int       @default(0)
+  dispatchWave        Int         @default(0)
   /// When the current wave's alerts stop counting. The next wave goes out
   /// once this passes without enough acceptances.
   waveDeadline        DateTime?
@@ -564,7 +723,7 @@ model Order {
   /// empty roster now is not an empty roster in fifteen seconds.
   poolExhaustedAt     DateTime?
   /// Admin hold. Waves stop going out; everything already in flight stands.
-  matchingPaused      Boolean   @default(false)
+  matchingPaused      Boolean     @default(false)
   // When the order was actually fanned out to teammates — i.e. when the
   // payment cleared. The row itself is written at the top of checkout, so
   // createdAt is not when the search started.
@@ -574,7 +733,7 @@ model Order {
   rerollDeadline      DateTime?
   sessionStartAt      DateTime?
   sessionCompleteAt   DateTime?
-  isReplay            Boolean   @default(false)
+  isReplay            Boolean     @default(false)
   vibe                String?
   conversationPref    String?
   playStylePref       String?
@@ -582,28 +741,32 @@ model Order {
   // What the teammate reports while playing — see lib/dispatch/types.ts.
   // Distinct from `status`, which is the order's own lifecycle.
   sessionStatus       String?
-  teammatePayoutEUR   Decimal?  @db.Decimal(10, 2)
-  createdAt           DateTime  @default(now())
+  teammatePayoutEUR   Decimal?    @db.Decimal(10, 2)
+  createdAt           DateTime    @default(now())
 
-  candidates DispatchCandidate[]
-  dispatchEvents DispatchEvent[]
-  games      SessionGame[]
-  review     Review?
-  earnings   TeammateEarning[]
-  charges    Charge[]
-  tip        Tip?
-  couponsRedeemed Coupon[] @relation("CouponsRedeemed")
+  candidates      DispatchCandidate[]
+  dispatchEvents  DispatchEvent[]
+  games           SessionGame[]
+  review          Review?
+  earnings        TeammateEarning[]
+  charges         Charge[]
+  tip             Tip?
+  couponsRedeemed Coupon[]            @relation("CouponsRedeemed")
   creditMovements CreditTransaction[]
-  /** Where confirmation and status mails go for an order placed without an
+  /**
+   * Where confirmation and status mails go for an order placed without an
    * account. A signed-in order mails clientUser.email instead, so exactly
-   * one of the two carries the address. */
-  guestEmail  String?
-  /** Snapshot of the in-game identity this order was booked with. */
-  ign         String?
-  ignRegion   String?
-  ignRoles    Json?
-  ignRank     String?
-  ignDivision String?
+   * one of the two carries the address.
+   */
+  guestEmail      String?
+  /**
+   * Snapshot of the in-game identity this order was booked with.
+   */
+  ign             String?
+  ignRegion       String?
+  ignRoles        Json?
+  ignRank         String?
+  ignDivision     String?
 
   @@index([clientUserId])
   @@index([status])
@@ -656,7 +819,9 @@ model DispatchCandidate {
   /// silence was our delivery failing, not their attention.
   deliveredAt        DateTime?
   respondedAt        DateTime?
-  /** 1-based order of acceptance — 1 is the auto-select. */
+  /**
+   * 1-based order of acceptance — 1 is the auto-select.
+   */
   candidatePosition  Int?
   isAutoSelect       Boolean          @default(false)
   selectedAt         DateTime?
@@ -714,15 +879,15 @@ model SessionGame {
 // One rating per order, same rule as the old lib/reviews.ts (re-rating an
 // order overwrites via the orderId unique constraint instead of stacking).
 model Review {
-  id            String   @id @default(cuid())
-  orderId       String   @unique
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  teammateId    String
-  teammate      Teammate @relation(fields: [teammateId], references: [id])
-  clientUserId  String?
-  clientUser    User?    @relation("ReviewsWritten", fields: [clientUserId], references: [id])
-  rating        Int
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  orderId      String   @unique
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  teammateId   String
+  teammate     Teammate @relation(fields: [teammateId], references: [id])
+  clientUserId String?
+  clientUser   User?    @relation("ReviewsWritten", fields: [clientUserId], references: [id])
+  rating       Int
+  createdAt    DateTime @default(now())
 
   @@index([teammateId])
 }
@@ -734,7 +899,9 @@ model Coupon {
   id              String    @id @default(cuid())
   code            String    @unique
   discountPercent Int
-  /** Where it came from: an order id for the post-session reward, or a campaign name. */
+  /**
+   * Where it came from: an order id for the post-session reward, or a campaign name.
+   */
   source          String
   // Null for a public campaign code anyone may redeem; set for a code that
   // was earned by one account.
@@ -763,7 +930,9 @@ model Tip {
   fromUserId String?
   fromUser   User?    @relation("TipsSent", fields: [fromUserId], references: [id])
   amountEUR  Decimal  @db.Decimal(10, 2)
-  /** The Stripe charge that paid for it; null when it was paid from credits. */
+  /**
+   * The Stripe charge that paid for it; null when it was paid from credits.
+   */
   chargeId   String?
   createdAt  DateTime @default(now())
 

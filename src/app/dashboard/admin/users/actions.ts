@@ -1,22 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { requireAdmin as requireScopedAdmin } from "@/lib/admin/access";
+import { writeAudit } from "@/lib/admin/audit";
 
 async function requireAdmin() {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") {
-    throw new Error("Forbidden — admin only.");
-  }
+  await requireScopedAdmin("security");
 }
 
 type AssignableRole = "ADMIN" | "TEAMMATE" | "CLIENT";
 
 export async function setUserRole(userId: string, role: AssignableRole) {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") throw new Error("Forbidden — admin only.");
-  if (session.user.id === userId && role !== "ADMIN") throw new Error("You cannot remove your own admin role.");
+  const admin = await requireScopedAdmin("security");
+  if (admin.user.id === userId && role !== "ADMIN") throw new Error("You cannot remove your own admin role.");
   const user = await prisma.user.findUnique({ where: { id: userId }, include: { teammate: true } });
   if (!user) throw new Error("User not found.");
 
@@ -36,6 +33,7 @@ export async function setUserRole(userId: string, role: AssignableRole) {
       prisma.teammate.updateMany({ where: { userId }, data: { available: false } }),
     ]);
   }
+  await writeAudit({ actorId: admin.user.id, action: "user.role_changed", entityType: "User", entityId: userId, reason: "Account role change", before: { role: user.role }, after: { role } });
   revalidatePath("/dashboard/admin/users");
   revalidatePath("/dashboard/admin");
 }

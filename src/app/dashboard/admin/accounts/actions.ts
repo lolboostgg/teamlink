@@ -2,18 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications/service";
 import { Prisma } from "@/generated/prisma/client";
-
-async function requireAdmin() {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") {
-    throw new Error("Forbidden — admin only.");
-  }
-  return session.user.id;
-}
+import { writeAudit } from "@/lib/admin/audit";
+import { requireAdmin } from "@/lib/admin/access";
 
 /**
  * Moves a customer's store credit by hand.
@@ -34,7 +27,7 @@ export async function adjustClientCredit(input: {
   direction: "add" | "deduct";
   reason: string;
 }) {
-  await requireAdmin();
+  const adminId = (await requireAdmin("finance")).user.id;
 
   const reason = input.reason.trim().slice(0, 300);
   if (!reason) throw new Error("Give a reason — the customer sees it.");
@@ -42,6 +35,7 @@ export async function adjustClientCredit(input: {
   const cents = Math.round(Math.abs(input.amountEUR) * 100);
   if (!Number.isFinite(cents) || cents <= 0) throw new Error("Enter an amount greater than zero.");
   const signed = input.direction === "deduct" ? -cents : cents;
+  const before = await prisma.user.findUnique({ where: { id: input.userId }, select: { creditBalanceCents: true } });
 
   await prisma.$transaction(async (tx) => {
     const user = await tx.user.findUnique({ where: { id: input.userId }, select: { creditBalanceCents: true } });
@@ -70,6 +64,7 @@ export async function adjustClientCredit(input: {
     body: reason,
     href: "/dashboard/client/wallet",
   });
+  await writeAudit({ actorId: adminId, action: `credit.${input.direction}`, entityType: "User", entityId: input.userId, reason, before, after: { creditBalanceCents: (before?.creditBalanceCents ?? 0) + signed } });
 
   await revalidateAccount(input.userId);
   revalidatePath("/dashboard/admin/users");
@@ -87,10 +82,10 @@ export async function adjustClientCredit(input: {
  * right now (see auth.ts).
  */
 export async function setAccountBanned(userId: string, banned: boolean, reason: string) {
-  const adminId = await requireAdmin();
+  const adminId = (await requireAdmin("operations")).user.id;
   if (userId === adminId) throw new Error("You can't ban your own account.");
 
-  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { role: true, bannedAt: true, bannedReason: true } });
   if (!target) throw new Error("Unknown account.");
   // Not a hierarchy we can express safely: an admin locking out another admin
   // is how a project ends up with nobody who can unlock anything.
@@ -122,6 +117,7 @@ export async function setAccountBanned(userId: string, banned: boolean, reason: 
       href: "/dashboard/client",
     });
   }
+  await writeAudit({ actorId: adminId, action: banned ? "account.banned" : "account.unbanned", entityType: "User", entityId: userId, reason: note || "Ban removed", before: { bannedAt: target.bannedAt, bannedReason: target.bannedReason }, after: banned ? { bannedAt: new Date(), bannedReason: note } : { bannedAt: null, bannedReason: null } });
 
   await revalidateAccount(userId);
   revalidatePath("/dashboard/admin/users");
@@ -131,7 +127,7 @@ export async function setAccountBanned(userId: string, banned: boolean, reason: 
 // Same cost factor as registration (api/auth/register) so a reset password
 // verifies identically to a self-chosen one.
 export async function setUserPassword(userId: string, password: string) {
-  await requireAdmin();
+  await requireAdmin("security");
   if (password.length < 8) throw new Error("Password must be at least 8 characters.");
 
   await prisma.user.update({
@@ -154,7 +150,7 @@ async function revalidateAccount(userId: string): Promise<void> {
 }
 
 export async function removeUserTwoFactor(userId: string) {
-  await requireAdmin();
+  await requireAdmin("security");
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { notificationPrefs: true } });
   if (!user) throw new Error("User not found.");
   const prefs = user.notificationPrefs && typeof user.notificationPrefs === "object" ? user.notificationPrefs as Record<string, unknown> : {};
@@ -166,7 +162,7 @@ export async function removeUserTwoFactor(userId: string) {
 }
 
 export async function reviewVerification(teammateId: string, approve: boolean, note: string) {
-  await requireAdmin();
+  await requireAdmin("operations");
   if (!approve && !note.trim()) throw new Error("A rejection needs a reason — the teammate sees it.");
 
   await prisma.teammateVerification.update({
@@ -192,7 +188,7 @@ export async function reviewVerification(teammateId: string, approve: boolean, n
 }
 
 export async function updateAccountDetails(userId: string, input: { name: string; email: string }) {
-  await requireAdmin();
+  await requireAdmin("support");
   const email = input.email.trim().toLowerCase();
   const name = input.name.trim();
   if (!email) throw new Error("Email is required.");

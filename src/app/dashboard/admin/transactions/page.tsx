@@ -99,6 +99,7 @@ export default async function AdminTransactionsPage({ searchParams }: Props) {
               Every store-credit movement across all accounts &middot; {total} matching
             </div>
           </div>
+          <Link href="/api/admin/exports/transactions" className="btn btn--ghost btn--sm"><i className="fa-solid fa-download" /> Export CSV</Link>
         </div>
 
         <AdminTableToolbar

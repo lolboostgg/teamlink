@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
 import { forceCompleteOrder, DispatchError, publishOrderChange } from "@/lib/dispatch/service";
 import { settleCancelledOrder, refundOrder } from "@/lib/orderRefunds";
 import { notifyUser } from "@/lib/notifications/service";
+import { requireAdmin as requireScopedAdmin } from "@/lib/admin/access";
 
 /**
  * What an admin can do to an order the ordinary flow has got stuck on.
@@ -19,9 +19,8 @@ import { notifyUser } from "@/lib/notifications/service";
 type Result = { ok: true; message: string } | { ok: false; error: string };
 
 async function requireAdmin(): Promise<string> {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") throw new Error("Forbidden — admin only.");
-  return session.user.name ?? session.user.email ?? "an admin";
+  const { user } = await requireScopedAdmin("support");
+  return user.name ?? user.email ?? "an admin";
 }
 
 function fail(err: unknown): Result {

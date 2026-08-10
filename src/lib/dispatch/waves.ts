@@ -173,6 +173,18 @@ export async function eligiblePool(
     return ceiling < 0 || orderRank <= ceiling;
   });
 
+  const sanctioned = new Set(
+    (await client.teammateSanction.findMany({
+      where: {
+        teammateId: { in: rank.map((teammate) => teammate.id) },
+        status: "ACTIVE",
+        type: { in: ["TEMP_SUSPENSION", "BAN"] },
+        OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+      },
+      select: { teammateId: true },
+    })).map((sanction) => sanction.teammateId),
+  );
+
   const busy = new Set(
     (
       await client.dispatchCandidate.findMany({
@@ -189,7 +201,7 @@ export async function eligiblePool(
     ).map((c) => c.teammateId),
   );
 
-  const free = rank.filter((t) => !busy.has(t.id) && !exclude.has(t.id));
+  const free = rank.filter((t) => !sanctioned.has(t.id) && !busy.has(t.id) && !exclude.has(t.id));
 
   return {
     pool: await sortByPriority(client, free, order, now),

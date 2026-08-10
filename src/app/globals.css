@@ -20380,3 +20380,54 @@ img.bento-chat__avatar {
 .rescue__note {
   margin-top: 12px;
 }
+
+/* Admin operations suite */
+.admin-ops-page { display: grid; gap: 22px; }
+.admin-ops-table-wrap { overflow-x: auto; border: 1px solid var(--dash-line); border-radius: 14px; }
+.admin-ops-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.admin-ops-table th, .admin-ops-table td { padding: 13px 15px; border-bottom: 1px solid var(--dash-line); text-align: left; vertical-align: top; font-size: 12px; }
+.admin-ops-table th { color: var(--text-faint); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.admin-ops-table tr:last-child td { border-bottom: 0; }
+.admin-ops-table details summary { color: var(--accent); cursor: pointer; }
+.admin-ops-table pre { max-width: 380px; max-height: 220px; overflow: auto; margin-top: 8px; padding: 10px; border-radius: 8px; background: var(--dash-surface-3); color: var(--text-muted); font-size: 10px; }
+.admin-ops-note { display: block; margin-top: 4px; color: var(--text-faint); }
+.admin-ticket-list { display: grid; gap: 12px; }
+.admin-ticket { padding: 18px; border: 1px solid var(--dash-line); border-radius: 14px; background: var(--dash-surface-2); }
+.admin-ticket header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.admin-ticket header > div { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.admin-ticket h3 { margin: 0; font-size: 15px; }
+.admin-ticket > p { margin: 12px 0; color: var(--text-muted); line-height: 1.55; }
+.admin-ticket__context { margin: 12px 0; padding: 10px 12px; border-radius: 9px; background: color-mix(in srgb, var(--accent) 8%, transparent); color: var(--text-muted); font-size: 11px; }
+.admin-ticket__links { display: inline-flex; gap: 10px; margin-left: 12px; }
+.admin-ticket__links a { color: var(--accent); font-weight: 800; }
+.admin-ticket__form, .ops-create-form--row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.admin-ticket__form input, .admin-ticket__form select, .ops-create-form input, .ops-create-form select, .ops-create-form textarea, .admin-sensitive-confirm input { min-height: 38px; padding: 8px 11px; border: 1px solid var(--dash-line); border-radius: 9px; background: var(--dash-surface-3); color: var(--text); font: inherit; }
+.admin-ticket__form input { flex: 1 1 180px; }
+.ops-create-form { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--dash-line); border-radius: 14px; background: var(--dash-surface-2); }
+.ops-create-form textarea { min-height: 100px; resize: vertical; }
+.ops-create-form .btn { width: fit-content; }
+.admin-alert-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 10px; }
+.admin-alert-card { display: grid; grid-template-columns: 1fr auto; gap: 5px 12px; padding: 14px; border: 1px solid var(--dash-line); border-radius: 12px; background: var(--dash-surface-2); color: var(--text-muted); }
+.admin-alert-card strong { grid-row: 1 / 3; grid-column: 2; align-self: center; color: var(--text); font-size: 23px; }
+.admin-alert-card i { color: var(--text-faint); font-size: 10px; }
+.admin-alert-card.is-danger { border-color: rgba(255, 77, 98, .25); }
+.admin-alert-card.is-danger strong { color: var(--danger); }
+.admin-alert-card.is-warning strong { color: var(--hue-gold); }
+.admin-system-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.admin-system-card { display: flex; gap: 11px; align-items: center; padding: 13px; border: 1px solid var(--dash-line); border-radius: 11px; background: var(--dash-surface-2); }
+.admin-system-card > i { color: var(--success); }
+.admin-system-card > i.fa-triangle-exclamation { color: var(--danger); }
+.admin-system-card span { display: grid; gap: 2px; }
+.admin-system-card small { color: var(--text-faint); }
+.admin-export-row { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.admin-sensitive-confirm { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.admin-security-gate { min-height: 70vh; display: grid; place-items: center; padding: 30px; }
+.admin-security-gate .dashboard-panel { width: min(520px, 100%); display: grid; gap: 15px; text-align: center; }
+.admin-security-gate .dashboard-panel > i { color: var(--accent); font-size: 36px; }
+.admin-security-gate h1, .admin-security-gate p { margin: 0; }
+.admin-security-gate .btn, .admin-security-gate code { justify-self: center; }
+.status-open, .status-active { color: var(--success); }
+.status-investigating, .status-waiting { color: var(--hue-gold); }
+.status-resolved, .status-expired, .status-revoked { color: var(--text-faint); }
+.status-banned { color: var(--danger); }
+@media (max-width: 720px) { .admin-ticket__form, .ops-create-form--row { align-items: stretch; flex-direction: column; } .admin-ticket__form > *, .ops-create-form--row > * { width: 100%; } .admin-sensitive-confirm { grid-template-columns: 1fr; } }

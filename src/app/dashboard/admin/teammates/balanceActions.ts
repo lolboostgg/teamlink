@@ -1,16 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { notifyUser } from "@/lib/notifications/service";
-
-async function requireAdmin() {
-  const session = await auth();
-  if (session?.user?.role !== "ADMIN") throw new Error("Admins only.");
-  return session.user.id;
-}
+import { writeAudit } from "@/lib/admin/audit";
+import { requireAdmin } from "@/lib/admin/access";
 
 export interface AdjustBalanceInput {
   teammateId: string;
@@ -33,7 +28,7 @@ export interface AdjustBalanceInput {
  * are made.
  */
 export async function adjustTeammateBalance(input: AdjustBalanceInput) {
-  const adminId = await requireAdmin();
+  const adminId = (await requireAdmin("finance")).user.id;
 
   const reason = input.reason.trim().slice(0, 300);
   if (!reason) throw new Error("Give a reason — the teammate sees it.");
@@ -82,6 +77,7 @@ export async function adjustTeammateBalance(input: AdjustBalanceInput) {
       href: "/dashboard/teammate/payments",
     });
   }
+  await writeAudit({ actorId: adminId, action: input.direction === "fine" ? "teammate.fined" : "teammate.credited", entityType: "Teammate", entityId: input.teammateId, reason, before: { balanceEUR: Number(teammate.balanceEUR) }, after: { balanceEUR: Number(teammate.balanceEUR) + signed } });
 
   // The admin acts from the teammate page; the payout queue and the
   // teammate's own view both read the same balance.

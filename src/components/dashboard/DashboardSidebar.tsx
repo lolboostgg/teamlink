@@ -30,13 +30,18 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
     { href: "/dashboard/admin/analytics", label: "Analytics", icon: "fa-solid fa-chart-line" },
     { href: "/dashboard/admin/users", label: "Users", icon: "fa-solid fa-users" },
     { href: "/dashboard/admin/teammates", label: "Teammates", icon: "fa-solid fa-user-gear" },
+    { href: "/dashboard/admin/sanctions", label: "Sanctions", icon: "fa-solid fa-user-slash" },
     { href: "/dashboard/admin/dispatch", label: "Live dispatch", icon: "fa-solid fa-satellite-dish" },
     { href: "/dashboard/admin/orders", label: "Orders & sessions", icon: "fa-solid fa-receipt" },
     { href: "/dashboard/admin/chat", label: "Chats", icon: "fa-solid fa-comments" },
-    { href: "/dashboard/admin/payouts", label: "Payouts & disputes", icon: "fa-solid fa-sack-dollar" },
+    { href: "/dashboard/admin/payouts", label: "Payouts", icon: "fa-solid fa-sack-dollar" },
+    { href: "/dashboard/admin/disputes", label: "Disputes", icon: "fa-solid fa-scale-balanced" },
     { href: "/dashboard/admin/transactions", label: "Transactions", icon: "fa-solid fa-receipt" },
     { href: "/dashboard/admin/applications", label: "Applications", icon: "fa-solid fa-inbox" },
     { href: "/dashboard/admin/onboarding", label: "Onboarding", icon: "fa-solid fa-user-plus" },
+    { href: "/dashboard/admin/audit", label: "Admin activity", icon: "fa-solid fa-clock-rotate-left" },
+    { href: "/dashboard/admin/staff", label: "Admin roles", icon: "fa-solid fa-user-shield" },
+    { href: "/dashboard/admin/security", label: "Security", icon: "fa-solid fa-shield-halved" },
   ],
   teammate: [
     { href: "/dashboard/teammate", label: "Overview", icon: "fa-solid fa-gauge" },
@@ -47,6 +52,7 @@ const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[
     { href: "/dashboard/teammate/profile", label: "Game profile", icon: "fa-solid fa-id-card" },
     { href: "/dashboard/teammate/verification", label: "Verification & payouts", icon: "fa-solid fa-shield-halved" },
     { href: "/dashboard/teammate/connections", label: "Connections", icon: "fa-solid fa-link" },
+    { href: "/dashboard/teammate/disputes", label: "Support tickets", icon: "fa-solid fa-life-ring" },
   ],
 };
 

@@ -6,6 +6,7 @@ import { AdminOverviewPanels } from "@/components/dashboard/admin/AdminOverviewP
 import { AdminUsersTable, type AdminUserRow } from "@/components/dashboard/admin/AdminUsersTable";
 import { getRecentUsers } from "@/lib/admin/users";
 import { prisma } from "@/lib/db";
+import { getOperationsSnapshot } from "@/lib/admin/operations";
 
 export const metadata: Metadata = { title: "Admin Dashboard" };
 // This page queries the live DB — force dynamic rendering instead of
@@ -17,10 +18,11 @@ export const dynamic = "force-dynamic";
 export default async function AdminDashboardPage() {
   // One grouped query instead of pulling every order row into memory just to
   // reduce four numbers out of it.
-  const [session, users, byStatus] = await Promise.all([
+  const [session, users, byStatus, operations] = await Promise.all([
     auth(),
     getRecentUsers(5),
     prisma.order.groupBy({ by: ["status"], _sum: { priceEUR: true }, _count: { _all: true } }),
+    getOperationsSnapshot(),
   ]);
 
   const failed = new Set(["CANCELLED", "NO_MATCH"]);
@@ -63,6 +65,16 @@ export default async function AdminDashboardPage() {
       />
 
       <AdminOverviewPanels stats={stats} />
+
+      <div className="dashboard-panel admin-operations-overview">
+        <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Operations alerts</div><div className="dashboard-panel__sub">Live exceptions that need a person</div></div></div>
+        <div className="admin-alert-grid">{operations.warnings.map((warning) => <Link href={warning.href} className={`admin-alert-card is-${warning.severity}`} key={warning.label}><span>{warning.label}</span><strong>{warning.count}</strong><i className="fa-solid fa-arrow-right" /></Link>)}</div>
+      </div>
+
+      <div className="dashboard-panel admin-operations-overview">
+        <div className="dashboard-panel__head"><div><div className="dashboard-panel__title">System status</div><div className="dashboard-panel__sub">Configuration and last known activity</div></div></div>
+        <div className="admin-system-grid">{operations.systems.map((system) => <div className="admin-system-card" key={system.label}><i className={`fa-solid ${system.ok ? "fa-circle-check" : "fa-triangle-exclamation"}`} /><span><strong>{system.label}</strong><small>{system.detail}</small></span></div>)}</div>
+      </div>
 
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">
