@@ -5,6 +5,48 @@ import { Reveal } from "@/components/ui/Reveal";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import type { CommunityStats } from "@/lib/community";
 
+const reviewTitles = [
+  "Smooth session",
+  "Great teammate",
+  "Quick and easy",
+  "Would play again",
+  "Friendly and focused",
+  "Exactly as expected",
+] as const;
+
+function stableIndex(value: string, length: number) {
+  return [...value].reduce((total, character) => total + character.charCodeAt(0), 0) % length;
+}
+
+function spreadTeammates(reviews: CommunityStats["recentReviews"]) {
+  const queues = new Map<string, CommunityStats["recentReviews"]>();
+
+  reviews.forEach((review) => {
+    const queue = queues.get(review.teammateName) ?? [];
+    queue.push(review);
+    queues.set(review.teammateName, queue);
+  });
+
+  const result: CommunityStats["recentReviews"] = [];
+  let previous = "";
+  let consecutive = 0;
+
+  while ([...queues.values()].some((queue) => queue.length)) {
+    const candidates = [...queues.entries()]
+      .filter(([, queue]) => queue.length)
+      .sort((a, b) => b[1].length - a[1].length);
+    const next = candidates.find(([name]) => name !== previous || consecutive < 2) ?? candidates[0];
+    const review = next[1].shift();
+
+    if (!review) break;
+    result.push(review);
+    consecutive = next[0] === previous ? consecutive + 1 : 1;
+    previous = next[0];
+  }
+
+  return result;
+}
+
 export function CommunityProof() {
   const [stats, setStats] = useState<CommunityStats | null>(null);
 
@@ -19,9 +61,10 @@ export function CommunityProof() {
 
   if (!stats || stats.recentReviews.length === 0 || stats.averageRating === null) return null;
 
-  const midpoint = Math.ceil(stats.recentReviews.length / 2);
-  const firstRow = stats.recentReviews.slice(0, midpoint);
-  const secondRow = stats.recentReviews.slice(midpoint);
+  const arrangedReviews = spreadTeammates(stats.recentReviews);
+  const midpoint = Math.ceil(arrangedReviews.length / 2);
+  const firstRow = arrangedReviews.slice(0, midpoint);
+  const secondRow = arrangedReviews.slice(midpoint);
   const rows = [firstRow, secondRow.length ? secondRow : firstRow];
   const score = stats.averageRating.toFixed(2).replace(/0$/, "");
 
@@ -54,8 +97,10 @@ export function CommunityProof() {
                           </div>
                           <span className="trust-review__verified"><i className="fa-solid fa-circle-check" aria-hidden="true" /> Verified</span>
                         </div>
-                        <strong>{review.rating}/5 session rating</strong>
-                        <p>{review.gameName} · {review.option}</p>
+                        <strong title={reviewTitles[stableIndex(review.id, reviewTitles.length)]}>
+                          {reviewTitles[stableIndex(review.id, reviewTitles.length)]}
+                        </strong>
+                        <p>{review.rating}/5 · {review.gameName} · {review.option}</p>
                         <footer>
                           <span className="trust-review__teammate">
                             <span className="trust-review__avatar">

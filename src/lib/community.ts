@@ -70,7 +70,7 @@ export async function getCommunityStats(): Promise<CommunityStats> {
     }),
     prisma.review.findMany({
       orderBy: { createdAt: "desc" },
-      take: 10,
+      take: 20,
       include: {
         teammate: { select: { name: true, avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
         order: { select: { gameName: true, option: true } },

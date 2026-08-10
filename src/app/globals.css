@@ -18604,6 +18604,13 @@ a.notification-panel__item:hover {
 .proof-review__stars { display: flex; gap: 3px; margin-bottom: 14px; }
 .proof-review__stars span { width: 19px; height: 19px; display: grid; place-items: center; border-radius: 2px; background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .24); font-size: 9px; }
 .proof-review__stars span.is-filled { background: #00b67a; color: #fff; }
+.proof-review > strong,
+.trust-review > strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .proof-review > strong { font-size: 14px; }
 .proof-review > p { margin-top: 5px; color: var(--text-muted); font-size: 12px; }
 .proof-review__with { margin-top: 12px; color: var(--text-faint); font-size: 10.5px; }
