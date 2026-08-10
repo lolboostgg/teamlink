@@ -348,7 +348,7 @@ export function BookingWidget({ game }: Props) {
                 apart, and together they pushed the card past the height it
                 was built for — which is how the total ended up printed over
                 the last step. */}
-            <LiveTeammates gameSlug={game.slug} gameName={game.name} eta={etaShort} />
+            <LiveTeammates gameSlug={game.slug} eta={etaShort} />
 
             {/* Fills the card down to the sticky footer — and since this is a
                 real sequence, the numbering carries information rather than

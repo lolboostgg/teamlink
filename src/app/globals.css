@@ -18232,6 +18232,55 @@ a.notification-panel__item:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* Variant C: availability uses the sidebar's ordinary rows instead of a
+   separate status card, so zero availability never becomes a visual alarm. */
+.roster-rows {
+  display: contents;
+}
+
+.roster-row {
+  min-height: 40px;
+}
+
+.roster-row__value {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.roster-row__stack {
+  display: flex;
+  align-items: center;
+  padding-left: 7px;
+}
+
+.roster-row__face {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  margin-left: -7px;
+  border: 2px solid var(--bg-elevated);
+  border-radius: 50%;
+  background: var(--bg-elevated-2);
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.roster-row__face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.roster-row__face--more {
+  color: var(--text-muted);
+  font-size: 8px;
+  font-weight: 800;
+}
+
 /* ---------------------------------------------------------------------------
    Chat card: the order room's own chrome rather than two floating bubbles.
 
@@ -18951,14 +19000,18 @@ img.bento-chat__avatar {
   right: 0;
   top: calc(100% + 8px);
   z-index: 20;
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  padding: 14px;
+  width: 340px;
+  padding: 16px;
   border: 1px solid var(--dash-line-strong);
   border-radius: var(--dash-radius);
   background: var(--dash-surface-2);
   box-shadow: var(--shadow-lg);
+}
+
+.range__fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .range__custom label {
@@ -18968,15 +19021,151 @@ img.bento-chat__avatar {
   color: var(--text-faint);
 }
 
-.range__custom input {
-  padding: 8px 10px;
+.range__date-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
   border: 1px solid var(--dash-line-strong);
   border-radius: var(--dash-radius-sm);
   background: var(--dash-bg);
   color: var(--text);
   font: inherit;
   font-size: 12.5px;
-  color-scheme: dark;
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.range__date-field i {
+  color: var(--text-faint);
+}
+
+.range__date-field:hover,
+.range__date-field.is-active {
+  border-color: var(--accent);
+}
+
+.range__date-field.is-active {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.range-calendar {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.range-calendar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  margin-bottom: 8px;
+}
+
+.range-calendar__head strong {
+  font-size: 13px;
+}
+
+.range-calendar__head > span {
+  display: flex;
+  gap: 3px;
+}
+
+.range-calendar__head button,
+.range-calendar__grid button {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.range-calendar__head button {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+
+.range-calendar__head button:hover,
+.range-calendar__grid button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.range-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.range-calendar__weekday {
+  display: grid;
+  place-items: center;
+  height: 24px;
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.range-calendar__grid button {
+  position: relative;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.range-calendar__grid button.is-outside {
+  color: color-mix(in srgb, var(--text-faint) 45%, transparent);
+}
+
+.range-calendar__grid button.is-in-range {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  color: var(--text);
+}
+
+.range-calendar__grid button.is-selected {
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.range-calendar__grid button:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+}
+
+.range__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.range__cancel {
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.range__cancel:hover {
+  color: var(--text);
 }
 
 /* ── KPI tiles ──────────────────────────────────────────────── */
@@ -19168,6 +19357,16 @@ img.bento-chat__avatar {
 @media (max-width: 560px) {
   .kpi-grid { grid-template-columns: minmax(0, 1fr); }
   .range__presets { flex-wrap: wrap; }
+  .range__custom {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    top: auto;
+    width: auto;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
 }
 
 /* ── Admin rescue panel ─────────────────────────────────────────
