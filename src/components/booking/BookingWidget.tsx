@@ -13,6 +13,8 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { TrustPoints, PaymentStrip } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
 import { FAQ_ITEMS } from "@/lib/content";
+import { bookingSteps } from "@/lib/bookingSteps";
+import { LiveTeammates } from "@/components/booking/LiveTeammates";
 
 interface Props {
   game: Game;
@@ -127,12 +129,9 @@ export function BookingWidget({ game }: Props) {
   // earns its place; next to a "Queue right now" label it is redundant.
   const etaShort = selected.eta.replace(/\s*away$/i, "");
 
-  const steps = [
-    { title: "Mode picked", sub: `${selected.name} · ${game.name}` },
-    { title: "Account details", sub: "IGN, region and role" },
-    { title: "Pay", sub: "Card, PayPal or crypto" },
-    { title: "Teammate joins", sub: `Usually ${selected.eta}` },
-  ];
+  // The whole path, from lib/bookingSteps.ts, so this card and the checkout
+  // rail cannot disagree about how many steps there are.
+  const steps = bookingSteps({ modeSummary: `${selected.name} · ${game.name}`, eta: selected.eta });
 
   const catColor = CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)";
   const categoryFaq = CATEGORY_FAQ[visibleCategory.category];
@@ -259,11 +258,39 @@ export function BookingWidget({ game }: Props) {
           </div>
         </Reveal>
 
-        <Reveal delay={50}>
-          <a href="#booking-faq" className="booking-faq-link">
-            <i className="fa-regular fa-circle-question" aria-hidden="true" /> Questions?
-          </a>
-        </Reveal>
+        {/* Under the mode list rather than in a full-width section of its
+            own further down. The left column used to simply stop here, leaving
+            a third of a screen empty beside a sticky sidebar, and the answers
+            were a scroll away from the question that prompts them. */}
+        <section className="booking-faq" id="booking-faq">
+          <Reveal>
+            <div className="booking-faq__head">
+              <h2 className="booking-faq__title">
+                Questions about{" "}
+                {visibleCategory.category === "Team Up" ? "Team Up" : visibleCategory.category.toLowerCase()}
+              </h2>
+            </div>
+          </Reveal>
+
+          <Reveal delay={40}>
+            <div className="faq" key={visibleCategory.category}>
+              {faqItems.map((item, i) => (
+                <div className={`faq-row${openFaq === i ? " is-open" : ""}`} key={item.q}>
+                  <button
+                    type="button"
+                    className="faq-row__btn"
+                    onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
+                    aria-expanded={openFaq === i}
+                  >
+                    <span>{item.q}</span>
+                    <i className="fa-solid fa-plus faq-row__icon" aria-hidden="true" />
+                  </button>
+                  {openFaq === i && <div className="faq-row__panel faq-row__panel--anim">{item.a}</div>}
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </section>
       </div>
 
       <div className="booking-sidebar-wrap">
@@ -337,6 +364,10 @@ export function BookingWidget({ game }: Props) {
               ))}
             </ol>
 
+            {/* Who actually shows up, answered before the money rather than
+                after it. Real rows or nothing — see LiveTeammates. */}
+            <LiveTeammates gameSlug={game.slug} gameName={game.name} />
+
             <TrustPoints compact payments={false} />
           </div>
 
@@ -392,35 +423,6 @@ export function BookingWidget({ game }: Props) {
       </Modal>
     </div>
 
-    <section className="booking-faq-section" id="booking-faq">
-      <Reveal>
-        <div className="section__head section__head--center">
-          <span className="section__eyebrow">FAQ</span>
-          <h2 className="section__title">
-            Questions about {visibleCategory.category === "Team Up" ? "Team Up" : visibleCategory.category.toLowerCase()}
-          </h2>
-        </div>
-      </Reveal>
-
-      <Reveal delay={40}>
-        <div className="faq" key={visibleCategory.category}>
-          {faqItems.map((item, i) => (
-            <div className={`faq-row${openFaq === i ? " is-open" : ""}`} key={item.q}>
-              <button
-                type="button"
-                className="faq-row__btn"
-                onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
-                aria-expanded={openFaq === i}
-              >
-                <span>{item.q}</span>
-                <i className="fa-solid fa-plus faq-row__icon" aria-hidden="true" />
-              </button>
-              {openFaq === i && <div className="faq-row__panel faq-row__panel--anim">{item.a}</div>}
-            </div>
-          ))}
-        </div>
-      </Reveal>
-    </section>
     </>
   );
 }

@@ -6,7 +6,6 @@ import { FAQ_ITEMS } from "@/lib/content";
 import { CommunityMarquee } from "@/components/home/CommunityMarquee";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { BentoFeatures } from "@/components/home/BentoFeatures";
-import { Faq } from "@/components/home/Faq";
 import { CtaBand } from "@/components/home/CtaBand";
 
 // The root layout's defaults cover the title and the social card; what it
@@ -29,7 +28,6 @@ export default function HomePage() {
       <CommunityMarquee />
       <HowItWorks />
       <BentoFeatures />
-      <Faq />
       <CtaBand />
     </main>
   );

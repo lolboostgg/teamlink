@@ -1,5 +1,14 @@
 import { Reveal } from "@/components/ui/Reveal";
 import { PriceTag } from "@/components/currency/PriceTag";
+import { GAMES } from "@/lib/games";
+import { priceFromEUR } from "@/lib/bookingOptions";
+
+// The cheapest session actually on sale, read from the catalogue rather than
+// typed in — a hardcoded figure is exactly how the old one drifted away from
+// the truth.
+const ENTRY_PRICE_EUR = Math.min(
+  ...GAMES.map((game) => priceFromEUR(game.slug)).filter((price): price is number => price !== null),
+);
 
 // Asymmetric "bento" grid with embedded mockup previews — eloboost.gg's
 // signature pattern for its "Why Players Choose Us" section, quite
@@ -31,21 +40,27 @@ export function BentoFeatures() {
             </div>
           </Reveal>
 
+          {/* This card used to compare €54.99 against €38.99. Neither number
+              belonged to anything on the site — the modes a visitor has just
+              scrolled past start at €4.99 — and an invented comparison on the
+              one card headed "Fair price" costs more trust than it buys.
+              What is left is checkable: the real entry price, and the promise
+              that it is also the price at the end. */}
           <Reveal className="bento__cell bento__cell--wide" delay={70}>
             <div className="bento-card">
-              <h3>Fair price</h3>
-              <p>We keep pricing transparent: no hidden fees, no surprise add-ons.</p>
+              <h3>The price you see is the price you pay</h3>
+              <p>No service fee bolted on at checkout, no surprise add-ons, and nothing charged before a teammate takes your order.</p>
               <div className="bento-card__price-compare">
                 <div className="bento-card__price-row">
-                  <span>Others charge</span>
-                  <PriceTag amountEUR={54.99} className="bento-card__price bento-card__price--old" />
+                  <span>Sessions from</span>
+                  <PriceTag amountEUR={ENTRY_PRICE_EUR} className="bento-card__price" />
                 </div>
                 <div className="bento-card__price-row">
-                  <span>QUP.gg</span>
-                  <PriceTag amountEUR={38.99} className="bento-card__price" />
+                  <span>Added at checkout</span>
+                  <span className="bento-card__price bento-card__price--nil">&euro;0.00</span>
                 </div>
               </div>
-              <span className="bento-card__badge">Best value</span>
+              <span className="bento-card__badge">Cancel free until matched</span>
             </div>
           </Reveal>
 

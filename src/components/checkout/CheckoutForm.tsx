@@ -12,6 +12,7 @@ import { calculateFee, getPaymentMethod, type PaymentMethodKey } from "@/lib/pay
 import { placeCheckoutOrder } from "@/app/actions/checkout";
 import { type Coupon } from "@/lib/coupons";
 import { useCreditBalance } from "@/lib/useCreditBalance";
+import { bookingSteps, type BookingStepKey } from "@/lib/bookingSteps";
 import { useToast } from "@/components/ui/ToastProvider";
 
 interface Props {
@@ -26,11 +27,12 @@ interface Props {
 
 type Step = "identity" | "ingame" | "payment";
 
-const STEPS: { key: Step; label: string }[] = [
-  { key: "identity", label: "Your details" },
-  { key: "ingame", label: "In-game info" },
-  { key: "payment", label: "Payment" },
-];
+/** This form's own step names, mapped onto the shared path in lib/bookingSteps. */
+const STEP_KEY: Record<Step, BookingStepKey> = {
+  identity: "details",
+  ingame: "ingame",
+  payment: "pay",
+};
 type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 
 // Orchestrates the checkout flow: identity (guest email or login/register)
@@ -55,6 +57,12 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
 
   // Skips the in-game step when the booking page already asked.
   const nextAfterIdentity = () => (ingame ? "payment" : "ingame");
+
+  // Built from what this order still needs, so a skipped in-game step leaves
+  // the rail at four entries rather than showing a fifth nobody will see.
+  // `initialIngame`, not `ingame` — the latter fills in as they go, and the
+  // rail must not renumber itself under their feet mid-checkout.
+  const steps = bookingSteps({ includeIngame: !initialIngame });
 
   function handleGuestContinue(email: string) {
     setIdentity({ mode: "guest", email });
@@ -111,8 +119,11 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
       <div>
         <Reveal>
           <div className="checkout-steps">
-            {STEPS.map((entry, index) => {
-              const position = STEPS.findIndex((s) => s.key === step);
+            {steps.map((entry, index) => {
+              const position = steps.findIndex((s) => s.key === STEP_KEY[step]);
+              // "mode" is behind them the moment they reach this page, and
+              // "match" is still ahead — both belong on the rail so the count
+              // matches the one the booking sidebar showed a click ago.
               const done = index < position;
               return (
                 <Fragment key={entry.key}>
@@ -125,7 +136,9 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
                     />
                   )}
                   <span
-                    className={`checkout-steps__item${step === entry.key ? " is-active" : done ? " is-done" : ""}`}
+                    className={`checkout-steps__item${
+                      entry.key === STEP_KEY[step] ? " is-active" : done ? " is-done" : ""
+                    }`}
                   >
                     <span className="checkout-steps__num">
                       {done ? <i className="fa-solid fa-check" aria-hidden="true" /> : index + 1}
