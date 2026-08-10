@@ -71,30 +71,44 @@ function dispatchLocally(event: LiveEvent) {
  * Not necessarily the one Prisma uses. LISTEN/NOTIFY needs a session that
  * stays put — a transaction-mode pooler hands the connection back between
  * statements, so a LISTEN registered on it is silently dropped and
- * cross-instance delivery degrades to "same process only" without any error
- * to notice it by.
+ * cross-instance delivery degrades to "same process only" with no error to
+ * notice it by. That is exactly the pooler Prisma should be on, though, since
+ * it is what absorbs a Next.js app's many short-lived queries.
  *
- * That is exactly the pooler Prisma should be on, though: it is what absorbs
- * a Next.js app's many short-lived queries. So the two are allowed to differ.
- * Set EVENTS_DATABASE_URL to a session-mode or direct connection when
- * DATABASE_URL points at the transaction pooler; leave it unset and the bus
- * shares whatever Prisma uses, which is right for a single connection string.
+ * So the two have to differ, and on Supabase they differ by one digit: the
+ * same host serves transaction mode on 6543 and session mode on 5432. That is
+ * derived here rather than demanded as configuration — EVENTS_DATABASE_URL is
+ * a name this codebase invented, not something the database hands you, and a
+ * setup step nobody is told about is a setup step nobody performs.
+ *
+ * Set EVENTS_DATABASE_URL explicitly to override, which is what a non-Supabase
+ * host or a direct (non-pooled) connection needs.
  */
 function busConnectionString(): string | undefined {
-  const url = process.env.EVENTS_DATABASE_URL ?? process.env.DATABASE_URL;
+  const explicit = process.env.EVENTS_DATABASE_URL;
+  if (explicit) return explicit;
 
-  // The failure this guards against has no symptom: LISTEN on a
-  // transaction-mode pooler succeeds, delivers nothing across instances, and
-  // the polling fallback quietly covers for it. Somebody would only notice as
-  // a vague "the dashboards feel laggy". Said out loud at startup instead.
-  if (!process.env.EVENTS_DATABASE_URL && url && /:6543(\/|$|\?)/.test(url)) {
+  const url = process.env.DATABASE_URL;
+  if (!url || !/:6543(\/|\?|$)/.test(url)) return url;
+
+  // Only for the host where the port really does select the mode. Rewritten
+  // by hand rather than through new URL(), which re-encodes the password on
+  // the way out and can hand pg a string that no longer authenticates.
+  if (!/@[^/]*\.pooler\.supabase\.com[:/]/.test(url)) {
     console.warn(
-      "[events] DATABASE_URL is the transaction pooler (6543), which drops LISTEN. " +
-        "Cross-instance delivery is off; set EVENTS_DATABASE_URL to a session (5432) connection.",
+      "[events] DATABASE_URL is on port 6543, which drops LISTEN, and this host is not one " +
+        "whose session port can be guessed. Cross-instance delivery is off until " +
+        "EVENTS_DATABASE_URL points at a session-mode connection.",
     );
+    return url;
   }
 
-  return url;
+  return url
+    .replace(/:6543(\/|\?|$)/, ":5432$1")
+    // A transaction-pooler flag; meaningless on the session port, and pg has
+    // no reason to be handed it.
+    .replace(/([?&])pgbouncer=true&?/, (_m, sep) => (sep === "?" ? "?" : "&"))
+    .replace(/[?&]$/, "");
 }
 
 /**
