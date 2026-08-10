@@ -20403,6 +20403,9 @@ img.bento-chat__avatar {
 .admin-ticket__form, .ops-create-form--row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .admin-ticket__form input, .admin-ticket__form select, .ops-create-form input, .ops-create-form select, .ops-create-form textarea, .admin-sensitive-confirm input { min-height: 38px; padding: 8px 11px; border: 1px solid var(--dash-line); border-radius: 9px; background: var(--dash-surface-3); color: var(--text); font: inherit; }
 .admin-ticket__form input { flex: 1 1 180px; }
+.admin-role-form .icon-select { width: 210px; flex: 0 0 210px; }
+.admin-role-form .icon-select__trigger { min-height: 40px; background: var(--dash-surface-3); }
+.admin-role-form .icon-select__list { z-index: 30; min-width: 230px; }
 .ops-create-form { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--dash-line); border-radius: 14px; background: var(--dash-surface-2); }
 .ops-create-form textarea { min-height: 100px; resize: vertical; }
 .ops-create-form .btn { width: fit-content; }
