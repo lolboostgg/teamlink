@@ -2,6 +2,7 @@
 
 import type { Game } from "@/lib/games";
 import { GameShowcaseCard } from "@/components/home/GameShowcaseCard";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 /** A game plus what the listing needs to make it choosable. */
 export interface GameListing extends Game {
@@ -26,6 +27,7 @@ interface Props {
 // listing used to be art and a name, which meant it answered only "which
 // game do I play" — the one thing every visitor already knew.
 export function GamesFullGrid({ games, onHover }: Props) {
+  const { p } = useLanguage();
   return (
     <div className="games-full-grid">
       {games.map((game) => (
@@ -39,23 +41,23 @@ export function GamesFullGrid({ games, onHover }: Props) {
               {game.online > 0 ? (
                 <span className="hero-card__live">
                   <span className="hero-card__live-dot" aria-hidden="true" />
-                  {game.online} online
+                  {game.online} {p("online")}
                 </span>
               ) : (
                 /* Said outright rather than left blank. A teammate can be
                    booked either way — the order waits for one to come online
                    — and a card with nothing where the others have a number
                    reads as broken. */
-                <span className="hero-card__live hero-card__live--none">No one online</span>
+                <span className="hero-card__live hero-card__live--none">{p("No one online")}</span>
               )}
               <span className="hero-card__facts">
                 {game.priceFromEUR !== null && (
                   <span>
-                    from <b>{EUR.format(game.priceFromEUR)}</b>
+                    {p("from")} <b>{EUR.format(game.priceFromEUR)}</b>
                   </span>
                 )}
                 <span>
-                  {game.modes} mode{game.modes === 1 ? "" : "s"}
+                  {game.modes} {p(game.modes === 1 ? "mode" : "modes")}
                 </span>
               </span>
             </>

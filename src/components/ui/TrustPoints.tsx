@@ -39,7 +39,7 @@ export function PaymentStrip() {
 // is deliberately concrete (specific guarantees, not just a generic
 // "secure" badge) rather than decorative.
 export function TrustPoints({ compact = false, payments = true }: Props) {
-  const { language } = useLanguage();
+  const { language, p } = useLanguage();
   const labels = getBookingCopy(language);
   const points = TRUST_POINTS.map((point, index) => ({
     ...point,
@@ -50,7 +50,7 @@ export function TrustPoints({ compact = false, payments = true }: Props) {
       {compact ? (
         <div className="trust-points__row">
           {points.map((point) => (
-            <div key={point.label} className="trust-points__row-item" title={point.desc}>
+            <div key={point.label} className="trust-points__row-item" title={p(point.desc)}>
               <span className="trust-points__icon">
                 <i className={point.icon} aria-hidden="true" />
               </span>
@@ -66,7 +66,7 @@ export function TrustPoints({ compact = false, payments = true }: Props) {
             </span>
             <div>
               <div className="trust-points__label">{point.label}</div>
-              <div className="trust-points__desc">{point.desc}</div>
+              <div className="trust-points__desc">{p(point.desc)}</div>
             </div>
           </div>
         ))
@@ -74,7 +74,7 @@ export function TrustPoints({ compact = false, payments = true }: Props) {
 
       {payments && (
         <div className="trust-points__payments">
-          {!compact && <span className="trust-points__payments-label">We accept</span>}
+          {!compact && <span className="trust-points__payments-label">{p("We accept")}</span>}
           <div className="trust-points__payment-icons">
             {PAYMENT_ICONS.map((icon) => (
               <i key={icon} className={icon} aria-hidden="true" />

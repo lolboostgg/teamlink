@@ -3,6 +3,8 @@ import { getGameBySlug } from "@/lib/games";
 import { CheckoutForm } from "@/components/checkout/CheckoutForm";
 import { TrustBadge } from "@/components/ui/TrustBadge";
 import { getCommunityStats } from "@/lib/community";
+import { getServerLanguage } from "@/lib/serverLanguage";
+import { translatePhrase } from "@/lib/phrases";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -29,6 +31,8 @@ export default async function CheckoutPage({ searchParams }: Props) {
   const teammates = Number(params.teammates ?? 1);
   const total = Number(params.total ?? 4.99);
   const community = await getCommunityStats();
+  const language = await getServerLanguage();
+  const p = (phrase: string) => translatePhrase(language, phrase);
 
   return (
     <main className="checkout-page section-relative">
@@ -36,13 +40,13 @@ export default async function CheckoutPage({ searchParams }: Props) {
 
       <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <div className="checkout-header">
-          <h1 className="checkout-title">Checkout</h1>
+          <h1 className="checkout-title">{p("Checkout")}</h1>
           <TrustBadge score={community.averageRating} reviews={community.reviews} />
         </div>
 
         <CheckoutForm
           gameSlug={game?.slug ?? ""}
-          gameName={game?.name ?? "Your game"}
+          gameName={game?.name ?? p("Your game")}
           option={option}
           teammates={teammates}
           baseTotalEUR={total}

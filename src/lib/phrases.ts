@@ -1,0 +1,26 @@
+import type { LanguageCode } from "@/lib/i18n";
+
+const de: Record<string, string> = {
+  "No one online":"Niemand online", "online":"online", "from":"ab", "mode":"Modus", "modes":"Modi",
+  "Account":"Konto", "Account menu":"Kontomenü", "My profile":"Mein Profil", "Go to dashboard":"Zum Dashboard", "Quick access":"Schnellzugriff",
+  "Orders & sessions":"Bestellungen & Sessions", "Chat overview":"Chat-Übersicht", "Manage users":"Nutzer verwalten", "Manage teammates":"Mitspieler verwalten", "Log out":"Abmelden",
+  "Product":"Produkt", "Games":"Spiele", "How it works":"So funktioniert’s", "Become a Teammate":"Mitspieler werden", "Company":"Unternehmen", "About":"Über uns", "Contact":"Kontakt", "Legal":"Rechtliches",
+  "Terms of Service":"Nutzungsbedingungen", "Privacy Policy":"Datenschutz", "Refund Policy":"Erstattungsrichtlinie", "All rights reserved.":"Alle Rechte vorbehalten.",
+  "Not affiliated with Riot Games, Epic Games, or any game publisher.":"Nicht mit Riot Games, Epic Games oder einem Spielepublisher verbunden.",
+  "Checkout":"Kasse", "Your game":"Dein Spiel", "Group size":"Gruppengröße", "Subtotal":"Zwischensumme", "Processing fee":"Bearbeitungsgebühr", "Coupon":"Gutschein", "Remove coupon":"Gutschein entfernen", "Add a coupon":"Gutschein hinzufügen", "Total":"Gesamt",
+  "How do you want to check out?":"Wie möchtest du fortfahren?", "You're logged in":"Du bist angemeldet", "Continue":"Weiter", "Not you? Log out":"Nicht du? Abmelden", "Email address":"E-Mail-Adresse", "Continue as guest":"Als Gast fortfahren", "or":"oder", "Log in / Register":"Anmelden / Registrieren",
+  "Enter your email address to continue.":"Gib deine E-Mail-Adresse ein, um fortzufahren.", "That doesn't look like a valid email address.":"Das sieht nicht nach einer gültigen E-Mail-Adresse aus.",
+  "Payment method":"Zahlungsmethode", "Unavailable":"Nicht verfügbar", "No extra fee":"Keine Zusatzgebühr", "Card":"Karte", "Credits":"Guthaben", "Processing...":"Wird verarbeitet…", "Pay":"Bezahlen", "Change":"Ändern",
+  "You're not logged in — checking out as a guest below, or log in first.":"Du bist nicht angemeldet – fahre unten als Gast fort oder melde dich zuerst an.",
+  "Your balance:":"Dein Guthaben:", "loading…":"wird geladen…", "Not enough credits for this total — top up or choose another payment method.":"Dein Guthaben reicht nicht aus – lade es auf oder wähle eine andere Zahlungsmethode.",
+  "Mode":"Modus", "Your details":"Deine Angaben", "In-game info":"In-Game-Daten", "Pay step":"Bezahlen", "Teammate joins":"Mitspieler tritt bei", "Checking out as logged-in user":"Bezahlung mit deinem angemeldeten Konto", "Checking out as guest":"Bezahlung als Gast", "Playing as":"Du spielst als",
+  "We accept":"Wir akzeptieren", "rated sessions":"bewertete Sessions", "out of 5":"von 5",
+  "Why QUP.gg":"Warum QUP.gg", "Why players choose us.":"Warum Spieler uns wählen.", "From click to game":"Vom Klick ins Spiel", "Five steps, about two minutes.":"Fünf Schritte, etwa zwei Minuten.",
+  "256-bit SSL on every order":"256-Bit-SSL bei jeder Bestellung", "Full refund if we can't match you":"Volle Erstattung, wenn wir keinen Mitspieler finden", "Real people, no bots":"Echte Menschen, keine Bots",
+  "Pick your mode":"Wähle deinen Modus", "Game, session type, how many teammates.":"Spiel, Session-Art und Anzahl der Mitspieler.", "We search":"Wir suchen", "Waves of teammates, seconds apart.":"Mitspieler werden in kurzen Wellen angefragt.", "Someone accepts":"Jemand nimmt an", "You see who, and their rank, before you play.":"Du siehst vor dem Spiel, wer angenommen hat und welchen Rang die Person hat.", "You play together":"Ihr spielt zusammen", "Your account, theirs. Nobody logs in as you.":"Jeder spielt mit dem eigenen Konto. Niemand meldet sich als du an.", "You rate it":"Du bewertest die Session", "The score is public and decides who gets booked next.":"Die Bewertung ist öffentlich und beeinflusst kommende Buchungen.",
+  "The price you see is the price you pay":"Du bezahlst genau den angezeigten Preis", "No service fee at checkout, and nothing charged before a teammate takes your order.":"Keine Servicegebühr an der Kasse und keine Abbuchung, bevor ein Mitspieler deine Bestellung annimmt.", "Sessions from":"Sessions ab", "Added at checkout":"An der Kasse hinzugefügt", "Charged before a teammate accepts":"Vor Annahme durch einen Mitspieler berechnet", "Nothing":"Nichts", "Cancel free until matched":"Kostenlos stornieren, solange du nicht gematcht bist",
+  "Tier-1 support":"Erstklassiger Support", "Real people who play these games. No bots, no copy-paste.":"Echte Menschen, die diese Spiele selbst spielen. Keine Bots, keine Textbausteine.", "Real-time updates":"Updates in Echtzeit", "Get notified the moment your teammate is ready.":"Du bekommst sofort Bescheid, sobald dein Mitspieler bereit ist.", "Powerful real-time chat":"Leistungsstarker Echtzeit-Chat", "Opens the moment you are matched — lanes and roles sorted before champion select.":"Öffnet sich direkt nach dem Match – klärt Lanes und Rollen vor der Champion-Auswahl.",
+};
+
+const dictionaries: Partial<Record<LanguageCode, Record<string, string>>> = { de };
+export function translatePhrase(language: LanguageCode, phrase: string) { return dictionaries[language]?.[phrase] ?? phrase; }

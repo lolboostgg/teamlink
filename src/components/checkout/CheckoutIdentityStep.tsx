@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 interface Props {
   onContinueAsGuest: (email: string) => void;
@@ -17,6 +18,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // machine) shows up in the OS/browser locale rather than the site's.
 export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
   const { open, isAuthenticated, logout } = useAuthModal();
+  const { p } = useLanguage();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -24,11 +26,11 @@ export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
     e.preventDefault();
     const trimmed = email.trim();
     if (!trimmed) {
-      setError("Enter your email address to continue.");
+      setError(p("Enter your email address to continue."));
       return;
     }
     if (!EMAIL_RE.test(trimmed)) {
-      setError("That doesn't look like a valid email address.");
+      setError(p("That doesn't look like a valid email address."));
       return;
     }
     setError(null);
@@ -41,19 +43,19 @@ export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
   if (isAuthenticated) {
     return (
       <div className="checkout-card">
-        <div className="checkout-card__title">How do you want to check out?</div>
+        <div className="checkout-card__title">{p("How do you want to check out?")}</div>
 
         <div className="checkout-card__identity-text checkout-card__identity-text--standalone">
           <i className="fa-solid fa-circle-check" aria-hidden="true" />
-          You&rsquo;re logged in
+          {p("You're logged in")}
         </div>
 
         <button type="button" className="btn btn--primary btn--block" onClick={onLoggedIn}>
-          Continue
+          {p("Continue")}
         </button>
 
         <button type="button" className="btn btn--ghost btn--block" onClick={logout} style={{ marginTop: 8 }}>
-          Not you? Log out
+          {p("Not you? Log out")}
         </button>
       </div>
     );
@@ -61,14 +63,14 @@ export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
 
   return (
     <div className="checkout-card">
-      <div className="checkout-card__title">How do you want to check out?</div>
+      <div className="checkout-card__title">{p("How do you want to check out?")}</div>
       <p className="checkout-card__identity-hint">
         <i className="fa-solid fa-circle-info" aria-hidden="true" /> You&rsquo;re not logged in — checking out as a guest below, or log in first.
       </p>
 
       <form onSubmit={handleGuestSubmit} noValidate>
         <div className="form-row">
-          <label htmlFor="checkout-guest-email">Email address</label>
+          <label htmlFor="checkout-guest-email">{p("Email address")}</label>
           <input
             id="checkout-guest-email"
             type="email"
@@ -88,12 +90,12 @@ export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
           )}
         </div>
         <button type="submit" className="btn btn--primary btn--block">
-          Continue as guest
+          {p("Continue as guest")}
         </button>
       </form>
 
       <div className="auth-modal__divider" style={{ margin: "18px 0" }}>
-        <span>or</span>
+        <span>{p("or")}</span>
       </div>
 
       <button
@@ -102,7 +104,7 @@ export function CheckoutIdentityStep({ onContinueAsGuest, onLoggedIn }: Props) {
         onClick={() => open("login", onLoggedIn)}
       >
         <i className="fa-solid fa-right-to-bracket" aria-hidden="true" />
-        Log in / Register
+        {p("Log in / Register")}
       </button>
     </div>
   );

@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { PAYMENT_ICONS } from "@/lib/payments";
 import { SOCIALS, SOCIAL_GLYPHS } from "@/lib/company";
 import { TrustpilotBadge } from "@/components/ui/TrustpilotBadge";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 // Every entry here now resolves to a real page. That is the rule for this
 // list: a footer link is a promise the site keeps, and "Pricing" pointing at
@@ -38,6 +41,7 @@ const FOOTER_NAV = [
 ];
 
 export function Footer() {
+  const { p, t } = useLanguage();
   const year = new Date().getFullYear();
 
   return (
@@ -46,7 +50,7 @@ export function Footer() {
         <div className="site-footer__top">
           <div className="site-footer__brand">
             <Logo />
-            <p className="site-footer__tagline">Ready. Queue. Play.</p>
+            <p className="site-footer__tagline">{t("home.tagline")}</p>
             <div className="site-footer__social">
               {SOCIALS.map((s) => (
                 <a key={s.url} href={s.url} aria-label={s.label} target="_blank" rel="noreferrer noopener">
@@ -60,7 +64,7 @@ export function Footer() {
           <div className="site-footer__nav">
             {FOOTER_NAV.map((col) => (
               <div className="site-footer__col" key={col.title}>
-                <div className="site-footer__col-title">{col.title}</div>
+                <div className="site-footer__col-title">{p(col.title)}</div>
                 <ul>
                   {col.links.map((link) => (
                     <li key={link.href + link.label}>
@@ -69,7 +73,7 @@ export function Footer() {
                           low-intent routes on every single load. The cost of
                           not doing it is one navigation nobody notices. */}
                       <Link href={link.href} prefetch={false}>
-                        {link.label}
+                        {p(link.label)}
                       </Link>
                     </li>
                   ))}
@@ -90,8 +94,8 @@ export function Footer() {
         </div>
 
         <div className="site-footer__bottom">
-          <span>© {year} QUP.gg. All rights reserved.</span>
-          <span>Not affiliated with Riot Games, Epic Games, or any game publisher.</span>
+          <span>© {year} QUP.gg. {p("All rights reserved.")}</span>
+          <span>{p("Not affiliated with Riot Games, Epic Games, or any game publisher.")}</span>
         </div>
       </div>
     </footer>

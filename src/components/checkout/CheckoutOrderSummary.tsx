@@ -1,6 +1,7 @@
 import { PriceTag } from "@/components/currency/PriceTag";
 import { TrustPoints } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 interface Props {
   gameSlug: string;
@@ -31,6 +32,7 @@ export function CheckoutOrderSummary({
   onOpenCoupon,
   onRemoveCoupon,
 }: Props) {
+  const { p } = useLanguage();
   return (
     <aside className="checkout-card order-summary">
       <div className="order-summary__head">
@@ -44,20 +46,20 @@ export function CheckoutOrderSummary({
 
       <div className="order-summary__item">
         <span>
-          <i className="fa-solid fa-user-group" aria-hidden="true" /> Group size
+          <i className="fa-solid fa-user-group" aria-hidden="true" /> {p("Group size")}
         </span>
         <span>{teammates}</span>
       </div>
       <div className="order-summary__item">
         <span>
-          <i className="fa-solid fa-receipt" aria-hidden="true" /> Subtotal
+          <i className="fa-solid fa-receipt" aria-hidden="true" /> {p("Subtotal")}
         </span>
         <PriceTag amountEUR={subtotalEUR} />
       </div>
       {feeEUR > 0 && (
         <div className="order-summary__item">
           <span>
-            <i className="fa-solid fa-circle-info" aria-hidden="true" /> {feeLabel ?? "Processing fee"}
+            <i className="fa-solid fa-circle-info" aria-hidden="true" /> {feeLabel ?? p("Processing fee")}
           </span>
           <PriceTag amountEUR={feeEUR} />
         </div>
@@ -66,12 +68,12 @@ export function CheckoutOrderSummary({
       {discountEUR > 0 && couponCode ? (
         <div className="order-summary__item order-summary__item--discount">
           <span>
-            <i className="fa-solid fa-ticket" aria-hidden="true" /> Coupon {couponCode}
+            <i className="fa-solid fa-ticket" aria-hidden="true" /> {p("Coupon")} {couponCode}
           </span>
           <span>
             −<PriceTag amountEUR={discountEUR} />
             {onRemoveCoupon && (
-              <button type="button" className="order-summary__coupon-remove" onClick={onRemoveCoupon} aria-label="Remove coupon">
+              <button type="button" className="order-summary__coupon-remove" onClick={onRemoveCoupon} aria-label={p("Remove coupon")}>
                 <i className="fa-solid fa-xmark" aria-hidden="true" />
               </button>
             )}
@@ -81,7 +83,7 @@ export function CheckoutOrderSummary({
         onOpenCoupon && (
           <button type="button" className="order-summary__coupon-trigger" onClick={onOpenCoupon}>
             <span>
-              <i className="fa-solid fa-ticket" aria-hidden="true" /> Add a coupon
+              <i className="fa-solid fa-ticket" aria-hidden="true" /> {p("Add a coupon")}
             </span>
             <i className="fa-solid fa-chevron-right" aria-hidden="true" />
           </button>
@@ -89,7 +91,7 @@ export function CheckoutOrderSummary({
       )}
 
       <div className="order-summary__total">
-        <span className="order-summary__total-label">Total</span>
+        <span className="order-summary__total-label">{p("Total")}</span>
         <PriceTag amountEUR={totalEUR} />
       </div>
 

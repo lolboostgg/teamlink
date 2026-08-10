@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { GAMES } from "@/lib/games";
 import { priceFromEUR } from "@/lib/bookingOptions";
 import { rankIcon } from "@/lib/gameRanks";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 // The cheapest session actually on sale, read from the catalogue rather than
 // typed in — a hardcoded figure is exactly how the old one drifted away from
@@ -28,13 +31,14 @@ const FLOW = [
 ];
 
 export function BentoFeatures() {
+  const { p } = useLanguage();
   return (
     <section className="section" id="why-us">
       <div className="container">
         <Reveal>
           <div className="section__head section__head--center">
-            <div className="section__eyebrow">Why QUP.gg</div>
-            <h2 className="section__title">Why players choose us.</h2>
+            <div className="section__eyebrow">{p("Why QUP.gg")}</div>
+            <h2 className="section__title">{p("Why players choose us.")}</h2>
           </div>
         </Reveal>
 
@@ -48,8 +52,8 @@ export function BentoFeatures() {
               <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-green)" }}>
                 <i className="fa-solid fa-route" aria-hidden="true" />
               </div>
-              <h3>From click to game</h3>
-              <p>Five steps, about two minutes.</p>
+              <h3>{p("From click to game")}</h3>
+              <p>{p("Five steps, about two minutes.")}</p>
 
               <ol className="flow">
                 {FLOW.map((step, i) => (
@@ -58,8 +62,8 @@ export function BentoFeatures() {
                       <i className={step.icon} />
                     </span>
                     <span className="flow__body">
-                      <b>{step.title}</b>
-                      <small>{step.detail}</small>
+                      <b>{p(step.title)}</b>
+                      <small>{p(step.detail)}</small>
                     </span>
                   </li>
                 ))}
@@ -75,25 +79,25 @@ export function BentoFeatures() {
               that it is also the price at the end. */}
           <Reveal className="bento__cell bento__cell--wide" delay={70}>
             <div className="bento-card">
-              <h3>The price you see is the price you pay</h3>
-              <p>No service fee at checkout, and nothing charged before a teammate takes your order.</p>
+              <h3>{p("The price you see is the price you pay")}</h3>
+              <p>{p("No service fee at checkout, and nothing charged before a teammate takes your order.")}</p>
               <div className="bento-card__price-compare">
                 <div className="bento-card__price-row">
-                  <span>Sessions from</span>
+                  <span>{p("Sessions from")}</span>
                   <PriceTag amountEUR={ENTRY_PRICE_EUR} className="bento-card__price" />
                 </div>
                 <div className="bento-card__price-row">
-                  <span>Added at checkout</span>
+                  <span>{p("Added at checkout")}</span>
                   <span className="bento-card__price bento-card__price--nil">&euro;0.00</span>
                 </div>
                 <div className="bento-card__price-row">
-                  <span>Charged before a teammate accepts</span>
-                  <span className="bento-card__price bento-card__price--nil">Nothing</span>
+                  <span>{p("Charged before a teammate accepts")}</span>
+                  <span className="bento-card__price bento-card__price--nil">{p("Nothing")}</span>
                 </div>
               </div>
 
               <div className="bento-card__foot">
-                <span className="bento-card__badge">Cancel free until matched</span>
+                <span className="bento-card__badge">{p("Cancel free until matched")}</span>
                 <Link className="bento-card__link" href="/legal/refunds">
                   Refund policy <i className="fa-solid fa-arrow-right" aria-hidden="true" />
                 </Link>
@@ -106,8 +110,8 @@ export function BentoFeatures() {
               <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-gold)" }}>
                 <i className="fa-solid fa-headset" aria-hidden="true" />
               </div>
-              <h3>Tier-1 support</h3>
-              <p>Real people who play these games. No bots, no copy-paste.</p>
+              <h3>{p("Tier-1 support")}</h3>
+              <p>{p("Real people who play these games. No bots, no copy-paste.")}</p>
               <div className="support-where">
                 <span>
                   <i className="fa-brands fa-discord" aria-hidden="true" /> Discord
@@ -127,8 +131,8 @@ export function BentoFeatures() {
               <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-pink)" }}>
                 <i className="fa-solid fa-bell" aria-hidden="true" />
               </div>
-              <h3>Real-time updates</h3>
-              <p>Get notified the moment your teammate is ready.</p>
+              <h3>{p("Real-time updates")}</h3>
+              <p>{p("Get notified the moment your teammate is ready.")}</p>
               {/* The last cell that held one sentence in a mockup-sized box.
                   Shows the thing it describes, in the same register as the
                   chat card next to it. */}
@@ -146,7 +150,7 @@ export function BentoFeatures() {
 
           <Reveal className="bento__cell bento__cell--wide" delay={280}>
             <div className="bento-card bento-card--chat">
-              <h3>Powerful real-time chat</h3>
+              <h3>{p("Powerful real-time chat")}</h3>
               <p>Opens the moment you are matched — lanes and roles sorted before champion select.</p>
               {/* Built from the same parts as the real order room — a header
                   with who you are talking to and their rank, sender names,

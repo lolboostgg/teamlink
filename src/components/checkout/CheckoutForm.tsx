@@ -14,6 +14,7 @@ import { type Coupon } from "@/lib/coupons";
 import { useCreditBalance } from "@/lib/useCreditBalance";
 import { bookingSteps, type BookingStepKey } from "@/lib/bookingSteps";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 interface Props {
   gameSlug: string;
@@ -41,6 +42,7 @@ type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalEUR, initialIngame = null }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { p } = useLanguage();
   const [step, setStep] = useState<Step>("identity");
   const [identity, setIdentity] = useState<Identity>(null);
   const [ingame, setIngame] = useState<IngameIdentity | null>(initialIngame);
@@ -143,7 +145,7 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
                     <span className="checkout-steps__num">
                       {done ? <i className="fa-solid fa-check" aria-hidden="true" /> : index + 1}
                     </span>
-                    {entry.label}
+                    {p(entry.label)}
                   </span>
                 </Fragment>
               );
@@ -180,11 +182,11 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
                   <span className="checkout-recap__text">
                     <i className="fa-solid fa-circle-check" aria-hidden="true" />
                     {identity?.mode === "guest"
-                      ? `Checking out as guest (${identity.email})`
-                      : "Checking out as logged-in user"}
+                      ? `${p("Checking out as guest")} (${identity.email})`
+                      : p("Checking out as logged-in user")}
                   </span>
                   <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("identity")}>
-                    Change
+                    {p("Change")}
                   </button>
                 </div>
 
@@ -192,10 +194,10 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
                   <div className="checkout-recap__row">
                     <span className="checkout-recap__text">
                       <i className="fa-solid fa-gamepad" aria-hidden="true" />
-                      Playing as {ingame.ign} ({ingame.region})
+                      {p("Playing as")} {ingame.ign} ({ingame.region})
                     </span>
                     <button type="button" className="btn btn--ghost btn--sm" onClick={() => setStep("ingame")}>
-                      Change
+                      {p("Change")}
                     </button>
                   </div>
                 )}

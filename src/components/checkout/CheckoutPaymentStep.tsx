@@ -2,6 +2,7 @@
 
 import { PAYMENT_METHODS, type PaymentMethodKey } from "@/lib/payments";
 import { PriceTag } from "@/components/currency/PriceTag";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 interface Props {
   method: PaymentMethodKey;
@@ -29,6 +30,7 @@ export function CheckoutPaymentStep({
   creditsEnabled,
   creditBalanceCents,
 }: Props) {
+  const { p } = useLanguage();
   const visibleMethods = PAYMENT_METHODS.filter((pm) => pm.key !== "credits" || creditsEnabled);
   const balanceEUR = creditBalanceCents != null ? creditBalanceCents / 100 : null;
   const insufficientCredits = method === "credits" && balanceEUR !== null && balanceEUR < totalEUR;
@@ -42,8 +44,8 @@ export function CheckoutPaymentStep({
   // What each method costs, said on the row itself so the three can be
   // compared without clicking through them one at a time.
   function feeBadge(pm: (typeof PAYMENT_METHODS)[number]) {
-    if (pm.key === "crypto") return { text: "Unavailable", tone: "muted" as const };
-    if (pm.feePercent === 0 && pm.feeFixedEUR === 0) return { text: "No extra fee", tone: "good" as const };
+    if (pm.key === "crypto") return { text: p("Unavailable"), tone: "muted" as const };
+    if (pm.feePercent === 0 && pm.feeFixedEUR === 0) return { text: p("No extra fee"), tone: "good" as const };
     return { text: `+${pm.feePercent}% + €${pm.feeFixedEUR.toFixed(2)}`, tone: "warn" as const };
   }
 
@@ -53,7 +55,7 @@ export function CheckoutPaymentStep({
           plus a second card repeating whichever tile was pressed — the two
           always said the same thing twice. */}
       <div className="checkout-card">
-        <div className="checkout-card__title">Payment method</div>
+        <div className="checkout-card__title">{p("Payment method")}</div>
 
         <div className="pay-options" role="radiogroup" aria-label="Payment method">
           {visibleMethods.map((pm) => {
@@ -72,7 +74,7 @@ export function CheckoutPaymentStep({
                   <span className="pay-option__icon">
                     <i className={pm.icon} aria-hidden="true" />
                   </span>
-                  <span className="pay-option__name">{pm.label}</span>
+                  <span className="pay-option__name">{p(pm.label)}</span>
                   <span className={`pay-option__badge pay-option__badge--${badge.tone}`}>{badge.text}</span>
                 </button>
 
@@ -101,7 +103,7 @@ export function CheckoutPaymentStep({
 
                     {pm.key === "credits" && (
                       <p>
-                        Your balance:{" "}
+                        {p("Your balance:")}{" "}
                         {balanceEUR !== null ? (
                           <strong>
                             <PriceTag amountEUR={balanceEUR} />
@@ -131,7 +133,7 @@ export function CheckoutPaymentStep({
         className="btn btn--vivid btn--block"
         disabled={submitting || insufficientCredits || method === "crypto"}
       >
-        {submitting ? "Processing..." : <>Pay <PriceTag amountEUR={totalEUR} /></>}
+        {submitting ? p("Processing...") : <>{p("Pay")} <PriceTag amountEUR={totalEUR} /></>}
       </button>
     </form>
   );

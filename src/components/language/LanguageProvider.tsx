@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { LanguageCode } from "@/lib/i18n";
 import { translate, type TranslationKey } from "@/lib/translations";
+import { translatePhrase } from "@/lib/phrases";
 
 const STORAGE_KEY = "qup:language";
 
@@ -10,6 +11,7 @@ interface LanguageContextValue {
   language: LanguageCode;
   setLanguage: (code: LanguageCode) => void;
   t: (key: TranslationKey) => string;
+  p: (phrase: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
@@ -44,7 +46,8 @@ export function LanguageProvider({ children, initialLanguage = "en" }: { childre
   }, [language]);
 
   const t = useCallback((key: TranslationKey) => translate(language, key), [language]);
-  const value = useMemo(() => ({ language, setLanguage, t }), [language, setLanguage, t]);
+  const p = useCallback((phrase: string) => translatePhrase(language, phrase), [language]);
+  const value = useMemo(() => ({ language, setLanguage, t, p }), [language, setLanguage, t, p]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

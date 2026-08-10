@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { dashboardHrefForRole, profileHrefForRole } from "@/lib/roles";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 const CLOSE_DELAY_MS = 200;
 
@@ -19,6 +20,7 @@ const DEFAULT_AVATAR = "/avatars/default.webp";
 export function DashboardTrigger() {
   const { data: session } = useSession();
   const { logout } = useAuthModal();
+  const { p, t } = useLanguage();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -26,7 +28,7 @@ export function DashboardTrigger() {
   const href = dashboardHrefForRole(session?.user?.role);
   const profileHref = profileHrefForRole(session?.user?.role);
   const role = session?.user?.role ?? "CLIENT";
-  const roleLabel = role === "TEAMMATE" ? "Teammate" : role === "ADMIN" ? "Admin" : "Client";
+  const roleLabel = role === "TEAMMATE" ? t("role.teammate") : role === "ADMIN" ? t("role.admin") : t("role.client");
   const roleLinks = role === "ADMIN"
     ? [
         ["/dashboard/admin/orders", "fa-solid fa-receipt", "Orders & sessions"],
@@ -96,14 +98,14 @@ export function DashboardTrigger() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={p("Account menu")}
       >
         <span className="profile-account-trigger__avatar">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={session?.user?.image || DEFAULT_AVATAR} alt="" />
         </span>
         <span className="profile-account-trigger__meta">
-          <strong>{session?.user?.name || "Account"}</strong>
+          <strong>{session?.user?.name || p("Account")}</strong>
           <small>{roleLabel}</small>
         </span>
         <i className="fa-solid fa-chevron-down profile-account-trigger__chevron" aria-hidden="true" />
@@ -124,7 +126,7 @@ export function DashboardTrigger() {
           {profileHref && (
             <Link href={profileHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}>
               <i className="fa-solid fa-id-card" aria-hidden="true" />
-              <span>My profile</span>
+              <span>{p("My profile")}</span>
             </Link>
           )}
           <Link
@@ -135,19 +137,19 @@ export function DashboardTrigger() {
             transitionTypes={transitionTypes}
           >
             <i className="fa-solid fa-gauge" aria-hidden="true" />
-            <span>Go to dashboard</span>
+            <span>{p("Go to dashboard")}</span>
           </Link>
-          <div className="account-dropdown__section-label">Quick access</div>
+          <div className="account-dropdown__section-label">{p("Quick access")}</div>
           {roleLinks.map(([linkHref, icon, label]) => (
             <Link key={linkHref} href={linkHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}>
               <i className={icon} aria-hidden="true" />
-              <span>{label}</span>
+              <span>{p(label)}</span>
             </Link>
           ))}
           <div className="account-dropdown__divider" />
           <button type="button" className="dropdown-switcher__item" role="menuitem" onClick={handleLogout}>
             <i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
-            <span>Log out</span>
+            <span>{p("Log out")}</span>
           </button>
         </div>
       )}
