@@ -3,54 +3,16 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { GAMES } from "@/lib/games";
 import { priceFromEUR } from "@/lib/bookingOptions";
 
-/**
- * Why players choose us.
- *
- * Rebuilt from an asymmetric "bento" of five cells. That layout gave two
- * cards a paragraph of copy in a cell sized for a mockup, so they were mostly
- * air, and the one card carrying a claim carried an invented one: it struck
- * out €54.99 against €38.99 while the modes a visitor had just scrolled past
- * start at €4.99. Neither figure belonged to anything on the site.
- *
- * What replaced it is four claims of equal weight, each one a sentence
- * somebody could hold us to, plus the price panel — now showing the real
- * entry price read from the catalogue against the nothing added at checkout.
- * Every card states what it means rather than illustrating it.
- */
-
-// The cheapest session actually on sale. Read, not typed in — a hardcoded
-// figure is exactly how the old one drifted away from the truth.
+// The cheapest session actually on sale, read from the catalogue rather than
+// typed in — a hardcoded figure is exactly how the old one drifted away from
+// the truth.
 const ENTRY_PRICE_EUR = Math.min(
   ...GAMES.map((game) => priceFromEUR(game.slug)).filter((price): price is number => price !== null),
 );
 
-const CLAIMS = [
-  {
-    icon: "fa-solid fa-key",
-    color: "var(--hue-green)",
-    title: "Never your account",
-    body: "No credential handover and nobody playing for you. Your teammate joins your lobby the way a friend would, so you are in every game you paid for.",
-  },
-  {
-    icon: "fa-solid fa-scale-balanced",
-    color: "var(--hue-gold)",
-    title: "A queue that is actually fair",
-    body: "Orders go out in waves ranked by who last got work, not by who clicks fastest. Playing well is what wins the next order.",
-  },
-  {
-    icon: "fa-solid fa-comments",
-    color: "var(--accent)",
-    title: "Talk before you play",
-    body: "Chat opens the moment you are matched, so lanes, roles and what you are here for get sorted before champion select rather than during it.",
-  },
-  {
-    icon: "fa-solid fa-headset",
-    color: "var(--hue-purple)",
-    title: "Support that plays these games",
-    body: "Real people on Discord and in the order chat, under an hour through the evening. No bots and no copy-paste from a language model.",
-  },
-];
-
+// Asymmetric "bento" grid with embedded mockup previews — eloboost.gg's
+// signature pattern for its "Why Players Choose Us" section, quite
+// different from a plain icon+text card grid.
 export function BentoFeatures() {
   return (
     <section className="section" id="why-us">
@@ -59,53 +21,84 @@ export function BentoFeatures() {
           <div className="section__head section__head--center">
             <div className="section__eyebrow">Why QUP.gg</div>
             <h2 className="section__title">Why players choose us.</h2>
-            <p className="section__sub">
-              Four things we will not trade away, and one number that does not change between here and the receipt.
-            </p>
           </div>
         </Reveal>
 
-        <div className="claims">
-          {CLAIMS.map((claim, i) => (
-            <Reveal key={claim.title} delay={i * 60}>
-              <article className="claim-card">
-                <span className="claim-card__icon" style={{ ["--item-color" as string]: claim.color }}>
-                  <i className={claim.icon} aria-hidden="true" />
-                </span>
-                <h3>{claim.title}</h3>
-                <p>{claim.body}</p>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-
-        <Reveal delay={80}>
-          <div className="price-promise">
-            <div className="price-promise__copy">
-              <h3>The price you see is the price you pay</h3>
-              <p>
-                No service fee appears at checkout, nothing is charged before a teammate takes your order, and you can
-                cancel free until one does.
-              </p>
+        <div className="bento">
+          <Reveal className="bento__cell bento__cell--tall">
+            <div className="bento-card">
+              <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-green)" }}>
+                <i className="fa-solid fa-shield-halved" aria-hidden="true" />
+              </div>
+              <h3>Privacy first</h3>
+              <p>Your account credentials and personal data stay safe with us, always.</p>
+              <div className="bento-card__chips">
+                <span><i className="fa-solid fa-lock" aria-hidden="true" /> Secure login</span>
+                <span><i className="fa-solid fa-user-shield" aria-hidden="true" /> Encrypted credentials</span>
+                <span><i className="fa-solid fa-shield" aria-hidden="true" /> 256-bit protected</span>
+              </div>
             </div>
-            <dl className="price-promise__figures">
-              <div>
-                <dt>Sessions from</dt>
-                <dd>
-                  <PriceTag amountEUR={ENTRY_PRICE_EUR} />
-                </dd>
+          </Reveal>
+
+          {/* This card used to compare €54.99 against €38.99. Neither number
+              belonged to anything on the site — the modes a visitor has just
+              scrolled past start at €4.99 — and an invented comparison on the
+              one card headed "Fair price" costs more trust than it buys.
+              What is left is checkable: the real entry price, and the promise
+              that it is also the price at the end. */}
+          <Reveal className="bento__cell bento__cell--wide" delay={70}>
+            <div className="bento-card">
+              <h3>The price you see is the price you pay</h3>
+              <p>No service fee bolted on at checkout, no surprise add-ons, and nothing charged before a teammate takes your order.</p>
+              <div className="bento-card__price-compare">
+                <div className="bento-card__price-row">
+                  <span>Sessions from</span>
+                  <PriceTag amountEUR={ENTRY_PRICE_EUR} className="bento-card__price" />
+                </div>
+                <div className="bento-card__price-row">
+                  <span>Added at checkout</span>
+                  <span className="bento-card__price bento-card__price--nil">&euro;0.00</span>
+                </div>
               </div>
-              <div>
-                <dt>Added at checkout</dt>
-                <dd className="price-promise__nil">&euro;0.00</dd>
+              <span className="bento-card__badge">Cancel free until matched</span>
+            </div>
+          </Reveal>
+
+          <Reveal className="bento__cell" delay={140}>
+            <div className="bento-card">
+              <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-gold)" }}>
+                <i className="fa-solid fa-headset" aria-hidden="true" />
               </div>
-              <div>
-                <dt>Charged before matched</dt>
-                <dd className="price-promise__nil">Nothing</dd>
+              <h3>Tier-1 support</h3>
+              <p>Real humans, no bots, no ChatGPT copy-paste answers.</p>
+            </div>
+          </Reveal>
+
+          <Reveal className="bento__cell" delay={210}>
+            <div className="bento-card">
+              <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-pink)" }}>
+                <i className="fa-solid fa-bell" aria-hidden="true" />
               </div>
-            </dl>
-          </div>
-        </Reveal>
+              <h3>Real-time updates</h3>
+              <p>Get notified the moment your teammate is ready.</p>
+            </div>
+          </Reveal>
+
+          <Reveal className="bento__cell bento__cell--wide" delay={280}>
+            <div className="bento-card bento-card--chat">
+              <h3>Powerful real-time chat</h3>
+              <p>Communicate instantly with your teammate.</p>
+              <div className="bento-chat">
+                <div className="bento-chat__bubble bento-chat__bubble--in">Ready when you are 👋</div>
+                <div className="bento-chat__bubble bento-chat__bubble--out">Let&rsquo;s go!</div>
+                <div className="bento-chat__input">
+                  <span>Type a message...</span>
+                  <i className="fa-solid fa-paper-plane" aria-hidden="true" />
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
   );
