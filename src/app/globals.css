@@ -10196,26 +10196,6 @@ body {
   line-height: 1.6;
 }
 
-.bento-card__chips {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 16px;
-}
-
-.bento-card__chips span {
-  font-size: 12px;
-  color: var(--text-faint);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.bento-card__chips i {
-  color: var(--success);
-}
-
 .bento-card__price-compare {
   margin-top: 12px;
   background: rgba(255, 255, 255, 0.03);
@@ -10256,46 +10236,6 @@ body {
   border: 1px solid rgba(47, 191, 113, 0.3);
 }
 
-.bento-chat {
-  margin-top: 14px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.bento-chat__bubble {
-  max-width: 70%;
-  padding: 8px 12px;
-  border-radius: 12px;
-  font-size: 12.5px;
-}
-
-.bento-chat__bubble--in {
-  align-self: flex-start;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.bento-chat__bubble--out {
-  align-self: flex-end;
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
-.bento-chat__input {
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: var(--text-faint);
-}
 
 @media (max-width: 980px) {
   .bento {
@@ -18045,10 +17985,6 @@ a.notification-panel__item:hover {
   justify-content: center;
 }
 
-.bento-card__chips {
-  margin-top: 18px;
-}
-
 /* ── Booking sidebar: availability block and the account button ── */
 /* The one route back into your own in-game details from this page. As a grey
    pill above the heading it read as a footnote; it is a row you can see now. */
@@ -18301,4 +18237,285 @@ a.notification-panel__item:hover {
   font-size: 13px;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   Privacy card: three checkable statements, not three adjectives.
+
+   It held one sentence in a cell built for a mockup, so the copy sat at the
+   top and three chips at the bottom with a hole between them. What fills it
+   now is the same claim broken into things somebody could actually verify —
+   each one also written into the Privacy Policy, so the card and the document
+   cannot drift apart.
+   ------------------------------------------------------------------------- */
+.privacy-facts {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  list-style: none;
+}
+
+.privacy-facts li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.privacy-facts i {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: rgba(47, 191, 113, 0.14);
+  color: var(--hue-green);
+  font-size: 9px;
+}
+
+.privacy-facts b {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.privacy-facts span {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
+.privacy-facts__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--hue-green);
+}
+
+.privacy-facts__link i {
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.privacy-facts__link:hover i {
+  transform: translateX(3px);
+}
+
+/* ---------------------------------------------------------------------------
+   Chat card: the order room's own chrome rather than two floating bubbles.
+
+   The old mockup was a rounded box with two lozenges in it, which read as a
+   placeholder because it was missing everything that makes the real thread
+   legible — who you are talking to, when, and whether it arrived.
+   ------------------------------------------------------------------------- */
+.bento-chat {
+  margin-top: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+
+.bento-chat__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.bento-chat__avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.bento-chat__who {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bento-chat__who b {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.bento-chat__who small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.bento-chat__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hue-green);
+}
+
+.bento-chat__order {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.bento-chat__thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px 12px;
+}
+
+/* The timestamp hangs under the bubble on the same side, which is what keeps
+   a two-line thread readable as a conversation rather than as two labels. */
+.bento-chat__msg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 78%;
+}
+
+.bento-chat__msg--in {
+  align-self: flex-start;
+}
+
+.bento-chat__msg--out {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.bento-chat__bubble {
+  padding: 8px 12px;
+  border-radius: 13px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.bento-chat__msg--in .bento-chat__bubble {
+  border-bottom-left-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.bento-chat__msg--out .bento-chat__bubble {
+  border-bottom-right-radius: 4px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.bento-chat__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 3px;
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Read, not just sent — the double tick is the detail that tells you the
+   other person is actually there. */
+.bento-chat__time i {
+  color: var(--cta-vivid);
+  font-size: 9px;
+}
+
+.bento-chat__typing {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 3px;
+  padding: 9px 12px;
+  border-radius: 13px;
+  border-bottom-left-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bento-chat__typing i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  animation: bentoTyping 1.3s ease-in-out infinite;
+}
+
+.bento-chat__typing i:nth-child(2) { animation-delay: 0.16s; }
+.bento-chat__typing i:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes bentoTyping {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bento-chat__typing i { animation: none; opacity: 0.5; }
+}
+
+.bento-chat__input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 12px 12px;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.bento-chat__input i {
+  color: var(--accent);
+}
+
+/* The notification the "Real-time updates" card describes, shown rather than
+   stated — same register as the chat mockup beside it, and the last of the
+   three cells that held a single sentence in a box built for a picture. */
+.bento-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bento-alert__icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: rgba(236, 72, 153, 0.16);
+  color: var(--hue-pink);
+  font-size: 11px;
+}
+
+.bento-alert__copy b {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.bento-alert__copy small {
+  font-size: 10.5px;
+  color: var(--text-faint);
 }

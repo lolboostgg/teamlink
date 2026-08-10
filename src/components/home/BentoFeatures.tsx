@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Reveal } from "@/components/ui/Reveal";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { GAMES } from "@/lib/games";
@@ -31,12 +32,39 @@ export function BentoFeatures() {
                 <i className="fa-solid fa-shield-halved" aria-hidden="true" />
               </div>
               <h3>Privacy first</h3>
-              <p>Your account credentials and personal data stay safe with us, always.</p>
-              <div className="bento-card__chips">
-                <span><i className="fa-solid fa-lock" aria-hidden="true" /> Secure login</span>
-                <span><i className="fa-solid fa-user-shield" aria-hidden="true" /> Encrypted credentials</span>
-                <span><i className="fa-solid fa-shield" aria-hidden="true" /> 256-bit protected</span>
-              </div>
+              <p>Not a promise about how carefully we hold your data — a list of what we never hold in the first place.</p>
+              {/* Three statements somebody can check, rather than three
+                  adjectives. Each one is also written into the Privacy Policy
+                  and the Terms, so the card and the documents cannot drift:
+                  no credential handover (Terms §1), payment details never
+                  reaching our servers (Privacy §1), and the 12-month chat
+                  retention (Privacy §5). */}
+              <ul className="privacy-facts">
+                <li>
+                  <i className="fa-solid fa-check" aria-hidden="true" />
+                  <span>
+                    <b>We never ask for your password</b>
+                    Your teammate joins your lobby. Nobody logs in as you.
+                  </span>
+                </li>
+                <li>
+                  <i className="fa-solid fa-check" aria-hidden="true" />
+                  <span>
+                    <b>Card details never touch our servers</b>
+                    They go straight to the payment provider. We see the last four digits.
+                  </span>
+                </li>
+                <li>
+                  <i className="fa-solid fa-check" aria-hidden="true" />
+                  <span>
+                    <b>Session chat is deleted after 12 months</b>
+                    Along with everything else we are not required to keep.
+                  </span>
+                </li>
+              </ul>
+              <Link className="privacy-facts__link" href="/legal/privacy">
+                Read the policy <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+              </Link>
             </div>
           </Reveal>
 
@@ -81,18 +109,69 @@ export function BentoFeatures() {
               </div>
               <h3>Real-time updates</h3>
               <p>Get notified the moment your teammate is ready.</p>
+              {/* The last cell that held one sentence in a mockup-sized box.
+                  Shows the thing it describes, in the same register as the
+                  chat card next to it. */}
+              <div className="bento-alert">
+                <span className="bento-alert__icon" aria-hidden="true">
+                  <i className="fa-solid fa-bell" />
+                </span>
+                <span className="bento-alert__copy">
+                  <b>A teammate accepted your order</b>
+                  <small>just now · tap to open</small>
+                </span>
+              </div>
             </div>
           </Reveal>
 
           <Reveal className="bento__cell bento__cell--wide" delay={280}>
             <div className="bento-card bento-card--chat">
               <h3>Powerful real-time chat</h3>
-              <p>Communicate instantly with your teammate.</p>
+              <p>Opens the moment you are matched, so lanes and roles are sorted before champion select.</p>
+              {/* Built from the same parts as the real order room — a header
+                  with who you are talking to and their rank, sender names,
+                  timestamps, a read receipt, a typing indicator. Two bubbles
+                  floating in a box looked like a placeholder because it was
+                  missing everything that makes the real one legible.
+
+                  Deliberately no real teammate's name or face: this is a
+                  demonstration of the interface, and putting words somebody
+                  never said next to their photo is the thing the rest of this
+                  page was cleaned up to stop doing. */}
               <div className="bento-chat">
-                <div className="bento-chat__bubble bento-chat__bubble--in">Ready when you are 👋</div>
-                <div className="bento-chat__bubble bento-chat__bubble--out">Let&rsquo;s go!</div>
+                <div className="bento-chat__head">
+                  <span className="bento-chat__avatar" aria-hidden="true">
+                    <i className="fa-solid fa-user" />
+                  </span>
+                  <span className="bento-chat__who">
+                    <b>Your teammate</b>
+                    <small>
+                      <span className="bento-chat__dot" /> online · Grandmaster
+                    </small>
+                  </span>
+                  <span className="bento-chat__order">#1042</span>
+                </div>
+
+                <div className="bento-chat__thread">
+                  <div className="bento-chat__msg bento-chat__msg--in">
+                    <span className="bento-chat__bubble">Ready when you are 👋 I&rsquo;ll go mid, you take jungle?</span>
+                    <span className="bento-chat__time">21:04</span>
+                  </div>
+                  <div className="bento-chat__msg bento-chat__msg--out">
+                    <span className="bento-chat__bubble">Sounds good — queueing now</span>
+                    <span className="bento-chat__time">
+                      21:04 <i className="fa-solid fa-check-double" aria-hidden="true" />
+                    </span>
+                  </div>
+                  <div className="bento-chat__typing" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                </div>
+
                 <div className="bento-chat__input">
-                  <span>Type a message...</span>
+                  <span>Type a message…</span>
                   <i className="fa-solid fa-paper-plane" aria-hidden="true" />
                 </div>
               </div>
