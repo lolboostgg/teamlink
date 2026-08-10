@@ -1,4 +1,8 @@
+"use client";
+
 import { PAYMENT_ICONS } from "@/lib/payments";
+import { useLanguage } from "@/components/language/LanguageProvider";
+import { getBookingCopy } from "@/lib/bookingLocale";
 
 const TRUST_POINTS = [
   { icon: "fa-solid fa-lock", label: "Secure & encrypted", desc: "256-bit SSL on every order" },
@@ -35,11 +39,17 @@ export function PaymentStrip() {
 // is deliberately concrete (specific guarantees, not just a generic
 // "secure" badge) rather than decorative.
 export function TrustPoints({ compact = false, payments = true }: Props) {
+  const { language } = useLanguage();
+  const labels = getBookingCopy(language);
+  const points = TRUST_POINTS.map((point, index) => ({
+    ...point,
+    label: [labels.secure, labels.guarantee, labels.support][index],
+  }));
   return (
     <div className={`trust-points${compact ? " trust-points--compact" : ""}`}>
       {compact ? (
         <div className="trust-points__row">
-          {TRUST_POINTS.map((point) => (
+          {points.map((point) => (
             <div key={point.label} className="trust-points__row-item" title={point.desc}>
               <span className="trust-points__icon">
                 <i className={point.icon} aria-hidden="true" />
@@ -49,7 +59,7 @@ export function TrustPoints({ compact = false, payments = true }: Props) {
           ))}
         </div>
       ) : (
-        TRUST_POINTS.map((point) => (
+        points.map((point) => (
           <div key={point.label} className="trust-points__point">
             <span className="trust-points__icon">
               <i className={point.icon} aria-hidden="true" />

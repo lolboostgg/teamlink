@@ -13,6 +13,8 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { TrustPoints, PaymentStrip } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
 import { FAQ_ITEMS } from "@/lib/content";
+import { useLanguage } from "@/components/language/LanguageProvider";
+import { getBookingCopy, localizeBookingValue } from "@/lib/bookingLocale";
 
 interface Props {
   game: Game;
@@ -51,6 +53,8 @@ const CATEGORY_FAQ: Record<string, { q: string; a: string }> = {
 // after checkout (see MatchmakingScreen), not up front — this widget only
 // books the game, mode and group size.
 export function BookingWidget({ game }: Props) {
+  const { language } = useLanguage();
+  const copy = getBookingCopy(language);
   const router = useRouter();
   const bookingCategories = useMemo(() => getBookingCategories(game.slug), [game.slug]);
   const [activeCategory, setActiveCategory] = useState(bookingCategories[0].category);
@@ -138,8 +142,8 @@ export function BookingWidget({ game }: Props) {
                 <i className="fa-solid fa-user-pen" />
               </span>
               <span className="booking-edit-account__copy">
-                <strong>Your in-game account</strong>
-                <small>IGN, region and role &mdash; change it before you book</small>
+                <strong>{copy.account}</strong>
+                <small>{copy.accountHint}</small>
               </span>
               <i className="fa-solid fa-chevron-right booking-edit-account__go" aria-hidden="true" />
             </button>
@@ -147,13 +151,13 @@ export function BookingWidget({ game }: Props) {
         )}
 
         <Reveal>
-          <span className="section__eyebrow booking-heading__eyebrow">Book a session</span>
+          <span className="section__eyebrow booking-heading__eyebrow">{copy.book}</span>
         </Reveal>
         <Reveal delay={10}>
           <h2 className="section__title booking-heading__title">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={gameIcon(game.slug)} alt="" className="booking-heading__game-icon" />
-            Choose your mode
+            {copy.choose}
           </h2>
         </Reveal>
 
@@ -169,7 +173,7 @@ export function BookingWidget({ game }: Props) {
                 onClick={() => setActiveCategory(cat.category)}
               >
                 <i className={CATEGORY_ICONS[cat.category] ?? "fa-solid fa-gamepad"} aria-hidden="true" />
-                {cat.category}
+                {copy.categories[cat.category] ?? cat.category}
               </button>
             ))}
           </div>
@@ -204,18 +208,18 @@ export function BookingWidget({ game }: Props) {
                 <span className="booking-option__main">
                   <span className="booking-option__name">
                     {option.name}
-                    <InfoTooltip text={option.description} />
+                    <InfoTooltip text={localizeBookingValue(language, option.description)} />
                   </span>
-                  <span className="booking-option__desc">{option.description}</span>
+                  <span className="booking-option__desc">{localizeBookingValue(language, option.description)}</span>
                 </span>
                 <span className="booking-option__price">
                   <span className="booking-option__price-value">
                     <PriceTag amountEUR={option.price} />
-                    <span className="booking-option__unit">{option.unit}</span>
+                    <span className="booking-option__unit">{localizeBookingValue(language, option.unit)}</span>
                   </span>
                   <span className="booking-option__eta">
                     <span className="booking-option__eta-dot" aria-hidden="true" />
-                    {option.eta}
+                    {localizeBookingValue(language, option.eta)}
                   </span>
                 </span>
               </button>
@@ -227,14 +231,14 @@ export function BookingWidget({ game }: Props) {
               {selected.name === option.name && option.maxTeammates > 1 && (
                 <div className="booking-option__teammates">
                   <span className="booking-option__teammates-label">
-                    <i className="fa-solid fa-user-group" aria-hidden="true" /> Teammates
+                    <i className="fa-solid fa-user-group" aria-hidden="true" /> {copy.teammates}
                   </span>
                   <span className="booking-stepper">
                     <button
                       type="button"
                       onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
                       disabled={groupSize <= 1}
-                      aria-label="Fewer teammates"
+                      aria-label={copy.fewer}
                     >
                       <i className="fa-solid fa-minus" aria-hidden="true" />
                     </button>
@@ -243,7 +247,7 @@ export function BookingWidget({ game }: Props) {
                       type="button"
                       onClick={() => setGroupSize((n) => Math.min(option.maxTeammates, n + 1))}
                       disabled={groupSize >= option.maxTeammates}
-                      aria-label="More teammates"
+                      aria-label={copy.more}
                     >
                       <i className="fa-solid fa-plus" aria-hidden="true" />
                     </button>
@@ -263,8 +267,7 @@ export function BookingWidget({ game }: Props) {
           <Reveal>
             <div className="booking-faq__head">
               <h2 className="booking-faq__title">
-                Questions about{" "}
-                {visibleCategory.category === "Team Up" ? "Team Up" : visibleCategory.category.toLowerCase()}
+                {copy.questions}{" "}{copy.categories[visibleCategory.category] ?? visibleCategory.category}
               </h2>
             </div>
           </Reveal>
@@ -279,10 +282,10 @@ export function BookingWidget({ game }: Props) {
                     onClick={() => setOpenFaq(openFaq === i ? -1 : i)}
                     aria-expanded={openFaq === i}
                   >
-                    <span>{item.q}</span>
+                    <span>{localizeBookingValue(language, item.q)}</span>
                     <i className="fa-solid fa-plus faq-row__icon" aria-hidden="true" />
                   </button>
-                  {openFaq === i && <div className="faq-row__panel faq-row__panel--anim">{item.a}</div>}
+                  {openFaq === i && <div className="faq-row__panel faq-row__panel--anim">{localizeBookingValue(language, item.a)}</div>}
                 </div>
               ))}
             </div>
@@ -307,14 +310,14 @@ export function BookingWidget({ game }: Props) {
                 1-on-1 mode just shows a plain "1" instead of a stepper stuck
                 at 1 with both buttons disabled, which read as broken. */}
             <div className="booking-sidebar__row booking-sidebar__row--last">
-              <span>Teammates</span>
+              <span>{copy.teammates}</span>
               {selected.maxTeammates > 1 ? (
                 <span className="booking-stepper">
                   <button
                     type="button"
                     onClick={() => setGroupSize((n) => Math.max(1, n - 1))}
                     disabled={groupSize <= 1}
-                    aria-label="Fewer teammates"
+                    aria-label={copy.fewer}
                   >
                     <i className="fa-solid fa-minus" aria-hidden="true" />
                   </button>
@@ -323,7 +326,7 @@ export function BookingWidget({ game }: Props) {
                     type="button"
                     onClick={() => setGroupSize((n) => Math.min(selected.maxTeammates, n + 1))}
                     disabled={groupSize >= selected.maxTeammates}
-                    aria-label="More teammates"
+                    aria-label={copy.more}
                   >
                     <i className="fa-solid fa-plus" aria-hidden="true" />
                   </button>
@@ -341,12 +344,12 @@ export function BookingWidget({ game }: Props) {
               card down. */}
           <div className="booking-sidebar__foot">
             <div className={`booking-sidebar__total${pulsing ? " is-pulsing" : ""}`}>
-              <span>Total</span>
+              <span>{copy.total}</span>
               <PriceTag amountEUR={total} />
             </div>
 
             <button type="button" className="btn btn--vivid btn--block booking-sidebar__cta" onClick={() => setIngameOpen(true)}>
-              <i className="fa-solid fa-bolt" aria-hidden="true" /> Continue to checkout
+              <i className="fa-solid fa-bolt" aria-hidden="true" /> {copy.checkout}
             </button>
 
             <PaymentStrip />
@@ -361,8 +364,8 @@ export function BookingWidget({ game }: Props) {
             gameSlug={game.slug}
             gameName={game.name}
             canSave={status === "authenticated"}
-            backLabel="Cancel"
-            continueLabel="Continue to checkout"
+            backLabel={copy.cancel}
+            continueLabel={copy.checkout}
             onBack={() => setIngameOpen(false)}
             onContinue={(ingame) => {
               setIngameOpen(false);
@@ -379,8 +382,8 @@ export function BookingWidget({ game }: Props) {
             gameSlug={game.slug}
             gameName={game.name}
             canSave
-            backLabel="Close"
-            continueLabel="Save account"
+            backLabel={copy.close}
+            continueLabel={copy.save}
             onBack={() => setEditAccountOpen(false)}
             onContinue={() => setEditAccountOpen(false)}
           />
