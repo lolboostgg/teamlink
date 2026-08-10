@@ -10287,15 +10287,27 @@ body {
   font-size: 12px;
 }
 
+/* A quiet affordance on a quiet pill, not a second call to action.
+   --cta-vivid is reserved for the one loudest button on a screen (see the
+   note where it is defined) and this was wearing it in the header, next to
+   the bell and the account chip, where nothing else is saturated at all. It
+   is a soft square in the accent now, matching the coin mark to its left. */
 .credits-widget__add {
   display: grid;
   place-items: center;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
-  background: var(--cta-vivid);
-  color: var(--cta-vivid-ink);
-  font-size: 10px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
+  font-size: 9px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.credits-widget__pill:hover .credits-widget__add {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: var(--accent);
 }
 
 .credits-widget__panel {
