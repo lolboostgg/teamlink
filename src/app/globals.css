@@ -18628,22 +18628,26 @@ img.bento-chat__avatar {
    that the reader can open the profile and check it, so the badge is the link
    rather than carrying one — and the green border says at a glance that this
    is somebody else vouching, not us. */
+/* Neutral surface, not a green one. The star tiles are already Trustpilot's
+   green and they are what makes the badge recognisable; tinting the frame as
+   well made a control that belonged to no part of the page. This is the same
+   glass the hero's other chips sit on, so it stays legible over the ambient
+   video without claiming its own colour. */
 .tp-badge {
   --tp: #00b67a;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 9px 16px;
-  border: 1px solid color-mix(in srgb, var(--tp) 45%, transparent);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--tp) 9%, rgba(255, 255, 255, 0.02));
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
   color: var(--text);
-  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  transition: background 0.18s ease, transform 0.18s ease;
 }
 
 .tp-badge:hover {
-  border-color: var(--tp);
-  background: color-mix(in srgb, var(--tp) 15%, transparent);
+  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
 }
 
@@ -18740,112 +18744,16 @@ img.bento-chat__avatar {
   }
 }
 
-/* ── "We never ask for these" ───────────────────────────────────
-   The privacy card used to be three claims each explained by a second
-   sentence — six lines of text to say one thing. This is the same thing
-   shown: the fields nobody will ever put in front of you, struck through one
-   after another. The strike is the argument, so it is the part that animates.
-
-   The stagger is driven by --i on each row, set in the markup, so adding a
-   fourth row needs no new rule here. */
-.never-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 16px;
-  list-style: none;
-}
-
-.never-list li {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 11px 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  overflow: hidden;
-  animation: neverRowIn 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
-  animation-delay: calc(var(--i) * 0.14s);
-}
-
-.never-list i {
-  width: 16px;
-  text-align: center;
-  color: var(--text-faint);
-  font-size: 12px;
-}
-
-/* The strike itself: a line that draws across the row from the left, timed to
-   land just after the row has arrived. */
-.never-list b {
-  position: absolute;
-  left: 13px;
-  right: 13px;
-  top: 50%;
-  height: 1.5px;
-  border-radius: 2px;
-  background: var(--hue-green);
-  transform-origin: left center;
-  transform: scaleX(0);
-  animation: neverStrike 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
-  animation-delay: calc(var(--i) * 0.14s + 0.35s);
-}
-
-@keyframes neverRowIn {
-  from { opacity: 0; transform: translate3d(-8px, 0, 0); }
-  to { opacity: 1; transform: none; }
-}
-
-@keyframes neverStrike {
-  to { transform: scaleX(1); }
-}
-
-/* A green tick lands on the row as its line completes: crossed out is the
-   good outcome here, and without it the strike reads as an error state. */
-.never-list li::after {
-  content: "\f00c";
-  font-family: "Font Awesome 7 Free", "Font Awesome 6 Free";
-  font-weight: 900;
-  margin-left: auto;
-  font-size: 10px;
-  color: var(--hue-green);
-  opacity: 0;
-  animation: neverTick 0.4s ease forwards;
-  animation-delay: calc(var(--i) * 0.14s + 0.75s);
-}
-
-@keyframes neverTick {
-  from { opacity: 0; transform: scale(0.5); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .never-list li,
-  .never-list b,
-  .never-list li::after {
-    animation-duration: 0.01ms;
-    animation-delay: 0ms;
-  }
-}
-
-.never-list__after {
-  margin-top: 14px;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--text-faint);
-}
-
 /* Above the small print rather than in the brand column: down there it has
    the width to stay on one line, and it sits with the other thing on the page
    that points somewhere outside the site. */
+/* Immediately above the small print. It is the last claim the page makes and
+   the disclaimer under it is the last qualification, so the two belong
+   together at the bottom rather than floating over the payment strip. */
 .site-footer__proof {
   display: flex;
   justify-content: center;
-  padding-top: 20px;
+  padding-top: 22px;
 }
 
 
@@ -18856,4 +18764,142 @@ img.bento-chat__avatar {
    centring them would push their first line down for nothing. */
 .bento__cell--tall .bento-card {
   justify-content: center;
+}
+
+/* ── The party, in the privacy card ─────────────────────────────
+   Two rows in a lobby is the entire difference between this product and
+   handing somebody your login, so the card shows a party with two players in
+   it rather than describing one. Same furniture as the chat mockup next to
+   it: avatars, a rank chip, real labels. */
+.lobby {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.lobby__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.lobby__head b {
+  color: var(--hue-green);
+  letter-spacing: 0;
+}
+
+.lobby__seat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  overflow: hidden;
+  animation: lobbySeatIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+.lobby__seat + .lobby__seat {
+  border-top: 1px solid var(--border);
+  animation-delay: 0.16s;
+}
+
+@keyframes lobbySeatIn {
+  from { opacity: 0; transform: translate3d(-6px, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+
+img.lobby__avatar,
+.lobby__avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+/* The customer's seat is the one wearing the site's own accent — it is their
+   party, and the visual difference is half the point being made. */
+.lobby__avatar--you {
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.lobby__who {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.lobby__who b {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.lobby__who small {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.lobby__tag {
+  margin-left: auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+/* Under the name, not beside it: the tall cell is the narrowest card in the
+   grid and a name, a sub-line and a rank chip do not share one row in it. */
+.lobby__rank {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ff4d6d;
+}
+
+.lobby__rank img {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.lobby__foot {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(47, 191, 113, 0.06);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.lobby__foot i {
+  margin-top: 2px;
+  color: var(--hue-green);
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lobby__seat { animation: none; }
 }

@@ -33,31 +33,48 @@ export function BentoFeatures() {
                 <i className="fa-solid fa-shield-halved" aria-hidden="true" />
               </div>
               <h3>Privacy first</h3>
-              <p>Three things we never ask you for.</p>
-              {/* The claim was three sentences explaining three sentences. It
-                  is the same claim shown instead: the fields we never put in
-                  front of anybody, crossed out one after another. Less to
-                  read, and the crossing-out is the argument. */}
-              <ul className="never-list">
-                <li style={{ ["--i" as string]: 0 }}>
-                  <i className="fa-solid fa-key" aria-hidden="true" />
-                  <span>Your password</span>
-                  <b aria-hidden="true" />
-                </li>
-                <li style={{ ["--i" as string]: 1 }}>
-                  <i className="fa-solid fa-gamepad" aria-hidden="true" />
-                  <span>Your account login</span>
-                  <b aria-hidden="true" />
-                </li>
-                <li style={{ ["--i" as string]: 2 }}>
-                  <i className="fa-solid fa-credit-card" aria-hidden="true" />
-                  <span>Your card number</span>
-                  <b aria-hidden="true" />
-                </li>
-              </ul>
-              <p className="never-list__after">
-                Your teammate joins your lobby, the way a friend would. That is the whole of it.
-              </p>
+              <p>Nobody ever plays as you. They play with you.</p>
+              {/* The claim, shown the way the chat card shows its own: a party
+                  with two players in it, because two rows in a lobby is the
+                  whole difference between this and handing somebody your
+                  login. Same furniture as the real thing — avatars, a rank
+                  chip, an owner mark. */}
+              <div className="lobby">
+                <div className="lobby__head">
+                  <span>Your party</span>
+                  <b>2 / 2</b>
+                </div>
+
+                <div className="lobby__seat">
+                  <span className="lobby__avatar lobby__avatar--you" aria-hidden="true">
+                    <i className="fa-solid fa-user" />
+                  </span>
+                  <span className="lobby__who">
+                    <b>You</b>
+                    <small>your own account</small>
+                  </span>
+                  <span className="lobby__tag">Owner</span>
+                </div>
+
+                <div className="lobby__seat">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="lobby__avatar" src="/avatars/default.webp" alt="" />
+                  <span className="lobby__who">
+                    <b>Kayzen</b>
+                    <small className="lobby__rank">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={rankIcon("league-of-legends", "grandmaster") ?? ""} alt="" />
+                      Grandmaster
+                    </small>
+                  </span>
+                  <span className="lobby__tag">Teammate</span>
+                </div>
+
+                <div className="lobby__foot">
+                  <i className="fa-solid fa-lock" aria-hidden="true" />
+                  Two players, two accounts, two passwords — and we never see either.
+                </div>
+              </div>
             </div>
           </Reveal>
 

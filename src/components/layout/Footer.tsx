@@ -79,14 +79,14 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="site-footer__proof">
-          <TrustpilotBadge />
-        </div>
-
         <div className="site-footer__payments">
           {PAYMENT_ICONS.map((icon) => (
             <i key={icon} className={icon} aria-hidden="true" />
           ))}
+        </div>
+
+        <div className="site-footer__proof">
+          <TrustpilotBadge />
         </div>
 
         <div className="site-footer__bottom">
