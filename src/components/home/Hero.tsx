@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TrustBadge } from "@/components/ui/TrustBadge";
+import { TrustpilotBadge } from "@/components/ui/TrustpilotBadge";
 import { GameSwitcherBar } from "@/components/booking/GameSwitcherBar";
 import { AmbientGameBackground } from "@/components/home/AmbientGameBackground";
 import { BookingWidget } from "@/components/booking/BookingWidget";
@@ -82,6 +83,14 @@ export function Hero({ game: gameProp, reviews = null, averageRating = null }: P
           </div>
 
           <GameSwitcherBar games={GAMES} activeSlug={game.slug} onHover={setHoverSlug} />
+
+          {/* Under the cards, not above them: by this point somebody has read
+              the promise and picked a game, and the question that follows is
+              "says who". Trustpilot answers it from outside the site, which
+              is the only kind of answer that carries here. */}
+          <div className="hero__trustpilot">
+            <TrustpilotBadge />
+          </div>
         </div>
 
         <button

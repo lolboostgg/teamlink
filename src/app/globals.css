@@ -2056,25 +2056,6 @@ body {
   border-color: var(--border-strong);
 }
 
-.site-footer__trustpilot {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-faint);
-  transition: color 0.15s ease;
-}
-
-.site-footer__trustpilot i {
-  color: #00b67a; /* Trustpilot's own green — the one thing that identifies it without a logo. */
-}
-
-.site-footer__trustpilot:hover {
-  color: var(--text);
-}
-
 .site-footer__nav {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -18715,4 +18696,125 @@ img.bento-chat__avatar {
    right above a loose grid and too much above a dense one. */
 #why-us .section__head {
   margin-bottom: 28px;
+}
+
+/* ── Trustpilot badge ───────────────────────────────────────────
+   Their green, their star, their star tiles. The whole value of this badge is
+   that the reader can open the profile and check it, so the badge is the link
+   rather than carrying one — and the green border says at a glance that this
+   is somebody else vouching, not us. */
+.tp-badge {
+  --tp: #00b67a;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border: 1px solid color-mix(in srgb, var(--tp) 45%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tp) 9%, rgba(255, 255, 255, 0.02));
+  color: var(--text);
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.tp-badge:hover {
+  border-color: var(--tp);
+  background: color-mix(in srgb, var(--tp) 15%, transparent);
+  transform: translateY(-1px);
+}
+
+.tp-badge__stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+/* Trustpilot's stars are white on a filled green tile, not a gold glyph —
+   that shape is what makes the badge recognisable from across a page. */
+.tp-badge__star {
+  display: grid;
+  place-items: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 3px;
+  background: var(--tp);
+  color: #fff;
+  font-size: 10px;
+}
+
+.tp-badge__score {
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.tp-badge__score span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.tp-badge__sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border-strong);
+}
+
+.tp-badge__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tp-badge__source i {
+  color: var(--tp);
+  font-size: 11px;
+}
+
+.tp-badge__source b {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.tp-badge--compact {
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.tp-badge--compact .tp-badge__star {
+  width: 15px;
+  height: 15px;
+  font-size: 8px;
+}
+
+.tp-badge--compact .tp-badge__score {
+  font-size: 12.5px;
+}
+
+.tp-badge--compact .tp-badge__score span,
+.tp-badge--compact .tp-badge__sep {
+  display: none;
+}
+
+.tp-badge--compact .tp-badge__source {
+  font-size: 11.5px;
+}
+
+/* Under the game carousel, centred with it. */
+.hero__trustpilot {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+.site-footer__brand .tp-badge {
+  margin-top: 14px;
+}
+
+@media (max-width: 560px) {
+  .tp-badge__sep,
+  .tp-badge__score span {
+    display: none;
+  }
 }

@@ -614,6 +614,54 @@ export function contactMessageMail(input: {
   };
 }
 
+/**
+ * "Your session never happened — come back and here is something off."
+ *
+ * The one re-engagement mail in the product, sent once, a day after an order
+ * was cancelled (see notify/winBack.ts). It leads with the availability
+ * because that is what actually changed since they tried: a number of
+ * teammates who are online for their game right now, read from the roster
+ * rather than asserted.
+ */
+export function winBackMail(input: {
+  name: string | null;
+  gameName: string;
+  option: string;
+  orderNo: number;
+  code: string;
+  percent: number;
+  days: number;
+  onlineNow: number;
+  url: string;
+}): MailBody {
+  const greeting = input.name ? `${input.name}, your ` : "Your ";
+  const availability =
+    input.onlineNow > 0
+      ? `${input.onlineNow} ${input.onlineNow === 1 ? "teammate is" : "teammates are"} online for ${input.gameName} right now.`
+      : `Teammates come online through the evening, and the order waits for the first one who can take it.`;
+
+  const content: Shell = {
+    heading: "Your teammate is waiting",
+    intro:
+      `${greeting}${input.option} session on ${input.gameName} never happened — order #${input.orderNo} was ` +
+      `cancelled and refunded. ${availability} Here is ${input.percent}% off for the trouble.`,
+    preheader: `${input.percent}% off your next ${input.gameName} session`,
+    highlight: {
+      label: `${input.percent}% off your next session`,
+      value: input.code,
+      note: `Paste it at checkout. Valid for ${input.days} days, on one order.`,
+    },
+    rows: [],
+    ctaLabel: `Book a ${input.gameName} teammate`,
+    ctaUrl: input.url,
+    footnote:
+      "Sent once, because a session you paid for did not happen. There is no series behind it and nothing else to unsubscribe from.",
+    subscription: null,
+  };
+
+  return { subject: `${input.percent}% off — your ${input.gameName} session never happened`, html: shell(content), text: shellText(content) };
+}
+
 export function teammateAssignedMail(input: {
   orderNo: number;
   gameName: string;

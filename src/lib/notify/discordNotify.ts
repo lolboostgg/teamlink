@@ -39,18 +39,30 @@ export interface DiscordMessage {
 /** The QUP.gg accent (#4066ff) as Discord wants it. */
 export const ACCENT = 0x4066ff;
 
-function buildPayload(message: DiscordMessage) {
+/**
+ * `components` are an application-only feature. A plain incoming webhook
+ * cannot send a button — Discord drops it — so every webhook post this
+ * codebase made was arriving with its link silently missing, which is exactly
+ * what the operations channel needed most. Bot DMs can still have the button,
+ * so the payload differs by route: a webhook hangs the URL off the embed
+ * title, which webhooks do render.
+ */
+function buildPayload(message: DiscordMessage, { asWebhook = false } = {}) {
+  const embed = {
+    title: message.title,
+    ...(asWebhook && message.linkUrl ? { url: message.linkUrl } : {}),
+    description: message.description,
+    color: message.color ?? ACCENT,
+    fields: message.fields ?? [],
+    timestamp: new Date().toISOString(),
+    ...(asWebhook && message.linkUrl
+      ? { footer: { text: message.linkLabel ?? "Open in admin" } }
+      : {}),
+  };
+
   return {
-    embeds: [
-      {
-        title: message.title,
-        description: message.description,
-        color: message.color ?? ACCENT,
-        fields: message.fields ?? [],
-        timestamp: new Date().toISOString(),
-      },
-    ],
-    ...(message.linkUrl
+    embeds: [embed],
+    ...(!asWebhook && message.linkUrl
       ? {
           components: [
             {
@@ -80,7 +92,7 @@ export async function postToTeammateChannel(message: DiscordMessage): Promise<bo
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
-      body: JSON.stringify(buildPayload(message)),
+      body: JSON.stringify(buildPayload(message, { asWebhook: true })),
       cache: "no-store",
     });
     if (!res.ok) console.error("[discord] webhook failed:", res.status, await res.text().catch(() => ""));

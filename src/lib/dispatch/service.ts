@@ -7,6 +7,7 @@ import { publish } from "@/lib/events/bus";
 import { issueSessionRewardCoupon } from "@/lib/couponsServer";
 import { notifyTeammateAssigned, notifyOrderCompleted, appUrl } from "@/lib/notify/orderNotifications";
 import { postToTeammateChannel } from "@/lib/notify/discordNotify";
+import { formatRank } from "@/lib/gameRanks";
 import { sendMail } from "@/lib/notify/mail";
 import { plainNoticeMail } from "@/lib/notify/templates";
 import { settleCancelledOrder, type RefundOutcome } from "@/lib/orderRefunds";
@@ -229,7 +230,7 @@ async function runReconcileTransaction(orderId: string, now: Date) {
   const waved: WaveResult[] = [];
   // Set when this pass is the one that runs the pool dry, so the call to
   // Discord happens after the transaction commits rather than inside it.
-  let poolJustExhausted: { orderNo: number; gameName: string; priceEUR: number } | null = null;
+  let poolJustExhausted: Parameters<typeof announceUnclaimedOrder>[0] | null = null;
 
   const result = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id: orderId }, include: { candidates: true } });
@@ -373,7 +374,14 @@ async function runReconcileTransaction(orderId: string, now: Date) {
             poolJustExhausted = {
               orderNo: order.orderNo,
               gameName: order.gameName,
+              option: order.option,
               priceEUR: Number(order.priceEUR),
+              payoutEUR: Number(order.teammatePayoutEUR),
+              teammatesRequested: order.teammatesRequested,
+              ign: order.ign,
+              ignRegion: order.ignRegion,
+              rank: formatRank(order.gameSlug, order.ignRank, order.ignDivision),
+              waves: order.dispatchWave,
             };
           } else {
             waved.push(next);
@@ -452,16 +460,14 @@ async function runReconcileTransaction(orderId: string, now: Date) {
 }
 
 /**
- * An order nobody eligible could take, into the teammate channel.
+ * An order the dispatcher has run out of people to ask, into the operations
+ * channel.
  *
- * The dispatcher does not give up — it releases the lapsed invitations and
- * asks the same pool again a few minutes later — but until somebody comes
- * online that is a retry against an empty room. A post reaches the teammates
- * who are not sitting in the dispatch panel, which is most of them most of
- * the time.
- *
- * Deliberately a channel post and not a DM: nobody has been invited to this
- * order, so there is no one person it belongs to.
+ * That channel is read by admins, not by teammates — so this is written for
+ * somebody who can act on it: the full order, what it pays, and a link into
+ * the admin view. The dispatcher keeps retrying on its own, but until
+ * somebody comes online it is retrying against an empty room, and the useful
+ * response is a human nudging a teammate rather than the loop trying again.
  *
  * Best-effort, like every other outbound: a missed post must not fail the
  * dispatch pass that produced it.
@@ -469,17 +475,34 @@ async function runReconcileTransaction(orderId: string, now: Date) {
 async function announceUnclaimedOrder(order: {
   orderNo: number;
   gameName: string;
+  option: string;
   priceEUR: number;
+  payoutEUR: number;
+  teammatesRequested: number;
+  ign: string | null;
+  ignRegion: string | null;
+  rank: string | null;
+  waves: number;
 }): Promise<void> {
   try {
+    const seats = order.teammatesRequested === 1 ? "1 teammate" : `${order.teammatesRequested} teammates`;
     await postToTeammateChannel({
-      title: `Order waiting · ${order.gameName}`,
+      title: "⚠️ Order waiting · nobody left to ask",
       description:
-        `Nobody available has taken order #${order.orderNo} yet. Go online and it is yours — ` +
-        `the order is still open and pays €${order.priceEUR.toFixed(2)}.`,
+        `**${order.option}** on **${order.gameName}** — looking for ${seats}. ` +
+        `Every eligible teammate has been invited and the pool is dry.`,
+      fields: [
+        { name: "Order", value: `#${order.orderNo}`, inline: true },
+        { name: "Total", value: `€${order.priceEUR.toFixed(2)}`, inline: true },
+        { name: "Payout", value: `€${order.payoutEUR.toFixed(2)}`, inline: true },
+        { name: "Rank", value: order.rank ?? "Unranked", inline: true },
+        { name: "Region", value: order.ignRegion ? order.ignRegion.toUpperCase() : "Any", inline: true },
+        { name: "Waves sent", value: String(order.waves), inline: true },
+        ...(order.ign ? [{ name: "Player", value: order.ign, inline: false }] : []),
+      ],
       color: 0xf5a524,
-      linkUrl: `${appUrl()}/dashboard/teammate/requests`,
-      linkLabel: "Open requests",
+      linkUrl: `${appUrl()}/dashboard/admin/orders/${order.orderNo}`,
+      linkLabel: "Open in admin",
     });
   } catch {
     // The announcement failing must not take the dispatch pass with it.

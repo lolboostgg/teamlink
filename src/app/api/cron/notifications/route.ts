@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sweepUnreadMessages } from "@/lib/notify/unreadMessages";
+import { sweepWinBack } from "@/lib/notify/winBack";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,11 @@ export async function GET(request: Request) {
 
   try {
     const unread = await sweepUnreadMessages();
-    return NextResponse.json({ ok: true, unread }, { headers: { "Cache-Control": "no-store" } });
+    // Idempotent for the same reason the sweep above is: it is the coupon
+    // row, not the schedule, that decides an order has already been chased.
+    // So this rides the same one-minute cron rather than needing its own.
+    const winBack = await sweepWinBack();
+    return NextResponse.json({ ok: true, unread, winBack }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
     console.error("[cron] sweep failed:", err);
     return NextResponse.json({ error: "Sweep failed." }, { status: 500 });

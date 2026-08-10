@@ -20,6 +20,24 @@ export const COMPANY = {
   trustpilot: "https://www.trustpilot.com/review/lolboost.gg",
 };
 
+/**
+ * What the Trustpilot profile says.
+ *
+ * Typed in, not read: Trustpilot has no free API for this and blocks scraping,
+ * so these two numbers are a claim we publish about a page anybody can open
+ * from the same badge. That makes them checkable — and it makes them ours to
+ * keep true. If the profile moves, these move with it.
+ *
+ * Distinct from the on-site rating in lib/community.ts, which counts the
+ * ratings left inside the product. The two are different populations and the
+ * badge says which one it is showing.
+ */
+export const TRUSTPILOT = {
+  score: 4.9,
+  /** Rounded down and written as "1,000+", never as an exact count we cannot verify. */
+  reviews: "1,000+",
+};
+
 export interface SocialLink {
   label: string;
   url: string;
