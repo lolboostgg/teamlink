@@ -137,7 +137,12 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ email, password }),
         }));
         if (!check.ok) {
-          setFormError("Incorrect email or password.");
+          const body = await check.json().catch(() => null) as { banned?: boolean; reason?: string } | null;
+          setFormError(
+            body?.banned
+              ? `This account has been banned. ${body.reason ?? ""}`.trim()
+              : "Incorrect email or password.",
+          );
           return;
         }
         const access = await check.json() as { requiresTwoFactor?: boolean };

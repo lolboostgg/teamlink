@@ -13,8 +13,6 @@ import { PriceTag } from "@/components/currency/PriceTag";
 import { TrustPoints, PaymentStrip } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
 import { FAQ_ITEMS } from "@/lib/content";
-import { bookingSteps } from "@/lib/bookingSteps";
-import { LiveTeammates } from "@/components/booking/LiveTeammates";
 
 interface Props {
   game: Game;
@@ -124,14 +122,6 @@ export function BookingWidget({ game }: Props) {
     }
     router.push(`/checkout?${params.toString()}`);
   }
-
-  // The option's eta reads "1 min away" in the mode list, where "away"
-  // earns its place; next to a "Queue right now" label it is redundant.
-  const etaShort = selected.eta.replace(/\s*away$/i, "");
-
-  // The whole path, from lib/bookingSteps.ts, so this card and the checkout
-  // rail cannot disagree about how many steps there are.
-  const steps = bookingSteps({ modeSummary: `${selected.name} · ${game.name}`, eta: selected.eta });
 
   const catColor = CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)";
   const categoryFaq = CATEGORY_FAQ[visibleCategory.category];
@@ -342,31 +332,6 @@ export function BookingWidget({ game }: Props) {
                 <span className="booking-sidebar__row-fixed">1</span>
               )}
             </div>
-
-            {/* Availability, once. The "queue right now" chip and the roster
-                were two answers to the same question sitting a few pixels
-                apart, and together they pushed the card past the height it
-                was built for — which is how the total ended up printed over
-                the last step. */}
-            <LiveTeammates gameSlug={game.slug} eta={etaShort} />
-
-            {/* Fills the card down to the sticky footer — and since this is a
-                real sequence, the numbering carries information rather than
-                decorating. Step 1 is already done by the time the card is
-                visible, so it reads as progress, not as a to-do list. */}
-            <ol className="booking-steps">
-              {steps.map((step, i) => (
-                <li key={step.title} className={`booking-step${i === 0 ? " is-done" : ""}`}>
-                  <span className="booking-step__marker" aria-hidden="true">
-                    {i === 0 ? <i className="fa-solid fa-check" /> : i + 1}
-                  </span>
-                  <span className="booking-step__copy">
-                    <span className="booking-step__title">{step.title}</span>
-                    <span className="booking-step__sub">{step.sub}</span>
-                  </span>
-                </li>
-              ))}
-            </ol>
 
             <TrustPoints compact payments={false} />
           </div>

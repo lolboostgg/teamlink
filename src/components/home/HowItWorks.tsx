@@ -20,17 +20,20 @@ export function HowItWorks() {
             <div className="how-timeline__visual" aria-hidden="true">
               <span className="how-timeline__ring how-timeline__ring--1" />
               <span className="how-timeline__ring how-timeline__ring--2" />
-              <i className="fa-solid fa-bolt" />
+              <span className="how-timeline__orbit how-timeline__orbit--1" />
+              <span className="how-timeline__orbit how-timeline__orbit--2" />
+              <span className="how-timeline__core"><i className="fa-solid fa-bolt" /></span>
             </div>
 
             <div className="how-timeline__steps">
-              {HOW_IT_WORKS.map((step) => (
+              {HOW_IT_WORKS.map((step, index) => (
                 <div className="how-timeline__step" key={step.step}>
                   <span className="how-timeline__num">{step.step}</span>
                   <div>
                     <h3>{step.title}</h3>
                     <p>{step.text}</p>
                   </div>
+                  <span className="how-timeline__step-glow" style={{ animationDelay: `${index * 1.1}s` }} aria-hidden="true" />
                 </div>
               ))}
             </div>

@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/components/language/LanguageProvider";
 import { AuthModalProvider } from "@/components/auth/AuthModalProvider";
 import { TeammatesSync } from "@/components/providers/TeammatesSync";
 import { NotificationProvider } from "@/components/dashboard/NotificationProvider";
+import { ScrollToTopOnReload } from "@/components/layout/ScrollToTopOnReload";
 
 // Single composition point for every app-wide client Context, mounted once
 // in the root layout. ToastProvider sits outermost since AuthModalProvider
@@ -18,6 +19,7 @@ import { NotificationProvider } from "@/components/dashboard/NotificationProvide
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
+      <ScrollToTopOnReload />
       <SessionProvider>
         <CurrencyProvider>
           <LanguageProvider>
