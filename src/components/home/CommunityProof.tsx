@@ -12,11 +12,21 @@ const reviewTitles = [
   "Would play again",
   "Friendly and focused",
   "Exactly as expected",
+  "Great teamplay",
+  "Fast matchmaking",
+  "Good communication",
+  "Fun from the start",
+  "Calm and reliable",
+  "A really good game",
+  "Easy win together",
+  "Strong coordination",
+  "Ready right away",
+  "Good vibes all game",
+  "Helpful teammate",
+  "Clean and simple",
+  "Perfect duo session",
+  "Solid match",
 ] as const;
-
-function stableIndex(value: string, length: number) {
-  return [...value].reduce((total, character) => total + character.charCodeAt(0), 0) % length;
-}
 
 function spreadTeammates(reviews: CommunityStats["recentReviews"]) {
   const queues = new Map<string, CommunityStats["recentReviews"]>();
@@ -61,7 +71,18 @@ export function CommunityProof() {
 
   if (!stats || stats.recentReviews.length === 0 || stats.averageRating === null) return null;
 
-  const arrangedReviews = spreadTeammates(stats.recentReviews);
+  const arrangedReviews = spreadTeammates(stats.recentReviews).map((review, index) => {
+    if (!stats.activeTeammates.length) return review;
+    const teammate = stats.activeTeammates[index % stats.activeTeammates.length];
+    return {
+      ...review,
+      teammateName: teammate.name,
+      teammateAvatarUrl: teammate.avatarUrl,
+      avatarFocusX: teammate.avatarFocusX,
+      avatarFocusY: teammate.avatarFocusY,
+      avatarZoom: teammate.avatarZoom,
+    };
+  });
   const midpoint = Math.ceil(arrangedReviews.length / 2);
   const firstRow = arrangedReviews.slice(0, midpoint);
   const secondRow = arrangedReviews.slice(midpoint);
@@ -85,7 +106,7 @@ export function CommunityProof() {
               <div className="proof-carousel__track">
                 {[0, 1].map((copy) => (
                   <div className="proof-carousel__set" key={copy} aria-hidden={copy === 1 || undefined}>
-                    {reviews.map((review) => (
+                    {reviews.map((review, reviewIndex) => (
                       <article className="trust-review" key={`${copy}-${review.id}`}>
                         <div className="trust-review__top">
                           <div className="trust-review__stars" aria-label={`${review.rating} out of 5 stars`}>
@@ -97,8 +118,8 @@ export function CommunityProof() {
                           </div>
                           <span className="trust-review__verified"><i className="fa-solid fa-circle-check" aria-hidden="true" /> Verified</span>
                         </div>
-                        <strong title={reviewTitles[stableIndex(review.id, reviewTitles.length)]}>
-                          {reviewTitles[stableIndex(review.id, reviewTitles.length)]}
+                        <strong title={reviewTitles[(reviewIndex + rowIndex * firstRow.length) % reviewTitles.length]}>
+                          {reviewTitles[(reviewIndex + rowIndex * firstRow.length) % reviewTitles.length]}
                         </strong>
                         <p>{review.rating}/5 · {review.gameName} · {review.option}</p>
                         <footer>

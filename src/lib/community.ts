@@ -30,6 +30,14 @@ export interface CommunityStats {
     reviewCount: number;
     sessions: number;
   }[];
+  activeTeammates: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    avatarFocusX: number;
+    avatarFocusY: number;
+    avatarZoom: number;
+  }[];
   recentReviews: {
     id: string;
     rating: number;
@@ -51,11 +59,12 @@ export const EMPTY_COMMUNITY_STATS: CommunityStats = {
   distribution: [5, 4, 3, 2, 1].map((rating) => ({ rating, count: 0 })),
   completedSessions: 0,
   ratedTeammates: [],
+  activeTeammates: [],
   recentReviews: [],
 };
 
 export async function getCommunityStats(): Promise<CommunityStats> {
-  const [total, average, byRating, completedSessions, teammates, recentReviews] = await Promise.all([
+  const [total, average, byRating, completedSessions, teammates, activeTeammates, recentReviews] = await Promise.all([
     prisma.review.count(),
     prisma.review.aggregate({ _avg: { rating: true } }),
     prisma.review.groupBy({ by: ["rating"], _count: true }),
@@ -67,6 +76,22 @@ export async function getCommunityStats(): Promise<CommunityStats> {
       include: { _count: { select: { reviewsReceived: true } } },
       orderBy: [{ rating: "desc" }],
       take: 6,
+    }),
+    prisma.teammate.findMany({
+      where: {
+        available: true,
+        OR: [{ user: { is: null } }, { user: { is: { bannedAt: null } } }],
+      },
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
+        avatarFocusX: true,
+        avatarFocusY: true,
+        avatarZoom: true,
+      },
+      orderBy: [{ lastSeenAt: "desc" }, { name: "asc" }],
+      take: 20,
     }),
     prisma.review.findMany({
       orderBy: { createdAt: "desc" },
@@ -97,6 +122,7 @@ export async function getCommunityStats(): Promise<CommunityStats> {
       reviewCount: t._count.reviewsReceived,
       sessions: t.sessionsCount,
     })),
+    activeTeammates,
     recentReviews: recentReviews.map((review) => ({
       id: review.id,
       rating: review.rating,
