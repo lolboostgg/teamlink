@@ -62,6 +62,7 @@ export function DashboardSidebar({
   accountAvatarUrl = null,
   onboardingPending = false,
   dashboards = [],
+  adminRole = null,
 }: {
   teammate?: TeammateSidebarData | null;
   /** The signed-in account itself — an admin or client has no teammate row. */
@@ -70,11 +71,15 @@ export function DashboardSidebar({
   onboardingPending?: boolean;
   /** Every dashboard this account may open — see lib/roles.ts. */
   dashboards?: DashboardRoleMeta[];
+  /** Scoped admin role; controls visibility only. Server pages/actions enforce access again. */
+  adminRole?: string | null;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const role: ShellRole = pathname.startsWith("/dashboard/admin") ? "admin" : "teammate";
-  const baseSections = SECTIONS[role];
+  const baseSections = role === "admin" && adminRole !== "SUPERADMIN"
+    ? SECTIONS.admin.filter((section) => section.href !== "/dashboard/admin/staff")
+    : SECTIONS[role];
   // While the checklist is open, the sidebar becomes the checklist plus the
   // three pages it sends you to. Everything else is rendered locked rather
   // than hidden, so it's obvious the panel exists and what unlocks it.

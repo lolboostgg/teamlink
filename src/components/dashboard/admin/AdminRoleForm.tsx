@@ -17,13 +17,15 @@ function SubmitButton() {
   return <button className="btn btn--vivid btn--sm" disabled={pending}>{pending ? "Saving…" : "Change role"}</button>;
 }
 
-export function AdminRoleForm({ userId, initialRole }: { userId: string; initialRole: string }) {
+export function AdminRoleForm({ userId, initialRole, disabled = false }: { userId: string; initialRole: string; disabled?: boolean }) {
   const [role, setRole] = useState(initialRole);
+  const currentRole = ROLE_OPTIONS.find((option) => option.value === role);
   return <form action={setAdminRole} className="admin-ticket__form admin-role-form">
     <input type="hidden" name="userId" value={userId}/>
     <input type="hidden" name="adminRole" value={role}/>
-    <IconSelect label="Admin role" value={role} options={ROLE_OPTIONS} onChange={(value) => value && setRole(value)}/>
-    <input name="password" type="password" required placeholder="Your password" autoComplete="current-password"/>
-    <SubmitButton />
+    {disabled
+      ? <span className="status-pill"><i className={currentRole?.glyph} aria-hidden="true" /> {currentRole?.label ?? role}</span>
+      : <IconSelect label="Admin role" value={role} options={ROLE_OPTIONS} onChange={(value) => value && setRole(value)}/>}
+    {!disabled && <SubmitButton />}
   </form>;
 }

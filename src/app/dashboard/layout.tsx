@@ -66,7 +66,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const account = session?.user?.id
     ? await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { name: true, avatarUrl: true, discordId: true, discordAvatar: true },
+        select: { name: true, avatarUrl: true, discordId: true, discordAvatar: true, adminRole: true },
       })
     : null;
   // Older uploads were truncated to exactly 2,000 characters by the profile
@@ -114,6 +114,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             accountAvatarUrl={accountAvatar}
             onboardingPending={onboardingPending}
             dashboards={accessibleDashboards(session?.user?.role, Boolean(teammate))}
+            adminRole={account?.adminRole ?? null}
           />
           <div className="dashboard-shell__main">
             <DashboardTopbar avatarUrl={teammateProfile?.avatarUrl ?? accountAvatar} />
