@@ -6,22 +6,22 @@ import { Modal } from "@/components/ui/Modal";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { useToast } from "@/components/ui/ToastProvider";
 import { adjustTeammateBalance } from "@/app/dashboard/admin/teammates/balanceActions";
+import { setAccountBanned } from "@/app/dashboard/admin/accounts/actions";
 
-type Action = "add" | "fine";
+type Action = "add" | "fine" | "ban" | "unban";
 
-/**
- * Balance corrections from the teammate's own page. Both directions land in
- * the earnings ledger as an ADJUSTMENT, so a balance is always explained by
- * the entries above it.
- */
 export function TeammateActionsMenu({
   teammateId,
   teammateName,
   balanceEUR,
+  userId,
+  banned,
 }: {
   teammateId: string;
   teammateName: string;
   balanceEUR: number;
+  userId: string | null;
+  banned: boolean;
 }) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -43,6 +43,7 @@ export function TeammateActionsMenu({
 
   const parsed = Number(amount.replace(",", ".")) || 0;
   const preview = action === "fine" ? Math.max(0, balanceEUR - parsed) : balanceEUR + parsed;
+  const isMoney = action === "add" || action === "fine";
 
   function open(next: Action) {
     setAction(next);
@@ -55,15 +56,30 @@ export function TeammateActionsMenu({
     if (!action) return;
     startTransition(async () => {
       try {
-        await adjustTeammateBalance({ teammateId, amountEUR: parsed, direction: action, reason });
-        showToast(action === "fine" ? "Balance reduced." : "Balance credited.", "success");
+        if (isMoney) {
+          await adjustTeammateBalance({ teammateId, amountEUR: parsed, direction: action, reason });
+          showToast(action === "fine" ? "Balance reduced." : "Balance credited.", "success");
+        } else {
+          if (!userId) throw new Error("This teammate has no linked account to ban.");
+          await setAccountBanned(userId, action === "ban", reason);
+          showToast(
+            action === "ban" ? `${teammateName} has been banned.` : `${teammateName} has been reinstated.`,
+            "success",
+          );
+        }
         setAction(null);
         router.refresh();
-      } catch (err) {
-        showToast(err instanceof Error ? err.message : "Couldn't update the balance.", "error");
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : "That didn't go through.", "error");
       }
     });
   }
+
+  const canSubmit = pending
+    ? false
+    : isMoney
+      ? parsed > 0 && Boolean(reason.trim())
+      : action === "unban" || Boolean(reason.trim());
 
   return (
     <div className="teammate-actions" ref={rootRef}>
@@ -82,18 +98,23 @@ export function TeammateActionsMenu({
         <div className="teammate-actions__menu" role="menu">
           <button type="button" role="menuitem" onClick={() => open("add")}>
             <i className="fa-solid fa-plus" aria-hidden="true" />
-            <span>
-              <strong>Add money</strong>
-              <small>Bonus, goodwill, manual correction</small>
-            </span>
+            <span><strong>Add money</strong><small>Bonus, goodwill, manual correction</small></span>
           </button>
           <button type="button" role="menuitem" onClick={() => open("fine")}>
             <i className="fa-solid fa-minus" aria-hidden="true" />
-            <span>
-              <strong>Fine money</strong>
-              <small>Deduct for a rule breach or chargeback</small>
-            </span>
+            <span><strong>Fine money</strong><small>Deduct for a rule breach or chargeback</small></span>
           </button>
+          {userId && (banned ? (
+            <button type="button" role="menuitem" onClick={() => open("unban")}>
+              <i className="fa-solid fa-lock-open" aria-hidden="true" />
+              <span><strong>Lift the ban</strong><small>Allow this teammate to sign in again</small></span>
+            </button>
+          ) : (
+            <button type="button" role="menuitem" className="is-danger" onClick={() => open("ban")}>
+              <i className="fa-solid fa-ban" aria-hidden="true" />
+              <span><strong>Ban teammate</strong><small>Block sign-in and remove them from dispatch</small></span>
+            </button>
+          ))}
         </div>
       )}
 
@@ -102,61 +123,73 @@ export function TeammateActionsMenu({
           <div className="payout-details-modal">
             <div className="payout-method-editor__head">
               <div>
-                <strong id="teammate-action-title">{action === "fine" ? "Fine" : "Add money to"} {teammateName}</strong>
+                <strong id="teammate-action-title">
+                  {action === "add" && `Add money to ${teammateName}`}
+                  {action === "fine" && `Fine ${teammateName}`}
+                  {action === "ban" && `Ban ${teammateName}`}
+                  {action === "unban" && `Lift the ban on ${teammateName}`}
+                </strong>
                 <span>
-                  Current balance: <PriceTag amountEUR={balanceEUR} />
+                  {isMoney ? (
+                    <>Current balance: <PriceTag amountEUR={balanceEUR} /></>
+                  ) : action === "ban" ? (
+                    "They are removed from dispatch, signed out, and cannot sign back in."
+                  ) : (
+                    "They can sign in again, but remain unavailable until they go online."
+                  )}
                 </span>
               </div>
             </div>
 
-            <div className="form-row">
-              <label htmlFor="adjust-amount">Amount (EUR)</label>
-              <input
-                id="adjust-amount"
-                inputMode="decimal"
-                placeholder="0.00"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-              />
-            </div>
+            {isMoney && (
+              <div className="form-row">
+                <label htmlFor="adjust-amount">Amount (EUR)</label>
+                <input id="adjust-amount" inputMode="decimal" placeholder="0.00" value={amount} onChange={(event) => setAmount(event.target.value)} />
+              </div>
+            )}
 
-            <div className="form-row">
-              <label htmlFor="adjust-reason">Reason</label>
-              <textarea
-                id="adjust-reason"
-                rows={2}
-                maxLength={300}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder={
-                  action === "fine"
-                    ? "e.g. no-show on order #1042 — the teammate sees this"
-                    : "e.g. compensation for a cancelled session — the teammate sees this"
-                }
-              />
-              <small className="form-row__note">Shown to the teammate on their payments page.</small>
-            </div>
+            {action !== "unban" && (
+              <div className="form-row">
+                <label htmlFor="adjust-reason">Reason</label>
+                <textarea
+                  id="adjust-reason"
+                  rows={2}
+                  maxLength={300}
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  placeholder={
+                    action === "ban"
+                      ? "e.g. repeated no-shows — shown when they try to sign in"
+                      : action === "fine"
+                        ? "e.g. no-show on order #1042 — the teammate sees this"
+                        : "e.g. compensation for a cancelled session — the teammate sees this"
+                  }
+                />
+                <small className="form-row__note">
+                  {action === "ban" ? "Shown on the sign-in screen." : "Shown to the teammate on their payments page."}
+                </small>
+              </div>
+            )}
 
-            {parsed > 0 && (
+            {isMoney && parsed > 0 && (
               <div className="payout-method-notice">
                 <i className="fa-solid fa-circle-info" aria-hidden="true" />
-                <span>
-                  Balance goes from <PriceTag amountEUR={balanceEUR} /> to <PriceTag amountEUR={preview} />.
-                </span>
+                <span>Balance goes from <PriceTag amountEUR={balanceEUR} /> to <PriceTag amountEUR={preview} />.</span>
               </div>
             )}
 
             <div className="teammate-profile-form__actions">
-              <button type="button" className="btn btn--ghost" disabled={pending} onClick={() => setAction(null)}>
-                Cancel
-              </button>
+              <button type="button" className="btn btn--ghost" disabled={pending} onClick={() => setAction(null)}>Cancel</button>
               <button
                 type="button"
-                className={action === "fine" ? "btn btn--danger" : "btn btn--vivid"}
-                disabled={pending || parsed <= 0 || !reason.trim()}
+                className={action === "fine" || action === "ban" ? "btn btn--danger" : "btn btn--vivid"}
+                disabled={!canSubmit}
                 onClick={submit}
               >
-                {action === "fine" ? "Deduct" : "Credit"} €{parsed.toFixed(2)}
+                {action === "add" && `Credit €${parsed.toFixed(2)}`}
+                {action === "fine" && `Deduct €${parsed.toFixed(2)}`}
+                {action === "ban" && "Ban this teammate"}
+                {action === "unban" && "Lift the ban"}
               </button>
             </div>
           </div>

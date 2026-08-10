@@ -99,9 +99,17 @@ export async function setAccountBanned(userId: string, banned: boolean, reason: 
   const note = reason.trim().slice(0, 300);
   if (banned && !note) throw new Error("Give a reason — it's what they're shown when they try to sign in.");
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: banned ? { bannedAt: new Date(), bannedReason: note } : { bannedAt: null, bannedReason: null },
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: banned ? { bannedAt: new Date(), bannedReason: note } : { bannedAt: null, bannedReason: null },
+    });
+
+    // A banned teammate must leave the live roster immediately. Unbanning
+    // does not silently mark them online again.
+    if (banned) {
+      await tx.teammate.updateMany({ where: { userId }, data: { available: false } });
+    }
   });
 
   // Only worth telling them about being let back in — a banned account can't
@@ -117,6 +125,7 @@ export async function setAccountBanned(userId: string, banned: boolean, reason: 
 
   await revalidateAccount(userId);
   revalidatePath("/dashboard/admin/users");
+  revalidatePath("/dashboard/admin/teammates");
 }
 
 // Same cost factor as registration (api/auth/register) so a reset password

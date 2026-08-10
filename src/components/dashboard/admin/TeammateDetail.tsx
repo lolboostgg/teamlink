@@ -114,17 +114,23 @@ export function TeammateDetail({
           teammateId={teammate.id}
           teammateName={teammate.name}
           balanceEUR={earnings.balanceEUR}
+          userId={account?.id ?? null}
+          banned={Boolean(account?.bannedAt)}
         />
 
         <div className="account-header__main">
           <h1 className="account-header__name">
             {teammate.name}
             <span className="account-role account-role--teammate">Teammate</span>
-            <span
-              className={`dashboard-pill ${teammate.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}
-            >
-              {teammate.available ? "ready" : "unavailable"}
-            </span>
+            {account?.bannedAt ? (
+              <span className="dashboard-pill dashboard-pill--danger">banned</span>
+            ) : (
+              <span
+                className={`dashboard-pill ${teammate.available ? "dashboard-pill--success" : "dashboard-pill--muted"}`}
+              >
+                {teammate.available ? "ready" : "unavailable"}
+              </span>
+            )}
           </h1>
 
           <div className="account-header__meta">
