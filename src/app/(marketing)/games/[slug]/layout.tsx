@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { getGameBySlug } from "@/lib/games";
 import { Hero } from "@/components/home/Hero";
-import { getCommunityStats } from "@/lib/community";
 import { CommunityProof } from "@/components/home/CommunityProof";
 import { HowItWorks } from "@/components/home/HowItWorks";
 import { BentoFeatures } from "@/components/home/BentoFeatures";
@@ -23,12 +22,10 @@ export default async function GameLayout({ children, params }: Props) {
   const game = getGameBySlug(slug);
   if (!game) notFound();
 
-  // Same reasoning as the homepage — see its revalidate.
-  const community = await getCommunityStats();
 
   return (
     <main>
-      <Hero game={game} reviews={community.reviews} averageRating={community.averageRating} />
+      <Hero game={game} />
       {children}
       <CommunityProof />
       <HowItWorks />

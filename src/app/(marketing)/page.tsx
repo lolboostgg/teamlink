@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
-import { getCommunityStats } from "@/lib/community";
 import { StructuredData } from "@/components/seo/StructuredData";
 import { faqSchema, pageMetadata } from "@/lib/seo";
 import { FAQ_ITEMS } from "@/lib/content";
@@ -19,21 +18,14 @@ export const metadata: Metadata = pageMetadata({
   path: "/",
 });
 
-// ISR, not fully static: the hero badge quotes the real rating, and a number
-// that is read has to be re-read sometimes. Five minutes is far longer than
-// the figures move and still one render per five minutes rather than per
-// visitor.
-export const revalidate = 300;
-
-export default async function HomePage() {
-  const community = await getCommunityStats();
+export default function HomePage() {
 
   return (
     <main>
       {/* The same questions the page answers below, in the form a search
           result can quote. */}
       <StructuredData schemas={[faqSchema(FAQ_ITEMS)]} />
-      <Hero reviews={community.reviews} averageRating={community.averageRating} />
+      <Hero />
       <CommunityProof />
       <HowItWorks />
       <BentoFeatures />

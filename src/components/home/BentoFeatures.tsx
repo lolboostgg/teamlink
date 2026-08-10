@@ -33,36 +33,31 @@ export function BentoFeatures() {
                 <i className="fa-solid fa-shield-halved" aria-hidden="true" />
               </div>
               <h3>Privacy first</h3>
-              <p>Not a promise about how carefully we hold your data — a list of what we never take.</p>
-              {/* Three statements somebody can check, rather than three
-                  adjectives. Each one is also written into the Privacy Policy
-                  and the Terms, so the card and the documents cannot drift:
-                  no credential handover (Terms §1), payment details never
-                  reaching our servers (Privacy §1), and the 12-month chat
-                  retention (Privacy §5). */}
-              <ul className="privacy-facts">
-                <li>
-                  <i className="fa-solid fa-check" aria-hidden="true" />
-                  <span>
-                    <b>We never ask for your password</b>
-                    Your teammate joins your lobby. Nobody logs in as you.
-                  </span>
+              <p>Three things we never ask you for.</p>
+              {/* The claim was three sentences explaining three sentences. It
+                  is the same claim shown instead: the fields we never put in
+                  front of anybody, crossed out one after another. Less to
+                  read, and the crossing-out is the argument. */}
+              <ul className="never-list">
+                <li style={{ ["--i" as string]: 0 }}>
+                  <i className="fa-solid fa-key" aria-hidden="true" />
+                  <span>Your password</span>
+                  <b aria-hidden="true" />
                 </li>
-                <li>
-                  <i className="fa-solid fa-check" aria-hidden="true" />
-                  <span>
-                    <b>Card details never touch our servers</b>
-                    They go straight to the payment provider. We see the last four digits.
-                  </span>
+                <li style={{ ["--i" as string]: 1 }}>
+                  <i className="fa-solid fa-gamepad" aria-hidden="true" />
+                  <span>Your account login</span>
+                  <b aria-hidden="true" />
                 </li>
-                <li>
-                  <i className="fa-solid fa-check" aria-hidden="true" />
-                  <span>
-                    <b>Session chat is deleted after 12 months</b>
-                    Along with everything else we are not required to keep.
-                  </span>
+                <li style={{ ["--i" as string]: 2 }}>
+                  <i className="fa-solid fa-credit-card" aria-hidden="true" />
+                  <span>Your card number</span>
+                  <b aria-hidden="true" />
                 </li>
               </ul>
+              <p className="never-list__after">
+                Your teammate joins your lobby, the way a friend would. That is the whole of it.
+              </p>
             </div>
           </Reveal>
 
