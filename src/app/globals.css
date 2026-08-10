@@ -10313,6 +10313,15 @@ body {
 .auth-modal__remember:hover .auth-modal__remember-box { border-color: var(--accent); }
 .auth-modal__remember input:checked + .auth-modal__remember-box { border-color: var(--accent); background: var(--accent); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
 .auth-modal__remember input:focus-visible + .auth-modal__remember-box { outline: 2px solid var(--accent); outline-offset: 2px; }
+.auth-modal__error {
+  margin: -4px 0 2px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+  line-height: 1.4;
+}
+.auth-modal__error i { flex: 0 0 auto; }
 .auth-modal__back { display: block; margin: 12px auto 0; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: 12px; cursor: pointer; }
 .auth-modal__back:hover { color: var(--text); }
 

@@ -280,7 +280,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
             )}
 
             {formError && (
-              <p className="form-row__error">
+              <p className="form-row__error auth-modal__error">
                 <i className="fa-solid fa-circle-exclamation" aria-hidden="true" /> {formError}
               </p>
             )}
