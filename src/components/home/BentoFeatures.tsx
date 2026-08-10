@@ -34,7 +34,7 @@ export function BentoFeatures() {
                 <i className="fa-solid fa-shield-halved" aria-hidden="true" />
               </div>
               <h3>Privacy first</h3>
-              <p>Not a promise about how carefully we hold your data — a list of what we never hold in the first place.</p>
+              <p>Not a promise about how carefully we hold your data — a list of what we never take.</p>
               {/* Three statements somebody can check, rather than three
                   adjectives. Each one is also written into the Privacy Policy
                   and the Terms, so the card and the documents cannot drift:
@@ -105,7 +105,7 @@ export function BentoFeatures() {
           <Reveal className="bento__cell bento__cell--wide" delay={70}>
             <div className="bento-card">
               <h3>The price you see is the price you pay</h3>
-              <p>No service fee bolted on at checkout, no surprise add-ons, and nothing charged before a teammate takes your order.</p>
+              <p>No service fee at checkout, and nothing charged before a teammate takes your order.</p>
               <div className="bento-card__price-compare">
                 <div className="bento-card__price-row">
                   <span>Sessions from</span>
@@ -141,7 +141,7 @@ export function BentoFeatures() {
                 <i className="fa-solid fa-headset" aria-hidden="true" />
               </div>
               <h3>Tier-1 support</h3>
-              <p>Real people who play these games. No bots, no copy-paste from a language model.</p>
+              <p>Real people who play these games. No bots, no copy-paste.</p>
               {/* The same windows the contact page publishes, so the two
                   cannot promise different things. */}
               <ul className="support-times">
@@ -213,7 +213,7 @@ export function BentoFeatures() {
           <Reveal className="bento__cell bento__cell--wide" delay={280}>
             <div className="bento-card bento-card--chat">
               <h3>Powerful real-time chat</h3>
-              <p>Opens the moment you are matched, so lanes and roles are sorted before champion select.</p>
+              <p>Opens the moment you are matched — lanes and roles sorted before champion select.</p>
               {/* Built from the same parts as the real order room — a header
                   with who you are talking to and their rank, sender names,
                   timestamps, a read receipt, a typing indicator. Two bubbles

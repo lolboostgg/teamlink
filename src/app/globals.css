@@ -18776,3 +18776,189 @@ img.bento-chat__avatar {
 .bento-card__link:hover i {
   transform: translateX(3px);
 }
+
+/* ── Bento density ─────────────────────────────────────────────
+   Filling the cells made every one of them taller, and the section went from
+   860px to 1200. The content stays; the spacing around it does not. Tighter
+   type and rhythm inside the cards, so five full cards occupy about what five
+   half-empty ones did. */
+.bento-card {
+  padding: 18px;
+}
+
+.bento-card h3 {
+  font-size: 15px;
+}
+
+.bento-card > p {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.bento-card__icon {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 11px;
+  font-size: 14px;
+}
+
+/* Privacy: the claim lines lose their air, not their words. */
+.privacy-facts {
+  gap: 9px;
+  margin-top: 13px;
+}
+
+.privacy-facts li {
+  grid-template-columns: 17px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.privacy-facts i {
+  width: 17px;
+  height: 17px;
+  font-size: 8px;
+}
+
+.privacy-facts b {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.privacy-facts span {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.privacy-keeps {
+  margin-top: 13px;
+  padding-top: 11px;
+}
+
+.privacy-keeps dl {
+  gap: 4px;
+}
+
+.privacy-keeps dl > div {
+  font-size: 11px;
+}
+
+.privacy-facts__link {
+  margin-top: 13px;
+}
+
+/* Price: the figure block and the strip below it. */
+.bento-card__price-compare {
+  margin-top: 10px;
+  padding: 10px 12px;
+}
+
+.bento-card__price-row {
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+.bento-pay {
+  margin-top: 12px;
+  padding-top: 11px;
+}
+
+.bento-pay .trust-points__payment-icons {
+  font-size: 15px;
+  gap: 10px;
+}
+
+.bento-card__foot {
+  margin-top: 12px;
+}
+
+/* Support: two columns that fit on one line each. */
+.support-times {
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.support-times li {
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.support-times b {
+  font-size: 12px;
+}
+
+.support-times span {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.support-where {
+  margin-top: 12px;
+  padding-top: 11px;
+  gap: 5px;
+}
+
+.support-where span {
+  padding: 4px 9px;
+  font-size: 10.5px;
+}
+
+/* Real-time updates: the alert and the clock under it. */
+.bento-alert {
+  margin-top: 12px;
+  padding: 9px 11px;
+  gap: 9px;
+}
+
+.bento-alert__icon {
+  width: 24px;
+  height: 24px;
+}
+
+.bento-timeline {
+  margin-top: 10px;
+}
+
+.bento-timeline li {
+  padding: 5px 0 5px 16px;
+  font-size: 11px;
+}
+
+.bento-timeline li::before {
+  top: 10px;
+}
+
+.bento-timeline li + li::after {
+  top: -5px;
+  height: 15px;
+}
+
+/* Chat: the thread, not the bubbles. */
+.bento-chat {
+  margin-top: 12px;
+}
+
+.bento-chat__head {
+  padding: 8px 11px;
+}
+
+.bento-chat__thread {
+  gap: 8px;
+  padding: 11px 11px 9px;
+}
+
+.bento-chat__bubble {
+  padding: 7px 11px;
+  font-size: 12px;
+}
+
+.bento-chat__input {
+  margin: 0 11px 11px;
+  padding: 8px 12px;
+  font-size: 11.5px;
+}
+
+/* The section head carried a 40px gap under it from .section__head, which is
+   right above a loose grid and too much above a dense one. */
+#why-us .section__head {
+  margin-bottom: 28px;
+}
