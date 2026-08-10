@@ -1812,9 +1812,7 @@ body {
   padding: 34px 38px;
   border: 0;
   border-radius: 24px;
-  background:
-    radial-gradient(circle at 12% 50%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 29%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.022), transparent 54%);
+  background: transparent;
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.2), inset 0 1px rgba(255, 255, 255, 0.025);
 }
 
@@ -18651,6 +18649,184 @@ a.notification-panel__item:hover {
 @media (prefers-reduced-motion: reduce) {
   .proof-reviews__track { animation: none; }
   .proof-reviews__viewport { overflow-x: auto; mask-image: none; }
+}
+
+/* Two Trustpilot-style streams. No customer identity is shown; the subject
+   of each verified rating is the teammate who earned it. */
+.proof-carousel {
+  display: grid;
+  gap: 14px;
+}
+
+.proof-carousel__viewport {
+  overflow: hidden;
+  padding: 2px 0;
+  mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+.proof-carousel__track {
+  display: flex;
+  width: max-content;
+  animation: trustReviewsLeft 36s linear infinite;
+}
+
+.proof-carousel__viewport.is-reverse .proof-carousel__track {
+  animation-name: trustReviewsRight;
+}
+
+.proof-carousel__viewport:hover .proof-carousel__track {
+  animation-play-state: paused;
+}
+
+.proof-carousel__set {
+  display: flex;
+  gap: 14px;
+  padding-right: 14px;
+}
+
+.trust-review {
+  width: 310px;
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg-elevated);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .16);
+  transition: border-color .16s ease, transform .16s ease;
+}
+
+.trust-review:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.trust-review__top,
+.trust-review footer,
+.trust-review__teammate {
+  display: flex;
+  align-items: center;
+}
+
+.trust-review__top,
+.trust-review footer {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.trust-review__stars {
+  display: flex;
+  gap: 3px;
+}
+
+.trust-review__stars span {
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .08);
+  color: rgba(255, 255, 255, .22);
+  font-size: 9px;
+}
+
+.trust-review__stars span.is-filled {
+  background: #00b67a;
+  color: #fff;
+}
+
+.trust-review__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #00b67a;
+  font-size: 9.5px;
+  font-weight: 800;
+}
+
+.trust-review > strong {
+  margin-top: 17px;
+  font-size: 14.5px;
+}
+
+.trust-review > p {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.trust-review footer {
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid var(--border);
+}
+
+.trust-review__teammate {
+  gap: 9px;
+  min-width: 0;
+}
+
+.trust-review__avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #00b67a 35%, var(--border));
+  border-radius: 50%;
+  background: var(--bg-elevated-2);
+}
+
+.trust-review__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.trust-review__teammate > span:last-child {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.trust-review__teammate small {
+  color: var(--text-faint);
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+
+.trust-review__teammate b {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trust-review time {
+  color: var(--text-faint);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+@keyframes trustReviewsLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes trustReviewsRight {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 620px) {
+  .trust-review { width: 276px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proof-carousel__viewport { overflow-x: auto; mask-image: none; }
+  .proof-carousel__track { animation: none !important; }
 }
 
 /* ── Why players choose us: the bento's two airy cells ─────────

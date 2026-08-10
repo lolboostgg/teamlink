@@ -36,7 +36,10 @@ export interface CommunityStats {
     gameName: string;
     option: string;
     teammateName: string;
-    clientName: string;
+    teammateAvatarUrl: string | null;
+    avatarFocusX: number;
+    avatarFocusY: number;
+    avatarZoom: number;
     createdAt: string;
   }[];
 }
@@ -69,9 +72,8 @@ export async function getCommunityStats(): Promise<CommunityStats> {
       orderBy: { createdAt: "desc" },
       take: 10,
       include: {
-        teammate: { select: { name: true } },
-        clientUser: { select: { name: true } },
-        order: { select: { gameName: true, option: true, customerLabel: true } },
+        teammate: { select: { name: true, avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
+        order: { select: { gameName: true, option: true } },
       },
     }),
   ]);
@@ -101,7 +103,10 @@ export async function getCommunityStats(): Promise<CommunityStats> {
       gameName: review.order.gameName,
       option: review.order.option,
       teammateName: review.teammate.name,
-      clientName: review.clientUser?.name || review.order.customerLabel || "Verified player",
+      teammateAvatarUrl: review.teammate.avatarUrl,
+      avatarFocusX: review.teammate.avatarFocusX,
+      avatarFocusY: review.teammate.avatarFocusY,
+      avatarZoom: review.teammate.avatarZoom,
       createdAt: review.createdAt.toISOString(),
     })),
   };
