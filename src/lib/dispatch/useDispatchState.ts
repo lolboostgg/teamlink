@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DispatchStateView } from "@/lib/dispatch/phase";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 
@@ -105,18 +105,54 @@ export function useDispatchState(enabled = true) {
   }, [enabled]);
 
   // Local interpolation between polls.
+  //
+  // Every countdown handed to a component is `server value − time since we
+  // read it`, measured against the wall clock rather than counted down tick
+  // by tick. That distinction is the whole point: a browser clamps timers in
+  // a hidden tab to about once a minute, so anything that decrements per tick
+  // freezes the moment a teammate alt-tabs into their game and is still
+  // showing "12s" when they come back to a wave that lapsed ten seconds ago.
+  // Clicking Accept on that number is what produced "this request timed out"
+  // with time apparently still on the clock. Read off Date.now(), the first
+  // render after the tab wakes is already correct.
   const [now, setNow] = useState(() => Date.now());
+  const counting = urgent || state.requests.length > 0;
   useEffect(() => {
-    if (!urgent) return;
-    const t = setInterval(() => setNow(Date.now()), 100);
-    return () => clearInterval(t);
-  }, [urgent]);
+    if (!counting) return;
+    const tick = () => setNow(Date.now());
+    const t = setInterval(tick, 100);
+    // A hidden tab gets no ticks worth having; this is what makes the number
+    // right on the frame the tab is looked at again, before the refetch that
+    // usePoll fires has even come back.
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [counting]);
 
-  const msLeft = urgent && fetchedAt ? Math.max(0, state.msLeft - (now - fetchedAt)) : state.msLeft;
+  const sinceRead = fetchedAt ? Math.max(0, now - fetchedAt) : 0;
+  const msLeft = urgent && fetchedAt ? Math.max(0, state.msLeft - sinceRead) : state.msLeft;
+
+  // The open-request clocks were the one set this never touched: each card
+  // got the raw figure from the last poll and ran its own counter off it.
+  //
+  // Quantised to a quarter second so this rebuilds four times a second
+  // rather than ten: the cards only ever print whole seconds, and each one is
+  // a good deal of markup to re-render for a digit that has not moved.
+  const sinceReadCoarse = Math.floor(sinceRead / 250) * 250;
+  const requests = useMemo(
+    () =>
+      fetchedAt
+        ? state.requests.map((request) => ({ ...request, msLeft: Math.max(0, request.msLeft - sinceReadCoarse) }))
+        : state.requests,
+    [state.requests, sinceReadCoarse, fetchedAt],
+  );
 
   return {
     ...state,
     msLeft,
+    requests,
     /** When the server was last read — a timestamp callers can date live
      * dispatch state by without reaching for a clock during render. */
     fetchedAt,

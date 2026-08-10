@@ -3,7 +3,9 @@
 import { headers } from "next/headers";
 import { COMPANY } from "@/lib/company";
 import { sendMail } from "@/lib/notify/mail";
-import { notifyAdmins } from "@/lib/notifications/service";
+import { teammateApplicationMail, contactMessageMail, type MailBody } from "@/lib/notify/templates";
+import { appUrl } from "@/lib/notify/orderNotifications";
+import { notifyAdmins, type NotifyInput } from "@/lib/notifications/service";
 import { prisma } from "@/lib/db";
 import { inviteState } from "@/lib/teammateInvites";
 import { countryName } from "@/lib/countries";
@@ -34,15 +36,6 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function clean(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
-}
-
-/** Mail bodies are assembled as HTML, so anything typed has to be inert. */
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 /**
@@ -78,46 +71,20 @@ async function throttled(): Promise<boolean> {
   return hits.length > MAX_PER_WINDOW;
 }
 
-interface Delivery {
-  subject: string;
-  rows: [string, string][];
-  message?: string;
-  notification: { type: string; title: string; body: string; href: string };
-}
-
-async function deliver({ subject, rows, message, notification }: Delivery): Promise<SubmitResult> {
-  const html = [
-    `<h2 style="font:600 18px system-ui">${escapeHtml(subject)}</h2>`,
-    "<table style=\"font:14px system-ui;border-collapse:collapse\">",
-    ...rows
-      .filter(([, value]) => value)
-      .map(
-        ([label, value]) =>
-          `<tr><td style="padding:4px 16px 4px 0;color:#666;vertical-align:top">${escapeHtml(label)}</td>` +
-          `<td style="padding:4px 0"><b>${escapeHtml(value)}</b></td></tr>`,
-      ),
-    "</table>",
-    message ? `<p style="font:14px/1.6 system-ui;white-space:pre-wrap">${escapeHtml(message)}</p>` : "",
-  ].join("");
-
-  const text = [
-    subject,
-    "",
-    ...rows.filter(([, value]) => value).map(([label, value]) => `${label}: ${value}`),
-    message ? `\n${message}` : "",
-  ].join("\n");
-
-  const mailed = await sendMail({ to: COMPANY.support, subject, html, text });
-
-  // The bell regardless of whether the mailbox is configured in this
-  // environment — losing an application because SMTP is down is the one
-  // outcome worth guarding against.
+/**
+ * Both forms end the same way: the mail to the support inbox, and the bell
+ * for every admin.
+ *
+ * The bell fires whether or not the mailbox is configured in this
+ * environment — losing an application because SMTP is down is the one
+ * outcome worth guarding against. And because the mail is best-effort by
+ * design and the admins have already been told, a dead mailbox is not the
+ * submitter's problem to look at.
+ */
+async function deliver(mail: MailBody, notification: NotifyInput): Promise<SubmitResult> {
+  const mailed = await sendMail({ to: COMPANY.support, ...mail });
   await notifyAdmins(notification);
-
-  // sendMail is best-effort by design and the admins have been notified
-  // either way, so a dead mailbox is not the submitter's problem to see.
-  if (!mailed) console.warn("[applications] mail not sent:", subject);
-
+  if (!mailed) console.warn("[applications] mail not sent:", mail.subject);
   return { ok: true };
 }
 
@@ -211,25 +178,25 @@ export async function submitTeammateApplication(raw: TeammateApplicationInput): 
   // the names.
   const gameNames = games.map((slug) => getGameBySlug(slug)?.name ?? slug).join(", ");
 
-  return deliver({
-    subject: `Teammate application — ${name}`,
-    rows: [
-      ["Name", name],
-      ["Email", email],
-      ["Discord", discord],
-      ["Country", countryName(country) ?? country],
-      ["Games", gameNames],
-      ["Ranks", ranks],
-      ["Hours per week", hours],
-    ],
-    message: experience,
-    notification: {
+  return deliver(
+    teammateApplicationMail({
+      name,
+      email,
+      discord,
+      country: countryName(country) ?? (country || null),
+      games: gameNames,
+      ranks: ranks || null,
+      hours: hours || null,
+      experience: experience || null,
+      url: `${appUrl()}/dashboard/admin/applications`,
+    }),
+    {
       type: "teammate.application",
       title: "New teammate application",
       body: `${name} (${discord}) — ${gameNames}`,
       href: "/dashboard/admin/applications",
     },
-  });
+  );
 }
 
 export interface ContactMessageInput {
@@ -258,20 +225,13 @@ export async function submitContactMessage(raw: ContactMessageInput): Promise<Su
     return { ok: false, error: "That's a few messages in a row — give it a few minutes." };
   }
 
-  return deliver({
-    subject: `Contact form — ${topic || "General"} — ${name}`,
-    rows: [
-      ["Name", name],
-      ["Email", email],
-      ["Topic", topic],
-      ["Order", orderNo],
-    ],
-    message,
-    notification: {
+  return deliver(
+    contactMessageMail({ name, email, topic, orderNo: orderNo || null, message, url: appUrl() }),
+    {
       type: "contact.message",
       title: `Contact form: ${topic || "General"}`,
       body: `${name} <${email}>`,
       href: "/dashboard/admin",
     },
-  });
+  );
 }

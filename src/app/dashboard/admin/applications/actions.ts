@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { newInviteToken, inviteUrl, INVITE_DEFAULT_DAYS } from "@/lib/teammateInvites";
 import { sendMail } from "@/lib/notify/mail";
+import { teammateInviteMail } from "@/lib/notify/templates";
 import { appUrl } from "@/lib/notify/orderNotifications";
 
 /**
@@ -68,18 +69,12 @@ export async function acceptApplication(id: string, days = INVITE_DEFAULT_DAYS):
   });
 
   const url = inviteUrl(appUrl(), token);
-  const heading = "You're in — set up your teammate account";
-  const body =
-    `Hi ${application.name}, your application to play on QUP.gg was accepted. ` +
-    `The link below creates your account; it works once and expires in ${validDays} days.`;
 
   // Best-effort, like every other send: the invite exists either way, and the
   // link comes back to the caller so it can be copied out by hand.
   await sendMail({
     to: application.email,
-    subject: heading,
-    html: `<p style="font:15px/1.6 system-ui">${body}</p><p><a href="${url}">${url}</a></p>`,
-    text: `${body}\n\n${url}`,
+    ...teammateInviteMail({ name: application.name, url, days: validDays }),
   });
 
   refresh();

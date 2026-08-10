@@ -80,9 +80,21 @@ interface Shell {
   /** A one-click rating row. Only worth showing once there is something to
    * rate — see orderCompletedMail. */
   review?: { question: string; hint: string; urlForScore: (score: number) => string };
+  /**
+   * Somebody's own words, kept as they wrote them. `rows` is for facts that
+   * fit on one line; a paragraph in that table wraps into a column two words
+   * wide. Line breaks survive.
+   */
+  quote?: { label: string; text: string };
+  /**
+   * The "manage what we send you" line under the card. Null drops it, which
+   * is the honest thing on mail that is not part of a subscription at all —
+   * an application confirmation, or a copy of a form to our own inbox.
+   */
+  subscription?: string | null;
 }
 
-function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, preheader, review }: Shell): string {
+function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, preheader, review, quote, subscription }: Shell): string {
   // A row per line with its own divider rather than one rule above the block:
   // at four or five rows the flat list ran together.
   const rowsHtml = rows
@@ -151,6 +163,37 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
             </tr>`
     : "";
 
+  // Their own words, in a panel of their own. Newlines become <br> because
+  // white-space:pre-wrap is one of the many CSS properties Outlook drops.
+  const quoteBlock = quote
+    ? `<tr>
+              <td style="padding:24px 30px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PANEL};border:1px solid ${BORDER};border-radius:12px;">
+                  <tr>
+                    <td style="padding:16px 18px;font-family:${FONT};">
+                      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:${FAINT};">${escapeHtml(quote.label)}</div>
+                      <div style="margin-top:8px;font-size:14px;line-height:1.65;color:${TEXT};">${escapeHtml(quote.text).replace(/\r?\n/g, "<br>")}</div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>`
+    : "";
+
+  const subscriptionRow =
+    subscription === null
+      ? ""
+      : `<tr>
+              <td align="center" style="padding:12px 20px 0;font-family:${FONT};font-size:11px;line-height:1.6;color:${FAINT};">
+                ${
+                  subscription
+                    ? escapeHtml(subscription)
+                    : `You&rsquo;re getting this because of an order you placed. Manage what we send you in your
+                <a href="${COMPANY.site}/dashboard" style="color:${FAINT};text-decoration:underline;">notification settings</a>.`
+                }
+              </td>
+            </tr>`;
+
   // A row of cells rather than inline-block links: Outlook's word-based
   // renderer ignores inline-block spacing and would stack them.
   const socialsHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center"><tr>${SOCIALS.map(
@@ -214,6 +257,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
             </tr>
             ${highlightBlock}
             ${rowsBlock}
+            ${quoteBlock}
             <tr>
               <td style="padding:26px 30px 0;">
                 <!-- Table button, not a styled <a>: Outlook drops the padding
@@ -274,12 +318,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
                 <a href="mailto:${COMPANY.support}" style="color:${FAINT};text-decoration:none;">${COMPANY.support}</a>
               </td>
             </tr>
-            <tr>
-              <td align="center" style="padding:12px 20px 0;font-family:${FONT};font-size:11px;line-height:1.6;color:${FAINT};">
-                You&rsquo;re getting this because of an order you placed. Manage what we send you in your
-                <a href="${COMPANY.site}/dashboard" style="color:${FAINT};text-decoration:underline;">notification settings</a>.
-              </td>
-            </tr>
+            ${subscriptionRow}
             <tr>
               <td align="center" style="padding:14px 20px 0;font-family:${FONT};font-size:11px;color:${FAINT};">
                 Not affiliated with Riot Games, Epic Games, or any game publisher.
@@ -293,7 +332,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
 </html>`;
 }
 
-function shellText({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, review }: Shell): string {
+function shellText({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, review, quote }: Shell): string {
   const all = highlight ? [highlight, ...rows] : rows;
   const lines = all.map((row) => `${row.label}: ${row.value}`).join("\n");
   const rating = review ? `${review.question}\n${review.urlForScore(5)}` : "";
@@ -303,6 +342,8 @@ function shellText({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight
     heading,
     intro,
     lines,
+    quote ? `${quote.label}:
+${quote.text}` : "",
     `${ctaLabel}: ${ctaUrl}`,
     rating,
     footnote,
@@ -472,6 +513,105 @@ export function plainNoticeMail(input: {
   };
 
   return { subject: input.heading, html: shell(content), text: shellText(content) };
+}
+
+/**
+ * A teammate application, to our own inbox.
+ *
+ * Internal, but built from the same shell as everything else: it is the one
+ * mail that gets forwarded around while somebody decides, and a wall of
+ * unstyled `<p>` tags is both harder to read and easy to mistake for spam
+ * from our own domain.
+ */
+export function teammateApplicationMail(input: {
+  name: string;
+  email: string;
+  discord: string;
+  country: string | null;
+  games: string;
+  ranks: string | null;
+  hours: string | null;
+  experience: string | null;
+  url: string;
+}): MailBody {
+  const content: Shell = {
+    heading: `${input.name} wants to play for us`,
+    intro:
+      "A new application came in through the site. Accepting it from the queue mails them a one-time invite link and copies it for you.",
+    preheader: `${input.games} · ${input.discord}`,
+    rows: [
+      { label: "Email", value: input.email },
+      { label: "Discord", value: input.discord },
+      ...(input.country ? [{ label: "Country", value: input.country }] : []),
+      { label: "Games", value: input.games },
+      ...(input.ranks ? [{ label: "Ranks", value: input.ranks }] : []),
+      ...(input.hours ? [{ label: "Available", value: input.hours }] : []),
+    ],
+    quote: input.experience ? { label: "In their own words", text: input.experience } : undefined,
+    ctaLabel: "Open the application queue",
+    ctaUrl: input.url,
+    footnote:
+      "Their address is held against a second application until this one is decided. Deleting the row is what lets them start over.",
+    // Nobody subscribed to this, and it is going to our own inbox.
+    subscription: null,
+  };
+
+  return { subject: `Teammate application — ${input.name}`, html: shell(content), text: shellText(content) };
+}
+
+/** The accepted applicant's invite link. The only mail that creates access. */
+export function teammateInviteMail(input: { name: string; url: string; days: number }): MailBody {
+  const content: Shell = {
+    heading: "You're in — set up your teammate account",
+    intro: `${input.name}, your application was accepted. The link below creates your account and lets you pick a password. It works once, and only for you.`,
+    preheader: "Your invite link is inside.",
+    highlight: {
+      label: "This link expires in",
+      value: input.days === 1 ? "1 day" : `${input.days} days`,
+      note: "If it lapses, ask us for a fresh one — nothing is lost.",
+    },
+    rows: [],
+    ctaLabel: "Create my teammate account",
+    ctaUrl: input.url,
+    footnote:
+      "Inside you will set your availability, add a profile for each game you take orders in, and verify your identity once before your first payout.",
+    subscription: null,
+  };
+
+  return { subject: "Your QUP.gg teammate invite", html: shell(content), text: shellText(content) };
+}
+
+/** The public contact form, to our own inbox. */
+export function contactMessageMail(input: {
+  name: string;
+  email: string;
+  topic: string;
+  orderNo: string | null;
+  message: string;
+  url: string;
+}): MailBody {
+  const content: Shell = {
+    heading: input.topic || "New message",
+    intro: `${input.name} wrote in through the contact form. Replying to this mail does not reach them — write to the address below.`,
+    preheader: `${input.name} · ${input.email}`,
+    rows: [
+      { label: "From", value: input.name },
+      { label: "Email", value: input.email },
+      ...(input.topic ? [{ label: "About", value: input.topic }] : []),
+      ...(input.orderNo ? [{ label: "Order", value: input.orderNo }] : []),
+    ],
+    quote: { label: "Message", text: input.message },
+    ctaLabel: "Reply to them",
+    ctaUrl: `mailto:${input.email}`,
+    footnote: "Sent from the contact form on the site. No account was needed to send it.",
+    subscription: null,
+  };
+
+  return {
+    subject: `Contact form — ${input.topic || "General"} — ${input.name}`,
+    html: shell(content),
+    text: shellText(content),
+  };
 }
 
 export function teammateAssignedMail(input: {

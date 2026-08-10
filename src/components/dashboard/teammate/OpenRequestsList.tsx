@@ -97,24 +97,19 @@ function RequestCard({
   onRespond: (orderId: string, accept: boolean) => void;
 }) {
   const { order, msLeft, acceptedCount } = request;
-  // Counts down locally between reads, and re-seeds whenever the server sends
-  // a fresh figure — during render, so a card never shows a second of the
-  // previous poll's clock after a new one has arrived.
-  const [left, setLeft] = useState(msLeft);
-  const [seededFrom, setSeededFrom] = useState(msLeft);
-  if (seededFrom !== msLeft) {
-    setSeededFrom(msLeft);
-    setLeft(msLeft);
-  }
-  useEffect(() => {
-    const t = setInterval(() => setLeft((value) => Math.max(0, value - 1000)), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  const seconds = Math.ceil(left / 1000);
+  // No local counter. msLeft already arrives rebased on the wall clock (see
+  // useDispatchState) — a card that decremented its own copy once a second
+  // froze in a background tab and then offered an Accept button for a wave
+  // that had already gone to the next teammates.
+  //
+  // Rounded down, not up: at 400ms left the honest number is 0, and the
+  // second this used to round up to was a button that could only be refused.
+  const seconds = Math.floor(msLeft / 1000);
   // The row stays on screen for the moment between the clock running out and
   // the next read dropping it — vanishing mid-reach is its own confusion.
-  const expired = left <= 0;
+  // The last second goes with it: a click there loses the race to the server
+  // more often than it wins it.
+  const expired = msLeft <= 1000;
   // A missing rank is the game's own Unranked, not the absence of one — it
   // sits at the bottom of the ladder with an emblem like every other tier.
   // Printing the bare word instead was what left these cards without art, on
