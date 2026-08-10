@@ -18745,161 +18745,119 @@ img.bento-chat__avatar {
 }
 
 /* Above the small print rather than in the brand column: down there it has
-   the width to stay on one line, and it sits with the other thing on the page
-   that points somewhere outside the site. */
-/* Immediately above the small print. It is the last claim the page makes and
-   the disclaimer under it is the last qualification, so the two belong
-   together at the bottom rather than floating over the payment strip. */
-.site-footer__proof {
-  display: flex;
-  justify-content: center;
-  padding-top: 22px;
-}
-
-
-/* The stars and the score share the first line; the source note gets the
-   second, which is what keeps the whole block inside the icon row's width. */
-
 /* Only the tall cell. The others are sized by their own content, and
    centring them would push their first line down for nothing. */
 .bento__cell--tall .bento-card {
   justify-content: center;
 }
 
-/* ── The party, in the privacy card ─────────────────────────────
-   Two rows in a lobby is the entire difference between this product and
-   handing somebody your login, so the card shows a party with two players in
-   it rather than describing one. Same furniture as the chat mockup next to
-   it: avatars, a rank chip, real labels. */
-.lobby {
-  margin-top: 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: rgba(0, 0, 0, 0.22);
-  overflow: hidden;
+/* On the payments row, pushed to the right so it lands above the disclaimer
+   rather than over the card marks. No surface of its own down here: the row
+   already has a rule above it, and a second frame inside a frame is what made
+   it read as a button nobody meant to press. */
+.site-footer__payments .tp-badge {
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  backdrop-filter: none;
 }
 
-.lobby__head {
+.site-footer__payments .tp-badge:hover {
+  background: none;
+  transform: none;
+}
+
+.site-footer__payments .tp-badge:hover .tp-badge__source b {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .site-footer__payments .tp-badge {
+    margin-left: 0;
+  }
+}
+
+/* ── The session flow, in the tall cell ─────────────────────────
+   A tall cell wants a sequence, and this is the only sequence on the page:
+   what actually happens between clicking and playing. The rail is drawn on
+   the markers rather than behind the list, so the last step has no line
+   dangling under it. */
+.flow {
+  display: grid;
+  gap: 0;
+  margin-top: 18px;
+  list-style: none;
+}
+
+.flow__step {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  gap: 12px;
+  padding: 0 0 18px;
+  animation: flowStepIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+  animation-delay: calc(var(--i) * 0.09s);
 }
 
-.lobby__head b {
-  color: var(--hue-green);
-  letter-spacing: 0;
+.flow__step:last-child {
+  padding-bottom: 0;
 }
 
-.lobby__seat {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 12px;
-  overflow: hidden;
-  animation: lobbySeatIn 0.45s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+/* The connector, from this marker down to the next one. */
+.flow__step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 28px;
+  bottom: 8px;
+  width: 1px;
+  background: linear-gradient(180deg, var(--border-strong), var(--border));
 }
 
-.lobby__seat + .lobby__seat {
-  border-top: 1px solid var(--border);
-  animation-delay: 0.16s;
-}
-
-@keyframes lobbySeatIn {
-  from { opacity: 0; transform: translate3d(-6px, 0, 0); }
-  to { opacity: 1; transform: none; }
-}
-
-img.lobby__avatar,
-.lobby__avatar {
+.flow__mark {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 27px;
+  height: 27px;
   flex: 0 0 auto;
   border-radius: 50%;
-  object-fit: cover;
-  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: 10px;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-/* The customer's seat is the one wearing the site's own accent — it is their
-   party, and the visual difference is half the point being made. */
-.lobby__avatar--you {
-  background: var(--accent-soft);
-  color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+/* Hovering the card lights the whole run — it is one journey, not five
+   independent rows, and lighting them individually said the opposite. */
+.bento-card:hover .flow__mark {
+  border-color: color-mix(in srgb, var(--hue-green) 55%, transparent);
+  background: rgba(47, 191, 113, 0.12);
+  color: var(--hue-green);
 }
 
-.lobby__who {
+.flow__body {
   display: grid;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
+  padding-top: 3px;
 }
 
-.lobby__who b {
+.flow__body b {
   font-size: 13px;
   font-weight: 700;
 }
 
-.lobby__who small {
-  font-size: 10.5px;
-  color: var(--text-faint);
-}
-
-.lobby__tag {
-  margin-left: auto;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-faint);
-}
-
-/* Under the name, not beside it: the tall cell is the narrowest card in the
-   grid and a name, a sub-line and a rank chip do not share one row in it. */
-.lobby__rank {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #ff4d6d;
-}
-
-.lobby__rank img {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-}
-
-.lobby__foot {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 12px;
-  border-top: 1px solid var(--border);
-  background: rgba(47, 191, 113, 0.06);
-  font-size: 11px;
+.flow__body small {
+  font-size: 11.5px;
   line-height: 1.5;
-  color: var(--text-muted);
+  color: var(--text-faint);
 }
 
-.lobby__foot i {
-  margin-top: 2px;
-  color: var(--hue-green);
-  font-size: 10px;
+@keyframes flowStepIn {
+  from { opacity: 0; transform: translate3d(-6px, 0, 0); }
+  to { opacity: 1; transform: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lobby__seat { animation: none; }
+  .flow__step { animation: none; }
 }

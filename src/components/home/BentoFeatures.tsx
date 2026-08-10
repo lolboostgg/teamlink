@@ -15,6 +15,18 @@ const ENTRY_PRICE_EUR = Math.min(
 // Asymmetric "bento" grid with embedded mockup previews — eloboost.gg's
 // signature pattern for its "Why Players Choose Us" section, quite
 // different from a plain icon+text card grid.
+// The order's own lifecycle, which is what the customer is really buying and
+// the one thing on this page that reads better as a sequence than as a claim.
+// Step four is where the privacy promise lives now: not "we would never", but
+// a description of what actually happens.
+const FLOW = [
+  { icon: "fa-solid fa-gamepad", title: "Pick your mode", detail: "Game, session type, how many teammates." },
+  { icon: "fa-solid fa-magnifying-glass", title: "We search", detail: "Waves of teammates, seconds apart." },
+  { icon: "fa-solid fa-user-check", title: "Someone accepts", detail: "You see who, and their rank, before you play." },
+  { icon: "fa-solid fa-tower-broadcast", title: "You play together", detail: "Your account, theirs. Nobody logs in as you." },
+  { icon: "fa-solid fa-star", title: "You rate it", detail: "The score is public and decides who gets booked next." },
+];
+
 export function BentoFeatures() {
   return (
     <section className="section" id="why-us">
@@ -27,54 +39,31 @@ export function BentoFeatures() {
         </Reveal>
 
         <div className="bento">
+          {/* The tall cell, finally used for what a tall cell is good at: a
+              sequence read top to bottom. It also carries the claim the old
+              card made in prose — step four is where "nobody plays as you"
+              stops being a promise and becomes a description. */}
           <Reveal className="bento__cell bento__cell--tall">
             <div className="bento-card">
               <div className="bento-card__icon" style={{ ["--item-color" as string]: "var(--hue-green)" }}>
-                <i className="fa-solid fa-shield-halved" aria-hidden="true" />
+                <i className="fa-solid fa-route" aria-hidden="true" />
               </div>
-              <h3>Privacy first</h3>
-              <p>Nobody ever plays as you. They play with you.</p>
-              {/* The claim, shown the way the chat card shows its own: a party
-                  with two players in it, because two rows in a lobby is the
-                  whole difference between this and handing somebody your
-                  login. Same furniture as the real thing — avatars, a rank
-                  chip, an owner mark. */}
-              <div className="lobby">
-                <div className="lobby__head">
-                  <span>Your party</span>
-                  <b>2 / 2</b>
-                </div>
+              <h3>From click to game</h3>
+              <p>Five steps, about two minutes.</p>
 
-                <div className="lobby__seat">
-                  <span className="lobby__avatar lobby__avatar--you" aria-hidden="true">
-                    <i className="fa-solid fa-user" />
-                  </span>
-                  <span className="lobby__who">
-                    <b>You</b>
-                    <small>your own account</small>
-                  </span>
-                  <span className="lobby__tag">Owner</span>
-                </div>
-
-                <div className="lobby__seat">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="lobby__avatar" src="/avatars/default.webp" alt="" />
-                  <span className="lobby__who">
-                    <b>Kayzen</b>
-                    <small className="lobby__rank">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={rankIcon("league-of-legends", "grandmaster") ?? ""} alt="" />
-                      Grandmaster
-                    </small>
-                  </span>
-                  <span className="lobby__tag">Teammate</span>
-                </div>
-
-                <div className="lobby__foot">
-                  <i className="fa-solid fa-lock" aria-hidden="true" />
-                  Two players, two accounts, two passwords — and we never see either.
-                </div>
-              </div>
+              <ol className="flow">
+                {FLOW.map((step, i) => (
+                  <li className="flow__step" key={step.title} style={{ ["--i" as string]: i }}>
+                    <span className="flow__mark" aria-hidden="true">
+                      <i className={step.icon} />
+                    </span>
+                    <span className="flow__body">
+                      <b>{step.title}</b>
+                      <small>{step.detail}</small>
+                    </span>
+                  </li>
+                ))}
+              </ol>
             </div>
           </Reveal>
 

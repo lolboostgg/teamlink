@@ -79,13 +79,13 @@ export function Footer() {
           </div>
         </div>
 
+        {/* One row: the ways money comes in on the left, the reason to trust
+            us with it on the right — directly above the disclaimer it
+            qualifies. */}
         <div className="site-footer__payments">
           {PAYMENT_ICONS.map((icon) => (
             <i key={icon} className={icon} aria-hidden="true" />
           ))}
-        </div>
-
-        <div className="site-footer__proof">
           <TrustpilotBadge />
         </div>
 
