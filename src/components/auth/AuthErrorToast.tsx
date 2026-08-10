@@ -15,7 +15,6 @@ import { useToast } from "@/components/ui/ToastProvider";
 const MESSAGES: Record<string, string> = {
   no_email: "That account has no email address we can use — add one at the provider, or sign up with email instead.",
   unverified_email: "Please verify your email address with the provider first, then try again.",
-  admin_credentials_required: "Admin accounts must sign in with email, password and their authenticator code.",
   OAuthSignin: "Couldn't start the sign-in. Please try again.",
   OAuthCallback: "The provider rejected the sign-in. Please try again.",
   OAuthAccountNotLinked: "That email already has an account here — sign in the way you created it.",

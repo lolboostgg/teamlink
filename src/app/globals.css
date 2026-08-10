@@ -20421,11 +20421,6 @@ img.bento-chat__avatar {
 .admin-system-card small { color: var(--text-faint); }
 .admin-export-row { display: flex; justify-content: flex-end; margin-bottom: 12px; }
 .admin-sensitive-confirm { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.admin-security-gate { min-height: 70vh; display: grid; place-items: center; padding: 30px; }
-.admin-security-gate .dashboard-panel { width: min(520px, 100%); display: grid; gap: 15px; text-align: center; }
-.admin-security-gate .dashboard-panel > i { color: var(--accent); font-size: 36px; }
-.admin-security-gate h1, .admin-security-gate p { margin: 0; }
-.admin-security-gate .btn, .admin-security-gate code { justify-self: center; }
 .status-open, .status-active { color: var(--success); }
 .status-investigating, .status-waiting { color: var(--hue-gold); }
 .status-resolved, .status-expired, .status-revoked { color: var(--text-faint); }

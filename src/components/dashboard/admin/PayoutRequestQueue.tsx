@@ -56,7 +56,6 @@ export function PayoutRequestQueue({ rows }: { rows: AdminPayoutRow[] }) {
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [note, setNote] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
 
   function run(fn: () => Promise<void>, success: string) {
     startTransition(async () => {
@@ -66,7 +65,6 @@ export function PayoutRequestQueue({ rows }: { rows: AdminPayoutRow[] }) {
         setConfirm(null);
         setNote("");
         setPassword("");
-        setOtp("");
         router.refresh();
       } catch (err) {
         showToast(err instanceof Error ? err.message : "Something went wrong.", "error");
@@ -286,7 +284,7 @@ export function PayoutRequestQueue({ rows }: { rows: AdminPayoutRow[] }) {
                 }
               />
             </div>
-            {confirm.action === "pay" && <div className="admin-sensitive-confirm"><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your current password" autoComplete="current-password"/><input value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="6-digit authenticator code" inputMode="numeric"/></div>}
+            {confirm.action === "pay" && <div className="admin-sensitive-confirm"><input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your current password" autoComplete="current-password"/></div>}
 
             <div className="teammate-profile-form__actions">
               <button type="button" className="btn btn--ghost" disabled={pending} onClick={() => setConfirm(null)}>
@@ -296,8 +294,8 @@ export function PayoutRequestQueue({ rows }: { rows: AdminPayoutRow[] }) {
                 <button
                   type="button"
                   className="btn btn--vivid"
-                  disabled={pending || !password || otp.length !== 6}
-                  onClick={() => run(() => markPayoutPaid(confirm.row.id, note, password, otp), "Payout booked.")}
+                  disabled={pending || !password}
+                  onClick={() => run(() => markPayoutPaid(confirm.row.id, note, password), "Payout booked.")}
                 >
                   <i className="fa-solid fa-check" aria-hidden="true" /> Mark as paid
                 </button>

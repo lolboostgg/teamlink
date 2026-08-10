@@ -18,8 +18,8 @@ import { requireAdmin as requireScopedAdmin } from "@/lib/admin/access";
  * asked on the 10th with €50 and finished four more orders by the 15th gets
  * the €60 they actually have.
  */
-export async function markPayoutPaid(requestId: string, adminNote: string, password: string, otp: string) {
-  const { user } = await requireSensitiveAdmin(password, otp, "finance");
+export async function markPayoutPaid(requestId: string, adminNote: string, password: string) {
+  const { user } = await requireSensitiveAdmin(password, "finance");
   const adminId = user.id;
 
   const result = await prisma.$transaction(async (tx) => {

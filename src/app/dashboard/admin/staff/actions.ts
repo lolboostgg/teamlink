@@ -6,7 +6,7 @@ import { requireSensitiveAdmin } from "@/lib/admin/reauth";
 import { writeAudit } from "@/lib/admin/audit";
 
 export async function setAdminRole(formData: FormData) {
-  const { user } = await requireSensitiveAdmin(String(formData.get("password") ?? ""), String(formData.get("otp") ?? ""), "security");
+  const { user } = await requireSensitiveAdmin(String(formData.get("password") ?? ""), "security");
   const userId = String(formData.get("userId") ?? "");
   const adminRole = String(formData.get("adminRole") ?? "SUPPORT") as "SUPPORT" | "OPERATIONS" | "FINANCE" | "SUPERADMIN";
   if (userId === user.id && adminRole !== "SUPERADMIN") throw new Error("You cannot remove your own superadmin access.");

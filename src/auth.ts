@@ -188,12 +188,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       // The credentials path throws instead (see authorize); this one has a
       // redirect available, so it says so on the way back to the site.
-      const existing = await prisma.user.findUnique({ where: { email }, select: { bannedAt: true, role: true } });
+      const existing = await prisma.user.findUnique({ where: { email }, select: { bannedAt: true } });
       if (existing?.bannedAt) return "/?authError=banned";
-      // Admin access always passes through our credentials + authenticator
-      // challenge. OAuth proves the provider account, but cannot prove that
-      // QUP.gg's mandatory admin TOTP challenge was completed.
-      if (existing?.role === "ADMIN") return "/?authError=admin_credentials_required";
 
       return true;
     },
