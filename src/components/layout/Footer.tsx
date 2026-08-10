@@ -55,7 +55,6 @@ export function Footer() {
               ))}
             </div>
 
-            <TrustpilotBadge compact />
           </div>
 
           <div className="site-footer__nav">
@@ -78,6 +77,10 @@ export function Footer() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="site-footer__proof">
+          <TrustpilotBadge />
         </div>
 
         <div className="site-footer__payments">

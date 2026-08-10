@@ -18635,7 +18635,7 @@ img.bento-chat__avatar {
   gap: 10px;
   padding: 9px 16px;
   border: 1px solid color-mix(in srgb, var(--tp) 45%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--tp) 9%, rgba(255, 255, 255, 0.02));
   color: var(--text);
   transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
@@ -18731,10 +18731,6 @@ img.bento-chat__avatar {
   display: flex;
   justify-content: center;
   margin-top: 22px;
-}
-
-.site-footer__brand .tp-badge {
-  margin-top: 14px;
 }
 
 @media (max-width: 560px) {
@@ -18843,53 +18839,21 @@ img.bento-chat__avatar {
   color: var(--text-faint);
 }
 
-/* ── Footer badge: no wider than the row of social icons above it ──
-   Four 32px tiles and three 10px gaps is 158px, so the badge stacks its two
-   lines rather than running them side by side. */
-.site-footer__brand .tp-badge {
-  display: inline-grid;
-  justify-items: start;
-  gap: 5px;
-  width: fit-content;
-  max-width: 176px;
-  padding: 8px 11px;
-  border-radius: var(--radius-sm);
+/* Above the small print rather than in the brand column: down there it has
+   the width to stay on one line, and it sits with the other thing on the page
+   that points somewhere outside the site. */
+.site-footer__proof {
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
 }
 
-.site-footer__brand .tp-badge__sep {
-  display: none;
-}
-
-.site-footer__brand .tp-badge__star {
-  width: 14px;
-  height: 14px;
-  font-size: 7.5px;
-}
-
-.site-footer__brand .tp-badge__score {
-  font-size: 12px;
-}
-
-.site-footer__brand .tp-badge__source {
-  font-size: 10.5px;
-  white-space: normal;
-}
 
 /* The stars and the score share the first line; the source note gets the
    second, which is what keeps the whole block inside the icon row's width. */
-.site-footer__brand .tp-badge__stars {
-  grid-column: 1;
-  grid-row: 1;
-}
 
-.site-footer__brand .tp-badge__score {
-  grid-column: 2;
-  grid-row: 1;
-  align-self: center;
-  margin-left: 7px;
-}
-
-.site-footer__brand .tp-badge__source {
-  grid-column: 1 / -1;
-  grid-row: 2;
+/* Only the tall cell. The others are sized by their own content, and
+   centring them would push their first line down for nothing. */
+.bento__cell--tall .bento-card {
+  justify-content: center;
 }
