@@ -141,8 +141,8 @@ body::before {
    Rendered once in the root layout (behind every page: marketing,
    dashboard, checkout — this is what makes the whole product feel like
    one place instead of a stitched-together set of screens). Two tiled
-   dot layers drifting at different speeds for parallax depth, plus a
-   couple of periodic "shooting star" streaks. z-index:-1 pins it below
+   dot layers drifting at different speeds for parallax depth, plus
+   softly moving nebula light fields. z-index:-1 pins it below
    all normal in-flow content while staying fixed to the viewport. */
 .starfield {
   position: fixed;
@@ -156,6 +156,38 @@ body::before {
   position: absolute;
   inset: -20%;
   background-repeat: repeat;
+}
+
+.starfield__nebula {
+  position: absolute;
+  width: min(72vw, 980px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.2;
+  will-change: transform;
+}
+
+.starfield__nebula--blue {
+  top: -42%;
+  left: -18%;
+  background: radial-gradient(circle, rgba(49, 93, 255, 0.42), rgba(25, 48, 139, 0.12) 42%, transparent 70%);
+  animation: nebulaFloatBlue 32s ease-in-out infinite alternate;
+}
+
+.starfield__nebula--violet {
+  right: -28%;
+  bottom: -48%;
+  background: radial-gradient(circle, rgba(133, 55, 255, 0.3), rgba(42, 32, 120, 0.1) 44%, transparent 70%);
+  animation: nebulaFloatViolet 38s ease-in-out infinite alternate;
+}
+
+.starfield__depth {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(68, 105, 255, 0.055), transparent 31%),
+    linear-gradient(180deg, transparent 0%, rgba(3, 5, 15, 0.2) 62%, rgba(3, 5, 15, 0.62) 100%);
 }
 
 .starfield__layer--sm {
@@ -191,66 +223,22 @@ body::before {
   }
 }
 
-.starfield__shoot {
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.8);
-  opacity: 0;
-  animation: shootingStar 9s ease-in infinite;
-}
-
-.starfield__shoot::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 100%;
-  width: 90px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7));
-  transform: translateY(-50%);
-}
-
-.starfield__shoot--1 {
-  top: 12%;
-  left: 15%;
-  animation-delay: 0.5s;
-}
-
-.starfield__shoot--2 {
-  top: 30%;
-  left: 70%;
-  animation-delay: 4.5s;
-}
-
-@keyframes shootingStar {
-  0% {
-    opacity: 0;
-    transform: translate(0, 0);
+@keyframes nebulaFloatBlue {
+  to {
+    transform: translate3d(11vw, 9vh, 0) scale(1.08);
   }
-  4% {
-    opacity: 1;
-  }
-  16% {
-    opacity: 0;
-    transform: translate(260px, 180px);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(260px, 180px);
+}
+
+@keyframes nebulaFloatViolet {
+  to {
+    transform: translate3d(-9vw, -7vh, 0) scale(1.12);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .starfield__layer,
-  .starfield__shoot {
+  .starfield__nebula {
     animation: none;
-  }
-
-  .starfield__shoot {
-    opacity: 0;
   }
 }
 
@@ -1813,7 +1801,6 @@ body {
   border: 0;
   border-radius: 24px;
   background: transparent;
-  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.2), inset 0 1px rgba(255, 255, 255, 0.025);
 }
 
 .how-timeline__visual {

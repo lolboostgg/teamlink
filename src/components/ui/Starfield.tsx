@@ -5,10 +5,11 @@
 export function Starfield() {
   return (
     <div className="starfield" aria-hidden="true">
+      <div className="starfield__nebula starfield__nebula--blue" />
+      <div className="starfield__nebula starfield__nebula--violet" />
       <div className="starfield__layer starfield__layer--sm" />
       <div className="starfield__layer starfield__layer--lg" />
-      <span className="starfield__shoot starfield__shoot--1" />
-      <span className="starfield__shoot starfield__shoot--2" />
+      <div className="starfield__depth" />
     </div>
   );
 }
