@@ -5,7 +5,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { DISPATCH_EVENT, logDispatch } from "@/lib/dispatch/log";
 import { forceCompleteOrder, DispatchError, publishOrderChange } from "@/lib/dispatch/service";
-import { settleCancelledOrder } from "@/lib/orderRefunds";
+import { settleCancelledOrder, refundOrder } from "@/lib/orderRefunds";
+import { notifyUser } from "@/lib/notifications/service";
 
 /**
  * What an admin can do to an order the ordinary flow has got stuck on.
@@ -118,6 +119,193 @@ export async function adminCompleteOrder(orderId: string): Promise<Result> {
     const closed = await forceCompleteOrder(orderId, admin);
     revalidatePath(`/dashboard/admin/orders/${closed.orderNo}`);
     return { ok: true, message: "Order closed and paid out." };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/**
+ * Swaps the teammate on a live order.
+ *
+ * The gap this fills: a teammate who stops answering mid-session left an
+ * admin with exactly one lever, adminCancelOrder, so a customer whose
+ * teammate vanished got their money back instead of a session. This keeps the
+ * order and changes who is on it.
+ *
+ * Everything happens in one transaction because the two halves are one fact:
+ * the outgoing candidate stops being selected and the incoming one starts.
+ * Half of that committed is an order with nobody on it or two people on it.
+ *
+ * The replacement's earning row is not written here — completion still does
+ * that, against whoever holds the seat when the session ends, which is
+ * exactly right. What the outgoing teammate has already earned stays theirs.
+ */
+export async function reassignTeammate(orderId: string, newTeammateId: string): Promise<Result> {
+  try {
+    const admin = await requireAdmin();
+
+    const [order, replacement] = await Promise.all([
+      prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+          id: true,
+          orderNo: true,
+          status: true,
+          gameSlug: true,
+          gameName: true,
+          candidates: { where: { selected: true }, select: { id: true, teammateId: true, isPrimary: true } },
+        },
+      }),
+      prisma.teammate.findUnique({
+        where: { id: newTeammateId },
+        select: { id: true, name: true, userId: true, available: true, gameSlugs: true },
+      }),
+    ]);
+
+    if (!order) return { ok: false, error: "That order is gone." };
+    if (SETTLED.has(order.status)) return { ok: false, error: "This order has already finished." };
+    if (!replacement) return { ok: false, error: "That teammate does not exist." };
+    if (order.candidates.some((candidate) => candidate.teammateId === newTeammateId)) {
+      return { ok: false, error: `${replacement.name} is already on this order.` };
+    }
+
+    // Warned about rather than blocked: an admin reaching for this is
+    // handling something the ordinary rules did not cover, and "not listed
+    // for this game" is a reason to think twice, not a wall.
+    const slugs = Array.isArray(replacement.gameSlugs) ? (replacement.gameSlugs as string[]) : [];
+    const notListed = !slugs.includes(order.gameSlug);
+
+    const outgoing = order.candidates[0] ?? null;
+
+    await prisma.$transaction(async (tx) => {
+      if (outgoing) {
+        await tx.dispatchCandidate.update({
+          where: { id: outgoing.id },
+          data: { selected: false, isPrimary: false, status: "SUPERSEDED", respondedAt: new Date() },
+        });
+      }
+
+      await tx.dispatchCandidate.upsert({
+        where: { orderId_teammateId: { orderId, teammateId: newTeammateId } },
+        create: {
+          orderId,
+          teammateId: newTeammateId,
+          invitedAt: new Date(),
+          wave: 0,
+          status: "ACCEPTED",
+          respondedAt: new Date(),
+          manual: true,
+          selected: true,
+          selectedAt: new Date(),
+          isPrimary: true,
+          candidatePosition: 1,
+        },
+        update: {
+          status: "ACCEPTED",
+          respondedAt: new Date(),
+          manual: true,
+          selected: true,
+          selectedAt: new Date(),
+          isPrimary: true,
+        },
+      });
+
+      await tx.teammate.update({ where: { id: newTeammateId }, data: { lastAssignedAt: new Date() } });
+
+      await logDispatch(
+        tx,
+        orderId,
+        DISPATCH_EVENT.ADMIN,
+        `${admin} moved the order to ${replacement.name}${notListed ? " (not listed for this game)" : ""}.`,
+        { teammateId: newTeammateId },
+      );
+    });
+
+    await publishOrderChange(orderId);
+
+    // The new teammate has to find out, and they are the one person who
+    // cannot see the admin log. Same event the ordinary selection sends, so
+    // it reaches their Discord too (see notify/channels.ts).
+    if (replacement.userId) {
+      await notifyUser(replacement.userId, {
+        type: "order.assigned",
+        title: "You've been put on an order",
+        body: `An admin moved order #${order.orderNo} (${order.gameName}) to you.`,
+        href: `/dashboard/teammate/session/${order.orderNo}`,
+      }).catch(() => undefined);
+    }
+
+    return {
+      ok: true,
+      message: notListed
+        ? `Moved to ${replacement.name} — note they are not listed for ${order.gameName}.`
+        : `Moved to ${replacement.name}.`,
+    };
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+/**
+ * Pays a refund by hand, from the page the alert points at.
+ *
+ * order.refund_due exists for the case where the automatic refund failed, and
+ * until now it linked to a screen that could only look at the problem: the
+ * actual fix was in the Stripe dashboard, in another tab, by somebody who had
+ * to work out which payment intent it was. This runs the same refund path the
+ * automatic one uses, so an account is credited and a guest is refunded to
+ * source, and it books the attempt into the log either way.
+ */
+export async function manualRefund(orderId: string, amountEUR: number): Promise<Result> {
+  try {
+    const admin = await requireAdmin();
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        orderNo: true,
+        clientUserId: true,
+        gameName: true,
+        priceEUR: true,
+      },
+    });
+    if (!order) return { ok: false, error: "That order is gone." };
+
+    const cents = Math.round(amountEUR * 100);
+    if (!Number.isFinite(cents) || cents <= 0) return { ok: false, error: "Enter an amount above zero." };
+
+    // refundOrder caps at what was actually taken, so an admin cannot hand
+    // back more than came in even by typing it.
+    const outcome = await refundOrder(
+      {
+        id: order.id,
+        orderNo: order.orderNo,
+        clientUserId: order.clientUserId,
+        gameName: order.gameName,
+        priceEUR: Number(order.priceEUR),
+      },
+      "cancelled_by_admin",
+      cents,
+    );
+
+    const paid = `€${(outcome.cents / 100).toFixed(2)}`;
+    await logDispatch(
+      prisma,
+      orderId,
+      DISPATCH_EVENT.ADMIN,
+      outcome.problem
+        ? `${admin} tried to refund ${paid} by hand and it failed: ${outcome.problem}`
+        : `${admin} refunded ${paid} by hand (${outcome.method}).`,
+    );
+
+    if (outcome.problem) return { ok: false, error: `Refund failed: ${outcome.problem}` };
+
+    revalidatePath(`/dashboard/admin/orders/${order.orderNo}`);
+    return {
+      ok: true,
+      message: outcome.method === "credit" ? `${paid} credited to their balance.` : `${paid} refunded to their card.`,
+    };
   } catch (err) {
     return fail(err);
   }

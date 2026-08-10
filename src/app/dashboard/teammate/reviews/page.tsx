@@ -3,20 +3,36 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { ReviewsBoard } from "@/components/dashboard/teammate/ReviewsBoard";
 import { requireOnboardedTeammate } from "@/lib/teammateGate";
+import { TablePagination, paginate } from "@/components/dashboard/TablePagination";
 
 export const metadata: Metadata = { title: "Reviews" };
 
-export default async function TeammateReviewsPage() {
+const PAGE_SIZE = 50;
+
+export default async function TeammateReviewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await requireOnboardedTeammate();
+  const params = await searchParams;
   const session = await auth();
   const teammate = session?.user?.id
     ? await prisma.teammate.findUnique({ where: { userId: session.user.id } })
     : null;
+
+  // A teammate with a few hundred sessions was loading every review they had
+  // ever been given, on a page that shows the most recent ones.
+  const total = teammate ? await prisma.review.count({ where: { teammateId: teammate.id } }) : 0;
+  const { page, pageCount, skip, take } = paginate(params.page, total, PAGE_SIZE);
+
   const reviews = teammate
     ? await prisma.review.findMany({
         where: { teammateId: teammate.id },
         include: { order: true, clientUser: true },
         orderBy: { createdAt: "desc" },
+        skip,
+        take,
       })
     : [];
   const display = reviews.map((review) => ({
@@ -50,6 +66,15 @@ export default async function TeammateReviewsPage() {
           <p>No reviews yet.</p>
         </div>
       )}
+
+      <TablePagination
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        pageSize={PAGE_SIZE}
+        hrefFor={(nextPage) => `/dashboard/teammate/reviews?page=${nextPage}`}
+        label="Reviews pagination"
+      />
     </div>
   );
 }

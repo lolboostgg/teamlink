@@ -7,6 +7,7 @@ import { payoutForOrder } from "@/lib/payoutSplit";
 import { AdminOrderReply } from "@/components/dashboard/admin/AdminOrderReply";
 import { AdminOrderChatScroll } from "@/components/dashboard/admin/AdminOrderChatScroll";
 import { AdminOrderControls } from "@/components/dashboard/admin/AdminOrderControls";
+import { AdminOrderRescue } from "@/components/dashboard/admin/AdminOrderRescue";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       booked={Math.max(1, order.gamesBooked)}
       settled={["COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status)}
       statusLabel={statusLabel}
+    />
+
+    <AdminOrderRescue
+      orderId={order.id}
+      gameSlug={order.gameSlug}
+      priceEUR={Number(order.priceEUR)}
+      settled={["COMPLETED", "CANCELLED", "NO_MATCH"].includes(order.status)}
     />
 
     <div className="admin-order-workspace">

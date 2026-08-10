@@ -27,6 +27,7 @@ const ONBOARDING_OPEN_PATHS = [
 const SECTIONS: Record<ShellRole, { href: string; label: string; icon: string }[]> = {
   admin: [
     { href: "/dashboard/admin", label: "Overview", icon: "fa-solid fa-gauge" },
+    { href: "/dashboard/admin/analytics", label: "Analytics", icon: "fa-solid fa-chart-line" },
     { href: "/dashboard/admin/users", label: "Users", icon: "fa-solid fa-users" },
     { href: "/dashboard/admin/teammates", label: "Teammates", icon: "fa-solid fa-user-gear" },
     { href: "/dashboard/admin/dispatch", label: "Live dispatch", icon: "fa-solid fa-satellite-dish" },

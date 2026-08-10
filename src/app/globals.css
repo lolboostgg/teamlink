@@ -18873,3 +18873,456 @@ img.bento-chat__avatar {
 @media (prefers-reduced-motion: reduce) {
   .flow__step { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Admin analytics.
+
+   The overview answers "how much have we ever done", which is the same number
+   every morning. This page answers "is today better than yesterday", so every
+   figure carries the period before it and the range is the first control on
+   the screen rather than a filter hidden in a corner.
+   ------------------------------------------------------------------------- */
+.analytics-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.analytics-head__title {
+  font-family: var(--font-heading);
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.analytics-head__sub {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--text-faint);
+}
+
+/* ── Range picker ───────────────────────────────────────────── */
+.range {
+  position: relative;
+}
+
+.range__presets {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--dash-line);
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
+}
+
+.range__preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: calc(var(--dash-radius-sm) - 3px);
+  background: none;
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.range__preset:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.range__preset.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.range__custom {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--dash-line-strong);
+  border-radius: var(--dash-radius);
+  background: var(--dash-surface-2);
+  box-shadow: var(--shadow-lg);
+}
+
+.range__custom label {
+  display: grid;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.range__custom input {
+  padding: 8px 10px;
+  border: 1px solid var(--dash-line-strong);
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  color-scheme: dark;
+}
+
+/* ── KPI tiles ──────────────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kpi {
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  border: 1px solid var(--dash-line);
+  border-radius: var(--dash-radius);
+  background: var(--dash-surface);
+}
+
+/* A hairline in the tile's own colour rather than a coloured card: seven
+   saturated panels in a row is a colour chart, not a dashboard. */
+.kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--tone, var(--accent));
+}
+
+.kpi__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tone, var(--accent)) 14%, transparent);
+  color: var(--tone, var(--accent));
+  font-size: 12px;
+}
+
+.kpi__label {
+  display: block;
+  margin-top: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.kpi__value {
+  display: block;
+  margin-top: 5px;
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.kpi__trend span {
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.kpi__trend.is-up { color: var(--hue-green); }
+.kpi__trend.is-down { color: var(--danger); }
+.kpi__trend.is-flat { color: var(--text-faint); font-weight: 500; }
+
+.kpi__all-time {
+  display: block;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dash-line);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+/* ── Daily chart ────────────────────────────────────────────── */
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 190px;
+  padding: 4px 0 0;
+}
+
+.chart__col {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.chart__bar {
+  display: block;
+  width: 100%;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, transparent));
+  transition: background 0.15s ease;
+}
+
+.chart__col:hover .chart__bar {
+  background: var(--cta-vivid);
+}
+
+.chart__axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--dash-line);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ── Rankings ───────────────────────────────────────────────── */
+.analytics-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.rank-list {
+  display: grid;
+  gap: 2px;
+  list-style: none;
+}
+
+.rank-list li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 4px;
+  font-size: 13px;
+}
+
+.rank-list li + li {
+  border-top: 1px solid var(--dash-line);
+}
+
+.rank-list img {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.rank-list__dot {
+  width: 8px;
+  height: 8px;
+  margin: 0 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.rank-list__name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-list__meta {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.rank-list b {
+  min-width: 74px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analytics-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 560px) {
+  .kpi-grid { grid-template-columns: minmax(0, 1fr); }
+  .range__presets { flex-wrap: wrap; }
+}
+
+/* ── Admin rescue panel ─────────────────────────────────────────
+   The two tools reached for once something has already gone wrong. Kept
+   behind a disclosure rather than sitting open beside cancel and complete: a
+   live order should not present four equally weighted destructive buttons. */
+.rescue {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px dashed var(--dash-line-strong);
+  border-radius: var(--dash-radius);
+  background: var(--dash-surface);
+}
+
+.rescue__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rescue__head b {
+  display: block;
+  font-size: 13.5px;
+}
+
+.rescue__head small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.rescue__tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.rescue__tabs .btn.is-active {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.rescue__body {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.rescue__field {
+  display: grid;
+  gap: 6px;
+  max-width: 340px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.rescue__field input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--dash-line-strong);
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.rescue__field--amount > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rescue__field--amount em {
+  font-style: normal;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-faint);
+}
+
+.rescue__matches {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  list-style: none;
+}
+
+.rescue__match {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.rescue__match:hover {
+  border-color: var(--dash-line-strong);
+}
+
+.rescue__match.is-picked {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.rescue__match-meta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.rescue__match-meta i {
+  color: var(--hue-gold);
+  margin-right: 3px;
+}
+
+/* Every reason the dispatcher would have refused this pick, said out loud. */
+.rescue__match-meta em {
+  font-style: normal;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(224, 168, 59, 0.14);
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.rescue__confirm {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dash-line);
+}
+
+.rescue__confirm p,
+.rescue__note {
+  max-width: 68ch;
+  margin-bottom: 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.rescue__note {
+  margin-top: 12px;
+}

@@ -4,6 +4,8 @@ import { StatGrid } from "@/components/dashboard/StatGrid";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { LiveRefresh } from "@/components/dashboard/LiveRefresh";
 import { TableFilterPills } from "@/components/dashboard/TableFilterPills";
+import { AdminTableToolbar } from "@/components/dashboard/admin/AdminTableToolbar";
+import { TablePagination, paginate } from "@/components/dashboard/TablePagination";
 import { PayoutRequestQueue, type AdminPayoutRow } from "@/components/dashboard/admin/PayoutRequestQueue";
 import type { PayoutMethodType } from "@/lib/payoutMethods";
 import { nextPayoutDate, payoutBreakdown, type PayoutRequestStatus } from "@/lib/payouts";
@@ -14,7 +16,9 @@ export const dynamic = "force-dynamic";
 
 const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "medium" });
 
-type Props = { searchParams: Promise<{ state?: string; method?: string }> };
+const PAGE_SIZE = 50;
+
+type Props = { searchParams: Promise<{ state?: string; method?: string; q?: string; page?: string }> };
 
 export default async function AdminPayoutsPage({ searchParams }: Props) {
   const params = await searchParams;
@@ -22,19 +26,34 @@ export default async function AdminPayoutsPage({ searchParams }: Props) {
   // from the ones that were never paid.
   const state = ["open", "paid", "rejected"].includes(params.state ?? "") ? params.state : undefined;
   const method = params.method === "BANK" || params.method === "CRYPTO" ? params.method : undefined;
+  const q = params.q?.trim().slice(0, 100) ?? "";
 
   const where: Prisma.PayoutRequestWhereInput = {
     ...(state === "open" ? { status: "PENDING" } : {}),
     ...(state === "paid" ? { status: "PAID" } : {}),
     ...(state === "rejected" ? { status: { in: ["REJECTED", "CANCELLED"] } } : {}),
     ...(method ? { payoutMethod: { is: { type: method } } } : {}),
+    // Who is owed money is the question this page gets asked, and until now
+    // the only way to answer it was to read the list.
+    ...(q
+      ? {
+          OR: [
+            { teammate: { is: { name: { contains: q, mode: "insensitive" as const } } } },
+            ...(/^#?\d+$/.test(q) ? [{ teammate: { is: { teammateNo: Number.parseInt(q.replace("#", ""), 10) } } }] : []),
+          ],
+        }
+      : {}),
   };
+
+  const total = await prisma.payoutRequest.count({ where });
+  const { page, pageCount, skip, take } = paginate(params.page, total, PAGE_SIZE);
 
   const [requests, owedAgg, paidAgg, openCount] = await Promise.all([
     prisma.payoutRequest.findMany({
       where,
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
-      take: 100,
+      skip,
+      take,
       include: {
         payoutMethod: true,
         teammate: { select: { teammateNo: true, name: true, balanceEUR: true } },
@@ -91,6 +110,12 @@ export default async function AdminPayoutsPage({ searchParams }: Props) {
           </div>
         </div>
 
+        <AdminTableToolbar
+          initialQuery={q}
+          placeholder="Search teammate name or roster no…"
+          searchLabel="Search payout requests"
+        />
+
         <TableFilterPills
           basePath="/dashboard/admin/payouts"
           groups={[
@@ -119,6 +144,22 @@ export default async function AdminPayoutsPage({ searchParams }: Props) {
         />
 
         <PayoutRequestQueue rows={rows} />
+
+        <TablePagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          pageSize={PAGE_SIZE}
+          hrefFor={(nextPage) => {
+            const next = new URLSearchParams();
+            if (q) next.set("q", q);
+            if (state) next.set("state", state);
+            if (method) next.set("method", method);
+            next.set("page", String(nextPage));
+            return `/dashboard/admin/payouts?${next}`;
+          }}
+          label="Payouts pagination"
+        />
       </div>
     </>
   );

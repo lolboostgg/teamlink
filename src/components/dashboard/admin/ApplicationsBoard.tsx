@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/ToastProvider";
 import { FlagIcon } from "@/components/ui/FlagIcon";
@@ -49,14 +49,6 @@ const STATUS_ICON: Record<ApplicationStatus, string> = {
   DECLINED: "fa-solid fa-ban",
 };
 
-const FILTERS = [
-  { key: "PENDING", label: "Waiting" },
-  { key: "INVITED", label: "Invited" },
-  { key: "DECLINED", label: "Declined" },
-  { key: "all", label: "All" },
-] as const;
-
-type FilterKey = (typeof FILTERS)[number]["key"];
 
 const dayFormat = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" });
 
@@ -70,22 +62,10 @@ function daysAgo(at: number): string {
 export function ApplicationsBoard({ applications }: { applications: ApplicationView[] }) {
   const router = useRouter();
   const { showToast } = useToast();
-  const [filter, setFilter] = useState<FilterKey>("PENDING");
   const [openId, setOpenId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const counts = useMemo(() => {
-    const tally: Record<FilterKey, number> = { all: applications.length, PENDING: 0, INVITED: 0, DECLINED: 0 };
-    for (const a of applications) tally[a.status] += 1;
-    return tally;
-  }, [applications]);
-
-  const visible = useMemo(
-    () => (filter === "all" ? applications : applications.filter((a) => a.status === filter)),
-    [applications, filter],
-  );
 
   function run(id: string, fn: () => Promise<{ ok: boolean; error?: string; inviteUrl?: string }>, success: string) {
     setBusyId(id);
@@ -129,34 +109,14 @@ export function ApplicationsBoard({ applications }: { applications: ApplicationV
         </div>
       </div>
 
-      {/* The same segmented control the tables use (see TableFilterPills) —
-          buttons rather than links, because this filter is local state and
-          not worth a navigation. */}
-      <div className="filter-pills">
-        <div className="filter-pills__group" role="group" aria-label="Filter applications">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              className={`filter-pill filter-pill--button${filter === f.key ? " is-active" : ""}`}
-              aria-pressed={filter === f.key}
-              onClick={() => setFilter(f.key)}
-            >
-              {f.label}
-              <span className="filter-pill__count">{counts[f.key]}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {visible.length === 0 ? (
+      {applications.length === 0 ? (
         <div className="dashboard-empty">
           <i className="fa-solid fa-inbox" aria-hidden="true" />
-          <p>{filter === "PENDING" ? "Nothing waiting — the queue is clear." : "Nothing here."}</p>
+          <p>No applications match.</p>
         </div>
       ) : (
         <ul className="application-list">
-          {visible.map((a) => {
+          {applications.map((a) => {
             const busy = pending && busyId === a.id;
             const expanded = openId === a.id;
             return (
