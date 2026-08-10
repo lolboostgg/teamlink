@@ -1,9 +1,11 @@
 "use client";
 
 import { useAuthModal } from "./AuthModalProvider";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 export function HeaderAuthButtons() {
   const { open, isAuthenticated, isLoading } = useAuthModal();
+  const { t } = useLanguage();
 
   // Don't assume signed-out while the session is still resolving — that's
   // what was flashing "Log in / Sign up" for a frame on every load even
@@ -16,7 +18,7 @@ export function HeaderAuthButtons() {
   // between two things before they have seen the site.
   return (
     <button type="button" className="btn btn--primary btn--sm" onClick={() => open("login")}>
-      <i className="fa-solid fa-right-to-bracket" aria-hidden="true" /> Login
+      <i className="fa-solid fa-right-to-bracket" aria-hidden="true" /> {t("common.login")}
     </button>
   );
 }

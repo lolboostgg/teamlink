@@ -17,11 +17,11 @@ const FEATURED_CURRENCIES: { code: CurrencyCode; flagIso: string }[] = [
 // (language) with a fixed currency row underneath, both visible at once.
 export function SettingsPanel() {
   const { currency, setCurrency } = useCurrency();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <div className="dropdown-switcher__menu dropdown-switcher__menu--right dropdown-switcher__menu--settings settings-panel">
-      <div className="settings-panel__title">Language</div>
+      <div className="settings-panel__title">{t("common.language")}</div>
       <div className="settings-panel__lang-list">
         {LANGUAGES.map((l) => (
           <button
@@ -31,14 +31,14 @@ export function SettingsPanel() {
             onClick={() => setLanguage(l.code)}
           >
             <FlagIcon iso={l.flagIso} label={l.label} className="settings-panel__lang-flag" />
-            <span>{l.label}</span>
+            <span>{l.nativeLabel}</span>
             {l.code === language && <i className="fa-solid fa-check" aria-hidden="true" />}
           </button>
         ))}
       </div>
 
       <div className="settings-panel__currency-row">
-        <div className="settings-panel__title">Currency</div>
+        <div className="settings-panel__title">{t("common.currency")}</div>
         <div className="settings-panel__currency-pills">
           {FEATURED_CURRENCIES.map((c) => {
             const meta = CURRENCIES.find((m) => m.code === c.code)!;

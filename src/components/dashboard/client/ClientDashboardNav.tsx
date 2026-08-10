@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLanguage } from "@/components/language/LanguageProvider";
+import type { TranslationKey } from "@/lib/translations";
 
 const SECTIONS = [
-  { href: "/dashboard/client", label: "Overview", icon: "fa-solid fa-gauge" },
-  { href: "/dashboard/client/orders", label: "Orders", icon: "fa-solid fa-calendar-check" },
-  { href: "/dashboard/client/favorites", label: "Favorites", icon: "fa-solid fa-heart" },
-  { href: "/dashboard/client/wallet", label: "Wallet", icon: "fa-solid fa-wallet" },
-  { href: "/dashboard/client/disputes", label: "Support", icon: "fa-solid fa-life-ring" },
-  { href: "/dashboard/client/settings", label: "Settings", icon: "fa-solid fa-gear" },
-];
+  { href: "/dashboard/client", key: "nav.overview", icon: "fa-solid fa-gauge" },
+  { href: "/dashboard/client/orders", key: "nav.orders", icon: "fa-solid fa-calendar-check" },
+  { href: "/dashboard/client/favorites", key: "nav.favorites", icon: "fa-solid fa-heart" },
+  { href: "/dashboard/client/wallet", key: "nav.wallet", icon: "fa-solid fa-wallet" },
+  { href: "/dashboard/client/disputes", key: "nav.support", icon: "fa-solid fa-life-ring" },
+  { href: "/dashboard/client/settings", key: "nav.settings", icon: "fa-solid fa-gear" },
+] satisfies { href: string; key: TranslationKey; icon: string }[];
 
 // Sits right under the real site header instead of a separate dashboard
 // shell — this is the client dashboard's only chrome of its own, a plain
@@ -18,6 +20,7 @@ const SECTIONS = [
 // walled-off admin panel.
 export function ClientDashboardNav() {
   const pathname = usePathname();
+  const { t } = useLanguage();
 
   return (
     <nav className="client-dashboard-nav" aria-label="Dashboard sections">
@@ -34,7 +37,7 @@ export function ClientDashboardNav() {
             className={`client-dashboard-nav__link${active ? " is-active" : ""}`}
           >
             <i className={s.icon} aria-hidden="true" />
-            {s.label}
+            {t(s.key)}
           </Link>
         );
       })}
