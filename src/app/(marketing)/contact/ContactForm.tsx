@@ -2,10 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { submitContactMessage } from "@/app/actions/applications";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 const TOPICS = ["An order or refund", "Payments", "Becoming a teammate", "Press or partnership", "Something else"];
 
 export function ContactForm() {
+  const { p } = useLanguage();
   const [form, setForm] = useState({ name: "", email: "", topic: TOPICS[0], orderNo: "", message: "", website: "" });
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -34,7 +36,7 @@ export function ContactForm() {
         <span className="form-done__icon">
           <i className="fa-solid fa-paper-plane" aria-hidden="true" />
         </span>
-        <h3>Message sent</h3>
+        <h3>{p("Message sent")}</h3>
         <p>
           It is in the support inbox now. We answer within a few hours during European evenings, and by the next
           morning otherwise — watch the address you gave us.
@@ -58,7 +60,7 @@ export function ContactForm() {
 
       <div className="form-grid">
         <div className="form-row">
-          <label htmlFor="contact-name">Your name</label>
+          <label htmlFor="contact-name">{p("Your name")}</label>
           <input id="contact-name" value={form.name} onChange={(e) => set("name", e.target.value)} required />
         </div>
         <div className="form-row">
@@ -72,27 +74,27 @@ export function ContactForm() {
           />
         </div>
         <div className="form-row">
-          <label htmlFor="contact-topic">What is it about?</label>
+          <label htmlFor="contact-topic">{p("What is it about?")}</label>
           <select id="contact-topic" value={form.topic} onChange={(e) => set("topic", e.target.value)}>
             {TOPICS.map((topic) => (
-              <option key={topic}>{topic}</option>
+              <option key={topic} value={topic}>{p(topic)}</option>
             ))}
           </select>
         </div>
         <div className="form-row">
-          <label htmlFor="contact-order">Order number (if you have one)</label>
+          <label htmlFor="contact-order">{p("Order number (if you have one)")}</label>
           <input id="contact-order" value={form.orderNo} onChange={(e) => set("orderNo", e.target.value)} />
         </div>
       </div>
 
       <div className="form-row">
-        <label htmlFor="contact-message">Message</label>
+        <label htmlFor="contact-message">{p("Message")}</label>
         <textarea
           id="contact-message"
           rows={6}
           value={form.message}
           onChange={(e) => set("message", e.target.value)}
-          placeholder="What happened, and what would fix it?"
+          placeholder={p("What happened, and what would fix it?")}
           required
         />
       </div>
