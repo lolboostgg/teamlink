@@ -11,7 +11,7 @@ export type PublicBlogPost = {
 
 const legacy: PublicBlogPost[] = POSTS.map(post => ({
   slug: post.slug, title: post.title, excerpt: post.excerpt, content: null, coverImageUrl: null, coverImageAlt: null,
-  seoTitle: null, seoDescription: null, publishedAt: new Date(post.date), category: { slug: "general", name: post.tag, gameSlug: null },
+  seoTitle: null, seoDescription: null, publishedAt: new Date(post.date), category: { slug: "general", name: "General", gameSlug: null },
 }));
 
 export async function getPublishedPosts(categorySlug?: string): Promise<PublicBlogPost[]> {

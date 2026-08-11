@@ -5,6 +5,8 @@ import { Reveal } from "@/components/ui/Reveal";
 import { ApplyWizardProvider, ApplyButton } from "@/app/(marketing)/become-a-teammate/ApplyWizard";
 import { GAMES } from "@/lib/games";
 import { pageMetadata } from "@/lib/seo";
+import { getServerLanguage } from "@/lib/serverLanguage";
+import { translatePhrase } from "@/lib/phrases";
 
 export const metadata: Metadata = pageMetadata({
   title: "Become a Teammate",
@@ -80,22 +82,23 @@ const FAQ = [
   },
 ];
 
-export default function BecomeATeammatePage() {
+export default async function BecomeATeammatePage() {
+  const language = await getServerLanguage(); const p = (phrase: string) => translatePhrase(language, phrase);
   return (
     <ApplyWizardProvider>
       <main className="section">
       <div className="container">
         <PageHero
-          eyebrow="Become a teammate"
-          title="Get paid for the games you were going to play anyway."
-          sub="Go available when you sit down, take the orders that suit you, and get paid per session at the rate you accepted."
+          eyebrow={p("Become a teammate")}
+          title={p("Get paid for the games you were going to play anyway.")}
+          sub={p("Go available when you sit down, take the orders that suit you, and get paid per session at the rate you accepted.")}
         >
           <div className="page-hero__cta">
             <ApplyButton className="btn btn--vivid btn--lg">
-              <i className="fa-solid fa-bolt" aria-hidden="true" /> Apply now
+              <i className="fa-solid fa-bolt" aria-hidden="true" /> {p("Apply now")}
             </ApplyButton>
             <Link href="/games" className="btn btn--ghost btn--lg">
-              See what people book
+              {p("See what people book")}
             </Link>
           </div>
         </PageHero>
@@ -107,8 +110,8 @@ export default function BecomeATeammatePage() {
                 <span className="value-card__icon" style={{ ["--item-color" as string]: reason.color }}>
                   <i className={reason.icon} aria-hidden="true" />
                 </span>
-                <h3>{reason.title}</h3>
-                <p>{reason.body}</p>
+                <h3>{p(reason.title)}</h3>
+                <p>{p(reason.body)}</p>
               </div>
             ))}
           </div>
@@ -116,13 +119,13 @@ export default function BecomeATeammatePage() {
 
         <Reveal>
           <section className="about-block">
-            <h2 className="about-block__title">How it goes</h2>
+            <h2 className="about-block__title">{p("How it goes")}</h2>
             <ol className="step-grid">
               {STEPS.map((step) => (
                 <li className="step-grid__item" key={step.step}>
                   <span className="step-grid__num">{step.step}</span>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
+                  <h3>{p(step.title)}</h3>
+                  <p>{p(step.text)}</p>
                 </li>
               ))}
             </ol>
@@ -131,12 +134,12 @@ export default function BecomeATeammatePage() {
 
         <Reveal>
           <section className="about-block">
-            <h2 className="about-block__title">What we need from you</h2>
+            <h2 className="about-block__title">{p("What we need from you")}</h2>
             <ul className="check-list">
               {REQUIREMENTS.map((item) => (
                 <li key={item}>
                   <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                  <span>{item}</span>
+                  <span>{p(item)}</span>
                 </li>
               ))}
             </ul>
@@ -145,17 +148,17 @@ export default function BecomeATeammatePage() {
 
         <Reveal>
           <section className="about-block" id="apply">
-            <h2 className="about-block__title">Apply</h2>
+            <h2 className="about-block__title">{p("Apply")}</h2>
             <div className="apply-invite">
               <div className="apply-invite__glow" aria-hidden="true" />
               <div className="apply-invite__body">
-                <h3>Four short steps, about two minutes.</h3>
+                <h3>{p("Four short steps, about two minutes.")}</h3>
                 <p>
                   Who you are, the games you play, when you are around. Everything goes straight to the team — nothing
                   is public, and we do not pass it on.
                 </p>
                 <ApplyButton className="btn btn--vivid btn--lg">
-                  <i className="fa-solid fa-bolt" aria-hidden="true" /> Start your application
+                  <i className="fa-solid fa-bolt" aria-hidden="true" /> {p("Start your application")}
                 </ApplyButton>
               </div>
               <ol className="apply-invite__steps" aria-hidden="true">
@@ -178,12 +181,12 @@ export default function BecomeATeammatePage() {
 
         <Reveal>
           <section className="about-block">
-            <h2 className="about-block__title">Questions</h2>
+            <h2 className="about-block__title">{p("Questions")}</h2>
             <div className="qa-list">
               {FAQ.map((item) => (
                 <div className="qa-item" key={item.q}>
-                  <h3>{item.q}</h3>
-                  <p>{item.a}</p>
+                  <h3>{p(item.q)}</h3>
+                  <p>{p(item.a)}</p>
                 </div>
               ))}
             </div>

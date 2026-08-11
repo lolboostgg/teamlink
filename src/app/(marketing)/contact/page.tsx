@@ -5,6 +5,8 @@ import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "@/app/(marketing)/contact/ContactForm";
 import { COMPANY, supportMailto } from "@/lib/company";
 import { pageMetadata } from "@/lib/seo";
+import { getServerLanguage } from "@/lib/serverLanguage";
+import { translatePhrase } from "@/lib/phrases";
 
 export const metadata: Metadata = pageMetadata({
   title: "Contact",
@@ -12,14 +14,15 @@ export const metadata: Metadata = pageMetadata({
   path: "/contact",
 });
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const language = await getServerLanguage(); const p = (phrase: string) => translatePhrase(language, phrase);
   return (
     <main className="section">
       <div className="container">
         <PageHero
           eyebrow="Contact"
-          title="Talk to a person"
-          sub="Support is staffed by people who play these games. No bots and no ticket that goes quiet for three days."
+          title={p("Talk to a person")}
+          sub={p("Support is staffed by people who play these games. No bots and no ticket that goes quiet for three days.")}
         />
 
         <div className="contact-layout">
@@ -29,7 +32,7 @@ export default function ContactPage() {
                 <i className="fa-solid fa-envelope" aria-hidden="true" />
               </span>
               <h3>Email</h3>
-              <p>Best for anything with an order number attached.</p>
+              <p>{p("Best for anything with an order number attached.")}</p>
               <a href={supportMailto("QUP.gg support")}>{COMPANY.support}</a>
             </div>
 
@@ -38,9 +41,9 @@ export default function ContactPage() {
                 <i className="fa-brands fa-discord" aria-hidden="true" />
               </span>
               <h3>Discord</h3>
-              <p>Fastest during European evenings, and where teammates hang out.</p>
+              <p>{p("Fastest during European evenings, and where teammates hang out.")}</p>
               <a href={COMPANY.discord} target="_blank" rel="noreferrer noopener">
-                Join the server
+                {p("Join the server")}
               </a>
             </div>
 
@@ -48,18 +51,18 @@ export default function ContactPage() {
               <span className="contact-card__icon" style={{ ["--item-color" as string]: "var(--hue-green)" }}>
                 <i className="fa-solid fa-comments" aria-hidden="true" />
               </span>
-              <h3>A live session</h3>
+              <h3>{p("A live session")}</h3>
               <p>
                 If a session is running right now, the chat inside the order is the quickest route — it reaches your
                 teammate and us at the same time.
               </p>
-              <Link href="/dashboard/client/orders">Open your orders</Link>
+              <Link href="/dashboard/client/orders">{p("Open your orders")}</Link>
             </div>
 
             {/* Said plainly rather than promised vaguely: "we aim to respond
                 as soon as possible" tells nobody whether to wait or chase. */}
             <div className="contact-hours">
-              <h4>What to expect</h4>
+              <h4>{p("What to expect")}</h4>
               <ul>
                 <li>
                   <b>Under an hour</b> — 15:00–01:00 CET, every day
@@ -82,8 +85,8 @@ export default function ContactPage() {
 
           <Reveal className="contact-layout__main">
             <div className="panel">
-              <h2 className="panel__title">Send us a message</h2>
-              <p className="panel__sub">No account needed. Everything here goes to the same inbox as the address above.</p>
+              <h2 className="panel__title">{p("Send us a message")}</h2>
+              <p className="panel__sub">{p("No account needed. Everything here goes to the same inbox as the address above.")}</p>
               <ContactForm />
             </div>
           </Reveal>

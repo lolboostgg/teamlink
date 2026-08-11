@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Reveal } from "@/components/ui/Reveal";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import type { CommunityStats } from "@/lib/community";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 const reviewTitles = [
   "Smooth session",
@@ -58,6 +59,7 @@ function spreadTeammates(reviews: CommunityStats["recentReviews"]) {
 }
 
 export function CommunityProof() {
+  const { language, p } = useLanguage();
   const [stats, setStats] = useState<CommunityStats | null>(null);
 
   useEffect(() => {
@@ -94,9 +96,9 @@ export function CommunityProof() {
       <div className="container">
         <Reveal>
           <div className="section__head section__head--center proof-heading">
-            <div className="section__eyebrow">Verified player ratings</div>
-            <h2 className="section__title">Reviews from real sessions.</h2>
-            <p className="section__sub">{score}/5 from {stats.reviews} ratings left after completed QUP.gg sessions.</p>
+            <div className="section__eyebrow">{p("Verified player ratings")}</div>
+            <h2 className="section__title">{p("Reviews from real sessions.")}</h2>
+            <p className="section__sub">{score}/5 · {stats.reviews} {p("ratings left after completed QUP.gg sessions.")}</p>
           </div>
         </Reveal>
 
@@ -109,14 +111,14 @@ export function CommunityProof() {
                     {reviews.map((review, reviewIndex) => (
                       <article className="trust-review" key={`${copy}-${review.id}`}>
                         <div className="trust-review__top">
-                          <div className="trust-review__stars" aria-label={`${review.rating} out of 5 stars`}>
+                          <div className="trust-review__stars" aria-label={`${review.rating} ${p("out of 5 stars")}`}>
                             {Array.from({ length: 5 }).map((_, index) => (
                               <span className={index < review.rating ? "is-filled" : ""} key={index}>
                                 <i className="fa-solid fa-star" aria-hidden="true" />
                               </span>
                             ))}
                           </div>
-                          <span className="trust-review__verified"><i className="fa-solid fa-circle-check" aria-hidden="true" /> Verified</span>
+                          <span className="trust-review__verified"><i className="fa-solid fa-circle-check" aria-hidden="true" /> {p("Verified")}</span>
                         </div>
                         <strong title={reviewTitles[(reviewIndex + rowIndex * firstRow.length) % reviewTitles.length]}>
                           {reviewTitles[(reviewIndex + rowIndex * firstRow.length) % reviewTitles.length]}
@@ -127,9 +129,9 @@ export function CommunityProof() {
                             <span className="trust-review__avatar">
                               <SafeAvatarImage src={review.teammateAvatarUrl} frame={review} alt="" />
                             </span>
-                            <span><small>Teammate</small><b>{review.teammateName}</b></span>
+                            <span><small>{p("Teammate")}</small><b>{review.teammateName}</b></span>
                           </span>
-                          <time>{new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(new Date(review.createdAt))}</time>
+                          <time>{new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(new Date(review.createdAt))}</time>
                         </footer>
                       </article>
                     ))}
