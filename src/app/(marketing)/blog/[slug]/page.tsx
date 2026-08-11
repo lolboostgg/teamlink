@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getPublishedPost } from "@/lib/blogData";
 import { getPost } from "@/lib/blog";
@@ -32,7 +33,13 @@ export default async function PostPage({ params }: Props) {
   const language = await getServerLanguage(); const p = (phrase: string) => translatePhrase(language, phrase);
   const date = new Intl.DateTimeFormat(language, { day: "numeric", month: "long", year: "numeric" }).format(post.publishedAt);
   const headings = legacy ? legacy.body.flatMap(section => section.heading ? [section.heading] : []) : (post.content || "").split("\n").filter(line => line.startsWith("## ")).map(line => line.slice(3));
-  return <main className="blog-page section"><div className="container container--narrow">
+  return <main className="blog-page blog-article-page section"><div className="blog-article-shell">
+    <aside className="blog-article-adrail blog-article-adrail--left" aria-label="QUP.gg">
+      <Link href="/games" className="blog-article-adrail__sticky">
+        <Image src="/blog/blog-side-left.png" alt="Ready. Queue. Team Up." width={944} height={1668} priority />
+      </Link>
+    </aside>
+    <div className="container container--narrow blog-article-content">
     <nav className="blog-breadcrumb" aria-label="Breadcrumb"><Link href="/blog">{p("Gaming blog")}</Link><i className="fa-solid fa-chevron-right"/><Link href="/blog/categories">{p("Categories")}</Link><i className="fa-solid fa-chevron-right"/><Link href={`/blog/categories/${post.category.slug}`}>{post.category.name}</Link><i className="fa-solid fa-chevron-right"/><span>{post.title}</span></nav>
     <header className="blog-article-head"><div className="post-card__meta"><span className="post-card__tag">{post.category.name}</span><time>{date}</time></div><h1>{post.title}</h1><p>{post.excerpt}</p></header>
     {post.coverImageUrl && <figure className="blog-article-cover"><img src={post.coverImageUrl} alt={post.coverImageAlt || ""}/></figure>}
@@ -41,5 +48,11 @@ export default async function PostPage({ params }: Props) {
       <aside className="blog-article-sidebar"><div className="blog-article-sidebar__card"><span>{p("In this article")}</span>{headings.length ? <nav>{headings.map(heading => <a href={`#${headingId(heading)}`} key={heading}>{heading}</a>)}</nav> : <p>{p("A short read from QUP.gg.")}</p>}<Link href={`/blog/categories/${post.category.slug}`}>{p("More in")} {post.category.name} <i className="fa-solid fa-arrow-right"/></Link></div></aside>
     </div>
     <div className="blog-article-back"><Link href={`/blog/categories/${post.category.slug}`} className="btn btn--outline"><i className="fa-solid fa-arrow-left"/> More {post.category.name} articles</Link></div>
+    </div>
+    <aside className="blog-article-adrail blog-article-adrail--right" aria-label="QUP.gg">
+      <Link href="/games" className="blog-article-adrail__sticky">
+        <Image src="/blog/blog-side-right.png" alt="Buy. Wait. Team Up." width={944} height={1668} priority />
+      </Link>
+    </aside>
   </div></main>;
 }
