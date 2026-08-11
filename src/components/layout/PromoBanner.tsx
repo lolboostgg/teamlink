@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 const STORAGE_KEY = "qup:promo-dismissed";
 
@@ -10,6 +11,7 @@ const STORAGE_KEY = "qup:promo-dismissed";
 // banner in the same spot). Deliberately no fake countdown/urgency: the
 // referral offer is always-on, not a manufactured expiring "sale."
 export function PromoBanner() {
+  const { p } = useLanguage();
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
@@ -31,12 +33,12 @@ export function PromoBanner() {
           <i className="fa-solid fa-gift" aria-hidden="true" />
         </span>
         <p className="promo-banner__text">
-          <strong>Refer a friend</strong> and you both get €5 session credit.
+          <strong>{p("Refer a friend")}</strong> {p("and you both get €5 session credit.")}
         </p>
         <Link href="/games" className="promo-banner__cta">
-          Learn more <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+          {p("Learn more")} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
         </Link>
-        <button type="button" className="promo-banner__close" onClick={dismiss} aria-label="Dismiss">
+        <button type="button" className="promo-banner__close" onClick={dismiss} aria-label={p("Dismiss")}>
           <i className="fa-solid fa-xmark" aria-hidden="true" />
         </button>
       </div>

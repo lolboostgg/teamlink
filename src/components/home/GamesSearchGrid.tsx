@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { GamesFullGrid, type GameListing } from "@/components/home/GamesFullGrid";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 export function GamesSearchGrid({ games }: { games: GameListing[] }) {
+  const { p } = useLanguage();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -20,13 +22,13 @@ export function GamesSearchGrid({ games }: { games: GameListing[] }) {
   return (
     <div className="container">
       <div className="section__head section__head--center">
-        <div className="section__eyebrow">All games</div>
-        <h1 className="section__title">Choose your game</h1>
-        <p className="section__sub">Pick a game to see available teammates, modes, and pricing.</p>
+        <div className="section__eyebrow">{p("All games")}</div>
+        <h1 className="section__title">{p("Choose your game")}</h1>
+        <p className="section__sub">{p("Pick a game to see available teammates, modes, and pricing.")}</p>
         {totalOnline > 0 && (
           <p className="games-page-live">
             <span className="games-page-live__dot" aria-hidden="true" />
-            {totalOnline} teammate{totalOnline === 1 ? "" : "s"} online right now
+            {totalOnline} {totalOnline === 1 ? p("teammate online right now") : p("teammates online right now")}
           </p>
         )}
       </div>
@@ -35,14 +37,14 @@ export function GamesSearchGrid({ games }: { games: GameListing[] }) {
         <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
         <input
           type="text"
-          placeholder="Search games..."
+          placeholder={p("Search games...")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
 
       {filtered.length === 0 ? (
-        <p className="games-page-empty">No games match &ldquo;{query}&rdquo;.</p>
+        <p className="games-page-empty">{p("No games match")} &ldquo;{query}&rdquo;.</p>
       ) : (
         <GamesFullGrid games={filtered} />
       )}

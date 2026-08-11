@@ -99,7 +99,7 @@ export function BentoFeatures() {
               <div className="bento-card__foot">
                 <span className="bento-card__badge">{p("Cancel free until matched")}</span>
                 <Link className="bento-card__link" href="/legal/refunds">
-                  Refund policy <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+                  {p("Refund policy")} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
                 </Link>
               </div>
             </div>
@@ -117,10 +117,10 @@ export function BentoFeatures() {
                   <i className="fa-brands fa-discord" aria-hidden="true" /> Discord
                 </span>
                 <span>
-                  <i className="fa-solid fa-comments" aria-hidden="true" /> Order chat
+                  <i className="fa-solid fa-comments" aria-hidden="true" /> {p("Order chat")}
                 </span>
                 <span>
-                  <i className="fa-solid fa-envelope" aria-hidden="true" /> Email
+                  <i className="fa-solid fa-envelope" aria-hidden="true" /> {p("Email")}
                 </span>
               </div>
             </div>
@@ -141,8 +141,8 @@ export function BentoFeatures() {
                   <i className="fa-solid fa-bell" />
                 </span>
                 <span className="bento-alert__copy">
-                  <b>A teammate accepted your order</b>
-                  <small>just now · tap to open</small>
+                  <b>{p("A teammate accepted your order")}</b>
+                  <small>{p("just now · tap to open")}</small>
                 </span>
               </div>
             </div>
@@ -151,7 +151,7 @@ export function BentoFeatures() {
           <Reveal className="bento__cell bento__cell--wide" delay={280}>
             <div className="bento-card bento-card--chat">
               <h3>{p("Powerful real-time chat")}</h3>
-              <p>Opens the moment you are matched — lanes and roles sorted before champion select.</p>
+              <p>{p("Opens the moment you are matched — lanes and roles sorted before champion select.")}</p>
               {/* Built from the same parts as the real order room — a header
                   with who you are talking to and their rank, sender names,
                   timestamps, a read receipt, a typing indicator. Two bubbles
@@ -171,7 +171,7 @@ export function BentoFeatures() {
                   <span className="bento-chat__who">
                     <b>Kayzen</b>
                     <small>
-                      <span className="bento-chat__dot" /> online ·{" "}
+                      <span className="bento-chat__dot" /> {p("online")} ·{" "}
                       <span className="bento-chat__rank">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={rankIcon("league-of-legends", "grandmaster") ?? ""} alt="" />
@@ -184,11 +184,11 @@ export function BentoFeatures() {
 
                 <div className="bento-chat__thread">
                   <div className="bento-chat__msg bento-chat__msg--in">
-                    <span className="bento-chat__bubble">Ready when you are 👋 I&rsquo;ll go mid, you take jungle?</span>
+                    <span className="bento-chat__bubble">{p("Ready when you are 👋 I’ll go mid, you take jungle?")}</span>
                     <span className="bento-chat__time">21:04</span>
                   </div>
                   <div className="bento-chat__msg bento-chat__msg--out">
-                    <span className="bento-chat__bubble">Sounds good — queueing now</span>
+                    <span className="bento-chat__bubble">{p("Sounds good — queueing now")}</span>
                     <span className="bento-chat__time">
                       21:04 <i className="fa-solid fa-check-double" aria-hidden="true" />
                     </span>
@@ -201,7 +201,7 @@ export function BentoFeatures() {
                 </div>
 
                 <div className="bento-chat__input">
-                  <span>Type a message…</span>
+                  <span>{p("Type a message…")}</span>
                   <i className="fa-solid fa-paper-plane" aria-hidden="true" />
                 </div>
               </div>

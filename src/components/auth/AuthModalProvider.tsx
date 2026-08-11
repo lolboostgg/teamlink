@@ -5,6 +5,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { Modal } from "@/components/ui/Modal";
 import { AuthErrorToast } from "@/components/auth/AuthErrorToast";
 import { useToast } from "@/components/ui/ToastProvider";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 type Mode = "login" | "signup" | null;
 
@@ -54,6 +55,7 @@ export function useAuthModal() {
 // The optional onSuccess callback lets callers (like checkout) react once
 // login/signup completes, without the provider knowing about them.
 export function AuthModalProvider({ children }: { children: ReactNode }) {
+  const { p } = useLanguage();
   const { showToast } = useToast();
   const { status } = useSession();
   const [mode, setMode] = useState<Mode>(null);
@@ -199,12 +201,12 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
       <Modal open={mode !== null} onClose={close} labelledBy="auth-modal-title">
         <div className="auth-modal">
           <h2 id="auth-modal-title" className="auth-modal__title">
-            {twoFactorStep ? "Verify it’s you" : mode === "login" ? "Log in to QUP.gg" : "Create your account"}
+            {twoFactorStep ? p("Verify it's you") : mode === "login" ? p("Log in to QUP.gg") : p("Create your account")}
           </h2>
           <p className="auth-modal__sub">
-            {twoFactorStep ? "Enter the six-digit code from your authenticator app." : mode === "login"
-              ? "Welcome back, pick up right where you left off."
-              : "Takes less than 30 seconds. No credit card required."}
+            {twoFactorStep ? p("Enter the six-digit code from your authenticator app.") : mode === "login"
+              ? p("Welcome back, pick up right where you left off.")
+              : p("Takes less than 30 seconds. No credit card required.")}
           </p>
 
           {!twoFactorStep && <div className="auth-modal__oauth">
@@ -215,7 +217,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
               onClick={() => startOAuth("discord")}
             >
               <i className="fa-brands fa-discord" aria-hidden="true" />
-              Continue with Discord
+              {p("Continue with Discord")}
             </button>
             <button
               type="button"
@@ -224,27 +226,27 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
               onClick={() => startOAuth("google")}
             >
               <i className="fa-brands fa-google" aria-hidden="true" />
-              Continue with Google
+              {p("Continue with Google")}
             </button>
           </div>}
 
           {!twoFactorStep && <div className="auth-modal__divider">
-            <span>or</span>
+            <span>{p("or")}</span>
           </div>}
 
           <form onSubmit={handleSubmit} noValidate>
             {!twoFactorStep && mode === "signup" && (
               <div className="form-row">
-                <label htmlFor="auth-username">Username</label>
-                <input id="auth-username" name="auth-username" type="text" placeholder="Your in-game name" />
+                <label htmlFor="auth-username">{p("Username")}</label>
+                <input id="auth-username" name="auth-username" type="text" placeholder={p("Your in-game name")} />
               </div>
             )}
             {!twoFactorStep && <div className="form-row">
-              <label htmlFor="auth-email">Email</label>
+              <label htmlFor="auth-email">{p("Email")}</label>
               <input id="auth-email" name="auth-email" type="email" placeholder="you@example.com" />
             </div>}
             {!twoFactorStep && <div className="form-row">
-              <label htmlFor="auth-password">Password</label>
+              <label htmlFor="auth-password">{p("Password")}</label>
               <div className="auth-modal__password-field">
                 <input
                   id="auth-password"
@@ -256,7 +258,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
                   type="button"
                   className="auth-modal__password-toggle"
                   onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? p("Hide password") : p("Show password")}
                   aria-pressed={showPassword}
                 >
                   <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`} aria-hidden="true" />
@@ -266,7 +268,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 
             {twoFactorStep && (
               <div className="form-row">
-                <label htmlFor="auth-otp">Authenticator code</label>
+                <label htmlFor="auth-otp">{p("Authenticator code")}</label>
                 <input id="auth-otp" name="auth-otp" type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="000000" />
               </div>
             )}
@@ -275,7 +277,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
               <label className="auth-modal__remember">
                 <input type="checkbox" id="auth-remember" name="auth-remember" defaultChecked />
                 <span className="auth-modal__remember-box"><i className="fa-solid fa-check" aria-hidden="true" /></span>
-                <span>Remember me</span>
+                <span>{p("Remember me")}</span>
               </label>
             )}
 
@@ -286,19 +288,19 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
             )}
 
             <button type="submit" className="btn btn--primary btn--block" disabled={submitting}>
-              {submitting ? "Please wait…" : twoFactorStep ? "Verify & continue" : mode === "login" ? "Log in" : "Create account"}
+              {submitting ? p("Please wait…") : twoFactorStep ? p("Verify & continue") : mode === "login" ? p("Log in") : p("Create account")}
             </button>
-            {twoFactorStep && <button type="button" className="auth-modal__back" onClick={() => { setTwoFactorStep(null); setFormError(null); }}>Back to login</button>}
+            {twoFactorStep && <button type="button" className="auth-modal__back" onClick={() => { setTwoFactorStep(null); setFormError(null); }}>{p("Back to login")}</button>}
           </form>
 
           {!twoFactorStep && <p className="auth-modal__switch">
             {mode === "login" ? (
               <>
-                New here? <button type="button" onClick={() => open("signup")}>Create an account</button>
+                {p("New here?")} <button type="button" onClick={() => open("signup")}>{p("Create an account")}</button>
               </>
             ) : (
               <>
-                Already have an account? <button type="button" onClick={() => open("login")}>Log in</button>
+                {p("Already have an account?")} <button type="button" onClick={() => open("login")}>{p("Log in")}</button>
               </>
             )}
           </p>}

@@ -4,9 +4,11 @@ import { useState } from "react";
 import { SafeAvatarImage } from "@/components/ui/SafeAvatarImage";
 import { useLiveSync } from "@/lib/events/useLiveSync";
 import type { LiveRosterResponse } from "@/app/api/teammates/live/route";
+import { useLanguage } from "@/components/language/LanguageProvider";
 
 /** Compact availability rows for the booking sidebar. */
 export function LiveTeammates({ gameSlug, eta }: { gameSlug: string; eta?: string }) {
+  const { p } = useLanguage();
   const [data, setData] = useState<LiveRosterResponse | null>(null);
 
   const load = async () => {
@@ -34,8 +36,8 @@ export function LiveTeammates({ gameSlug, eta }: { gameSlug: string; eta?: strin
   return (
     <div className="roster-rows">
       <div className="booking-sidebar__row roster-row">
-        <span>Available now</span>
-        <span className="roster-row__value" aria-label={`${online} teammates available now`}>
+        <span>{p("Available now")}</span>
+        <span className="roster-row__value" aria-label={`${online} ${p("teammates available now")}`}>
           {data && online > 0 ? (
             <span className="roster-row__stack" aria-hidden="true">
               {shown.map((teammate) => (
@@ -53,7 +55,7 @@ export function LiveTeammates({ gameSlug, eta }: { gameSlug: string; eta?: strin
 
       {eta && (
         <div className="booking-sidebar__row booking-sidebar__row--last roster-row">
-          <span>Typical wait</span>
+          <span>{p("Typical wait")}</span>
           <b>{eta}</b>
         </div>
       )}
