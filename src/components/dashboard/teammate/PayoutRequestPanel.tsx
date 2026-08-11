@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { DashboardSelect } from "@/components/dashboard/DashboardSelect";
 import { Modal } from "@/components/ui/Modal";
 import { PriceTag } from "@/components/currency/PriceTag";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -248,14 +249,7 @@ export function PayoutRequestPanel({
 
             <div className="form-row">
               <label htmlFor="payout-method">Payout method</label>
-              <select id="payout-method" value={methodId} onChange={(event) => setMethodId(event.target.value)}>
-                {methods.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {PAYOUT_LABELS[option.type]}
-                    {option.isDefault ? " (default)" : ""} · {option.summary}
-                  </option>
-                ))}
-              </select>
+              <DashboardSelect value={methodId} onChange={setMethodId} label="Payout method" options={methods.map(option => ({ value: option.id, label: `${PAYOUT_LABELS[option.type]}${option.isDefault ? " (default)" : ""} · ${option.summary}` }))}/>
               <Link href="/dashboard/teammate/verification" className="form-row__note">
                 Manage payout methods
               </Link>

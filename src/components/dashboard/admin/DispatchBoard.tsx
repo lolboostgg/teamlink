@@ -16,6 +16,7 @@ import {
   setMatchingPaused,
 } from "@/app/dashboard/admin/dispatch/actions";
 import { ranksForGame, DIVISIONS, rankHasDivisions } from "@/lib/gameRanks";
+import { DashboardSelect } from "@/components/dashboard/DashboardSelect";
 
 /**
  * The live dispatch board.
@@ -396,27 +397,8 @@ function CorrectControl({ order, busy, onSaved }: { order: BoardOrder; busy: boo
     <div className="dispatch-tool">
       <span className="dispatch-tool__label">Correct the order&rsquo;s filters</span>
       <div className="dispatch-tool__row">
-        <select value={rank} onChange={(event) => setRank(event.target.value)} aria-label="Rank">
-          <option value="">No rank</option>
-          {ranks.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={division}
-          onChange={(event) => setDivision(event.target.value)}
-          aria-label="Division"
-          disabled={!rankHasDivisions(rank || null)}
-        >
-          <option value="">—</option>
-          {DIVISIONS.map((value) => (
-            <option key={value} value={value}>
-              {value}
-            </option>
-          ))}
-        </select>
+        <DashboardSelect value={rank} onChange={setRank} label="Rank" options={[{value:"",label:"No rank"},...ranks.map(option => ({value:option.value,label:option.label}))]}/>
+        <DashboardSelect value={division} onChange={setDivision} label="Division" disabled={!rankHasDivisions(rank || null)} options={[{value:"",label:"—"},...DIVISIONS.map(value => ({value,label:value}))]}/>
         <input
           value={region}
           onChange={(event) => setRegion(event.target.value)}
