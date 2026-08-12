@@ -80,7 +80,7 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
     console.error("[checkout] order placement failed:", err);
     if (
       err instanceof Error &&
-      ("code" in err && err.code === "P2022")
+      (/unitPriceEUR|idempotencyKey/i.test(err.message) || "code" in err && err.code === "P2022")
     ) {
       return { ok: false, error: "Checkout is being updated. Please try again in a moment." };
     }
@@ -197,7 +197,7 @@ export async function rerollOrder(orderId: string, accessToken?: string | null):
     gameName: previous.gameName,
     option: previous.option,
     priceEUR: Number(previous.priceEUR),
-    unitPriceEUR: Math.round((Number(previous.priceEUR) / Math.max(1, previous.gamesBooked)) * 100) / 100,
+    unitPriceEUR: Number(previous.unitPriceEUR),
     teammates: previous.teammatesRequested,
     requestedTeammateId: null,
     customerLabel: previous.customerLabel,
@@ -254,7 +254,7 @@ export async function placeReplayCheckout(
   // A replay is always one game. Extra games raise both priceEUR and
   // gamesBooked on the old order, so carrying the whole running total would
   // charge for every game from the previous session again.
-  const priceEUR = Math.round((Number(previous.priceEUR) / Math.max(1, previous.gamesBooked)) * 100) / 100;
+  const priceEUR = Number(previous.unitPriceEUR);
   const replayTotalEUR = Math.round((priceEUR + calculateFee(priceEUR, method)) * 100) / 100;
   const order = await createOrderWithDispatch({
     gameSlug: previous.gameSlug,

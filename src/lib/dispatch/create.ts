@@ -73,6 +73,7 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       gameName: input.gameName,
       option: input.option,
       priceEUR: input.priceEUR,
+      unitPriceEUR: input.unitPriceEUR,
       // Frozen at creation, so a later price change to the roster or the
       // options table can't retroactively move what this order pays out.
       teammatePayoutEUR: teammateCut(input.priceEUR),

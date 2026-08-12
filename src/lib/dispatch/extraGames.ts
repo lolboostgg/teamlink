@@ -18,7 +18,7 @@ export async function applyExtraGames(orderId: string, quantity: number) {
   });
   if (!order) return null;
 
-  const unitPrice = Number(order.priceEUR) / Math.max(1, order.gamesBooked);
+  const unitPrice = Number(order.unitPriceEUR);
   const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
