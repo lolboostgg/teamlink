@@ -74,6 +74,21 @@ export async function confirmCheckoutReturn(sessionId: string): Promise<{ settle
  * that hasn't been paid for.
  */
 export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceOrderResult> {
+  try {
+    return await placeCheckoutOrderInner(input);
+  } catch (err) {
+    console.error("[checkout] order placement failed:", err);
+    if (
+      err instanceof Error &&
+      (/unitPriceEUR|idempotencyKey/i.test(err.message) || "code" in err && err.code === "P2022")
+    ) {
+      return { ok: false, error: "Checkout is being updated. Please try again in a moment." };
+    }
+    return { ok: false, error: "Checkout could not be completed. Your credits were not charged. Please try again." };
+  }
+}
+
+async function placeCheckoutOrderInner(input: PlaceOrderInput): Promise<PlaceOrderResult> {
   const session = await auth();
   const userId = session?.user?.id ?? null;
 
