@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -94,9 +94,19 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   const [buyMoreOpen, setBuyMoreOpen] = useState(false);
   const [buyMoreQty, setBuyMoreQty] = useState(1);
   const [buyingMore, setBuyingMore] = useState(false);
+  const extraGameAttempt = useRef<string | null>(null);
+  const extraGameStartedAtCount = useRef<number | null>(null);
   const [buyMoreMethod, setBuyMoreMethod] = useState<PaymentMethodKey>("credits");
   const effectiveBuyMoreMethod: PaymentMethodKey =
     isGuest && buyMoreMethod === "credits" ? "card" : buyMoreMethod;
+
+  useEffect(() => {
+    if (!order || extraGameStartedAtCount.current === null) return;
+    if (order.gamesBooked <= extraGameStartedAtCount.current) return;
+    extraGameAttempt.current = null;
+    extraGameStartedAtCount.current = null;
+    setBuyingMore(false);
+  }, [order?.gamesBooked, order]);
 
   // Same as MatchmakingScreen's copy — a cancellation with cancelApprovedAt
   // set went through the "teammate approves" flow, so send the customer
@@ -248,27 +258,48 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   // only says how many. A saved card is charged on the spot; without one the
   // customer finishes on Stripe's page and the webhook adds the games.
   async function handleBuyMore() {
+    if (buyingMore) return;
+    const quantity = buyMoreQty;
+    const attemptKey = extraGameAttempt.current ?? crypto.randomUUID();
+    extraGameAttempt.current = attemptKey;
+    extraGameStartedAtCount.current ??= order!.gamesBooked;
     setBuyingMore(true);
+    setBuyMoreOpen(false);
+    showToast(`Adding ${quantity} game${quantity > 1 ? "s" : ""}...`, "info");
     try {
-      const result = await addGames(order!.id, buyMoreQty, effectiveBuyMoreMethod, accessToken, crypto.randomUUID());
+      const timeout = new Promise<"timeout">((resolve) => window.setTimeout(() => resolve("timeout"), 8_000));
+      const result = await Promise.race([
+        addGames(order!.id, quantity, effectiveBuyMoreMethod, accessToken, attemptKey),
+        timeout,
+      ]);
+      if (result === "timeout") {
+        setBuyingMore(false);
+        showToast("The purchase is still syncing. Don't click again — the game will appear automatically.", "info");
+        return;
+      }
       if (!result.ok) {
         setBuyingMore(false);
+        setBuyMoreOpen(true);
         showToast(result.error, "error");
         return;
       }
       if ("redirect" in result) {
+        extraGameAttempt.current = null;
+        extraGameStartedAtCount.current = null;
         window.location.assign(result.redirect);
         return;
       }
+      extraGameAttempt.current = null;
+      extraGameStartedAtCount.current = null;
       setBuyingMore(false);
-      setBuyMoreOpen(false);
       setBuyMoreQty(1);
-      showToast(`Added ${buyMoreQty} more game${buyMoreQty > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
+      showToast(`Added ${quantity} more game${quantity > 1 ? "s" : ""} with ${teammate!.name}!`, "success");
     } catch (err) {
       // Same trap as the tip and replay buttons: a thrown action skipped the
       // line that puts the button back, so it sat on "Adding…" for good.
       console.error("[add-games] failed:", err);
       setBuyingMore(false);
+      setBuyMoreOpen(true);
       showToast("Couldn't add those games — please try again.", "error");
     }
   }
