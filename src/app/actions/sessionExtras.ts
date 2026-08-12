@@ -1,16 +1,17 @@
 "use server";
 
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { chargeDefaultCard, startCheckout } from "@/lib/stripeCheckout";
-import { applyExtraGames } from "@/lib/dispatch/extraGames";
+import { applyExtraGames, purchaseExtraGamesWithCredits } from "@/lib/dispatch/extraGames";
 import { recordTip, getTipForOrder } from "@/lib/tipsServer";
 import { claimFulfilment } from "@/lib/chargeFulfilment";
 import { spendCredits } from "@/app/actions/credits";
 import { calculateFee, type PaymentMethodKey } from "@/lib/payments";
 import { authorizeCustomerOrder } from "@/lib/orderAccess";
-import { spendCreditsOnce } from "@/lib/creditsServer";
 import { publish } from "@/lib/events/bus";
+import { notifyUser } from "@/lib/notifications/service";
 
 export type ExtraPaymentResult =
   | { ok: true }
@@ -55,13 +56,29 @@ export async function addGames(
     : `/checkout/matching?order=${orderId}`;
 
   if (method === "credits") {
-    const paid = await spendCreditsOnce({
-      userId: userId!, orderId, amountEUR,
-      note: `${qty}x extra game · ${order.gameName}`,
-      idempotencyKey: idempotencyKey ?? "",
+    const paid = await purchaseExtraGamesWithCredits({
+      userId: userId!, orderId, quantity: qty, idempotencyKey: idempotencyKey ?? "",
     });
-    if (!paid.ok) return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
-    if (await claimFulfilment(paid.chargeId)) await applyExtraGames(orderId, qty);
+    if (!paid.ok) return { ok: false, error: paid.error };
+    const { receipt } = paid;
+    if (!receipt.alreadyProcessed) {
+      after(() => Promise.all(receipt.teammateUserIds.map((teammateUserId) => notifyUser(teammateUserId, {
+        type: "order.games_added",
+        title: `${receipt.customerLabel} added +${qty} game${qty === 1 ? "" : "s"}`,
+        body: `${receipt.gameName} · ${receipt.gamesBooked} games total`,
+        href: `/dashboard/teammate/session/${receipt.orderNo}`,
+        fields: [
+          { name: "Added", value: `+${qty} game${qty === 1 ? "" : "s"}`, inline: true },
+          { name: "Total", value: `${receipt.gamesBooked} games`, inline: true },
+          { name: "Order", value: `#${receipt.orderNo}`, inline: true },
+        ],
+      }))));
+      await publish({
+        topic: "orders",
+        key: orderId,
+        userIds: [...receipt.teammateUserIds, ...(receipt.clientUserId ? [receipt.clientUserId] : [])],
+      });
+    }
     await publish({ topic: "orders", key: "credits", userIds: [userId!] });
     return { ok: true };
   }
