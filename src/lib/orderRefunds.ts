@@ -1,4 +1,5 @@
 import { Prisma } from "@/generated/prisma/client";
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { refundPaymentIntent, stripeConfigured, StripeError } from "@/lib/stripe";
 import { notifyAdmins } from "@/lib/notifications/service";
@@ -107,12 +108,13 @@ export async function refundOrder(
   reason: RefundReason,
   overrideCents?: number,
 ): Promise<RefundOutcome> {
-  const charges = await prisma.charge.findMany({
-    where: { orderId: order.id, status: "SUCCEEDED", kind: { in: ["ORDER", "EXTRA_GAMES"] } },
-    select: { id: true, kind: true, amountEUR: true, stripePaymentIntentId: true },
-  });
-
-  const owed = await owedCents(order, overrideCents);
+  const [charges, owed] = await Promise.all([
+    prisma.charge.findMany({
+      where: { orderId: order.id, status: "SUCCEEDED", kind: { in: ["ORDER", "EXTRA_GAMES"] } },
+      select: { id: true, kind: true, amountEUR: true, stripePaymentIntentId: true },
+    }),
+    owedCents(order, overrideCents),
+  ]);
   const outcome = order.clientUserId
     ? await creditBack(order, order.clientUserId, owed.cents, reason)
     : await refundToStripe(order, charges, owed);
@@ -382,12 +384,15 @@ export async function settleCancelledOrder(
   if (outcome.played && outcome.booked) {
     await payForPlayedGames(order, outcome.played, outcome.booked);
   }
-  await notifyOrderCancelled(order.id, {
+  // Money and status are complete before the action returns; SMTP is not part
+  // of that transaction. Waiting for its ten-second network timeout made a
+  // successful cancellation look stuck on "Saving...".
+  after(() => notifyOrderCancelled(order.id, {
     reason: REFUND_TEXT[reason],
     // A refund that failed was already raised to the admins; promising the
     // customer money that hasn't moved would be the wrong thing to say.
     refund: outcome.problem ? null : moneyLine(outcome),
-  });
+  }));
   return outcome;
 }
 
