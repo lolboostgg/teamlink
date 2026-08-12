@@ -31,7 +31,7 @@ export function TeammateCard({ teammate, gameSlug, isCenter, isFirstAccepted, is
       className={`pick-card${isCenter ? " pick-card--center" : ""}${isSelected ? " is-selected" : ""}`}
       onClick={onSelect}
       aria-pressed={isSelected}
-      aria-label={`${teammate.name}, ${teammate.rating.toFixed(1)} rating, ${isSelected ? "selected" : "select this teammate"}`}
+      aria-label={`${teammate.name}, ${teammate.rating.toFixed(1)} rating, ${teammate.reviewCount ?? 0} reviews, ${teammate.sessions} sessions, ${isSelected ? "selected" : "select this teammate"}`}
     >
       {isCenter && (
         <span className="pick-card__auto-label">
@@ -45,7 +45,7 @@ export function TeammateCard({ teammate, gameSlug, isCenter, isFirstAccepted, is
       </span>
 
       <span className="pick-card__rating">
-        <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} ({teammate.reviewCount ?? 0} reviews)
+        <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} · {teammate.reviewCount ?? 0} reviews · {teammate.sessions} sessions
       </span>
 
       {isSelected && (

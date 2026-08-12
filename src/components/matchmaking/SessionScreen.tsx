@@ -324,7 +324,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                 </span>
                 <div className="session-complete__teammate-name">{teammate.name}</div>
                 <div className="session-complete__teammate-rating">
-                  <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} ({teammate.sessions} sessions)
+                  <i className="fa-solid fa-star" aria-hidden="true" /> {teammate.rating.toFixed(1)} · {teammate.reviewCount ?? 0} reviews · {teammate.sessions} sessions
                 </div>
               </div>
 

@@ -39,10 +39,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
           avatarFocusY: true,
           avatarZoom: true,
           rating: true,
+          sessionsCount: true,
           available: true,
           balanceEUR: true,
           user: { select: { avatarUrl: true, discordId: true, discordAvatar: true } },
-          _count: { select: { candidacies: { where: { selected: true } } } },
         },
       })
     : null;
@@ -96,7 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         avatarFocusY: teammate.avatarFocusY,
         avatarZoom: teammate.avatarZoom,
         rating: teammate.rating,
-        sessionsCount: teammate._count.candidacies,
+        sessionsCount: teammate.sessionsCount,
         available: teammate.available,
         // Decimal doesn't cross the server/client boundary — it has to be a
         // plain number before it gets there.
