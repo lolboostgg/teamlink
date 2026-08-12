@@ -133,21 +133,32 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   const previousGamesBooked = useRef<number | null>(null);
   const [, startTransition] = useTransition();
   const [cancelPending, setCancelPending] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch(`/api/dispatch/order/${orderId}`, { cache: "no-store" });
-    const data = await res.json();
-    if (!res.ok) {
-      setDenied(data.error ?? "Couldn't load this order.");
-      return;
+    try {
+      const res = await fetch(`/api/dispatch/order/${orderId}`, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setDenied(data.error ?? "Couldn't load this order.");
+        return;
+      }
+      setDenied(null);
+      setLoadError(null);
+      if (previousGamesBooked.current !== null && data.gamesBooked > previousGamesBooked.current) {
+        const added = data.gamesBooked - previousGamesBooked.current;
+        showToast(`${data.customerLabel} booked ${added === 1 ? "one more game" : `${added} more games`}.`, "success");
+      }
+      previousGamesBooked.current = data.gamesBooked;
+      setOrder(data);
+    } catch (error) {
+      setLoadError(error instanceof DOMException && error.name === "TimeoutError"
+        ? "The order room is taking too long to respond."
+        : "The order room could not be loaded.");
     }
-    setDenied(null);
-    if (previousGamesBooked.current !== null && data.gamesBooked > previousGamesBooked.current) {
-      const added = data.gamesBooked - previousGamesBooked.current;
-      showToast(`${data.customerLabel} booked ${added === 1 ? "one more game" : `${added} more games`}.`, "success");
-    }
-    previousGamesBooked.current = data.gamesBooked;
-    setOrder(data);
   }, [orderId, showToast]);
 
   useLiveSync("orders", load, 4000, { key: orderId });
@@ -220,6 +231,15 @@ export function OrderRoom({ orderId }: { orderId: string }) {
   }
 
   if (!order) {
+    if (loadError) {
+      return (
+        <div className="dashboard-empty">
+          <i className="fa-solid fa-triangle-exclamation" aria-hidden="true" />
+          <p>{loadError}</p>
+          <button type="button" className="btn btn--vivid btn--sm" onClick={() => void load()}>Try again</button>
+        </div>
+      );
+    }
     return (
       <div className="dashboard-empty">
         <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />

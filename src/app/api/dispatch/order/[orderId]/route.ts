@@ -41,7 +41,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
           },
         },
       },
-      clientUser: true,
+      clientUser: {
+        select: { name: true, avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true },
+      },
     },
   });
   if (!order) return NextResponse.json({ error: "Unknown order." }, { status: 404 });

@@ -162,9 +162,9 @@ async function ensureListener(): Promise<void> {
  * inside a request that is about to return — it never throws, because failing
  * to notify must not fail the write that succeeded.
  */
-export async function publish(event: LiveEvent): Promise<void> {
-  dispatchLocally(event);
+let publishQueue: Promise<void> = Promise.resolve();
 
+async function publishAcrossInstances(event: LiveEvent): Promise<void> {
   if (!busConnectionString()) return;
   try {
     const current = bus();
@@ -183,8 +183,18 @@ export async function publish(event: LiveEvent): Promise<void> {
     }
     await current.publisher.query("SELECT pg_notify($1, $2)", [PG_CHANNEL, JSON.stringify(event)]);
   } catch {
-    // Local subscribers already got it; cross-instance delivery is best-effort.
+    // Local subscribers already got it; polling catches another instance up.
   }
+}
+
+export async function publish(event: LiveEvent): Promise<void> {
+  dispatchLocally(event);
+  // Cross-instance fan-out is a delivery optimisation, not part of the
+  // database mutation the user is waiting for. Queue it in the background so
+  // three signals from one click cannot add three connection timeouts to the
+  // response. Same-instance SSE is already updated synchronously above; the
+  // polling fallback covers a process that is frozen before this finishes.
+  publishQueue = publishQueue.then(() => publishAcrossInstances(event));
 }
 
 /** Subscribes to every event on this process. Returns an unsubscribe fn. */
