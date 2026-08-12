@@ -32,7 +32,7 @@ import { useToast } from "@/components/ui/ToastProvider";
  * itself with a sound, a tab title and a real OS notification rather than
  * waiting to be noticed.
  */
-export function OpenRequestsList({ initialOnline }: { initialOnline: boolean }) {
+export function OpenRequestsList() {
   const { requests, waitingSince, serverNow, phase, refresh, loaded, error } = useDispatchState();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -54,7 +54,7 @@ export function OpenRequestsList({ initialOnline }: { initialOnline: boolean }) 
   }
 
   if (requests.length === 0) {
-    return <IdlePanel waitingSince={waitingSince} serverNow={serverNow} offline={loaded ? phase === "OFFLINE" : !initialOnline} connecting={!loaded} error={error} />;
+    return <IdlePanel waitingSince={waitingSince} serverNow={serverNow} offline={loaded && phase === "OFFLINE"} connecting={!loaded} error={error} />;
   }
 
   return (
