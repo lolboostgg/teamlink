@@ -37,11 +37,15 @@ export async function applyExtraGames(orderId: string, quantity: number) {
       data: userIds.map((userId) => ({
         userId,
         type: "order.games_added",
-        title: `${order.customerLabel} booked ${qty === 1 ? "one more game" : `${qty} more games`}`,
+        title: `${order.customerLabel} added +${qty} game${qty === 1 ? "" : "s"}`,
         body: `${order.gameName} · ${updated.gamesBooked} games total`,
         href: `/dashboard/teammate/session/${order.orderNo}`,
       })),
     });
+    // The rows above feed the bell; publish on its own topic as well so an
+    // online teammate sees the +game notification immediately rather than
+    // waiting for the polling fallback.
+    await publish({ topic: "notifications", userIds });
   }
 
   await publish({

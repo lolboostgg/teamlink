@@ -41,6 +41,7 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
   if (method === "credits" && !userId) {
     return { ok: false, error: "Sign in to pay from your balance, or pay by card or PayPal." };
   }
+  if (method === "crypto") return { ok: false, error: "Crypto payments aren't available yet." };
 
   const unitPrice = Number(order.priceEUR) / Math.max(1, order.gamesBooked);
   const amountEUR = Math.round(unitPrice * qty * 100) / 100;
@@ -54,7 +55,7 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
 
   // No account means no saved card to try first — straight to the hosted
   // page, where the webhook adds the games once it is paid.
-  if (!userId) {
+  if (!userId || method === "paypal") {
     try {
       const checkout = await startCheckout({
         amountEUR,
@@ -97,7 +98,7 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
         returnPath: `/checkout/matching?order=${orderId}`,
         kind: "EXTRA_GAMES",
         orderId,
-        methods: method === "paypal" ? ["paypal"] : ["card"],
+        methods: ["card"],
         extraMetadata: { quantity: String(qty) },
       });
       return { ok: true, redirect: checkout.url };

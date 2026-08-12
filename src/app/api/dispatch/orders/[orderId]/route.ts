@@ -9,7 +9,12 @@ import { publish } from "@/lib/events/bus";
 
 export const dynamic = "force-dynamic";
 
-const include = { candidates: true, review: true, games: true } as const;
+const include = {
+  candidates: true,
+  review: true,
+  games: true,
+  clientUser: { select: { avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
+} as const;
 
 /** Compares two secrets without leaking their contents through timing. */
 function tokenMatches(given: string, expected: string): boolean {

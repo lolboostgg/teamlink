@@ -94,6 +94,9 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   const [buyMoreOpen, setBuyMoreOpen] = useState(false);
   const [buyMoreQty, setBuyMoreQty] = useState(1);
   const [buyingMore, setBuyingMore] = useState(false);
+  const [buyMoreMethod, setBuyMoreMethod] = useState<PaymentMethodKey>("credits");
+  const effectiveBuyMoreMethod: PaymentMethodKey =
+    isGuest && buyMoreMethod === "credits" ? "card" : buyMoreMethod;
 
   // Same as MatchmakingScreen's copy — a cancellation with cancelApprovedAt
   // set went through the "teammate approves" flow, so send the customer
@@ -173,6 +176,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   const favorited = teammate ? favoriteIds.includes(teammate.id) : false;
   const savedRating = rating || order.reviewRating || 0;
   const hasRated = rated || savedRating > 0;
+  const singleGamePrice = order.priceEUR / Math.max(1, order.gamesBooked);
   const liveStatuses: string[] = ["assigned", "in_progress", "completed"];
 
   if (!teammate || !liveStatuses.includes(order.status)) {
@@ -241,7 +245,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   async function handleBuyMore() {
     setBuyingMore(true);
     try {
-      const result = await addGames(order!.id, buyMoreQty, "card");
+      const result = await addGames(order!.id, buyMoreQty, effectiveBuyMoreMethod);
       if (!result.ok) {
         setBuyingMore(false);
         showToast(result.error, "error");
@@ -440,7 +444,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                   "Starting…"
                 ) : (
                   <>
-                    Play again with {teammate.name} · <PriceTag amountEUR={order.priceEUR} />
+                    Play again with {teammate.name} · <PriceTag amountEUR={singleGamePrice} />
                   </>
                 )}
               </button>
@@ -542,9 +546,10 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   const rank = teammate.lolRank ? getRankMeta(teammate.lolRank) : null;
   const rerollSecondsLeft = order.rerollDeadline != null ? Math.max(0, Math.ceil((order.rerollDeadline - now) / 1000)) : 0;
   const canReroll = rerollSecondsLeft > 0;
-  const buyMoreTotal = order.priceEUR * buyMoreQty;
   const games = order.games ?? [];
   const gamesBooked = Math.max(1, order.gamesBooked);
+  const unitPrice = singleGamePrice;
+  const buyMoreTotal = unitPrice * buyMoreQty;
   const sessionStatus = (order.sessionStatus ?? "WAITING_FOR_INVITE") as SessionStatus;
   const sessionStatusLabel = SESSION_STATUS_LABELS[sessionStatus] ?? "Waiting for invite";
 
@@ -664,6 +669,15 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                         <i className="fa-solid fa-plus" aria-hidden="true" />
                       </button>
                     </div>
+                  </div>
+                  <div className="pay-picker-row">
+                    <span>Pay with</span>
+                    <PaymentMethodPicker
+                      value={effectiveBuyMoreMethod}
+                      onChange={setBuyMoreMethod}
+                      disabled={buyingMore}
+                      creditsEnabled={!isGuest}
+                    />
                   </div>
                   <button type="button" className="btn btn--vivid btn--block btn--sm" onClick={handleBuyMore} disabled={buyingMore}>
                     {buyingMore ? "Adding..." : <>Checkout · <PriceTag amountEUR={buyMoreTotal} /></>}

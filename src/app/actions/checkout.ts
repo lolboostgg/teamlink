@@ -235,11 +235,15 @@ export async function placeReplayCheckout(
   if (method === "credits" && !userId) {
     return { ok: false, error: "Sign in to pay from your balance, or pay by card or PayPal." };
   }
+  if (method === "crypto") return { ok: false, error: "Crypto payments aren't available yet." };
 
   const teammateId = previous.candidates[0]?.teammateId ?? null;
   if (!teammateId) return { ok: false, error: "That session has no teammate to play with again." };
 
-  const priceEUR = Number(previous.priceEUR);
+  // A replay is always one game. Extra games raise both priceEUR and
+  // gamesBooked on the old order, so carrying the whole running total would
+  // charge for every game from the previous session again.
+  const priceEUR = Math.round((Number(previous.priceEUR) / Math.max(1, previous.gamesBooked)) * 100) / 100;
   const order = await createOrderWithDispatch({
     gameSlug: previous.gameSlug,
     gameName: previous.gameName,
