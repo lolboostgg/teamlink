@@ -2,8 +2,7 @@ import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { chargeSavedCard, createCheckoutSession, createCustomer, getCheckoutSession, stripeConfigured, StripeError } from "@/lib/stripe";
-import { Prisma } from "@/generated/prisma/client";
+import { chargeSavedCard, createCheckoutSession, createCustomer, stripeConfigured, StripeError } from "@/lib/stripe";
 
 /**
  * The two ways money is taken, kept out of any "use server" module.
@@ -69,14 +68,6 @@ export async function startCheckout(input: StartCheckoutInput): Promise<{ url: s
   const guestEmail = input.guestEmail?.trim().toLowerCase();
   if (!user && !guestEmail) throw new Error("An email address is required to check out.");
 
-  if (input.idempotencyKey) {
-    const existing = await prisma.charge.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
-    if (existing?.stripeSessionId) {
-      const prior = await getCheckoutSession(existing.stripeSessionId).catch(() => null);
-      if (prior?.url) return { url: prior.url };
-    }
-  }
-
   let customerId = user?.stripeCustomerId ?? undefined;
   if (user && !customerId) {
     const customer = await createCustomer({ email: user.email, name: user.name, userId: user.id });
@@ -117,7 +108,8 @@ export async function startCheckout(input: StartCheckoutInput): Promise<{ url: s
 
   if (!checkout.url) throw new Error("Stripe didn't return a checkout URL.");
 
-  const chargeData = {
+  await prisma.charge.create({
+    data: {
       userId: user?.id ?? null,
       guestEmail: user ? null : (guestEmail ?? null),
       orderId: input.orderId ?? null,
@@ -125,17 +117,8 @@ export async function startCheckout(input: StartCheckoutInput): Promise<{ url: s
       amountEUR,
       stripeSessionId: checkout.id,
       status: "PENDING",
-      idempotencyKey: input.idempotencyKey ?? null,
-  } satisfies Prisma.ChargeUncheckedCreateInput;
-  if (input.idempotencyKey) {
-    await prisma.charge.upsert({
-      where: { idempotencyKey: input.idempotencyKey },
-      create: chargeData,
-      update: { stripeSessionId: checkout.id },
-    });
-  } else {
-    await prisma.charge.create({ data: chargeData });
-  }
+    },
+  });
 
   return { url: checkout.url };
 }
@@ -187,18 +170,16 @@ export async function chargeDefaultCard(input: QuickChargeInput): Promise<QuickC
 
   // Written first so a charge that succeeds at Stripe but fails on the way
   // back to us is still reconciled by the webhook.
-  const chargeData = {
+  const charge = await prisma.charge.create({
+    data: {
       userId: user.id,
       orderId: input.orderId ?? null,
       savedCardId: card.id,
       kind: input.kind,
       amountEUR,
       status: "PENDING",
-      idempotencyKey: input.idempotencyKey ?? null,
-  } satisfies Prisma.ChargeUncheckedCreateInput;
-  const charge = input.idempotencyKey
-    ? await prisma.charge.upsert({ where: { idempotencyKey: input.idempotencyKey }, create: chargeData, update: {} })
-    : await prisma.charge.create({ data: chargeData });
+    },
+  });
 
   try {
     const intent = await chargeSavedCard({

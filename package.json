@@ -6,7 +6,6 @@
     "dev": "next dev",
     "prebuild": "prisma generate && node scripts/build-icon-css.mjs",
     "build": "next build",
-    "prestart": "prisma db execute --file prisma/sql/2026-08-12-order-unit-price.sql",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",

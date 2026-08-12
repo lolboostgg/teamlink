@@ -34,7 +34,6 @@ type Row = {
   gameName: string;
   option: string;
   priceEUR: unknown;
-  unitPriceEUR: unknown;
   teammatesRequested: number;
   gamesBooked: number;
   sessionStatus: string | null;
@@ -106,7 +105,7 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     gameName: row.gameName,
     option: row.option,
     priceEUR: Number(row.priceEUR),
-    unitPriceEUR: Number(row.unitPriceEUR),
+    unitPriceEUR: Math.round((Number(row.priceEUR) / Math.max(1, row.gamesBooked)) * 100) / 100,
     teammates: row.teammatesRequested,
     gamesBooked: row.gamesBooked,
     sessionStatus: row.sessionStatus,

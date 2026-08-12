@@ -9,7 +9,6 @@ import { claimFulfilment } from "@/lib/chargeFulfilment";
 import { spendCredits } from "@/app/actions/credits";
 import { calculateFee, type PaymentMethodKey } from "@/lib/payments";
 import { authorizeCustomerOrder } from "@/lib/orderAccess";
-import { spendCreditsOnce } from "@/lib/creditsServer";
 import { publish } from "@/lib/events/bus";
 
 export type ExtraPaymentResult =
@@ -48,20 +47,16 @@ export async function addGames(
   }
   if (method === "crypto") return { ok: false, error: "Crypto payments aren't available yet." };
 
-  const subtotalEUR = Math.round(Number(order.unitPriceEUR) * qty * 100) / 100;
+  const subtotalEUR = Math.round((Number(order.priceEUR) / Math.max(1, order.gamesBooked)) * qty * 100) / 100;
   const amountEUR = Math.round((subtotalEUR + calculateFee(subtotalEUR, method)) * 100) / 100;
   const returnPath = order.accessToken
     ? `/order/${encodeURIComponent(order.accessToken)}`
     : `/checkout/matching?order=${orderId}`;
 
   if (method === "credits") {
-    const paid = await spendCreditsOnce({
-      userId: userId!, orderId, amountEUR,
-      note: `${qty}x extra game · ${order.gameName}`,
-      idempotencyKey: idempotencyKey ?? "",
-    });
+    const paid = await spendCredits(amountEUR, `${qty}x extra game · ${order.gameName}`);
     if (!paid.ok) return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
-    if (await claimFulfilment(paid.chargeId)) await applyExtraGames(orderId, qty);
+    await applyExtraGames(orderId, qty);
     await publish({ topic: "orders", key: "credits", userIds: [userId!] });
     return { ok: true };
   }

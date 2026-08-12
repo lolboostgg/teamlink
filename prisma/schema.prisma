@@ -190,10 +190,6 @@ model Charge {
    * credited, exactly once no matter who gets there first.
    */
   fulfilledAt           DateTime?
-  /// Client-generated key for retry-safe one-click purchases (for example
-  /// extra games paid from credits). Repeated requests reuse the first
-  /// attempt instead of charging and fulfilling twice.
-  idempotencyKey        String?      @unique
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
 
@@ -745,9 +741,6 @@ model Order {
   gameName            String
   option              String
   priceEUR            Decimal     @db.Decimal(10, 2)
-  /// Catalogue/rank price of exactly one game, excluding coupons and payment
-  /// fees. Extra games and replays are always quoted from this frozen value.
-  unitPriceEUR        Decimal     @db.Decimal(10, 2)
   teammatesRequested  Int         @default(1)
   gamesBooked         Int         @default(1)
   requestedTeammateId String?
