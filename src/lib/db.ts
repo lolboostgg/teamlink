@@ -44,14 +44,18 @@ function createPrismaClient(): PrismaClient {
     // leave an auth request pending for a long time and the login UI appears
     // frozen on "Please wait…".
     connectionTimeoutMillis: 5_000,
-    idleTimeoutMillis: 30_000,
+    // The quiet live-view fallback runs once a minute. Closing an idle
+    // connection after 30s guaranteed a fresh PgBouncer authentication on
+    // almost every poll (tens of thousands of get_auth calls in Supabase).
+    // Keep a small pool warm instead of constantly tearing it down.
+    idleTimeoutMillis: transactionPooler ? 5 * 60_000 : 60_000,
     query_timeout: 8_000,
     statement_timeout: 8_000,
     // Every dashboard page is force-dynamic and runs several queries per
     // render, so too small a pool shows up as requests queueing behind each
     // other — but on the session pooler a large one is borrowed from every
     // other instance, and EMAXCONNSESSION is what that looks like.
-    max: transactionPooler ? 10 : 4,
+    max: transactionPooler ? 5 : 3,
   });
   return new PrismaClient({ adapter });
 }

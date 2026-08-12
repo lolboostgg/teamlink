@@ -13,6 +13,23 @@ type StateResponse = DispatchStateView & {
   serverNow: number | null;
 };
 
+let stateRequest: Promise<StateResponse> | null = null;
+
+async function fetchDispatchState(): Promise<StateResponse> {
+  if (stateRequest) return stateRequest;
+  stateRequest = (async () => {
+    const res = await fetch("/api/dispatch/state", { cache: "no-store" });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(body?.error ?? "Could not load your live dispatch status.");
+    }
+    return res.json() as Promise<StateResponse>;
+  })().finally(() => {
+    stateRequest = null;
+  });
+  return stateRequest;
+}
+
 const EMPTY: StateResponse = {
   phase: "OFFLINE",
   order: null,
@@ -38,6 +55,32 @@ const EMPTY: StateResponse = {
  */
 const HEARTBEAT_MS = 45_000;
 
+// Several dashboard components consume the same dispatch state at once
+// (global DispatchFlow, request list, active-order card). Each hook instance
+// used to start its own heartbeat, so one tab wrote lastSeen three times per
+// interval and several open tabs multiplied that again. One shared loop per
+// browser tab is enough to prove that the dashboard is present.
+let heartbeatConsumers = 0;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
+function beatPresence() {
+  void fetch("/api/dispatch/heartbeat", { method: "POST", keepalive: true }).catch(() => undefined);
+}
+
+function retainHeartbeat() {
+  heartbeatConsumers += 1;
+  if (heartbeatTimer) return;
+  beatPresence();
+  heartbeatTimer = setInterval(beatPresence, HEARTBEAT_MS);
+}
+
+function releaseHeartbeat() {
+  heartbeatConsumers = Math.max(0, heartbeatConsumers - 1);
+  if (heartbeatConsumers > 0 || !heartbeatTimer) return;
+  clearInterval(heartbeatTimer);
+  heartbeatTimer = null;
+}
+
 /**
  * Polls the server for the authoritative dispatch phase. Two seconds while
  * idle, half a second while a countdown is on screen — Supabase Realtime
@@ -58,18 +101,12 @@ export function useDispatchState(enabled = true) {
   const load = useCallback(async () => {
     if (!enabled) return;
     try {
-      const res = await fetch("/api/dispatch/state", { cache: "no-store" });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(body?.error ?? "Could not load your live dispatch status.");
-        return;
-      }
-      const data = (await res.json()) as StateResponse;
+      const data = await fetchDispatchState();
       setFetchedAt(Date.now());
       setState({ ...EMPTY, ...data });
       setError(null);
-    } catch {
-      setError("Could not reach live dispatch. Reconnecting...");
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Could not reach live dispatch. Reconnecting...");
       // A dropped poll is not worth surfacing — the next tick retries.
     }
   }, [enabled]);
@@ -99,15 +136,8 @@ export function useDispatchState(enabled = true) {
   // interval keeps the beat going in both cases.
   useEffect(() => {
     if (!enabled) return;
-    const beat = () => {
-      void fetch("/api/dispatch/heartbeat", { method: "POST", keepalive: true }).catch(() => {
-        // A missed beat is not worth surfacing. Several have to be missed
-        // before it costs the teammate anything.
-      });
-    };
-    beat();
-    const timer = setInterval(beat, HEARTBEAT_MS);
-    return () => clearInterval(timer);
+    retainHeartbeat();
+    return releaseHeartbeat;
   }, [enabled]);
 
   // Local interpolation between polls.
