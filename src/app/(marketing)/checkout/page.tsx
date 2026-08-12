@@ -5,6 +5,7 @@ import { TrustBadge } from "@/components/ui/TrustBadge";
 import { getCommunityStats } from "@/lib/community";
 import { getServerLanguage } from "@/lib/serverLanguage";
 import { translatePhrase } from "@/lib/phrases";
+import { quoteBookingEUR } from "@/lib/bookingOptions";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -29,7 +30,9 @@ export default async function CheckoutPage({ searchParams }: Props) {
   const game = params.game ? getGameBySlug(params.game) : undefined;
   const option = params.option ?? "Duo";
   const teammates = Number(params.teammates ?? 1);
-  const total = Number(params.total ?? 4.99);
+  // The URL is user-editable. Render the same trusted catalogue/rank quote
+  // that the payment action will use instead of displaying its `total`.
+  const total = game ? (quoteBookingEUR(game.slug, option, teammates, params.rank) ?? 4.99) : 4.99;
   const community = await getCommunityStats();
   const language = await getServerLanguage();
   const p = (phrase: string) => translatePhrase(language, phrase);

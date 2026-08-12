@@ -11,6 +11,7 @@ import { startCheckout } from "@/lib/stripeCheckout";
 import { settleCheckoutSession } from "@/lib/fulfilment";
 import { spendCredits } from "@/app/actions/credits";
 import { refundCreditsToUser } from "@/lib/creditsServer";
+import { ranksForGame } from "@/lib/gameRanks";
 
 export interface PlaceOrderInput {
   gameSlug: string;
@@ -78,7 +79,8 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
   const game = getGameBySlug(input.gameSlug);
   if (!game) return { ok: false, error: "Unknown game." };
 
-  const subtotalEUR = quoteBookingEUR(input.gameSlug, input.option, input.teammates);
+  const validRank = ranksForGame(input.gameSlug).some((rank) => rank.value === input.ignRank) ? input.ignRank : null;
+  const subtotalEUR = quoteBookingEUR(input.gameSlug, input.option, input.teammates, validRank);
   if (subtotalEUR === null) return { ok: false, error: "Unknown booking option." };
 
   const guestEmail = input.guestEmail?.trim().toLowerCase() || null;
@@ -110,7 +112,7 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
     ign: input.ign?.slice(0, 60) ?? null,
     ignRegion: input.ignRegion?.slice(0, 20) ?? null,
     ignRoles: (input.ignRoles ?? []).slice(0, 6),
-    ignRank: input.ignRank?.slice(0, 30) ?? null,
+    ignRank: validRank,
     ignDivision: input.ignDivision?.slice(0, 5) ?? null,
     // Everything waits for its payment; credits are settled a few lines down
     // and release the order themselves.

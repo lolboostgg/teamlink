@@ -14726,20 +14726,27 @@ a.notification-panel__item:hover {
 
 .ingame-account {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 28px;
   align-items: center;
   gap: 11px;
   padding: 12px 13px;
   border: 1px solid var(--border);
   border-radius: 11px;
   background: var(--dash-surface-2);
-  cursor: pointer;
   transition: border-color 0.14s ease;
 }
 
 .ingame-account:hover { border-color: var(--border-strong); }
 .ingame-account.is-active { border-color: var(--accent); background: rgba(79, 112, 255, 0.06); }
 .ingame-account input { position: absolute; opacity: 0; pointer-events: none; }
+.ingame-account__select {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  cursor: pointer;
+}
 
 .ingame-account__mark {
   width: 18px;
@@ -14756,6 +14763,21 @@ a.notification-panel__item:hover {
 .ingame-account__copy { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .ingame-account__copy strong { overflow: hidden; color: var(--text); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .ingame-account__copy small { color: var(--text-faint); font-size: 10.5px; }
+.ingame-account__remove {
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  place-items: center;
+}
+.ingame-account__remove:hover { background: rgba(239, 68, 68, 0.12); color: #f87171; }
+.ingame-account__remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .ingame-step__add {
   justify-self: start;

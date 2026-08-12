@@ -6,7 +6,8 @@ import { Modal } from "@/components/ui/Modal";
 import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/CheckoutIngameStep";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
-import { getBookingCategories, CATEGORY_COLORS, type BookingOption } from "@/lib/bookingOptions";
+import { getBookingCategories, CATEGORY_COLORS, rankPriceMultiplier, type BookingOption } from "@/lib/bookingOptions";
+import { listGameAccounts } from "@/app/actions/gameAccounts";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
@@ -64,6 +65,7 @@ export function BookingWidget({ game }: Props) {
   const [pulsing, setPulsing] = useState(false);
   const [ingameOpen, setIngameOpen] = useState(false);
   const [editAccountOpen, setEditAccountOpen] = useState(false);
+  const [pricingAccount, setPricingAccount] = useState<{ gameSlug: string; rank: string | null } | null>(null);
   const [openFaq, setOpenFaq] = useState(-1);
   const { status } = useSession();
   const firstRender = useRef(true);
@@ -93,7 +95,22 @@ export function BookingWidget({ game }: Props) {
     setGroupSize((n) => Math.min(n, option.maxTeammates));
   }
 
-  const total = useMemo(() => selected.price * groupSize, [selected, groupSize]);
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    listGameAccounts(game.slug).then((accounts) => {
+      if (!cancelled) setPricingAccount({ gameSlug: game.slug, rank: accounts[0]?.rank ?? null });
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [game.slug, status, editAccountOpen]);
+
+  const effectivePricingRank =
+    status === "authenticated" && pricingAccount?.gameSlug === game.slug ? pricingAccount.rank : null;
+
+  const total = useMemo(
+    () => selected.price * groupSize * rankPriceMultiplier(game.slug, selected.name, effectivePricingRank),
+    [game.slug, selected, groupSize, effectivePricingRank],
+  );
 
   // Small "flash" on the total whenever the selection changes, so the price
   // update reads as live/reactive rather than just appearing.
@@ -111,11 +128,12 @@ export function BookingWidget({ game }: Props) {
   // one thing the customer has to look up, and finding out about it after
   // committing to a price is where people drop out.
   function goToCheckout(ingame?: IngameIdentity) {
+    const checkoutTotal = selected.price * groupSize * rankPriceMultiplier(game.slug, selected.name, ingame?.rank ?? effectivePricingRank);
     const params = new URLSearchParams({
       game: game.slug,
       option: selected.name,
       teammates: String(groupSize),
-      total: total.toFixed(2),
+      total: checkoutTotal.toFixed(2),
     });
     if (ingame) {
       params.set("ign", ingame.ign);
@@ -214,7 +232,7 @@ export function BookingWidget({ game }: Props) {
                 </span>
                 <span className="booking-option__price">
                   <span className="booking-option__price-value">
-                    <PriceTag amountEUR={option.price} />
+                    <PriceTag amountEUR={option.price * rankPriceMultiplier(game.slug, option.name, effectivePricingRank)} />
                     <span className="booking-option__unit">{localizeBookingValue(language, option.unit)}</span>
                   </span>
                   <span className="booking-option__eta">
@@ -368,6 +386,7 @@ export function BookingWidget({ game }: Props) {
             continueLabel={copy.checkout}
             onBack={() => setIngameOpen(false)}
             onContinue={(ingame) => {
+              setPricingAccount({ gameSlug: game.slug, rank: ingame.rank });
               setIngameOpen(false);
               goToCheckout(ingame);
             }}
@@ -385,7 +404,10 @@ export function BookingWidget({ game }: Props) {
             backLabel={copy.close}
             continueLabel={copy.save}
             onBack={() => setEditAccountOpen(false)}
-            onContinue={() => setEditAccountOpen(false)}
+            onContinue={(ingame) => {
+              setPricingAccount({ gameSlug: game.slug, rank: ingame.rank });
+              setEditAccountOpen(false);
+            }}
           />
         </div>
       </Modal>

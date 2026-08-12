@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { getGameProfileConfig } from "@/lib/gameProfiles";
 import { regionsForGame, ignPlaceholder, ignHint, type RegionOption } from "@/lib/gameRegions";
 import { DIVISIONS, ranksForGame, rankHasDivisions, formatRank, rankColor } from "@/lib/gameRanks";
-import { listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
+import { deleteGameAccount, listGameAccounts, saveGameAccount, type GameAccountView } from "@/app/actions/gameAccounts";
 import { verifyRiotAccount } from "@/app/actions/riot";
 import type { RiotLookupResult } from "@/lib/riotApi";
 
@@ -468,6 +468,25 @@ export function CheckoutIngameStep({
     });
   }
 
+  function removeSavedAccount(id: string) {
+    const account = saved.find((entry) => entry.id === id);
+    if (!account || !window.confirm(`Remove ${account.ign}?`)) return;
+
+    startTransition(async () => {
+      try {
+        await deleteGameAccount(id);
+        setSaved((current) => {
+          const remaining = current.filter((entry) => entry.id !== id);
+          if (selectedId === id) setSelectedId(remaining[0]?.id ?? null);
+          if (remaining.length === 0) setAdding(true);
+          return remaining;
+        });
+      } catch {
+        setError("Couldn't remove that account. Please try again.");
+      }
+    });
+  }
+
   function continueWithForm() {
     setError(null);
     if (!ign.trim()) {
@@ -537,7 +556,8 @@ export function CheckoutIngameStep({
         <>
           <div className="ingame-accounts">
             {saved.map((account) => (
-              <label key={account.id} className={`ingame-account${selectedId === account.id ? " is-active" : ""}`}>
+              <div key={account.id} className={`ingame-account${selectedId === account.id ? " is-active" : ""}`}>
+                <label className="ingame-account__select">
                 <input
                   type="radio"
                   name="ingame-account"
@@ -554,7 +574,22 @@ export function CheckoutIngameStep({
                     {account.roles.length > 0 && ` · ${account.roles.map(labelForRole(gameSlug)).join(", ")}`}
                   </small>
                 </span>
-              </label>
+                </label>
+                <button
+                  type="button"
+                  className="ingame-account__remove"
+                  aria-label={`Remove ${account.ign}`}
+                  title="Remove account"
+                  disabled={pending}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    removeSavedAccount(account.id);
+                  }}
+                >
+                  <i className="fa-solid fa-xmark" aria-hidden="true" />
+                </button>
+              </div>
             ))}
           </div>
 

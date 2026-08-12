@@ -464,16 +464,53 @@ export function getBookingOption(gameSlug: string, name: string): BookingOption 
 }
 
 /**
+ * Ranked League sessions get harder to staff as the customer's MMR rises.
+ * Keep the table in one shared place so the booking UI and the trusted
+ * server-side checkout quote can never disagree.
+ */
+const LOL_RANK_PRICE_MULTIPLIER: Record<string, number> = {
+  unranked: 1,
+  iron: 1,
+  bronze: 1,
+  silver: 1.05,
+  gold: 1.1,
+  platinum: 1.2,
+  emerald: 1.3,
+  diamond: 1.5,
+  master: 1.8,
+  grandmaster: 2.1,
+  challenger: 2.5,
+};
+
+export function isRankPricedOption(gameSlug: string, optionName: string): boolean {
+  if (gameSlug !== "league-of-legends") return false;
+  const category = categoryForOption(gameSlug, optionName);
+  // League calls its competitive teammate modes "Team Up" in the catalogue;
+  // other catalogues use the more literal "Ranked" category.
+  return category === "Team Up" || category === "Ranked";
+}
+
+export function rankPriceMultiplier(gameSlug: string, optionName: string, rank?: string | null): number {
+  if (!isRankPricedOption(gameSlug, optionName)) return 1;
+  return LOL_RANK_PRICE_MULTIPLIER[rank?.toLowerCase() ?? "unranked"] ?? 1;
+}
+
+/**
  * What an order actually costs, decided here rather than taken from the
  * client. The booking widget puts its total in the checkout URL, which
  * anyone can edit — so the server prices the booking again from the same
  * catalogue before charging for it.
  */
-export function quoteBookingEUR(gameSlug: string, optionName: string, teammates: number): number | null {
+export function quoteBookingEUR(
+  gameSlug: string,
+  optionName: string,
+  teammates: number,
+  rank?: string | null,
+): number | null {
   const option = getBookingOption(gameSlug, optionName);
   if (!option) return null;
   const size = Math.max(1, Math.min(option.maxTeammates, Math.round(teammates)));
-  return Math.round(option.price * size * 100) / 100;
+  return Math.round(option.price * size * rankPriceMultiplier(gameSlug, optionName, rank) * 100) / 100;
 }
 
 export function getBookingOptionDescription(gameSlug: string, name: string): string | undefined {
