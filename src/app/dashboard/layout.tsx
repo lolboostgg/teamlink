@@ -106,7 +106,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <DashboardAuthGate initiallyAuthenticated={!!session}>
       <>
-        <DispatchFlow />
+        <DispatchFlow hasTeammateProfile={Boolean(teammate)} />
         <div className="dashboard-shell">
           <DashboardSidebar
             teammate={teammateProfile}

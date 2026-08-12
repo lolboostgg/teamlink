@@ -54,13 +54,16 @@ function CountdownRing({ msLeft, totalMs }: { msLeft: number; totalMs: number })
  * lib/dispatch/service.ts). Accepting is a server action — the UI never
  * decides who gets an order, it only reflects what the DB committed.
  */
-export function DispatchFlow() {
+export function DispatchFlow({ hasTeammateProfile = false }: { hasTeammateProfile?: boolean }) {
   const { data: session } = useSession();
-  const isTeammate = session?.user?.role === "TEAMMATE";
+  // Admin accounts can explicitly open the teammate dashboard when they own
+  // a linked teammate profile. Their persisted account role remains ADMIN,
+  // so role alone is not the active-dashboard capability.
+  const isTeammate = session?.user?.role === "TEAMMATE" || hasTeammateProfile;
   const router = useRouter();
   const pathname = usePathname();
   const { showToast } = useToast();
-  const state = useDispatchState();
+  const state = useDispatchState(isTeammate);
   const [pending, startTransition] = useTransition();
   const [dismissed, setDismissed] = useState<string | null>(null);
   const stateOrderId = state.order?.id;

@@ -13,6 +13,8 @@ export type TeammatePhase =
   | "ACTIVE_SESSION"
   | "NOT_SELECTED";
 
+const CUSTOMER_SELECTION_MS = 60_000;
+
 // Shapes crossing the API boundary. Deliberately narrow — the teammate view
 // carries no other candidate's identity, only counts (see spec §7).
 export interface DispatchOrderView {
@@ -221,11 +223,17 @@ function derivePhase(
     (r) => r.status === "ACCEPTED" && ["SEARCHING", "CANDIDATES_READY", "SELECTING"].includes(r.order.status),
   );
   if (waiting) {
-    const deadline = waiting.order.selectionDeadline ?? waiting.order.dispatchDeadline;
+    // Immediately after Accept there is a short reveal grace before the
+    // order flips to SELECTING. selectionDeadline is null during that gap;
+    // dispatchDeadline is deliberately far in the future and produced huge
+    // values such as 86395 seconds in this one-minute ring.
+    const msLeft = waiting.order.selectionDeadline
+      ? waiting.order.selectionDeadline.getTime() - now
+      : CUSTOMER_SELECTION_MS;
     return {
       phase: "WAITING_FOR_CUSTOMER_SELECTION",
       order: toView(waiting.order),
-      msLeft: Math.max(0, deadline.getTime() - now),
+      msLeft: Math.max(0, msLeft),
       candidatePosition: waiting.candidatePosition,
       isAutoSelect: waiting.isAutoSelect,
       acceptedCount: acceptedIn(waiting),
