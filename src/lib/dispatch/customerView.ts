@@ -1,4 +1,6 @@
 import type { DispatchOrder, DispatchGame, CandidateStatus, OrderStatus } from "@/lib/matchmaking/types";
+import type { LanguageCode } from "@/lib/i18n";
+import type { LolRankTier, ChampionName, LolLane } from "@/lib/lolAssets";
 
 // The customer screens were written against the old localStorage record, so
 // the API hands back that exact shape — lowercase statuses, epoch millis —
@@ -59,6 +61,25 @@ type Row = {
     manual: boolean;
     selected: boolean;
     isPrimary: boolean;
+    teammate?: {
+      id: string;
+      name: string;
+      avatarInitials: string;
+      avatarUrl: string | null;
+      avatarFocusX: number;
+      avatarFocusY: number;
+      avatarZoom: number;
+      tagline: string | null;
+      languages: unknown;
+      timezone: string | null;
+      rating: number;
+      sessionsCount: number;
+      gameSlugs: unknown;
+      lolRank: string | null;
+      lolChampions: unknown;
+      lolLanes: unknown;
+      _count?: { reviewsReceived: number };
+    };
   }[];
   review?: { rating: number } | null;
   // Optional: only the reads that include the relation carry it, and a
@@ -101,6 +122,27 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     requestedTeammateId: row.requestedTeammateId,
     candidates: row.candidates.map((c) => ({
       teammateId: c.teammateId,
+      teammate: c.teammate
+        ? {
+            id: c.teammate.id,
+            name: c.teammate.name,
+            avatarInitials: c.teammate.avatarInitials,
+            avatarUrl: c.teammate.avatarUrl,
+            avatarFocusX: c.teammate.avatarFocusX,
+            avatarFocusY: c.teammate.avatarFocusY,
+            avatarZoom: c.teammate.avatarZoom,
+            tagline: c.teammate.tagline ?? "",
+            languages: (c.teammate.languages as LanguageCode[] | null) ?? [],
+            timezone: c.teammate.timezone ?? "",
+            rating: c.teammate.rating,
+            sessions: c.teammate.sessionsCount,
+            reviewCount: c.teammate._count?.reviewsReceived ?? 0,
+            gameSlugs: (c.teammate.gameSlugs as string[] | null) ?? [],
+            lolRank: (c.teammate.lolRank as LolRankTier | null) ?? undefined,
+            lolChampions: (c.teammate.lolChampions as ChampionName[] | null) ?? undefined,
+            lolLanes: (c.teammate.lolLanes as LolLane[] | null) ?? undefined,
+          }
+        : undefined,
       status: CANDIDATE_STATUS[c.status] ?? "pending",
       // Simulation-only fields the customer UI never reads; kept so the
       // shared type doesn't need a second variant.

@@ -1,9 +1,14 @@
 import type { AvatarFrame } from "@/lib/avatarFrame";
+import type { Teammate } from "@/lib/teammates";
 
 export type CandidateStatus = "pending" | "accepted" | "declined" | "timed_out" | "superseded";
 
 export interface DispatchCandidate {
   teammateId: string;
+  /** Profile snapshotted from the live database read. This avoids accepted
+   * candidates disappearing when the separate public roster cache has not
+   * finished loading (or no longer lists a now-busy teammate). */
+  teammate?: Teammate;
   status: CandidateStatus;
   // Precomputed once at order creation so the flow resolves deterministically
   // without needing a live timer/backend — see reconcile() in store.ts.

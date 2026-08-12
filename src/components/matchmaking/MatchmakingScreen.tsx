@@ -434,7 +434,7 @@ export function MatchmakingScreen({ orderId, accessToken }: Props) {
         <div className="selected-anim">
           <div className="selected-anim__row">
             {selectedAnimIds.map((id) => {
-              const teammate = getTeammateById(id);
+              const teammate = order.candidates.find((candidate) => candidate.teammateId === id)?.teammate ?? getTeammateById(id);
               return (
                 <div className="selected-anim__card" key={id}>
                   <span className="selected-anim__badge" aria-hidden="true">
@@ -520,7 +520,10 @@ export function MatchmakingScreen({ orderId, accessToken }: Props) {
   const countdownCaption = multiPick
     ? `${pickedIds.length}/${maxPicks} selected — auto-selecting in ${selectionSecondsLeft}s`
     : `Auto-selecting in ${selectionSecondsLeft}s`;
-  const confirmTeammate = confirmTarget ? getTeammateById(confirmTarget.teammateId) : null;
+  const confirmTeammate = confirmTarget
+    ? order.candidates.find((candidate) => candidate.teammateId === confirmTarget.teammateId)?.teammate ??
+      getTeammateById(confirmTarget.teammateId)
+    : null;
   const confirmCopy: Record<PickAction, string> = {
     select: `Are you sure you want to select ${confirmTeammate?.name ?? "this teammate"} as your teammate?`,
     add: `Add ${confirmTeammate?.name ?? "this teammate"} to your team? (${pickedIds.length + 1}/${maxPicks})`,
@@ -541,7 +544,9 @@ export function MatchmakingScreen({ orderId, accessToken }: Props) {
 
       <div className="teammate-row" role="list" aria-label="Candidate teammates">
         {slots.map((slot) => {
-          const teammate = slot.candidate ? getTeammateById(slot.candidate.teammateId) : undefined;
+          const teammate = slot.candidate
+            ? slot.candidate.teammate ?? getTeammateById(slot.candidate.teammateId)
+            : undefined;
           const isCenter = slot.position === "center";
           return (
             <div

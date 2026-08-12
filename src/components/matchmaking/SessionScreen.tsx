@@ -172,7 +172,10 @@ export function SessionScreen({ orderId, accessToken }: Props) {
     );
   }
 
-  const teammate = order.selectedTeammateId ? getTeammateById(order.selectedTeammateId) : null;
+  const teammate = order.selectedTeammateId
+    ? order.candidates.find((candidate) => candidate.teammateId === order.selectedTeammateId)?.teammate ??
+      getTeammateById(order.selectedTeammateId)
+    : null;
   const favorited = teammate ? favoriteIds.includes(teammate.id) : false;
   const savedRating = rating || order.reviewRating || 0;
   const hasRated = rated || savedRating > 0;
@@ -633,7 +636,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                 </span>
                 <div className="session-screen__team-list">
                   {order.selectedTeammateIds.slice(1).map((id) => {
-                    const t = getTeammateById(id);
+                    const t = order.candidates.find((candidate) => candidate.teammateId === id)?.teammate ?? getTeammateById(id);
                     return (
                       <span className="session-screen__team-chip" key={id}>
                         <span className="session-screen__team-chip-avatar">

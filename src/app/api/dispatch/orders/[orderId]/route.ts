@@ -10,7 +10,7 @@ import { publish } from "@/lib/events/bus";
 export const dynamic = "force-dynamic";
 
 const include = {
-  candidates: true,
+  candidates: { include: { teammate: { include: { _count: { select: { reviewsReceived: true } } } } } },
   review: true,
   games: true,
   clientUser: { select: { avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
