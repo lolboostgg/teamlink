@@ -13,6 +13,7 @@ import { spendCredits } from "@/app/actions/credits";
 import { refundCreditsToUser } from "@/lib/creditsServer";
 import { ranksForGame } from "@/lib/gameRanks";
 import { authorizeCustomerOrder } from "@/lib/orderAccess";
+import { ensureCheckoutSchema } from "@/lib/checkoutSchema";
 
 export interface PlaceOrderInput {
   gameSlug: string;
@@ -75,6 +76,7 @@ export async function confirmCheckoutReturn(sessionId: string): Promise<{ settle
  */
 export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceOrderResult> {
   try {
+    await ensureCheckoutSchema();
     return await placeCheckoutOrderInner(input);
   } catch (err) {
     console.error("[checkout] order placement failed:", err);
