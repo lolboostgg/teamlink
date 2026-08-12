@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { subscribe, isForViewer } from "@/lib/events/bus";
+import { authorizeCustomerOrder } from "@/lib/orderAccess";
 
 export const dynamic = "force-dynamic";
 // Streaming needs the Node runtime — the bus holds a real pg connection.
@@ -22,8 +23,14 @@ const HEARTBEAT_MS = 25_000;
 export async function GET(request: Request) {
   const session = await auth();
   const userId = session?.user?.id;
-  if (!userId) return new Response("Not signed in.", { status: 401 });
-  const isAdmin = session.user.role === "ADMIN";
+  const url = new URL(request.url);
+  const guestOrderId = url.searchParams.get("order");
+  const guestToken = url.searchParams.get("token");
+  const guestOrder = !userId && guestOrderId
+    ? await authorizeCustomerOrder(guestOrderId, guestToken)
+    : null;
+  if (!userId && !guestOrder) return new Response("Not signed in.", { status: 401 });
+  const isAdmin = session?.user?.role === "ADMIN";
 
   const encoder = new TextEncoder();
 
@@ -46,7 +53,12 @@ export async function GET(request: Request) {
       send("retry: 3000\n\n");
 
       const unsubscribe = subscribe((event) => {
-        if (!isForViewer(event, userId, isAdmin)) return;
+        const forGuestOrder = Boolean(
+          guestOrder &&
+          ((event.topic === "orders" && event.key === guestOrder.id) ||
+            (event.topic === "chat" && event.key?.startsWith(`${guestOrder.id}::`))),
+        );
+        if (userId ? !isForViewer(event, userId, isAdmin) : !forGuestOrder) return;
         send(`event: change\ndata: ${JSON.stringify({ topic: event.topic, key: event.key })}\n\n`);
       });
 

@@ -111,7 +111,7 @@ const POLICY: Record<string, ChannelPolicy> = {
 
   // Deliberately bell-only: the recipient is looking at the screen it
   // happened on, or it is an admin who lives in the dashboard anyway.
-  "order.games_added": {},
+  "order.games_added": { discord: true, topic: "orders" },
   "payout.requested": {},
   "teammate.joined": {},
   "verification.submitted": {},

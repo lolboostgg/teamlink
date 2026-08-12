@@ -68,7 +68,9 @@ export function LiveOrdersPanel() {
       </div>
       <div className="dashboard-list">
         {orders.map((order) => {
-          const teammate = order.selectedTeammateId ? getTeammateById(order.selectedTeammateId) : null;
+          const teammate = order.selectedTeammateId
+            ? order.candidates.find((candidate) => candidate.teammateId === order.selectedTeammateId)?.teammate ?? getTeammateById(order.selectedTeammateId)
+            : null;
           const cancellable = order.status === "candidates_ready" || order.status === "selecting";
           return (
             <div className="dashboard-list-item" key={order.id}>

@@ -3,23 +3,24 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { notifyUser } from "@/lib/notifications/service";
+import { authorizeCustomerOrder } from "@/lib/orderAccess";
 
-export async function submitTeammateReview(orderId: string, teammateId: string, rating: number) {
+export async function submitTeammateReview(orderId: string, teammateId: string, rating: number, accessToken?: string | null) {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return { ok: false, error: "Choose between one and five stars." } as const;
   }
-  const session = await auth();
-  const order = await prisma.order.findFirst({
+  const authorized = await authorizeCustomerOrder(orderId, accessToken);
+  const order = authorized ? await prisma.order.findFirst({
     where: {
-      id: orderId,
+      id: authorized.id,
       status: "COMPLETED",
       candidates: { some: { teammateId, selected: true } },
     },
-  });
+  }) : null;
   // A guest order has no clientUserId — knowing its id (the capability URL
   // they checked out with) is what proves it's theirs, same as the rest of
   // the guest flow. An account-bound order still requires the owning user.
-  if (!order || (order.clientUserId && order.clientUserId !== session?.user?.id)) {
+  if (!order) {
     return { ok: false, error: "This session cannot be reviewed." } as const;
   }
   await prisma.review.upsert({

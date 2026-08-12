@@ -93,9 +93,11 @@ export function useLiveSync(
   topic: string,
   refresh: () => void | Promise<unknown>,
   fallbackMs: number,
-  options: { enabled?: boolean; key?: string } = {},
+  options: { enabled?: boolean; key?: string; guestOrder?: { id: string; token: string } } = {},
 ) {
-  const { enabled = true, key } = options;
+  const { enabled = true, key, guestOrder } = options;
+  const guestOrderId = guestOrder?.id;
+  const guestOrderToken = guestOrder?.token;
   const refreshRef = useRef(refresh);
   // Kept in an effect rather than assigned during render: a render can be
   // thrown away or replayed, and writing to a ref in that phase is exactly
@@ -106,6 +108,22 @@ export function useLiveSync(
 
   useEffect(() => {
     if (!enabled) return;
+
+    if (guestOrderId && guestOrderToken) {
+      const guestSource = new EventSource(
+        `/api/events?order=${encodeURIComponent(guestOrderId)}&token=${encodeURIComponent(guestOrderToken)}`,
+      );
+      const onChange = (event: Event) => {
+        try {
+          const signal = JSON.parse((event as MessageEvent).data) as Signal;
+          if (signal.topic !== topic) return;
+          if (key !== undefined && signal.key !== undefined && signal.key !== key) return;
+          void refreshRef.current();
+        } catch {}
+      };
+      guestSource.addEventListener("change", onChange);
+      return () => guestSource.close();
+    }
 
     refCount += 1;
     openStream();
@@ -124,7 +142,7 @@ export function useLiveSync(
       refCount -= 1;
       if (refCount === 0) closeStream();
     };
-  }, [topic, key, enabled]);
+  }, [topic, key, enabled, guestOrderId, guestOrderToken]);
 
   const isConnected = useSyncExternalStore(
     subscribeToConnection,
@@ -134,5 +152,5 @@ export function useLiveSync(
   );
 
   const task = useCallback(() => refreshRef.current(), []);
-  usePoll(task, isConnected ? CONNECTED_FALLBACK_MS : fallbackMs, enabled);
+  usePoll(task, guestOrderId || isConnected ? CONNECTED_FALLBACK_MS : fallbackMs, enabled);
 }

@@ -12,6 +12,7 @@ import { settleCheckoutSession } from "@/lib/fulfilment";
 import { spendCredits } from "@/app/actions/credits";
 import { refundCreditsToUser } from "@/lib/creditsServer";
 import { ranksForGame } from "@/lib/gameRanks";
+import { authorizeCustomerOrder } from "@/lib/orderAccess";
 
 export interface PlaceOrderInput {
   gameSlug: string;
@@ -101,6 +102,7 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
     gameName: game.name,
     option: input.option.slice(0, 120),
     priceEUR: totalEUR,
+    unitPriceEUR: subtotalEUR,
     teammates: input.teammates,
     requestedTeammateId: input.requestedTeammateId ?? null,
     customerLabel: (session?.user?.name || session?.user?.email || guestEmail || "Customer").slice(0, 120),
@@ -166,18 +168,11 @@ export async function placeCheckoutOrder(input: PlaceOrderInput): Promise<PlaceO
  * browser place a new order — is what keeps "create an order" from being a
  * way to get one for free.
  */
-export async function rerollOrder(orderId: string): Promise<PlaceOrderResult> {
-  const session = await auth();
-  const userId = session?.user?.id ?? null;
-
-  const previous = await prisma.order.findFirst({
-    where: {
-      id: orderId,
-      status: { in: ["ASSIGNED", "IN_PROGRESS"] },
-      ...(userId ? { clientUserId: userId } : {}),
-    },
-  });
-  if (!previous) return { ok: false, error: "This session can't be rerolled." };
+export async function rerollOrder(orderId: string, accessToken?: string | null): Promise<PlaceOrderResult> {
+  const previous = await authorizeCustomerOrder(orderId, accessToken);
+  if (!previous || !["ASSIGNED", "IN_PROGRESS"].includes(previous.status)) {
+    return { ok: false, error: "This session can't be rerolled." };
+  }
   if (!previous.rerollDeadline || previous.rerollDeadline.getTime() < Date.now()) {
     return { ok: false, error: "The reroll window for this session has closed." };
   }
@@ -187,6 +182,7 @@ export async function rerollOrder(orderId: string): Promise<PlaceOrderResult> {
     gameName: previous.gameName,
     option: previous.option,
     priceEUR: Number(previous.priceEUR),
+    unitPriceEUR: Number(previous.unitPriceEUR),
     teammates: previous.teammatesRequested,
     requestedTeammateId: null,
     customerLabel: previous.customerLabel,
@@ -213,6 +209,7 @@ export async function rerollOrder(orderId: string): Promise<PlaceOrderResult> {
 export async function placeReplayCheckout(
   orderId: string,
   method: PaymentMethodKey,
+  accessToken?: string | null,
 ): Promise<PlaceOrderResult> {
   const session = await auth();
   const userId = session?.user?.id ?? null;
@@ -222,14 +219,13 @@ export async function placeReplayCheckout(
   // session was told to sign up first. Knowing the order id is the
   // capability, as everywhere else in the guest flow; an account-bound order
   // still requires its owner.
-  const previous = await prisma.order.findFirst({
-    where: { id: orderId },
+  const authorized = await authorizeCustomerOrder(orderId, accessToken);
+  if (!authorized) return { ok: false, error: "Unknown order." };
+  const previous = await prisma.order.findUnique({
+    where: { id: authorized.id },
     include: { candidates: { where: { selected: true, isPrimary: true } } },
   });
   if (!previous) return { ok: false, error: "Unknown order." };
-  if (previous.clientUserId && previous.clientUserId !== userId) {
-    return { ok: false, error: "Unknown order." };
-  }
 
   // Credits are an account balance, so a guest has none to spend.
   if (method === "credits" && !userId) {
@@ -243,12 +239,14 @@ export async function placeReplayCheckout(
   // A replay is always one game. Extra games raise both priceEUR and
   // gamesBooked on the old order, so carrying the whole running total would
   // charge for every game from the previous session again.
-  const priceEUR = Math.round((Number(previous.priceEUR) / Math.max(1, previous.gamesBooked)) * 100) / 100;
+  const priceEUR = Number(previous.unitPriceEUR);
+  const replayTotalEUR = Math.round((priceEUR + calculateFee(priceEUR, method)) * 100) / 100;
   const order = await createOrderWithDispatch({
     gameSlug: previous.gameSlug,
     gameName: previous.gameName,
     option: previous.option,
-    priceEUR,
+    priceEUR: replayTotalEUR,
+    unitPriceEUR: priceEUR,
     teammates: previous.teammatesRequested,
     requestedTeammateId: teammateId,
     customerLabel: previous.customerLabel,
@@ -266,7 +264,7 @@ export async function placeReplayCheckout(
   });
 
   if (method === "credits") {
-    const paid = await spendCredits(priceEUR, `Replay · ${previous.gameName}`);
+    const paid = await spendCredits(replayTotalEUR, `Replay · ${previous.gameName}`);
     if (!paid.ok) {
       await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
       return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
@@ -281,7 +279,7 @@ export async function placeReplayCheckout(
       await activateOrderAfterPayment(order.id);
     } catch (err) {
       console.error(`[replay] dispatch failed for order ${order.id}, refunding credits:`, err);
-      await refundCreditsToUser(userId!, priceEUR, `Refund · replay could not start`, order.id);
+      await refundCreditsToUser(userId!, replayTotalEUR, `Refund · replay could not start`, order.id);
       await prisma.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
       return {
         ok: false,
@@ -294,7 +292,7 @@ export async function placeReplayCheckout(
 
   try {
     const checkout = await startCheckout({
-      amountEUR: priceEUR,
+      amountEUR: replayTotalEUR,
       description: `Replay · ${previous.gameName} · ${previous.option}`,
       returnPath: orderPath(order),
       kind: "ORDER",

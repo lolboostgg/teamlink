@@ -21,18 +21,20 @@ export function ClientChatContent() {
       [...orders]
         .sort((a, b) => b.createdAt - a.createdAt)
         .flatMap((order) =>
-          order.selectedTeammateIds.map((teammateId) => ({
+          order.selectedTeammateIds.map((teammateId) => {
+            const teammate = order.candidates.find((candidate) => candidate.teammateId === teammateId)?.teammate ?? getTeammateById(teammateId);
+            return ({
             id: `${order.id}-${teammateId}`,
-            withName: getTeammateById(teammateId)?.name ?? "Teammate",
-            withAvatarUrl: getTeammateById(teammateId)?.avatarUrl ?? null,
-            withAvatarFrame: getTeammateById(teammateId) ?? null,
+            withName: teammate?.name ?? "Teammate",
+            withAvatarUrl: teammate?.avatarUrl ?? null,
+            withAvatarFrame: teammate ?? null,
             gameName: order.gameName,
             conversationKey: conversationKey(order.id, teammateId),
             orderNo: order.orderNo,
             status: (order.status === "completed" ? "completed" : "active") as "active" | "completed",
             lockedAt:
               order.status === "completed" ? (order.sessionCompleteAt ?? order.createdAt) + 60 * 60 * 1000 : null,
-          })),
+          });}),
         ),
     [orders],
   );

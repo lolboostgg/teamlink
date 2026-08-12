@@ -64,7 +64,11 @@ export function useDispatchOrder(orderId: string | null, accessToken?: string | 
   // The stream is what makes this screen feel live; this is only the net for
   // when it is down. At one second it was not a fallback, it was a second
   // poller running next to a push channel that already told us everything.
-  useLiveSync("orders", load, 20_000, { enabled: Boolean(orderId), key: orderId ?? undefined });
+  useLiveSync("orders", load, 20_000, {
+    enabled: Boolean(orderId),
+    key: orderId ?? undefined,
+    guestOrder: orderId && accessToken ? { id: orderId, token: accessToken } : undefined,
+  });
 
   // Every countdown on these screens (search elapsed, selection window,
   // reroll deadline, session clock) is derived from `now`, so it has to

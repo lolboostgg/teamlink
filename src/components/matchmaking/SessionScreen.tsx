@@ -22,7 +22,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { SessionChat } from "@/components/matchmaking/SessionChat";
 import { PaymentMethodPicker } from "@/components/ui/PaymentMethodPicker";
 import { CancelPendingCard } from "@/components/matchmaking/CancelPendingCard";
-import type { PaymentMethodKey } from "@/lib/payments";
+import { calculateFee, type PaymentMethodKey } from "@/lib/payments";
 import { SESSION_STATUS_LABELS, REPORTABLE_STATUSES, sessionStepIndex, type SessionStatus } from "@/lib/dispatch/sessionTypes";
 import { OrderNotFound } from "@/components/matchmaking/OrderNotFound";
 
@@ -63,7 +63,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   const completionConversationKey = order?.selectedTeammateId
     ? conversationKey(order.id, order.selectedTeammateId)
     : undefined;
-  const { messages: completionMessages } = useConversationMessages(completionConversationKey);
+  const { messages: completionMessages } = useConversationMessages(completionConversationKey, accessToken);
   const favoriteIds = useFavoriteIds();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -114,13 +114,13 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   useEffect(() => {
     if (order?.status !== "completed") return;
     let cancelled = false;
-    void loadTip(order.id).then((tip) => {
+    void loadTip(order.id, accessToken).then((tip) => {
       if (tip && !cancelled) setTipSent(tip.amountEUR);
     });
     return () => {
       cancelled = true;
     };
-  }, [order?.status, order?.id]);
+  }, [order?.status, order?.id, accessToken]);
 
   // "Not found" and "not fetched yet" both leave order null, and this used to
   // treat them the same — so a reload flashed "we couldn't find that session"
@@ -179,7 +179,9 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   const favorited = teammate ? favoriteIds.includes(teammate.id) : false;
   const savedRating = rating || order.reviewRating || 0;
   const hasRated = rated || savedRating > 0;
-  const singleGamePrice = order.priceEUR / Math.max(1, order.gamesBooked);
+  const singleGamePrice = order.unitPriceEUR;
+  const replayFee = calculateFee(singleGamePrice, effectiveReplayMethod);
+  const replayTotal = Math.round((singleGamePrice + replayFee) * 100) / 100;
   const liveStatuses: string[] = ["assigned", "in_progress", "completed"];
 
   if (!teammate || !liveStatuses.includes(order.status)) {
@@ -197,7 +199,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   async function handleReroll() {
     setRerollModalOpen(false);
     setRerolling(true);
-    const result = await rerollOrder(order!.id);
+    const result = await rerollOrder(order!.id, accessToken);
     if (!result.ok) {
       setRerolling(false);
       showToast(result.error, "error");
@@ -218,7 +220,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   async function handleKeepPlaying() {
     setStartingReplay(true);
     try {
-      const result = await placeReplayCheckout(order!.id, effectiveReplayMethod);
+      const result = await placeReplayCheckout(order!.id, effectiveReplayMethod, accessToken);
       if (!result.ok) {
         setStartingReplay(false);
         showToast(result.error, "error");
@@ -248,7 +250,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   async function handleBuyMore() {
     setBuyingMore(true);
     try {
-      const result = await addGames(order!.id, buyMoreQty, effectiveBuyMoreMethod);
+      const result = await addGames(order!.id, buyMoreQty, effectiveBuyMoreMethod, accessToken, crypto.randomUUID());
       if (!result.ok) {
         setBuyingMore(false);
         showToast(result.error, "error");
@@ -278,7 +280,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   function sendQuickMessage(text: string, toast: string) {
     // Same key SessionChat renders below, so the message lands in the thread
     // that is actually on screen rather than a parallel one.
-    sendChatMessage(conversationKey(order!.id, teammate!.id), "client", text);
+    sendChatMessage(conversationKey(order!.id, teammate!.id), "client", text, accessToken);
     showToast(toast, "info");
   }
 
@@ -339,7 +341,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                       onClick={() => {
                         setRating(n);
                         setRated(true);
-                        void submitTeammateReview(order.id, teammate.id, n).then((result) => {
+                        void submitTeammateReview(order.id, teammate.id, n, accessToken).then((result) => {
                           if (!result.ok) showToast(result.error, "error");
                         });
                       }}
@@ -447,7 +449,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                   "Starting…"
                 ) : (
                   <>
-                    Play again with {teammate.name} · <PriceTag amountEUR={singleGamePrice} />
+                    Play again with {teammate.name} · <PriceTag amountEUR={replayTotal} />
                   </>
                 )}
               </button>
@@ -511,7 +513,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                   if (!(amount > 0)) return;
                   setSendingTip(true);
                   try {
-                    const result = await sendTip(order.id, amount, tipMethod);
+                    const result = await sendTip(order.id, amount, tipMethod, accessToken);
                     if (!result.ok) {
                       setSendingTip(false);
                       showToast(result.error, "error");
@@ -552,7 +554,9 @@ export function SessionScreen({ orderId, accessToken }: Props) {
   const games = order.games ?? [];
   const gamesBooked = Math.max(1, order.gamesBooked);
   const unitPrice = singleGamePrice;
-  const buyMoreTotal = unitPrice * buyMoreQty;
+  const buyMoreSubtotal = unitPrice * buyMoreQty;
+  const buyMoreFee = calculateFee(buyMoreSubtotal, effectiveBuyMoreMethod);
+  const buyMoreTotal = Math.round((buyMoreSubtotal + buyMoreFee) * 100) / 100;
   const sessionStatus = (order.sessionStatus ?? "WAITING_FOR_INVITE") as SessionStatus;
   const sessionStatusLabel = SESSION_STATUS_LABELS[sessionStatus] ?? "Waiting for invite";
 
@@ -682,6 +686,9 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                       creditsEnabled={!isGuest}
                     />
                   </div>
+                  {buyMoreFee > 0 && (
+                    <small className="form-row__note">Payment fee · <PriceTag amountEUR={buyMoreFee} /></small>
+                  )}
                   <button type="button" className="btn btn--vivid btn--block btn--sm" onClick={handleBuyMore} disabled={buyingMore}>
                     {buyingMore ? "Adding..." : <>Checkout · <PriceTag amountEUR={buyMoreTotal} /></>}
                   </button>
@@ -788,6 +795,7 @@ export function SessionScreen({ orderId, accessToken }: Props) {
               vibe={order.vibe}
               conversationPref={order.conversationPref}
               playStylePref={order.playStylePref}
+              accessToken={accessToken}
             />
           </div>
         </Reveal>

@@ -35,6 +35,55 @@ export async function refundCreditsToUser(
   }
 }
 
+export async function spendCreditsOnce(input: {
+  userId: string;
+  orderId: string;
+  amountEUR: number;
+  note: string;
+  idempotencyKey: string;
+}): Promise<{ ok: true; chargeId: string } | { ok: false; error: string }> {
+  const amountCents = Math.round(input.amountEUR * 100);
+  if (amountCents <= 0 || !input.idempotencyKey) return { ok: false, error: "Invalid purchase." };
+
+  const existing = await prisma.charge.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
+  if (existing) {
+    return existing.userId === input.userId && existing.orderId === input.orderId
+      ? { ok: true, chargeId: existing.id }
+      : { ok: false, error: "Invalid purchase." };
+  }
+
+  try {
+    const charge = await prisma.$transaction(async (tx) => {
+      const debited = await tx.user.updateMany({
+        where: { id: input.userId, creditBalanceCents: { gte: amountCents } },
+        data: { creditBalanceCents: { decrement: amountCents } },
+      });
+      if (debited.count !== 1) throw new Error("INSUFFICIENT_BALANCE");
+      await tx.creditTransaction.create({
+        data: { userId: input.userId, type: "SPEND", amountCents: -amountCents, note: input.note },
+      });
+      return tx.charge.create({
+        data: {
+          userId: input.userId,
+          orderId: input.orderId,
+          kind: "EXTRA_GAMES",
+          status: "SUCCEEDED",
+          amountEUR: input.amountEUR,
+          idempotencyKey: input.idempotencyKey,
+        },
+      });
+    });
+    return { ok: true, chargeId: charge.id };
+  } catch (err) {
+    if (err instanceof Error && err.message === "INSUFFICIENT_BALANCE") return { ok: false, error: "Not enough credits." };
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const charge = await prisma.charge.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
+      if (charge?.userId === input.userId && charge.orderId === input.orderId) return { ok: true, chargeId: charge.id };
+    }
+    throw err;
+  }
+}
+
 /**
  * Grants a bought credit package.
  *

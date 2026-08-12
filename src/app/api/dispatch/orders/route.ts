@@ -25,7 +25,7 @@ export async function GET() {
   const rows = await prisma.order.findMany({
     where: orderWhere,
     include: {
-      candidates: true,
+      candidates: { include: { teammate: { include: { _count: { select: { reviewsReceived: true } } } } } },
       review: true,
       clientUser: { select: { avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
     },
@@ -40,7 +40,7 @@ export async function GET() {
   const fresh = await prisma.order.findMany({
     where: { id: { in: rows.map((r) => r.id) } },
     include: {
-      candidates: true,
+      candidates: { include: { teammate: { include: { _count: { select: { reviewsReceived: true } } } } } },
       review: true,
       clientUser: { select: { avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
     },

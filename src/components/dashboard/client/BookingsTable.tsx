@@ -13,7 +13,9 @@ export function BookingsTable({ orders }: { orders: DispatchOrder[] }) {
     <thead><tr><th>Game</th><th>Order ID</th><th>Option</th><th>Teammate</th><th>Status</th><th>Price</th><th>Date</th><th /></tr></thead>
     <tbody>{orders.map((order) => {
       const status = displayStatus(order.status);
-      const teammate = order.selectedTeammateId ? getTeammateById(order.selectedTeammateId) : null;
+      const teammate = order.selectedTeammateId
+        ? order.candidates.find((candidate) => candidate.teammateId === order.selectedTeammateId)?.teammate ?? getTeammateById(order.selectedTeammateId)
+        : null;
       return <tr key={order.id}>
         <td><span className="client-order-game"><GameMark slug={order.gameSlug} /><strong>{order.gameName}</strong></span></td>
         <td className="dashboard-table__primary">#{order.orderNo}</td>
@@ -22,7 +24,7 @@ export function BookingsTable({ orders }: { orders: DispatchOrder[] }) {
         <td><span className={`dashboard-pill ${STATUS_PILL[status]}`}>{status}</span></td>
         <td><PriceTag amountEUR={order.priceEUR} /></td>
         <td>{formatOrderDate(order.createdAt)}</td>
-        <td>{status === "upcoming" ? <Link href={`/checkout/matching?order=${order.orderNo}`} className="btn btn--ghost btn--sm">Continue</Link> : <Link href={`/games/${order.gameSlug}`} className="btn btn--ghost btn--sm">Rebook</Link>}</td>
+        <td>{status === "upcoming" ? <Link href={`/checkout/matching?order=${order.id}`} className="btn btn--ghost btn--sm">Continue</Link> : <Link href={`/games/${order.gameSlug}`} className="btn btn--ghost btn--sm">Rebook</Link>}</td>
       </tr>;
     })}</tbody>
   </table>;

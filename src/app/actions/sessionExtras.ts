@@ -1,14 +1,16 @@
 "use server";
 
 import { auth } from "@/auth";
-import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { chargeDefaultCard, startCheckout } from "@/lib/stripeCheckout";
 import { applyExtraGames } from "@/lib/dispatch/extraGames";
 import { recordTip, getTipForOrder } from "@/lib/tipsServer";
 import { claimFulfilment } from "@/lib/chargeFulfilment";
 import { spendCredits } from "@/app/actions/credits";
-import type { PaymentMethodKey } from "@/lib/payments";
+import { calculateFee, type PaymentMethodKey } from "@/lib/payments";
+import { authorizeCustomerOrder } from "@/lib/orderAccess";
+import { spendCreditsOnce } from "@/lib/creditsServer";
+import { publish } from "@/lib/events/bus";
 
 export type ExtraPaymentResult =
   | { ok: true }
@@ -24,18 +26,21 @@ const MAX_TIP_EUR = 200;
  * The amount is derived from the order's own unit price here, never sent by
  * the client — the button only says how many.
  */
-export async function addGames(orderId: string, quantity: number, method: PaymentMethodKey): Promise<ExtraPaymentResult> {
+export async function addGames(
+  orderId: string,
+  quantity: number,
+  method: PaymentMethodKey,
+  accessToken?: string | null,
+  idempotencyKey?: string,
+): Promise<ExtraPaymentResult> {
   const session = await auth();
   const userId = session?.user?.id ?? null;
 
   const qty = Math.max(1, Math.min(9, Math.round(quantity)));
   // Same rule as tipping and playing again: the order id is the capability
   // for a guest, and an account-bound order still requires its owner.
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
-  });
-  if (!order) return { ok: false, error: "This session cannot be extended." };
-  if (order.clientUserId && order.clientUserId !== userId) {
+  const order = await authorizeCustomerOrder(orderId, accessToken);
+  if (!order || !["ASSIGNED", "IN_PROGRESS"].includes(order.status)) {
     return { ok: false, error: "This session cannot be extended." };
   }
   if (method === "credits" && !userId) {
@@ -43,13 +48,21 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
   }
   if (method === "crypto") return { ok: false, error: "Crypto payments aren't available yet." };
 
-  const unitPrice = Number(order.priceEUR) / Math.max(1, order.gamesBooked);
-  const amountEUR = Math.round(unitPrice * qty * 100) / 100;
+  const subtotalEUR = Math.round(Number(order.unitPriceEUR) * qty * 100) / 100;
+  const amountEUR = Math.round((subtotalEUR + calculateFee(subtotalEUR, method)) * 100) / 100;
+  const returnPath = order.accessToken
+    ? `/order/${encodeURIComponent(order.accessToken)}`
+    : `/checkout/matching?order=${orderId}`;
 
   if (method === "credits") {
-    const paid = await spendCredits(amountEUR, `${qty}x extra game · ${order.gameName}`);
+    const paid = await spendCreditsOnce({
+      userId: userId!, orderId, amountEUR,
+      note: `${qty}x extra game · ${order.gameName}`,
+      idempotencyKey: idempotencyKey ?? "",
+    });
     if (!paid.ok) return { ok: false, error: paid.error ?? "Couldn't pay with credits." };
-    await applyExtraGames(orderId, qty);
+    if (await claimFulfilment(paid.chargeId)) await applyExtraGames(orderId, qty);
+    await publish({ topic: "orders", key: "credits", userIds: [userId!] });
     return { ok: true };
   }
 
@@ -60,12 +73,13 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
       const checkout = await startCheckout({
         amountEUR,
         description: `${qty} more game${qty > 1 ? "s" : ""} · ${order.gameName}`,
-        returnPath: `/checkout/matching?order=${orderId}`,
+        returnPath,
         kind: "EXTRA_GAMES",
         orderId,
         methods: method === "paypal" ? ["paypal"] : ["card"],
         extraMetadata: { quantity: String(qty) },
         guestEmail: order.guestEmail ?? undefined,
+        idempotencyKey,
       });
       return { ok: true, redirect: checkout.url };
     } catch (err) {
@@ -78,6 +92,7 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
     description: `${qty} more game${qty > 1 ? "s" : ""} · ${order.gameName}`,
     kind: "EXTRA_GAMES",
     orderId,
+    idempotencyKey,
   });
 
   if (charged.ok) {
@@ -95,11 +110,12 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
       const checkout = await startCheckout({
         amountEUR,
         description: `${qty} more game${qty > 1 ? "s" : ""} · ${order.gameName}`,
-        returnPath: `/checkout/matching?order=${orderId}`,
+        returnPath,
         kind: "EXTRA_GAMES",
         orderId,
         methods: ["card"],
         extraMetadata: { quantity: String(qty) },
+        idempotencyKey,
       });
       return { ok: true, redirect: checkout.url };
     } catch (err) {
@@ -116,7 +132,12 @@ export async function addGames(orderId: string, quantity: number, method: Paymen
  * One tip per order, and it only exists once the money did — the teammate's
  * balance is credited from the same transaction that writes the tip.
  */
-export async function sendTip(orderId: string, amountEUR: number, method: PaymentMethodKey): Promise<ExtraPaymentResult> {
+export async function sendTip(
+  orderId: string,
+  amountEUR: number,
+  method: PaymentMethodKey,
+  accessToken?: string | null,
+): Promise<ExtraPaymentResult> {
   const session = await auth();
   const userId = session?.user?.id ?? null;
 
@@ -129,19 +150,20 @@ export async function sendTip(orderId: string, amountEUR: number, method: Paymen
   // id is the capability, same as everywhere else in the guest flow (see the
   // review action). An account-bound order still requires its owner, so a
   // signed-in stranger cannot tip on somebody else's session.
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, status: "COMPLETED" },
-  });
-  if (!order) return { ok: false, error: "You can only tip a session you completed." };
-  if (order.clientUserId && order.clientUserId !== userId) {
+  const order = await authorizeCustomerOrder(orderId, accessToken);
+  if (!order || order.status !== "COMPLETED") {
     return { ok: false, error: "You can only tip a session you completed." };
   }
   if (await getTipForOrder(orderId)) return { ok: false, error: "You already tipped this session." };
+  const returnPath = order.accessToken
+    ? `/order/${encodeURIComponent(order.accessToken)}`
+    : `/checkout/matching?order=${orderId}`;
 
   // Credits are an account balance; a guest has none to spend.
   if (method === "credits" && !userId) {
     return { ok: false, error: "Sign in to pay from your balance, or pay by card or PayPal." };
   }
+  if (method === "crypto") return { ok: false, error: "Crypto payments aren't available yet." };
 
   if (method === "credits") {
     const paid = await spendCredits(amount, `Tip · ${order.gameName}`);
@@ -152,12 +174,12 @@ export async function sendTip(orderId: string, amountEUR: number, method: Paymen
 
   // A guest has no saved card to charge, so there is nothing to try before
   // the hosted page — go straight there and let the webhook record the tip.
-  if (!userId) {
+  if (!userId || method === "paypal") {
     try {
       const checkout = await startCheckout({
         amountEUR: amount,
         description: `Tip · ${order.gameName}`,
-        returnPath: `/checkout/matching?order=${orderId}`,
+        returnPath,
         kind: "TIP",
         orderId,
         methods: method === "paypal" ? ["paypal"] : ["card"],
@@ -192,10 +214,10 @@ export async function sendTip(orderId: string, amountEUR: number, method: Paymen
       const checkout = await startCheckout({
         amountEUR: amount,
         description: `Tip · ${order.gameName}`,
-        returnPath: `/checkout/matching?order=${orderId}`,
+        returnPath,
         kind: "TIP",
         orderId,
-        methods: method === "paypal" ? ["paypal"] : ["card"],
+        methods: ["card"],
         saveCard: false,
         // Taken from the order rather than asked for again: a guest gave it
         // at checkout, and this is the same person on the same session.
@@ -211,18 +233,12 @@ export async function sendTip(orderId: string, amountEUR: number, method: Paymen
 }
 
 /** What the session-complete screen shows instead of the tip buttons. */
-export async function loadTip(orderId: string): Promise<{ amountEUR: number } | null> {
-  const session = await auth();
-  const userId = session?.user?.id ?? null;
+export async function loadTip(orderId: string, accessToken?: string | null): Promise<{ amountEUR: number } | null> {
   // Guests can tip now, so they also have to be able to see that they
   // already did — otherwise the buttons come back after a reload and invite
   // a second payment.
-  const order = await prisma.order.findFirst({
-    where: { id: orderId },
-    select: { id: true, clientUserId: true },
-  });
+  const order = await authorizeCustomerOrder(orderId, accessToken);
   if (!order) return null;
-  if (order.clientUserId && order.clientUserId !== userId) return null;
   const tip = await getTipForOrder(orderId);
   return tip ? { amountEUR: Number(tip.amountEUR) } : null;
 }

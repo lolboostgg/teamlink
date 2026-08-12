@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { teammateCut } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
+import { notifyUser } from "@/lib/notifications/service";
 
 /**
  * Adds games to a live order once they are paid for.
@@ -17,7 +18,7 @@ export async function applyExtraGames(orderId: string, quantity: number) {
   });
   if (!order) return null;
 
-  const unitPrice = Number(order.priceEUR) / Math.max(1, order.gamesBooked);
+  const unitPrice = Number(order.unitPriceEUR);
   const updated = await prisma.order.update({
     where: { id: orderId },
     data: {
@@ -33,19 +34,19 @@ export async function applyExtraGames(orderId: string, quantity: number) {
 
   const userIds = order.candidates.map((candidate) => candidate.teammate.userId).filter(Boolean) as string[];
   if (userIds.length > 0) {
-    await prisma.notification.createMany({
-      data: userIds.map((userId) => ({
-        userId,
+    await Promise.all(userIds.map((userId) =>
+      notifyUser(userId, {
         type: "order.games_added",
         title: `${order.customerLabel} added +${qty} game${qty === 1 ? "" : "s"}`,
         body: `${order.gameName} · ${updated.gamesBooked} games total`,
         href: `/dashboard/teammate/session/${order.orderNo}`,
-      })),
-    });
-    // The rows above feed the bell; publish on its own topic as well so an
-    // online teammate sees the +game notification immediately rather than
-    // waiting for the polling fallback.
-    await publish({ topic: "notifications", userIds });
+        fields: [
+          { name: "Added", value: `+${qty} game${qty === 1 ? "" : "s"}`, inline: true },
+          { name: "Total", value: `${updated.gamesBooked} games`, inline: true },
+          { name: "Order", value: `#${order.orderNo}`, inline: true },
+        ],
+      }),
+    ));
   }
 
   await publish({

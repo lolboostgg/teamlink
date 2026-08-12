@@ -7,6 +7,7 @@ import { respondToDispatchAction } from "@/app/dashboard/teammate/dispatchAction
 import { playSound, type SoundName } from "@/lib/notificationSound";
 import { useToast } from "@/components/ui/ToastProvider";
 import { useLiveSync } from "@/lib/events/useLiveSync";
+import { usePathname } from "next/navigation";
 
 export interface FeedNotification {
   id: string;
@@ -47,7 +48,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const { showToast } = useToast();
   const { data: session } = useSession();
   const signedIn = Boolean(session?.user?.id);
-  const { phase, order, refresh, fetchedAt } = useDispatchState(session?.user?.role === "TEAMMATE");
+  const pathname = usePathname();
+  const teammateDashboardActive = session?.user?.role === "TEAMMATE" || pathname.startsWith("/dashboard/teammate");
+  const { phase, order, refresh, fetchedAt } = useDispatchState(teammateDashboardActive);
   const [stored, setStored] = useState<FeedNotification[]>([]);
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);

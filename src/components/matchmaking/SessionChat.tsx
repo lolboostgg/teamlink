@@ -30,6 +30,7 @@ interface Props {
   vibe?: string | null;
   conversationPref?: string | null;
   playStylePref?: string | null;
+  accessToken?: string | null;
 }
 
 const QUICK_REPLIES = ["Hello", "Okay", "Waiting for invite", "Thank you", "GG", "On the way", "Logging in..."];
@@ -52,8 +53,9 @@ export function SessionChat({
   vibe,
   conversationPref,
   playStylePref,
+  accessToken,
 }: Props) {
-  const { messages, refresh } = useConversationMessages(conversationKey);
+  const { messages, refresh } = useConversationMessages(conversationKey, accessToken);
 
   // A short blip when the other side writes, so a backgrounded tab is not
   // silent. Keyed on the last message id: the poll re-delivers the same
@@ -114,10 +116,10 @@ export function SessionChat({
   }, [conversationKey, lastMessageId, otherTyping]);
 
   useEffect(() => {
-    markConversationRead(conversationKey, viewer);
-  }, [conversationKey, messages, viewer]);
+    markConversationRead(conversationKey, viewer, accessToken);
+  }, [conversationKey, messages, viewer, accessToken]);
 
-  useEffect(() => () => setChatTyping(conversationKey, viewer, false), [conversationKey, viewer]);
+  useEffect(() => () => setChatTyping(conversationKey, viewer, false, accessToken), [conversationKey, viewer, accessToken]);
 
   // Seeds the teammate's opening line into the real store once per
   // conversation (not on every mount) so it's part of the same persisted
@@ -130,12 +132,12 @@ export function SessionChat({
   useEffect(() => {
     if (viewer !== "teammate" || seededRef.current || messages.length > 0) return;
     seededRef.current = true;
-    sendChatMessage(conversationKey, "teammate", `Hi! This is ${teammateName} — ready when you are.`);
+    sendChatMessage(conversationKey, "teammate", `Hi! This is ${teammateName} — ready when you are.`, accessToken);
     // BroadcastChannel never delivers a message back to the tab that sent
     // it, so this tab's own subscription won't fire on its own write —
     // refresh() closes that gap for the sender specifically.
     refresh();
-  }, [conversationKey, teammateName, messages.length, refresh, viewer]);
+  }, [conversationKey, teammateName, messages.length, refresh, viewer, accessToken]);
 
   const systemLines: SystemLine[] = [];
   if (vibe) systemLines.push({ id: "sys-vibe", text: `Vibe set: ${vibe.charAt(0).toUpperCase()}${vibe.slice(1)}` });
@@ -147,8 +149,8 @@ export function SessionChat({
   }
 
   function sendText(text: string) {
-    sendChatMessage(conversationKey, viewer, text);
-    setChatTyping(conversationKey, viewer, false);
+    sendChatMessage(conversationKey, viewer, text, accessToken);
+    setChatTyping(conversationKey, viewer, false, accessToken);
     refresh();
   }
 
@@ -219,9 +221,9 @@ export function SessionChat({
           value={draft}
           onChange={(e) => {
             setDraft(e.target.value);
-            setChatTyping(conversationKey, viewer, e.target.value.trim().length > 0);
+            setChatTyping(conversationKey, viewer, e.target.value.trim().length > 0, accessToken);
             if (typingTimer.current) clearTimeout(typingTimer.current);
-            typingTimer.current = setTimeout(() => setChatTyping(conversationKey, viewer, false), 1600);
+            typingTimer.current = setTimeout(() => setChatTyping(conversationKey, viewer, false, accessToken), 1600);
           }}
         />
         <button type="submit" aria-label="Send">

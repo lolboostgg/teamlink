@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { chargeSavedCard, createCheckoutSession, createCustomer, stripeConfigured, StripeError } from "@/lib/stripe";
+import { chargeSavedCard, createCheckoutSession, createCustomer, getCheckoutSession, stripeConfigured, StripeError } from "@/lib/stripe";
+import { Prisma } from "@/generated/prisma/client";
 
 /**
  * The two ways money is taken, kept out of any "use server" module.
@@ -41,6 +42,7 @@ export interface StartCheckoutInput {
    * credit package to grant, the teammate a tip belongs to.
    */
   extraMetadata?: Record<string, string>;
+  idempotencyKey?: string;
 }
 
 /**
@@ -66,6 +68,14 @@ export async function startCheckout(input: StartCheckoutInput): Promise<{ url: s
 
   const guestEmail = input.guestEmail?.trim().toLowerCase();
   if (!user && !guestEmail) throw new Error("An email address is required to check out.");
+
+  if (input.idempotencyKey) {
+    const existing = await prisma.charge.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
+    if (existing?.stripeSessionId) {
+      const prior = await getCheckoutSession(existing.stripeSessionId).catch(() => null);
+      if (prior?.url) return { url: prior.url };
+    }
+  }
 
   let customerId = user?.stripeCustomerId ?? undefined;
   if (user && !customerId) {
@@ -102,13 +112,12 @@ export async function startCheckout(input: StartCheckoutInput): Promise<{ url: s
       ...(input.extraMetadata ?? {}),
       kind: input.kind ?? "ORDER",
     },
-    idempotencyKey: randomUUID(),
+    idempotencyKey: input.idempotencyKey ?? randomUUID(),
   });
 
   if (!checkout.url) throw new Error("Stripe didn't return a checkout URL.");
 
-  await prisma.charge.create({
-    data: {
+  const chargeData = {
       userId: user?.id ?? null,
       guestEmail: user ? null : (guestEmail ?? null),
       orderId: input.orderId ?? null,
@@ -116,8 +125,17 @@ export async function startCheckout(input: StartCheckoutInput): Promise<{ url: s
       amountEUR,
       stripeSessionId: checkout.id,
       status: "PENDING",
-    },
-  });
+      idempotencyKey: input.idempotencyKey ?? null,
+  } satisfies Prisma.ChargeUncheckedCreateInput;
+  if (input.idempotencyKey) {
+    await prisma.charge.upsert({
+      where: { idempotencyKey: input.idempotencyKey },
+      create: chargeData,
+      update: { stripeSessionId: checkout.id },
+    });
+  } else {
+    await prisma.charge.create({ data: chargeData });
+  }
 
   return { url: checkout.url };
 }
@@ -127,6 +145,7 @@ export interface QuickChargeInput {
   description: string;
   kind: "EXTRA_GAMES" | "TIP";
   orderId?: string;
+  idempotencyKey?: string;
 }
 
 export type QuickChargeResult =
@@ -168,16 +187,18 @@ export async function chargeDefaultCard(input: QuickChargeInput): Promise<QuickC
 
   // Written first so a charge that succeeds at Stripe but fails on the way
   // back to us is still reconciled by the webhook.
-  const charge = await prisma.charge.create({
-    data: {
+  const chargeData = {
       userId: user.id,
       orderId: input.orderId ?? null,
       savedCardId: card.id,
       kind: input.kind,
       amountEUR,
       status: "PENDING",
-    },
-  });
+      idempotencyKey: input.idempotencyKey ?? null,
+  } satisfies Prisma.ChargeUncheckedCreateInput;
+  const charge = input.idempotencyKey
+    ? await prisma.charge.upsert({ where: { idempotencyKey: input.idempotencyKey }, create: chargeData, update: {} })
+    : await prisma.charge.create({ data: chargeData });
 
   try {
     const intent = await chargeSavedCard({
@@ -188,7 +209,7 @@ export async function chargeDefaultCard(input: QuickChargeInput): Promise<QuickC
       metadata: { userId: user.id, kind: input.kind, ...(input.orderId ? { orderId: input.orderId } : {}) },
       // Our own row id: retrying this exact charge can never take the money
       // twice, however many times the button is clicked.
-      idempotencyKey: charge.id,
+      idempotencyKey: input.idempotencyKey ?? charge.id,
     });
 
     await prisma.charge.update({

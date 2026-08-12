@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
+import { authorizeCustomerOrder } from "@/lib/orderAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,12 @@ const NO_ACCESS: ConversationAccess = { side: null, locked: false, orderId: "", 
  * Being the order's client wins, so a teammate booking someone else writes
  * as the customer they are on that order.
  */
-async function conversationAccess(userId: string | null, role: string | undefined, key: string): Promise<ConversationAccess> {
+async function conversationAccess(
+  userId: string | null,
+  role: string | undefined,
+  key: string,
+  accessToken?: string | null,
+): Promise<ConversationAccess> {
   const separator = key.indexOf("::");
   const orderId = separator > 0 ? key.slice(0, separator) : "";
   const teammateId = separator > 0 ? key.slice(separator + 2) : "";
@@ -50,6 +56,9 @@ async function conversationAccess(userId: string | null, role: string | undefine
   });
   const candidate = order?.candidates.find((c) => c.teammateId === teammateId);
   if (!order || !candidate) return NO_ACCESS;
+  const guestAuthorized = !order.clientUserId && !userId
+    ? Boolean(await authorizeCustomerOrder(orderId, accessToken))
+    : false;
 
   // A guest order (no account) has no session to match against — the order
   // id half of the key is the capability instead, same as the rest of the
@@ -65,7 +74,7 @@ async function conversationAccess(userId: string | null, role: string | undefine
           : role === "ADMIN"
             ? "admin"
             : null
-      : !userId
+      : guestAuthorized
         ? "client"
         : candidate.teammate.userId === userId
           ? "teammate"
@@ -109,7 +118,7 @@ async function conversationAudience(orderId: string): Promise<string[]> {
 export async function GET(request: NextRequest) {
   const session = await auth();
   const key = request.nextUrl.searchParams.get("key")?.slice(0, 300) ?? "";
-  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key) : NO_ACCESS;
+  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key, request.headers.get("x-order-token")) : NO_ACCESS;
   if (!access.side) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -135,7 +144,7 @@ export async function PATCH(request: NextRequest) {
   const session = await auth();
   const body = await request.json().catch(() => null) as { key?: string; action?: "typing" | "read"; typing?: boolean } | null;
   const key = body?.key?.slice(0, 300) ?? "";
-  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key) : NO_ACCESS;
+  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key, request.headers.get("x-order-token")) : NO_ACCESS;
   const side = access.side;
   if (!side) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
@@ -159,7 +168,7 @@ export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as { id?: string; key?: string; text?: string; createdAt?: number } | null;
   const key = body?.key?.slice(0, 300) ?? "";
   const text = body?.text?.trim().slice(0, 4000) ?? "";
-  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key) : NO_ACCESS;
+  const access = key ? await conversationAccess(session?.user?.id ?? null, session?.user?.role, key, request.headers.get("x-order-token")) : NO_ACCESS;
   const sender = access.side;
   if (!text || !sender) {
     return NextResponse.json({ error: "Invalid message" }, { status: 400 });

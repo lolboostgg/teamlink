@@ -67,11 +67,11 @@ function writeConversation(key: string, messages: ChatMessage[]): void {
 // by the server off this order's own client/teammate rows, not by whatever
 // the browser claims. The local value is only the optimistic echo, and the
 // next sync replaces it with the stored row either way.
-async function persistMessage(message: ChatMessage): Promise<void> {
+async function persistMessage(message: ChatMessage, accessToken?: string | null): Promise<void> {
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(accessToken ? { "x-order-token": accessToken } : {}) },
       body: JSON.stringify({
         id: message.id,
         key: message.conversationKey,
@@ -104,7 +104,7 @@ function dropMessage(key: string, id: string): void {
   window.dispatchEvent(new CustomEvent("qup-chat-rejected", { detail: { key, id } }));
 }
 
-export function sendChatMessage(key: string, from: "client" | "teammate" | "admin", text: string): void {
+export function sendChatMessage(key: string, from: "client" | "teammate" | "admin", text: string, accessToken?: string | null): void {
   const trimmed = text.trim();
   if (!trimmed || typeof window === "undefined") return;
   const messages = readAll();
@@ -118,7 +118,7 @@ export function sendChatMessage(key: string, from: "client" | "teammate" | "admi
   };
   messages.push(message);
   writeAll(messages);
-  void persistMessage(message);
+  void persistMessage(message, accessToken);
 }
 
 type ChatSide = "client" | "teammate";
@@ -133,20 +133,20 @@ function readPresence(): Presence {
   }
 }
 
-export function setChatTyping(key: string, side: ChatSide, typing: boolean): void {
+export function setChatTyping(key: string, side: ChatSide, typing: boolean, accessToken?: string | null): void {
   if (typeof window === "undefined") return;
   const presence = readPresence();
   presence[key] = { ...presence[key], [side]: typing ? Date.now() + 1800 : 0 };
   window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(presence));
   getChannel()?.postMessage({ type: "chat-presence" });
-  void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, action: "typing", typing }) }).catch(() => undefined);
+  void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json", ...(accessToken ? { "x-order-token": accessToken } : {}) }, body: JSON.stringify({ key, action: "typing", typing }) }).catch(() => undefined);
 }
 
 export function isChatTyping(key: string, side: ChatSide): boolean {
   return (readPresence()[key]?.[side] ?? 0) > Date.now();
 }
 
-export function markConversationRead(key: string, side: ChatSide): void {
+export function markConversationRead(key: string, side: ChatSide, accessToken?: string | null): void {
   const messages = readAll();
   let changed = false;
   const next = messages.map((message) => {
@@ -156,7 +156,7 @@ export function markConversationRead(key: string, side: ChatSide): void {
   });
   if (changed) {
     writeAll(next);
-    void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key, action: "read" }) }).catch(() => undefined);
+    void fetch("/api/chat", { method: "PATCH", headers: { "Content-Type": "application/json", ...(accessToken ? { "x-order-token": accessToken } : {}) }, body: JSON.stringify({ key, action: "read" }) }).catch(() => undefined);
   }
 }
 
@@ -181,7 +181,7 @@ function subscribeToChat(callback: () => void): () => void {
   };
 }
 
-export function useConversationMessages(key: string | undefined): { messages: ChatMessage[]; refresh: () => void } {
+export function useConversationMessages(key: string | undefined, accessToken?: string | null): { messages: ChatMessage[]; refresh: () => void } {
   const [messages, setMessages] = useState<ChatMessage[]>(() => (key ? getMessages(key) : []));
 
   const refresh = useCallback(() => {
@@ -196,9 +196,12 @@ export function useConversationMessages(key: string | undefined): { messages: Ch
     if (!key) return;
     if (!migrated.current) {
       migrated.current = true;
-      await Promise.all(getMessages(key).map(persistMessage));
+      await Promise.all(getMessages(key).map((message) => persistMessage(message, accessToken)));
     }
-    const response = await fetch(`/api/chat?key=${encodeURIComponent(key)}`, { cache: "no-store" });
+    const response = await fetch(`/api/chat?key=${encodeURIComponent(key)}`, {
+      cache: "no-store",
+      headers: accessToken ? { "x-order-token": accessToken } : undefined,
+    });
     // Deliberately thrown rather than swallowed: usePoll reads a rejection as
     // "back off", which is what should happen when the chat API is down.
     if (!response.ok) throw new Error(`Chat sync failed: ${response.status}`);
@@ -212,9 +215,13 @@ export function useConversationMessages(key: string | undefined): { messages: Ch
       getChannel()?.postMessage({ type: "chat-presence" });
     }
     setMessages(data.messages);
-  }, [key]);
+  }, [key, accessToken]);
 
-  useLiveSync("chat", sync, 2000, { enabled: Boolean(key), key });
+  const orderId = key?.split("::", 1)[0];
+  useLiveSync("chat", sync, 2000, {
+    enabled: Boolean(key), key,
+    guestOrder: orderId && accessToken ? { id: orderId, token: accessToken } : undefined,
+  });
 
   useEffect(() => {
     if (!key) return subscribeToChat(refresh);

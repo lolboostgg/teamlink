@@ -29,7 +29,9 @@ export function OrdersHistoryPanel() {
     return orders.filter((order) => {
       if (status !== "all" && displayStatus(order.status) !== status) return false;
       if (!normalizedQuery) return true;
-      const teammateName = order.selectedTeammateId ? getTeammateById(order.selectedTeammateId)?.name : "";
+      const teammateName = order.selectedTeammateId
+        ? order.candidates.find((candidate) => candidate.teammateId === order.selectedTeammateId)?.teammate?.name ?? getTeammateById(order.selectedTeammateId)?.name
+        : "";
       return [order.id, order.orderNo, order.gameName, order.gameSlug, order.option, teammateName]
         .some((value) => String(value).toLowerCase().includes(normalizedQuery));
     });

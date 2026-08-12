@@ -34,6 +34,7 @@ type Row = {
   gameName: string;
   option: string;
   priceEUR: unknown;
+  unitPriceEUR: unknown;
   teammatesRequested: number;
   gamesBooked: number;
   sessionStatus: string | null;
@@ -105,6 +106,7 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     gameName: row.gameName,
     option: row.option,
     priceEUR: Number(row.priceEUR),
+    unitPriceEUR: Number(row.unitPriceEUR),
     teammates: row.teammatesRequested,
     gamesBooked: row.gamesBooked,
     sessionStatus: row.sessionStatus,

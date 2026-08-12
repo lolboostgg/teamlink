@@ -46,6 +46,7 @@ export interface DispatchOrder {
   gameName: string;
   option: string;
   priceEUR: number;
+  unitPriceEUR: number;
   teammates: number;
   gamesBooked: number;
   sessionStatus: string | null;
