@@ -59,11 +59,17 @@ export function useDispatchState(enabled = true) {
     if (!enabled) return;
     try {
       const res = await fetch("/api/dispatch/state", { cache: "no-store" });
-      if (!res.ok) return;
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(body?.error ?? "Could not load your live dispatch status.");
+        return;
+      }
       const data = (await res.json()) as StateResponse;
       setFetchedAt(Date.now());
       setState({ ...EMPTY, ...data });
+      setError(null);
     } catch {
+      setError("Could not reach live dispatch. Reconnecting...");
       // A dropped poll is not worth surfacing — the next tick retries.
     }
   }, [enabled]);
@@ -156,6 +162,7 @@ export function useDispatchState(enabled = true) {
     /** When the server was last read — a timestamp callers can date live
      * dispatch state by without reaching for a clock during render. */
     fetchedAt,
+    loaded: fetchedAt > 0,
     error,
     setError,
     refresh: load,

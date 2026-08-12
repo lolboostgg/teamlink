@@ -32,8 +32,8 @@ import { useToast } from "@/components/ui/ToastProvider";
  * itself with a sound, a tab title and a real OS notification rather than
  * waiting to be noticed.
  */
-export function OpenRequestsList() {
-  const { requests, waitingSince, serverNow, phase, refresh } = useDispatchState();
+export function OpenRequestsList({ initialOnline }: { initialOnline: boolean }) {
+  const { requests, waitingSince, serverNow, phase, refresh, loaded, error } = useDispatchState();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -54,7 +54,7 @@ export function OpenRequestsList() {
   }
 
   if (requests.length === 0) {
-    return <IdlePanel waitingSince={waitingSince} serverNow={serverNow} offline={phase === "OFFLINE"} />;
+    return <IdlePanel waitingSince={waitingSince} serverNow={serverNow} offline={loaded ? phase === "OFFLINE" : !initialOnline} connecting={!loaded} error={error} />;
   }
 
   return (
@@ -259,10 +259,14 @@ function IdlePanel({
   waitingSince,
   serverNow,
   offline,
+  connecting,
+  error,
 }: {
   waitingSince: number | null;
   serverNow: number | null;
   offline: boolean;
+  connecting: boolean;
+  error: string | null;
 }) {
   // Measured against the server's clock at the last read and advanced
   // locally, so a browser running behind doesn't invent waiting time. The
@@ -276,7 +280,18 @@ function IdlePanel({
     return () => clearInterval(t);
   }, [serverNow]);
 
-  if (offline || !waitingSince) {
+  if (connecting && !offline) {
+    return (
+      <div className="request-idle">
+        <span className="request-idle__pulse" aria-hidden="true" />
+        <div className="request-idle__label">Online</div>
+        <div className="request-idle__clock">Connecting...</div>
+        <p className="request-idle__hint">{error ?? "Loading your live requests..."}</p>
+      </div>
+    );
+  }
+
+  if (offline) {
     return (
       <div className="request-idle request-idle--offline">
         <i className="fa-solid fa-power-off" aria-hidden="true" />
@@ -285,6 +300,18 @@ function IdlePanel({
           Go online from the dashboard header — requests are only dispatched to teammates who are listed and
           available.
         </p>
+      </div>
+    );
+  }
+
+  if (!waitingSince) {
+    return (
+      <div className="request-idle">
+        <span className="request-idle__pulse" aria-hidden="true" />
+        <div className="request-idle__label">Online</div>
+        <div className="request-idle__clock">Ready</div>
+        <p className="request-idle__hint">Waiting for orders. New requests appear here automatically.</p>
+        <AlertPermission />
       </div>
     );
   }

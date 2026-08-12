@@ -82,38 +82,44 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
   }
 
   async function handlePaymentSubmit() {
+    if (submitting) return;
     setSubmitting(true);
 
     // Everything that decides what this costs — the catalogue price, the
     // method fee, the coupon — is recomputed on the server. The totals in
     // this component are what the customer sees, never what they are
     // charged, because a URL and a React state are both theirs to edit.
-    const result = await placeCheckoutOrder({
-      gameSlug,
-      option,
-      teammates,
-      method,
-      couponCode: appliedCoupon?.code ?? null,
-      guestEmail: identity?.mode === "guest" ? identity.email : null,
-      // Frozen onto the order: editing the saved account later must not
-      // rewrite who a past order was played on.
-      ign: ingame?.ign ?? null,
-      ignRegion: ingame?.region ?? null,
-      ignRoles: ingame?.roles ?? [],
-      ignRank: ingame?.rank ?? null,
-      ignDivision: ingame?.division ?? null,
-    });
+    try {
+      const result = await placeCheckoutOrder({
+        gameSlug,
+        option,
+        teammates,
+        method,
+        couponCode: appliedCoupon?.code ?? null,
+        guestEmail: identity?.mode === "guest" ? identity.email : null,
+        // Frozen onto the order: editing the saved account later must not
+        // rewrite who a past order was played on.
+        ign: ingame?.ign ?? null,
+        ignRegion: ingame?.region ?? null,
+        ignRoles: ingame?.roles ?? [],
+        ignRank: ingame?.rank ?? null,
+        ignDivision: ingame?.division ?? null,
+      });
 
-    if (!result.ok) {
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return;
+      }
+
+      // Either our own matching screen (paid from credits) or Stripe's hosted
+      // page; the teammates are only invited once the payment lands.
+      if (result.redirect.startsWith("http")) window.location.assign(result.redirect);
+      else router.push(result.redirect);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Checkout failed. Please try again.", "error");
+    } finally {
       setSubmitting(false);
-      showToast(result.error, "error");
-      return;
     }
-
-    // Either our own matching screen (paid from credits) or Stripe's hosted
-    // page; the teammates are only invited once the payment lands.
-    if (result.redirect.startsWith("http")) window.location.assign(result.redirect);
-    else router.push(result.redirect);
   }
 
   return (

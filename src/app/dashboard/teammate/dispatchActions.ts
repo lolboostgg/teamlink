@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { settleCancelledOrder } from "@/lib/orderRefunds";
+import { publish } from "@/lib/events/bus";
 import {
   publishOrderChange,
   respondToDispatch,
@@ -162,6 +163,7 @@ export async function setOnlineAction(online: boolean): Promise<Result> {
         lastSeenAt: online ? now : teammate.lastSeenAt,
       },
     });
+    await publish({ topic: "dispatch", key: "availability", userIds: teammate.userId ? [teammate.userId] : [] });
     revalidatePath("/dashboard/teammate");
     return { ok: true };
   } catch (err) {

@@ -123,7 +123,11 @@ async function ensureListener(): Promise<void> {
   if (!busConnectionString()) return;
 
   current.listenerStarting = (async () => {
-    const client = new Client({ connectionString: busConnectionString() });
+    const client = new Client({
+      connectionString: busConnectionString(),
+      connectionTimeoutMillis: 2_000,
+      query_timeout: 2_000,
+    });
     client.on("notification", (message) => {
       if (message.channel !== PG_CHANNEL || !message.payload) return;
       try {
@@ -165,7 +169,11 @@ export async function publish(event: LiveEvent): Promise<void> {
   try {
     const current = bus();
     if (!current.publisher) {
-      const client = new Client({ connectionString: busConnectionString() });
+      const client = new Client({
+        connectionString: busConnectionString(),
+        connectionTimeoutMillis: 2_000,
+        query_timeout: 2_000,
+      });
       client.on("error", () => {
         const state = bus();
         if (state.publisher === client) state.publisher = undefined;
