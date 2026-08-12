@@ -47,6 +47,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
     },
   });
   if (!order) return NextResponse.json({ error: "Unknown order." }, { status: 404 });
+  if (order.status === "CANCELLED" || order.status === "NO_MATCH") {
+    return NextResponse.json({ error: "This order has been closed." }, { status: 410 });
+  }
 
   const selected = order.candidates.find((candidate) => candidate.selected);
 
