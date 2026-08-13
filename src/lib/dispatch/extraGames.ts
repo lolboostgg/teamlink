@@ -25,31 +25,48 @@ export async function purchaseExtraGamesWithCredits(input: {
   const qty = Math.max(1, Math.min(9, Math.round(input.quantity)));
   if (!input.idempotencyKey) return { ok: false, error: "Invalid purchase." };
 
+  // Both reads moved out of the transaction, and run together.
+  //
+  // An interactive transaction holds one pooled connection for as long as its
+  // body runs, and every statement inside is a separate round trip — so two
+  // reads in there cost the pool two round trips of occupancy each, for work
+  // that locks nothing and guarantees nothing. At READ COMMITTED a plain
+  // SELECT inside a transaction is no more consistent with the writes that
+  // follow than one taken just before it, so the atomicity is unchanged and
+  // the connection is held for a third less time. That matters under the
+  // transaction pooler, where a request that cannot get a connection waits
+  // out connectionTimeoutMillis before it even begins.
+  const [order, existing] = await Promise.all([
+    prisma.order.findFirst({
+      where: { id: input.orderId, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
+      include: { candidates: { where: { selected: true }, include: { teammate: { select: { userId: true } } } } },
+    }),
+    prisma.charge.findUnique({ where: { idempotencyKey: input.idempotencyKey } }),
+  ]);
+  if (!order) return { ok: false, error: "This session cannot be extended." };
+
+  const teammateUserIds = order.candidates.map((candidate) => candidate.teammate.userId).filter(Boolean) as string[];
+  if (existing) {
+    if (existing.userId !== input.userId || existing.orderId !== input.orderId) return { ok: false, error: "Invalid purchase." };
+    return {
+      ok: true,
+      receipt: {
+        alreadyProcessed: true,
+        customerLabel: order.customerLabel,
+        gameName: order.gameName,
+        gamesBooked: order.gamesBooked,
+        orderNo: order.orderNo,
+        clientUserId: order.clientUserId,
+        teammateUserIds,
+      },
+    };
+  }
+
+  const amountEUR = Math.round(Number(order.unitPriceEUR) * qty * 100) / 100;
+  const amountCents = Math.round(amountEUR * 100);
+
   try {
     const receipt = await prisma.$transaction(async (tx) => {
-      const order = await tx.order.findFirst({
-        where: { id: input.orderId, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
-        include: { candidates: { where: { selected: true }, include: { teammate: { select: { userId: true } } } } },
-      });
-      if (!order) throw new Error("ORDER_CLOSED");
-
-      const teammateUserIds = order.candidates.map((candidate) => candidate.teammate.userId).filter(Boolean) as string[];
-      const existing = await tx.charge.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
-      if (existing) {
-        if (existing.userId !== input.userId || existing.orderId !== input.orderId) throw new Error("INVALID_PURCHASE");
-        return {
-          alreadyProcessed: true,
-          customerLabel: order.customerLabel,
-          gameName: order.gameName,
-          gamesBooked: order.gamesBooked,
-          orderNo: order.orderNo,
-          clientUserId: order.clientUserId,
-          teammateUserIds,
-        };
-      }
-
-      const amountEUR = Math.round(Number(order.unitPriceEUR) * qty * 100) / 100;
-      const amountCents = Math.round(amountEUR * 100);
       const debited = await tx.user.updateMany({
         where: { id: input.userId, creditBalanceCents: { gte: amountCents } },
         data: { creditBalanceCents: { decrement: amountCents } },
@@ -70,8 +87,15 @@ export async function purchaseExtraGamesWithCredits(input: {
           fulfilledAt: new Date(),
         },
       });
-      const updated = await tx.order.update({
-        where: { id: input.orderId },
+      // updateMany with the status repeated, not update by id: the status was
+      // read outside this transaction, so it is the write that has to insist
+      // the session is still live. Matching nothing means the order closed in
+      // between, and throwing takes the credit debit back out with it —
+      // previously this would have charged for games added to a finished
+      // order. The count is the guard; gamesBooked is derived rather than
+      // returned, which updateMany cannot do.
+      const extended = await tx.order.updateMany({
+        where: { id: input.orderId, status: { in: ["ASSIGNED", "IN_PROGRESS"] } },
         data: {
           gamesBooked: { increment: qty },
           priceEUR: { increment: amountEUR },
@@ -80,12 +104,13 @@ export async function purchaseExtraGamesWithCredits(input: {
             : { increment: teammateCut(amountEUR) },
         },
       });
+      if (extended.count !== 1) throw new Error("ORDER_CLOSED");
 
       return {
         alreadyProcessed: false,
         customerLabel: order.customerLabel,
         gameName: order.gameName,
-        gamesBooked: updated.gamesBooked,
+        gamesBooked: order.gamesBooked + qty,
         orderNo: order.orderNo,
         clientUserId: order.clientUserId,
         teammateUserIds,
@@ -95,7 +120,10 @@ export async function purchaseExtraGamesWithCredits(input: {
   } catch (error) {
     if (error instanceof Error && error.message === "INSUFFICIENT_BALANCE") return { ok: false, error: "Not enough credits." };
     if (error instanceof Error && error.message === "ORDER_CLOSED") return { ok: false, error: "This session cannot be extended." };
-    if (error instanceof Error && error.message === "INVALID_PURCHASE") return { ok: false, error: "Invalid purchase." };
+    // Two requests carrying the same idempotency key can both get past the
+    // read above and race to insert. One wins, the other lands here — which
+    // is the constraint doing the job the read was only ever an optimisation
+    // for, and the reason that read is safe outside the transaction.
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const existing = await prisma.charge.findUnique({ where: { idempotencyKey: input.idempotencyKey } });
       if (existing?.userId === input.userId && existing.orderId === input.orderId) {
