@@ -83,9 +83,13 @@ export function isDiscordBotConfigured(): boolean {
   return Boolean(process.env.DISCORD_BOT_TOKEN);
 }
 
-/** Broadcast into the teammate channel. */
-export async function postToTeammateChannel(message: DiscordMessage): Promise<boolean> {
-  const url = process.env.DISCORD_TEAMMATE_WEBHOOK_URL;
+/**
+ * Posts an embed to an incoming webhook.
+ *
+ * `label` only ever reaches a log line — a webhook URL carries its own
+ * credential in the path, so it must not be printed when the post fails.
+ */
+async function postToWebhook(url: string | undefined, message: DiscordMessage, label: string): Promise<boolean> {
   if (!url) return false;
 
   try {
@@ -95,12 +99,29 @@ export async function postToTeammateChannel(message: DiscordMessage): Promise<bo
       body: JSON.stringify(buildPayload(message, { asWebhook: true })),
       cache: "no-store",
     });
-    if (!res.ok) console.error("[discord] webhook failed:", res.status, await res.text().catch(() => ""));
+    if (!res.ok) console.error(`[discord] ${label} webhook failed:`, res.status, await res.text().catch(() => ""));
     return res.ok;
   } catch (err) {
-    console.error("[discord] webhook error:", err);
+    console.error(`[discord] ${label} webhook error:`, err);
     return false;
   }
+}
+
+/** Broadcast into the teammate channel. */
+export function postToTeammateChannel(message: DiscordMessage): Promise<boolean> {
+  return postToWebhook(process.env.DISCORD_TEAMMATE_WEBHOOK_URL, message, "teammate");
+}
+
+/**
+ * Broadcast into the staff support channel.
+ *
+ * Its own webhook rather than the teammate one: this carries what a customer
+ * wrote about an order, which is not something to post into a channel
+ * teammates read. Unset means nothing is sent — a support channel nobody
+ * configured is silence, not an error.
+ */
+export function postToSupportChannel(message: DiscordMessage): Promise<boolean> {
+  return postToWebhook(process.env.DISCORD_SUPPORT_WEBHOOK_URL, message, "support");
 }
 
 /** Opens (or reuses — Discord is idempotent here) the bot's DM channel. */

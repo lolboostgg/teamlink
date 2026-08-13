@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { enforceRateLimit } from "@/lib/admin/rateLimit";
+import { after } from "next/server";
 import { notifyAdmins } from "@/lib/notifications/service";
+import { postToSupportChannel } from "@/lib/notify/discordNotify";
+import { appUrl } from "@/lib/notify/orderNotifications";
 
 /**
  * What the ticket form gets back.
@@ -64,6 +67,25 @@ export async function openDispute(_previous: TicketFormState, formData: FormData
       { name: "Opened by", value: who, inline: true },
     ],
   });
+
+  // The staff channel on top of the per-admin bell and DM: a webhook post
+  // reaches whoever happens to be looking at Discord, including admins who
+  // never linked their account, and it is one message rather than one per
+  // admin. after(), because a Discord round trip has no business standing
+  // between a customer and the confirmation that their ticket was filed.
+  after(() =>
+    postToSupportChannel({
+      title: `🎫 New ticket · #${order.orderNo}`,
+      description: `**${title}**\n${description.length > 400 ? `${description.slice(0, 397)}…` : description}`,
+      color: 0xe5484d,
+      fields: [
+        { name: "Order", value: `#${order.orderNo} · ${order.gameName}`, inline: true },
+        { name: "Opened by", value: who, inline: true },
+      ],
+      linkUrl: `${appUrl()}/dashboard/admin/disputes?ticket=${ticket.id}`,
+      linkLabel: "Open in admin",
+    }),
+  );
 
   revalidatePath("/dashboard/admin/disputes");
   revalidatePath(`/dashboard/${session.user.role.toLowerCase()}/disputes`);
