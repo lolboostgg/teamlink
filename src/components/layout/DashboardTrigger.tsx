@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { dashboardHrefForRole, profileHrefForRole } from "@/lib/roles";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { useLanguage } from "@/components/language/LanguageProvider";
-
-const CLOSE_DELAY_MS = 200;
+import { useHeaderDropdown } from "@/lib/useHeaderDropdown";
 
 const DEFAULT_AVATAR = "/avatars/default.webp";
 
-// Same hover/click dropdown pattern as SettingsTrigger. Every account now
+// Same hover/click dropdown pattern as SettingsTrigger — literally the same
+// one now, from useHeaderDropdown, which also keeps this from being open at
+// the same time as the settings, credits or notification panels. Every account now
 // has exactly one real dashboard (see dashboardHrefForRole) instead of the
 // old 3-way demo switcher anyone could click through regardless of role.
 // Trigger is a small avatar-initials circle rather than a "Dashboard" text
@@ -22,9 +22,7 @@ export function DashboardTrigger() {
   const { logout } = useAuthModal();
   const { p, t } = useLanguage();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const { open, rootRef, rootProps, triggerProps, close } = useHeaderDropdown();
   const href = dashboardHrefForRole(session?.user?.role);
   const profileHref = profileHrefForRole(session?.user?.role);
   const role = session?.user?.role ?? "CLIENT";
@@ -53,52 +51,19 @@ export function DashboardTrigger() {
   const transitionTypes: string[] | undefined =
     session?.user?.role === "CLIENT" ? undefined : ["dashboard-enter"];
 
-  function clearCloseTimer() {
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-  }
-
-  function scheduleClose() {
-    clearCloseTimer();
-    closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
-  }
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [open]);
-
-  useEffect(() => () => clearCloseTimer(), []);
-
   function handleLogout() {
-    setOpen(false);
+    close();
     logout();
     router.push("/");
   }
 
   return (
-    <div
-      className="dropdown-switcher header-utilities__dashboard"
-      ref={rootRef}
-      onMouseEnter={() => {
-        clearCloseTimer();
-        setOpen(true);
-      }}
-      onMouseLeave={scheduleClose}
-    >
+    <div className="dropdown-switcher header-utilities__dashboard" ref={rootRef} {...rootProps}>
       <button
         type="button"
         className="profile-account-trigger"
-        onClick={() => setOpen((v) => !v)}
-        aria-haspopup="menu"
-        aria-expanded={open}
         aria-label={p("Account menu")}
+        {...triggerProps}
       >
         <span className="profile-account-trigger__avatar">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -124,7 +89,7 @@ export function DashboardTrigger() {
             </span>
           </div>
           {profileHref && (
-            <Link href={profileHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}>
+            <Link href={profileHref} className="dropdown-switcher__item" role="menuitem" onClick={close}>
               <i className="fa-solid fa-id-card" aria-hidden="true" />
               <span>{p("My profile")}</span>
             </Link>
@@ -133,7 +98,7 @@ export function DashboardTrigger() {
             href={href}
             className="dropdown-switcher__item"
             role="menuitem"
-            onClick={() => setOpen(false)}
+            onClick={close}
             transitionTypes={transitionTypes}
           >
             <i className="fa-solid fa-gauge" aria-hidden="true" />
@@ -141,7 +106,7 @@ export function DashboardTrigger() {
           </Link>
           <div className="account-dropdown__section-label">{p("Quick access")}</div>
           {roleLinks.map(([linkHref, icon, label]) => (
-            <Link key={linkHref} href={linkHref} className="dropdown-switcher__item" role="menuitem" onClick={() => setOpen(false)}>
+            <Link key={linkHref} href={linkHref} className="dropdown-switcher__item" role="menuitem" onClick={close}>
               <i className={icon} aria-hidden="true" />
               <span>{p(label)}</span>
             </Link>

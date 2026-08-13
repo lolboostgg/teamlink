@@ -1,33 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useNotifications } from "@/components/dashboard/NotificationProvider";
 import { NotificationPanel } from "@/components/dashboard/NotificationPanel";
+import { useHeaderDropdown } from "@/lib/useHeaderDropdown";
 
 export function NotificationBell() {
   const { notifications, unreadCount } = useNotifications();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    return () => document.removeEventListener("mousedown", onPointerDown);
-  }, [open]);
+  const { open, rootRef, rootProps, triggerProps } = useHeaderDropdown();
 
   return (
-    <div className="dropdown-switcher" ref={ref}>
-      <button
-        type="button"
-        className="notification-bell"
-        onClick={() => setOpen((value) => !value)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label="Notifications"
-      >
+    <div className="dropdown-switcher" ref={rootRef} {...rootProps}>
+      <button type="button" className="notification-bell" aria-label="Notifications" {...triggerProps}>
         <i className="fa-solid fa-bell" aria-hidden="true" />
         {unreadCount > 0 && <span className="notification-bell__badge">{unreadCount}</span>}
       </button>
