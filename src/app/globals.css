@@ -20618,6 +20618,75 @@ img.bento-chat__avatar {
 .ticket-actions__close { margin-left: auto; }
 .ticket-actions__confirm { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; color: var(--text-muted); font-size: 12px; }
 
+/* ── Admin support queue ────────────────────────────────────────────────
+   A list beside a detail panel, not a column of cards. Every ticket used to
+   render its whole conversation and all three of its forms at once, so the
+   page was thousands of pixels of controls belonging to tickets nobody was
+   looking at. */
+.dispute-board { display: grid; gap: 14px; }
+.dispute-board__bar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+.dispute-board__bar .filter-pills__group { flex-wrap: wrap; }
+.dispute-board__search { display: flex; align-items: center; gap: 9px; flex: 1 1 220px; min-width: 0; max-width: 340px; min-height: 38px; margin-left: auto; padding: 0 13px; border: 1px solid var(--dash-line); border-radius: 999px; background: var(--dash-surface-2); }
+.dispute-board__search > i { color: var(--text-faint); font-size: 11px; }
+.dispute-board__search input { min-width: 0; width: 100%; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 12px; outline: none; }
+.dispute-board__search input::-webkit-search-cancel-button { filter: invert(1); opacity: .5; }
+
+.dispute-board__split { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 14px; align-items: start; }
+
+.dispute-queue { display: grid; gap: 4px; max-height: 68vh; overflow-y: auto; margin: 0; padding: 6px; border: 1px solid var(--dash-line); border-radius: var(--dash-radius); background: var(--dash-surface-2); list-style: none; }
+.dispute-queue__empty { padding: 26px 12px; color: var(--text-faint); font-size: 12px; text-align: center; }
+.dispute-queue__row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 1px solid transparent; border-radius: 11px; background: none; color: var(--text); cursor: pointer; font: inherit; text-align: left; }
+.dispute-queue__row:hover { background: var(--dash-surface-3); }
+.dispute-queue__row.is-selected { border-color: color-mix(in srgb, var(--accent) 42%, transparent); background: color-mix(in srgb, var(--accent) 13%, transparent); }
+/* The dot takes its colour from the .status-* class beside it, same trick as
+   .status-badge — one colour per state, declared once. */
+.dispute-queue__dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.dispute-queue__body { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.dispute-queue__title { overflow: hidden; font-size: 12.5px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.dispute-queue__meta { overflow: hidden; color: var(--text-faint); font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
+.dispute-queue__right { display: grid; justify-items: end; gap: 4px; flex: 0 0 auto; }
+.dispute-queue__right time { color: var(--text-faint); font-size: 10px; white-space: nowrap; }
+.dispute-queue__flag { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: color-mix(in srgb, var(--hue-gold) 20%, transparent); color: var(--hue-gold); font-size: 8px; }
+
+.dispute-detail { display: grid; gap: 13px; padding: 20px; border: 1px solid var(--dash-line); border-radius: var(--dash-radius); background: var(--dash-surface-2); }
+.dispute-detail--empty { justify-items: center; gap: 7px; padding: 60px 20px; border-style: dashed; border-color: var(--dash-line-strong); background: none; text-align: center; }
+.dispute-detail--empty > i { color: var(--text-faint); font-size: 24px; }
+.dispute-detail--empty p { max-width: 300px; margin: 0; color: var(--text-faint); font-size: 12px; }
+.dispute-detail__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 13px; border-bottom: 1px solid var(--dash-line); }
+.dispute-detail__head > div { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
+.dispute-detail__head h3 { width: 100%; margin: 0; font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.dispute-detail__head > time { flex: 0 0 auto; color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+
+.dispute-detail__reply { display: grid; gap: 9px; padding: 14px; border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); border-radius: 13px; background: color-mix(in srgb, var(--accent) 7%, var(--dash-surface-3)); }
+.dispute-detail__reply textarea { width: 100%; min-height: 76px; padding: 11px 13px; border: 1px solid var(--dash-line); border-radius: 11px; background: var(--dash-surface-3); color: var(--text); font: inherit; font-size: 13px; line-height: 1.6; resize: vertical; }
+.dispute-detail__reply textarea::placeholder { color: var(--text-faint); }
+.dispute-detail__reply textarea:focus-visible { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--accent) 18%, transparent); }
+.dispute-detail__reply-foot { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; }
+.dispute-detail__reply-foot small { color: var(--text-faint); font-size: 11px; }
+
+/* Folded by default: one of these is bookkeeping and the other moves money,
+   and neither should be sitting open under every ticket you glance at. */
+.dispute-tool { border: 1px solid var(--dash-line); border-radius: 13px; background: var(--dash-surface-3); }
+.dispute-tool > summary { display: flex; align-items: center; gap: 9px; padding: 12px 15px; cursor: pointer; color: var(--text-muted); font-size: 11px; font-weight: 900; letter-spacing: .06em; list-style: none; text-transform: uppercase; }
+.dispute-tool > summary::-webkit-details-marker { display: none; }
+.dispute-tool > summary::after { content: "\f078"; margin-left: auto; color: var(--text-faint); font: 900 9px "Font Awesome 6 Free"; transition: transform .18s ease; }
+.dispute-tool[open] > summary::after { transform: rotate(180deg); }
+.dispute-tool > summary span { color: var(--text-faint); font-size: 10px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.dispute-tool[open] > summary { border-bottom: 1px solid var(--dash-line); }
+.dispute-tool .admin-ticket__form { margin: 0; padding: 13px 15px; }
+.dispute-tool--danger { border-color: color-mix(in srgb, var(--danger) 24%, transparent); }
+.dispute-tool--danger > summary { color: color-mix(in srgb, var(--danger) 70%, var(--text)); }
+.dispute-tool__warn { margin: 0; padding: 12px 15px 0; color: var(--hue-gold); font-size: 11.5px; line-height: 1.5; }
+.dispute-tool__notes { padding: 0 15px 13px; }
+.dispute-tool__notes p { margin: 0 0 8px; color: var(--text-muted); font-size: 12px; line-height: 1.55; }
+.dispute-tool__notes small { color: var(--text-faint); }
+
+@media (max-width: 1080px) {
+  .dispute-board__split { grid-template-columns: 1fr; }
+  .dispute-queue { max-height: 320px; }
+  .dispute-board__search { margin-left: 0; max-width: none; }
+}
+
 .admin-ticket__flag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--hue-gold) 34%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--hue-gold) 13%, transparent); color: var(--hue-gold); font-size: 10px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
 .admin-ticket__flag--muted { border-color: var(--dash-line-strong); background: transparent; color: var(--text-faint); }
 .admin-ticket__stage--reply { border-color: color-mix(in srgb, var(--accent) 26%, transparent); }
