@@ -105,10 +105,27 @@ function keyShape(): string {
   return notes.join(", ");
 }
 
-const ATTEMPT_TIMEOUT_MS = 8000;
-const MAX_RETRIES = 2;
+const ATTEMPT_TIMEOUT_MS = 4000;
+const MAX_RETRIES = 1;
+
+/**
+ * How long the whole lookup may take, across every call it makes.
+ *
+ * Per-attempt timeouts alone did not bound anything: three chained calls, each
+ * retrying twice at eight seconds, is a seventy-second worst case against a
+ * customer who is given up on at thirty — so the form reported its own
+ * timeout and the server's diagnosis of what actually went wrong was thrown
+ * away. One budget for the lot means the server always answers first, and the
+ * answer names the call that ran out.
+ */
+const TOTAL_BUDGET_MS = 12_000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Wall-clock deadline shared by every call in one lookup. */
+type Deadline = { at: number };
+const newDeadline = (): Deadline => ({ at: Date.now() + TOTAL_BUDGET_MS });
+const remaining = (deadline: Deadline) => deadline.at - Date.now();
 
 /**
  * null on a 404 specifically — every other non-2xx throws.
@@ -117,27 +134,37 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * the lookup outright: both are routine against this API. Waits stay short
  * and bounded on purpose — a customer is sitting in front of the form, so
  * giving up quickly beats honouring a 30s Retry-After.
+ *
+ * `stage` rides along so a failure says which of the three calls it was.
+ * "Couldn't reach the Riot API" was true of all of them and told nobody
+ * whether continental routing, the platform shard, or the ranked ladder was
+ * the thing that never answered.
  */
-async function riotFetch(url: string): Promise<unknown | null> {
+async function riotFetch(url: string, deadline: Deadline, stage: string): Promise<unknown | null> {
   const token = apiKey();
   let lastStatus = 0;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const left = remaining(deadline);
+    if (left <= 250) throw new RiotApiError(`Riot's ${stage} service ran out of time.`);
+
     let res: Response;
     try {
       res = await fetch(url, {
         headers: { "X-Riot-Token": token },
         cache: "no-store",
-        signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
+        // Never longer than the budget has left, so one slow call cannot
+        // spend the time the next one needs to report its own failure.
+        signal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, left)),
       });
     } catch (err) {
       // Timeout or transport failure — worth one more try before giving up.
-      if (attempt < MAX_RETRIES) {
+      if (attempt < MAX_RETRIES && remaining(deadline) > 1200) {
         await sleep(400 * (attempt + 1));
         continue;
       }
-      console.error("[riot] request failed", safeUrl(url), err);
-      throw new RiotApiError("Couldn't reach the Riot API.");
+      console.error("[riot] request failed", stage, safeUrl(url), err);
+      throw new RiotApiError(`Couldn't reach Riot's ${stage} service.`);
     }
 
     if (res.status === 404) return null;
@@ -146,9 +173,9 @@ async function riotFetch(url: string): Promise<unknown | null> {
 
     if (res.status === 429 || res.status >= 500) {
       lastStatus = res.status;
-      if (attempt < MAX_RETRIES) {
-        const retryAfter = Number(res.headers.get("retry-after")) || 0;
-        await sleep(Math.min(2000, Math.max(500, retryAfter * 1000 || 500 * (attempt + 1))));
+      const wait = Math.min(2000, Math.max(500, Number(res.headers.get("retry-after")) * 1000 || 500 * (attempt + 1)));
+      if (attempt < MAX_RETRIES && remaining(deadline) > wait + 1200) {
+        await sleep(wait);
         continue;
       }
       throw new RiotApiError(
@@ -219,8 +246,8 @@ export type RiotLookupResult = RiotLookupFound | RiotLookupNotFound | RiotLookup
  * `id` from Summoner-V4 responses, and a missing one silently turned every
  * lookup into "Unranked" via a 404 on the by-summoner route.
  */
-async function fetchRankEntry(platform: string, puuid: string): Promise<RiotLeagueEntry | undefined> {
-  const entries = (await riotFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`)) as
+async function fetchRankEntry(platform: string, puuid: string, deadline: Deadline): Promise<RiotLeagueEntry | undefined> {
+  const entries = (await riotFetch(`https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`, deadline, "ranked ladder")) as
     | RiotLeagueEntry[]
     | null;
   return entries?.find((entry) => entry.queueType === "RANKED_SOLO_5x5");
@@ -253,24 +280,30 @@ export async function verifyLeagueAccount(ign: string, region: string): Promise<
   const platform = PLATFORM_BY_REGION[region];
   if (!continent || !platform) throw new RiotApiError("Unsupported region.");
 
+  const deadline = newDeadline();
+
   const account = (await riotFetch(
     `https://${continent}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`,
+    deadline,
+    "account",
   )) as RiotAccount | null;
   if (!account) return { status: "not_found" };
 
-  const summoner = (await riotFetch(
-    `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`,
-  )) as RiotSummoner | null;
+  // Both only need the PUUID, so they were two round trips where one would
+  // do. The rank call is allowed to lose — the account is what the customer
+  // is waiting to have confirmed, and a rate-limited ladder costs the rank
+  // rather than the whole answer. On the wrong-server path below its result
+  // is simply discarded, which is one wasted request on the uncommon branch
+  // in exchange for a round trip saved on every successful lookup.
+  const [summoner, entry] = await Promise.all([
+    riotFetch(`https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`, deadline, "summoner") as Promise<RiotSummoner | null>,
+    fetchRankEntry(platform, account.puuid, deadline).catch((err) => {
+      console.error("[riot] rank lookup failed", err);
+      return undefined;
+    }),
+  ]);
 
   if (summoner) {
-    // The account is already confirmed at this point — a rate-limited or
-    // failing rank call should cost the rank, not the whole result.
-    let entry: RiotLeagueEntry | undefined;
-    try {
-      entry = await fetchRankEntry(platform, account.puuid);
-    } catch (err) {
-      console.error("[riot] rank lookup failed", err);
-    }
     const { rank, division } = toRankFields(entry);
     return {
       status: "found",
@@ -296,6 +329,8 @@ export async function verifyLeagueAccount(ign: string, region: string): Promise<
       try {
         const found = await riotFetch(
           `https://${otherPlatform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`,
+          deadline,
+          "summoner",
         );
         return found ? otherPlatform : null;
       } catch {
