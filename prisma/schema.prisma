@@ -316,7 +316,12 @@ model Notification {
   readAt    DateTime?
   createdAt DateTime  @default(now())
 
+  /// Both, because the bell asks two different questions: `readAt` answers
+  /// "how many are unread", `createdAt` answers "give me the newest thirty"
+  /// — and the second was being served by sorting everything the first index
+  /// returned.
   @@index([userId, readAt])
+  @@index([userId, createdAt])
 }
 
 enum CreditTxType {
@@ -430,9 +435,15 @@ model Dispute {
   updatedAt      DateTime           @updatedAt
   notes          DisputeNote[]
 
+  /// The admin queue reads every ticket newest-first with no filter at all,
+  /// which `[status, updatedAt]` cannot serve — a leading column the query
+  /// does not mention is an index the planner skips.
+  @@index([updatedAt])
   @@index([status, updatedAt])
   @@index([orderId])
-  @@index([openedById])
+  /// Sort included, same reason as Order: the reporter's own list is filtered
+  /// by opener and ordered by activity, and those belong in one index.
+  @@index([openedById, updatedAt])
 }
 
 /// Everything written on a ticket after it was opened, in one table.
@@ -591,6 +602,13 @@ model Teammate {
   earnings        TeammateEarning[]
   payoutRequests  PayoutRequest[]
   tipsReceived    Tip[]                 @relation("TipsReceived")
+
+  /// "Who can be invited right now" — the question every dispatch wave, the
+  /// live-teammates endpoint and the game availability check all ask, and the
+  /// only index on this table. It was a sequential scan, which is the right
+  /// plan for seven rows and the wrong one for the number of teammates the
+  /// platform is trying to have.
+  @@index([available, lastSeenAt])
 }
 
 enum TeammateEarningType {
@@ -833,7 +851,14 @@ model Order {
   ignRank         String?
   ignDivision     String?
 
-  @@index([clientUserId])
+  /// Filter and sort in one index, so the newest forty come off it in order.
+  /// On `clientUserId` alone Postgres had to read every order the customer
+  /// ever placed and sort the lot to throw all but forty away — free at a
+  /// hundred rows, and the shape of query that quietly stops scaling. This is
+  /// the endpoint every open dashboard tab polls, so it is the one that would
+  /// have found out first. Replaces the single-column index, which this one
+  /// still serves by prefix.
+  @@index([clientUserId, createdAt])
   @@index([status])
 }
 
@@ -896,6 +921,11 @@ model DispatchCandidate {
 
   @@unique([orderId, teammateId])
   @@index([teammateId, status])
+  /// A teammate's own session history, newest first. Same sort-after-filter
+  /// shape as the customer's order list, and it grows with every wave a
+  /// teammate is invited to rather than every order they take — so it grows
+  /// faster than anything else keyed to one person.
+  @@index([teammateId, invitedAt])
 }
 
 /// Append-only trace of everything the dispatcher did to an order.
