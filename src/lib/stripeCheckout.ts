@@ -146,6 +146,10 @@ export interface QuickChargeInput {
   kind: "EXTRA_GAMES" | "TIP";
   orderId?: string;
   idempotencyKey?: string;
+  /** The signed-in user, when the caller already resolved it. Saves a second
+   * JWT verification and the role re-check's query inside one request — see
+   * the note in lib/orderAccess.ts. Omit it and this resolves its own. */
+  userId?: string;
 }
 
 export type QuickChargeResult =
@@ -163,8 +167,8 @@ export type QuickChargeResult =
 export async function chargeDefaultCard(input: QuickChargeInput): Promise<QuickChargeResult> {
   if (!stripeConfigured()) return { ok: false, requiresAction: false, error: "Payments aren't configured yet." };
 
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, requiresAction: false, error: "Sign in to pay with a saved card." };
+  const userId = input.userId ?? (await auth())?.user?.id;
+  if (!userId) return { ok: false, requiresAction: false, error: "Sign in to pay with a saved card." };
 
   const amountEUR = Math.round(input.amountEUR * 100) / 100;
   if (!Number.isFinite(amountEUR) || amountEUR <= 0) {
@@ -172,7 +176,7 @@ export async function chargeDefaultCard(input: QuickChargeInput): Promise<QuickC
   }
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: userId },
     select: {
       id: true,
       stripeCustomerId: true,

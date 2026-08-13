@@ -55,7 +55,16 @@ function createPrismaClient(): PrismaClient {
     // render, so too small a pool shows up as requests queueing behind each
     // other — but on the session pooler a large one is borrowed from every
     // other instance, and EMAXCONNSESSION is what that looks like.
-    max: transactionPooler ? 5 : 3,
+    //
+    // Five was too few for the transaction pooler. There a connection is
+    // handed back between statements, so `max` caps how many statements can
+    // be in flight at once rather than how many connections are reserved —
+    // and a dashboard render issuing several queries, plus the polls behind
+    // it, exhausted five while the pooler itself was idle. Requests then sat
+    // in pg's own queue, which looks exactly like a slow database and is not
+    // one. Twelve keeps a couple of concurrent renders and their polls moving
+    // without approaching the pooler's per-project ceiling.
+    max: transactionPooler ? 12 : 3,
   });
   return new PrismaClient({ adapter });
 }

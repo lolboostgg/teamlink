@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { prisma } from "@/lib/db";
 import { teammateCut } from "@/lib/payoutSplit";
 import { publish } from "@/lib/events/bus";
@@ -136,7 +137,12 @@ export async function applyExtraGames(orderId: string, quantity: number) {
 
   const userIds = order.candidates.map((candidate) => candidate.teammate.userId).filter(Boolean) as string[];
   if (userIds.length > 0) {
-    await Promise.all(userIds.map((userId) =>
+    // after(), not await: telling the teammate is not something the customer
+    // who just clicked "add games" should be made to wait for. The credits
+    // path next door already did this; the card path was still holding the
+    // response open for a notification row and a Discord DM per teammate,
+    // on top of the Stripe round trip it had just made.
+    after(() => Promise.all(userIds.map((userId) =>
       notifyUser(userId, {
         type: "order.games_added",
         title: `${order.customerLabel} added +${qty} game${qty === 1 ? "" : "s"}`,
@@ -148,7 +154,7 @@ export async function applyExtraGames(orderId: string, quantity: number) {
           { name: "Order", value: `#${order.orderNo}`, inline: true },
         ],
       }),
-    ));
+    )));
   }
 
   await publish({

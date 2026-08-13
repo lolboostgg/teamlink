@@ -40,7 +40,12 @@ export async function addGames(
   const qty = Math.max(1, Math.min(9, Math.round(quantity)));
   // Same rule as tipping and playing again: the order id is the capability
   // for a guest, and an account-bound order still requires its owner.
-  const order = await authorizeCustomerOrder(orderId, accessToken);
+  //
+  // `userId` is handed down rather than re-resolved: this action used to call
+  // auth() three times for one click — here, again inside
+  // authorizeCustomerOrder, and a third time inside chargeDefaultCard — each
+  // verifying the same JWT and each able to trigger the role re-check's query.
+  const order = await authorizeCustomerOrder(orderId, accessToken, userId);
   if (!order || !["ASSIGNED", "IN_PROGRESS"].includes(order.status)) {
     return { ok: false, error: "This session cannot be extended." };
   }
@@ -110,6 +115,7 @@ export async function addGames(
     kind: "EXTRA_GAMES",
     orderId,
     idempotencyKey,
+    userId,
   });
 
   if (charged.ok) {
@@ -167,7 +173,7 @@ export async function sendTip(
   // id is the capability, same as everywhere else in the guest flow (see the
   // review action). An account-bound order still requires its owner, so a
   // signed-in stranger cannot tip on somebody else's session.
-  const order = await authorizeCustomerOrder(orderId, accessToken);
+  const order = await authorizeCustomerOrder(orderId, accessToken, userId);
   if (!order || order.status !== "COMPLETED") {
     return { ok: false, error: "You can only tip a session you completed." };
   }
@@ -216,6 +222,7 @@ export async function sendTip(
     description: `Tip · ${order.gameName}`,
     kind: "TIP",
     orderId,
+    userId,
   });
 
   if (charged.ok) {

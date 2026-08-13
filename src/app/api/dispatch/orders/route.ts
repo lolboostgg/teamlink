@@ -22,30 +22,40 @@ export async function GET() {
     ? { candidates: { some: { teammateId: teammate.id, selected: true } } }
     : { clientUserId: session.user.id };
 
+  // One shape, declared once: the re-read below has to match the first read
+  // exactly or the two halves of the response disagree about what an order
+  // looks like, and that is the kind of drift a copy-paste invites.
+  const ORDER_SHAPE = {
+    candidates: { include: { teammate: { include: { _count: { select: { reviewsReceived: true } } } } } },
+    review: true,
+    clientUser: { select: { avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
+  } as const;
+
   const rows = await prisma.order.findMany({
     where: orderWhere,
-    include: {
-      candidates: { include: { teammate: { include: { _count: { select: { reviewsReceived: true } } } } } },
-      review: true,
-      clientUser: { select: { avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
-    },
+    include: ORDER_SHAPE,
     orderBy: { createdAt: "desc" },
     take: 40,
   });
 
-  for (const row of rows) {
-    if (!["COMPLETED", "CANCELLED", "NO_MATCH"].includes(row.status)) await reconcileOrder(row.id);
-  }
+  // Reconciling used to be a `for` loop of awaits — forty orders meant forty
+  // round trips one after another, on a connection held for all of them, and
+  // this endpoint is polled by every open dashboard tab. Nothing here reads
+  // another order's result, so they all go at once and the endpoint costs one
+  // round trip's latency instead of forty.
+  const live = rows.filter((row) => !["COMPLETED", "CANCELLED", "NO_MATCH"].includes(row.status));
+  await Promise.all(live.map((row) => reconcileOrder(row.id)));
 
-  const fresh = await prisma.order.findMany({
-    where: { id: { in: rows.map((r) => r.id) } },
-    include: {
-      candidates: { include: { teammate: { include: { _count: { select: { reviewsReceived: true } } } } } },
-      review: true,
-      clientUser: { select: { avatarUrl: true, avatarFocusX: true, avatarFocusY: true, avatarZoom: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  // Only what reconciling could have moved is read back. A completed order is
+  // final — re-reading all forty (with the per-candidate review counts that
+  // makes those joins expensive) to pick up changes that can only ever land
+  // on the open ones was doing the whole page's most expensive query twice.
+  // On an order history where everything is finished, it is now skipped.
+  const refreshed = live.length
+    ? await prisma.order.findMany({ where: { id: { in: live.map((row) => row.id) } }, include: ORDER_SHAPE })
+    : [];
+  const byId = new Map(refreshed.map((row) => [row.id, row]));
+  const fresh = rows.map((row) => byId.get(row.id) ?? row);
 
   return NextResponse.json(
     { orders: fresh.map(toCustomerOrder) },
