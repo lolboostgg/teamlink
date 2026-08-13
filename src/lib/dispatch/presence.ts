@@ -17,6 +17,24 @@ import { prisma } from "@/lib/db";
  */
 export const PRESENCE_MAX_AGE_MS = 180_000;
 
+/**
+ * How often a beat is actually written down.
+ *
+ * The panel reports in far more often than the answer can change, and every
+ * report was a row update: measured against the live database, presence writes
+ * were the single most expensive thing the application did — sixteen thousand
+ * UPDATEs on a seven-row table, forty-two seconds of database time, more than
+ * every SELECT in the system put together. Each one writes a new row version,
+ * touches every index on the table and leaves a dead tuple behind, which is
+ * also why a table holding seven teammates had grown to 400 kB.
+ *
+ * A third of the staleness window keeps two beats of margin before anyone is
+ * counted away, so nothing about who is reachable changes. It writes a quarter
+ * as often as the fifteen seconds it replaces, which were twelve times more
+ * often than PRESENCE_MAX_AGE_MS ever required.
+ */
+export const PRESENCE_WRITE_EVERY_MS = 60_000;
+
 interface PresenceRow {
   available: boolean;
   availableSince: Date | null;
@@ -50,22 +68,27 @@ export function presenceUpdate(teammate: PresenceRow, now: Date) {
 /**
  * The same thing for callers that don't already hold the row.
  *
- * One statement in the case that happens every 45 seconds for every online
- * teammate — the panel is still open, so only the beat itself is written. The
- * second query is the return-after-an-absence path, which by definition runs
- * once per return.
+ * A read first, and usually nothing else. This used to open with an
+ * unconditional `updateMany`, chosen because it was one statement rather than
+ * two — but it wrote on *every* beat, and the two are not the same kind of
+ * statement. A read of one indexed row costs the database nothing measurable;
+ * an update writes a new row version, touches every index on the table, emits
+ * WAL and leaves a dead tuple for vacuum. Trading a guaranteed write for a
+ * guaranteed read plus a write once a minute is what took presence from the
+ * most expensive thing this application does to a rounding error.
+ *
+ * The second statement is now the throttle expiring or a return after an
+ * absence — both rare — rather than the common case.
  */
 export async function markTeammatePresent(userId: string, now: Date): Promise<void> {
-  const stillHere = await prisma.teammate.updateMany({
-    where: { userId, lastSeenAt: { gte: new Date(now.getTime() - PRESENCE_MAX_AGE_MS) } },
-    data: { lastSeenAt: now },
-  });
-  if (stillHere.count > 0) return;
-
   const teammate = await prisma.teammate.findUnique({
     where: { userId },
     select: { id: true, available: true, availableSince: true, lastSeenAt: true },
   });
   if (!teammate) return;
+  // Already recorded recently enough. Nobody can observe the difference: the
+  // row still says "here" by every rule that reads it.
+  if (teammate.lastSeenAt && now.getTime() - teammate.lastSeenAt.getTime() < PRESENCE_WRITE_EVERY_MS) return;
+
   await prisma.teammate.update({ where: { id: teammate.id }, data: presenceUpdate(teammate, now) });
 }

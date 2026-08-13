@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { getTeammateDispatchView, MAX_CANDIDATES } from "@/lib/dispatch/service";
 import { deriveServerPhase } from "@/lib/dispatch/phase";
-import { presenceUpdate } from "@/lib/dispatch/presence";
+import { presenceUpdate, PRESENCE_WRITE_EVERY_MS } from "@/lib/dispatch/presence";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ export async function GET() {
   // as well as in the heartbeat endpoint: both fire when the dashboard mounts,
   // and whichever the server sees first is the one that has to catch it.
   let availableSince = teammate.availableSince;
-  if (!teammate.lastSeenAt || now.getTime() - teammate.lastSeenAt.getTime() >= 15_000) {
+  if (!teammate.lastSeenAt || now.getTime() - teammate.lastSeenAt.getTime() >= PRESENCE_WRITE_EVERY_MS) {
     const data = presenceUpdate(teammate, now);
     await prisma.teammate.update({ where: { id: teammate.id }, data });
     // Read back from what we just wrote, not from the row as it was loaded:
