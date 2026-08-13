@@ -1,0 +1,76 @@
+/**
+ * Runs once when a server instance boots, before it accepts requests.
+ *
+ * Every deploy restarts the process, and a fresh process has done none of the
+ * work that makes the app quick: no database pool, no compiled route modules.
+ * Measured on this build, the first request to a route took 1.4-1.5s against
+ * 19-51ms once warm — a factor of 45 to 77 — and the first query paid 263ms
+ * to open a connection that costs 34ms warm. Someone had to pay that, and it
+ * was whoever happened to arrive first after a publish. This makes it the
+ * server's own problem instead.
+ *
+ * Everything is done over HTTP against this same server, and nothing from the
+ * application is imported here. That is not squeamishness: this file is traced
+ * into the Edge instrumentation bundle as well as the Node one, so importing
+ * lib/db pulls Prisma's client into a runtime that cannot load it and fails
+ * the build — a runtime guard does not help, because the failure is at bundle
+ * time, not at call time. Requesting a route that queries is a warm pool
+ * anyway, so there is nothing the direct import would have bought.
+ */
+export function register() {
+  // Only the Node server serves these routes.
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // Dev restarts constantly and serves one person, who would rather have the
+  // reload back than a warm pool.
+  if (process.env.NODE_ENV !== "production") return;
+
+  scheduleRouteWarmup();
+}
+
+/**
+ * The routes worth compiling before somebody asks for them.
+ *
+ * The entry points and the endpoints every open dashboard polls — not every
+ * route in the app, which would trade a slow first visit for a slow boot.
+ * Unauthenticated hits are enough: compiling the module is the expensive part,
+ * and it happens whether or not the request goes on to find a session.
+ */
+const WARM_PATHS = [
+  // First, and a database route on purpose: opening the connection pool is
+  // its own 263ms against 34ms warm, and this is what pays it.
+  "/api/community",
+  "/",
+  "/games",
+  "/checkout",
+  "/api/fx",
+  "/api/dispatch/orders",
+  "/api/dispatch/state",
+  "/api/notifications",
+  "/dashboard/client",
+  "/dashboard/teammate",
+];
+
+/**
+ * Fires the warmup after `register` returns.
+ *
+ * Not awaited and not part of readiness: `register` blocks the server from
+ * accepting requests, so warming routes from inside it would deadlock — the
+ * requests would be waiting for the server that is waiting for them. A short
+ * delay puts them just behind the door opening, where they compete with real
+ * traffic for a second or two and then stop.
+ */
+function scheduleRouteWarmup(): void {
+  const port = process.env.PORT ?? "3000";
+  const base = `http://127.0.0.1:${port}`;
+
+  setTimeout(() => {
+    void Promise.allSettled(
+      WARM_PATHS.map((path) =>
+        fetch(`${base}${path}`, {
+          headers: { "user-agent": "qup-warmup" },
+          signal: AbortSignal.timeout(10_000),
+        }).catch(() => undefined),
+      ),
+    );
+  }, 500).unref?.();
+}
