@@ -86,6 +86,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     // same cue as a cancellation on purpose — both are "an admin has to look
     // at this", and neither should sound like a routine bell row.
     if (type === "dispute.opened") return "cancel";
+    // A reply on a ticket is somebody talking to you, which is what the
+    // message cue already means everywhere else in the app.
+    if (type === "dispute.replied") return "message";
     if (type === "dispute.resolved") return "tip";
     return "generic";
   }

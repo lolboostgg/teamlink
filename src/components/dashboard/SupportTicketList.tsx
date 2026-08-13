@@ -1,4 +1,5 @@
 import { SupportTicketForm, type TicketOrderOption } from "@/components/dashboard/SupportTicketForm";
+import { SupportTicketActions } from "@/components/dashboard/SupportTicketActions";
 
 /**
  * The reporter's view of their own tickets.
@@ -6,8 +7,15 @@ import { SupportTicketForm, type TicketOrderOption } from "@/components/dashboar
  * Deliberately not the admin view: no assignee, no internal notes, no
  * ownership controls. What somebody who opened a ticket wants to know is
  * where it stands and what came of it, and everything here answers one of
- * those two questions.
+ * those two questions — or lets them say something back.
  */
+
+export interface SupportTicketMessage {
+  id: string;
+  body: string;
+  authorRole: string;
+  createdAt: Date;
+}
 
 export interface SupportTicketRow {
   id: string;
@@ -17,25 +25,20 @@ export interface SupportTicketRow {
   resolution: string | null;
   resolutionNote: string | null;
   amountEUR: number | null;
+  closedByReporter: boolean;
   orderId: string | null;
   createdAt: Date;
   updatedAt: Date;
+  /** Public messages only — internal notes never reach this component. */
+  messages: SupportTicketMessage[];
 }
 
 /** The stages a ticket moves through, in the order it moves through them. */
 const STAGES = [
-  { key: "OPEN", label: "Received", icon: "fa-solid fa-inbox" },
-  { key: "INVESTIGATING", label: "Investigating", icon: "fa-solid fa-magnifying-glass" },
-  { key: "WAITING", label: "Waiting on you", icon: "fa-regular fa-clock" },
-  { key: "RESOLVED", label: "Resolved", icon: "fa-solid fa-flag-checkered" },
+  { key: "PENDING", label: "Pending", icon: "fa-solid fa-inbox" },
+  { key: "IN_PROGRESS", label: "In progress", icon: "fa-solid fa-magnifying-glass" },
+  { key: "SOLVED", label: "Solved", icon: "fa-solid fa-flag-checkered" },
 ] as const;
-
-const STATUS_TONE: Record<string, string> = {
-  OPEN: "open",
-  INVESTIGATING: "investigating",
-  WAITING: "waiting",
-  RESOLVED: "resolved",
-};
 
 /**
  * What each outcome meant, in the reporter's terms.
@@ -78,41 +81,50 @@ export function SupportTicketList({ tickets, orders, orderLabels, hint }: {
             <p>When something goes wrong in a session, open a ticket above and we&apos;ll pick it up.</p>
           </div>
         : tickets.map((ticket) => {
-            const tone = STATUS_TONE[ticket.status] ?? "open";
-            const resolved = ticket.status === "RESOLVED";
-            // A resolved ticket is shown as finished end-to-end rather than
-            // lit up to whichever stage it happened to pass through — WAITING
-            // sits after INVESTIGATING in the track but a ticket can skip it.
-            const reached = resolved ? STAGES.length : STAGES.findIndex((stage) => stage.key === ticket.status) + 1;
+            const solved = ticket.status === "SOLVED";
+            const tone = ticket.status.toLowerCase();
+            const reached = STAGES.findIndex((stage) => stage.key === ticket.status) + 1;
             const outcome = ticket.resolution ? RESOLUTION_COPY[ticket.resolution] : null;
             const orderLabel = ticket.orderId ? orderLabels.get(ticket.orderId) : null;
 
             return <article className={`support-ticket support-ticket--${tone}`} key={ticket.id}>
               <header className="support-ticket__head">
-                <span className={`status-badge status-${ticket.status.toLowerCase()}`}>{ticket.status.toLowerCase()}</span>
+                <span className={`status-badge status-${tone}`}>{ticket.status.replace("_", " ").toLowerCase()}</span>
                 {orderLabel && <span className="support-ticket__order"><i className="fa-solid fa-receipt" aria-hidden="true" /> {orderLabel}</span>}
                 <time dateTime={ticket.createdAt.toISOString()}>{dateFormat.format(ticket.createdAt)}</time>
               </header>
 
               <h3 className="support-ticket__title">{ticket.title}</h3>
-              <p className="support-ticket__body">{ticket.description}</p>
 
               <ol className="support-track" aria-label="Ticket progress">
-                {STAGES.map((stage, index) => {
-                  // WAITING only earns a slot in the track once the ticket has
-                  // actually been put there; on every other ticket it is a
-                  // stage that never happens and just makes the row longer.
-                  if (stage.key === "WAITING" && ticket.status !== "WAITING") return null;
-                  const done = index < reached;
-                  const current = stage.key === ticket.status;
-                  return <li key={stage.key} className={`support-track__step${done ? " is-done" : ""}${current ? " is-current" : ""}`}>
-                    <i className={stage.icon} aria-hidden="true" />
-                    <span>{stage.label}</span>
+                {STAGES.map((stage, index) => <li key={stage.key} className={`support-track__step${index < reached ? " is-done" : ""}${stage.key === ticket.status ? " is-current" : ""}`}>
+                  <i className={stage.icon} aria-hidden="true" />
+                  <span>{stage.label}</span>
+                </li>)}
+              </ol>
+
+              {/* The opening description is the first message in the thread
+                  rather than a paragraph above it — it is the same thing, and
+                  splitting them made the reply that answered it look like it
+                  was answering nothing. */}
+              <ol className="ticket-thread">
+                <li className="ticket-message ticket-message--mine">
+                  <div className="ticket-message__meta"><strong>You</strong><time dateTime={ticket.createdAt.toISOString()}>{dateFormat.format(ticket.createdAt)}</time></div>
+                  <p>{ticket.description}</p>
+                </li>
+                {ticket.messages.map((message) => {
+                  const fromSupport = message.authorRole === "ADMIN";
+                  return <li key={message.id} className={`ticket-message ticket-message--${fromSupport ? "support" : "mine"}`}>
+                    <div className="ticket-message__meta">
+                      <strong>{fromSupport ? <><i className="fa-solid fa-headset" aria-hidden="true" /> Support</> : "You"}</strong>
+                      <time dateTime={message.createdAt.toISOString()}>{dateFormat.format(message.createdAt)}</time>
+                    </div>
+                    <p>{message.body}</p>
                   </li>;
                 })}
               </ol>
 
-              {resolved && outcome && <div className={`support-outcome support-outcome--${outcome.tone}`}>
+              {solved && outcome && <div className={`support-outcome support-outcome--${outcome.tone}`}>
                 <div className="support-outcome__head">
                   <i className={outcome.icon} aria-hidden="true" />
                   <strong>{outcome.label}</strong>
@@ -122,13 +134,15 @@ export function SupportTicketList({ tickets, orders, orderLabels, hint }: {
                 {ticket.resolutionNote && <blockquote>{ticket.resolutionNote}</blockquote>}
               </div>}
 
-              {ticket.status === "WAITING" && <div className="support-outcome support-outcome--waiting">
+              {solved && ticket.closedByReporter && <div className="support-outcome support-outcome--neutral">
                 <div className="support-outcome__head">
-                  <i className="fa-solid fa-reply" aria-hidden="true" />
-                  <strong>We need something from you</strong>
+                  <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                  <strong>You closed this ticket</strong>
                 </div>
-                <p>Support has asked a question about this ticket. Check your email or Discord and reply there so we can keep going.</p>
+                <p>No refund or credit was issued, because you closed it yourself rather than asking us to settle it. Reply below if it turns out you still need us.</p>
               </div>}
+
+              <SupportTicketActions ticketId={ticket.id} solved={solved} />
             </article>;
           })}
     </div>

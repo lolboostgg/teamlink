@@ -387,11 +387,15 @@ model AdminAuditLog {
   @@index([entityType, entityId])
 }
 
+/// Three states, because a ticket only ever answers one question for the
+/// person who opened it: has anybody picked this up, and is it finished.
+/// The old vocabulary had a fourth, WAITING, which claimed support was
+/// blocked on the reporter — with no channel to ask them anything through,
+/// it was a dead end. Replies are that channel now, so the state is gone.
 enum DisputeStatus {
-  OPEN
-  INVESTIGATING
-  WAITING
-  RESOLVED
+  PENDING
+  IN_PROGRESS
+  SOLVED
 }
 
 enum DisputeResolution {
@@ -411,11 +415,17 @@ model Dispute {
   assigneeId     String?
   title          String
   description    String             @db.Text
-  status         DisputeStatus      @default(OPEN)
+  status         DisputeStatus      @default(PENDING)
   resolution     DisputeResolution?
   resolutionNote String?            @db.Text
   amountEUR      Decimal?           @db.Decimal(10, 2)
   resolvedAt     DateTime?
+  /// Set when the reporter closed it themselves rather than support solving
+  /// it. Both land on SOLVED, and the difference is the whole story the card
+  /// tells: "you closed this" is not "we refunded you". Inferring it from a
+  /// null `resolution` would break the moment an admin closes one without
+  /// picking an outcome.
+  closedByReporter Boolean          @default(false)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   notes          DisputeNote[]
@@ -425,11 +435,23 @@ model Dispute {
   @@index([openedById])
 }
 
+/// Everything written on a ticket after it was opened, in one table.
+///
+/// `internal` is the whole access rule: true is an admin talking to other
+/// admins and never leaves the admin page, false is a message in the
+/// conversation the reporter can see. It defaults to true so a note added by
+/// code that hasn't thought about it stays private — the failure that costs
+/// nothing, rather than the one that shows a customer an internal remark.
 model DisputeNote {
   id        String   @id @default(cuid())
   disputeId String
   dispute   Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
   authorId  String
+  /// Which side wrote it, captured at write time. Reading it back off the
+  /// author's User row would relabel every past message the day somebody is
+  /// promoted to admin, and a support reply has to keep reading as a support
+  /// reply forever.
+  authorRole Role    @default(CLIENT)
   internal  Boolean  @default(true)
   body      String   @db.Text
   createdAt DateTime @default(now())

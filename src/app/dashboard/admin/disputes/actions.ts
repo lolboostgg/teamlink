@@ -21,23 +21,30 @@ function ticketHref(openedByRole: string): string {
 
 /** Plain-language status, for a notification the customer actually reads. */
 const STATUS_SAID: Record<string, string> = {
-  OPEN: "reopened",
-  INVESTIGATING: "being looked into",
-  WAITING: "waiting on your reply",
-  RESOLVED: "resolved",
+  PENDING: "back in the queue",
+  IN_PROGRESS: "being looked into",
+  SOLVED: "solved",
 };
 
+/**
+ * Triage: where the ticket sits, who owns it, and a note for other admins.
+ *
+ * SOLVED is reachable from here, but resolveDispute below is the way to
+ * finish a ticket that owes somebody money — this one moves no funds and
+ * records no outcome, so closing from here leaves the card saying only that
+ * it is done.
+ */
 export async function updateDispute(formData: FormData) {
   const { user } = await requireAdmin("support");
   const id = String(formData.get("id") ?? "");
-  const status = String(formData.get("status") ?? "OPEN") as "OPEN" | "INVESTIGATING" | "WAITING" | "RESOLVED";
+  const status = String(formData.get("status") ?? "PENDING") as "PENDING" | "IN_PROGRESS" | "SOLVED";
   const assigneeId = String(formData.get("assigneeId") ?? "") || null;
   const note = String(formData.get("note") ?? "").trim().slice(0, 2000);
   const before = await prisma.dispute.findUnique({ where: { id } });
   if (!before) throw new Error("Dispute not found.");
   await prisma.$transaction(async (tx) => {
-    await tx.dispute.update({ where: { id }, data: { status, assigneeId, resolvedAt: status === "RESOLVED" ? new Date() : null } });
-    if (note) await tx.disputeNote.create({ data: { disputeId: id, authorId: user.id, internal: true, body: note } });
+    await tx.dispute.update({ where: { id }, data: { status, assigneeId, resolvedAt: status === "SOLVED" ? new Date() : null, ...(status === "SOLVED" ? {} : { closedByReporter: false }) } });
+    if (note) await tx.disputeNote.create({ data: { disputeId: id, authorId: user.id, authorRole: "ADMIN", internal: true, body: note } });
   });
   await writeAudit({ actorId: user.id, action: "dispute.updated", entityType: "Dispute", entityId: id, reason: note, before: { status: before.status, assigneeId: before.assigneeId }, after: { status, assigneeId } });
 
@@ -85,8 +92,8 @@ export async function resolveDispute(formData: FormData) {
       }
     }
   }
-  await prisma.dispute.update({ where: { id }, data: { status: "RESOLVED", resolution, resolutionNote: note, amountEUR: amount || null, resolvedAt: new Date(), assigneeId: dispute.assigneeId ?? user.id } });
-  await writeAudit({ actorId: user.id, action: "dispute.resolved", entityType: "Dispute", entityId: id, reason: note, before: { status: dispute.status }, after: { status: "RESOLVED", resolution, amountEUR: amount } });
+  await prisma.dispute.update({ where: { id }, data: { status: "SOLVED", closedByReporter: false, resolution, resolutionNote: note, amountEUR: amount || null, resolvedAt: new Date(), assigneeId: dispute.assigneeId ?? user.id } });
+  await writeAudit({ actorId: user.id, action: "dispute.resolved", entityType: "Dispute", entityId: id, reason: note, before: { status: dispute.status }, after: { status: "SOLVED", resolution, amountEUR: amount } });
 
   // The outcome is the whole point of the ticket, and it is the one message
   // in this flow that carries money: the resolution note is what a customer
@@ -101,6 +108,51 @@ export async function resolveDispute(formData: FormData) {
     body: note,
     href: ticketHref(dispute.openedByRole),
   });
+  revalidatePath("/dashboard/admin/disputes");
+  revalidatePath(ticketHref(dispute.openedByRole));
+}
+
+/**
+ * A reply to the person who opened the ticket.
+ *
+ * The counterpart to the internal note in triage, and kept a separate action
+ * rather than a checkbox on that form for the same reason the two forms on
+ * the page are separate: one of these is read by a customer and the other
+ * never leaves this page, and a mis-ticked box is the kind of mistake that
+ * cannot be taken back.
+ *
+ * Replying moves a PENDING ticket to IN_PROGRESS on its own. An admin who has
+ * answered is working on it, and making them say so a second time in the
+ * status picker is a step that only ever gets forgotten.
+ */
+export async function replyAsAdmin(formData: FormData) {
+  const { user } = await requireAdmin("support");
+  const id = String(formData.get("id") ?? "");
+  const body = String(formData.get("body") ?? "").trim().slice(0, 3000);
+  if (!body) throw new Error("Write a reply first.");
+
+  const dispute = await prisma.dispute.findUnique({ where: { id } });
+  if (!dispute) throw new Error("Dispute not found.");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.disputeNote.create({ data: { disputeId: id, authorId: user.id, authorRole: "ADMIN", internal: false, body } });
+    await tx.dispute.update({
+      where: { id },
+      data: {
+        assigneeId: dispute.assigneeId ?? user.id,
+        ...(dispute.status === "PENDING" ? { status: "IN_PROGRESS" } : {}),
+      },
+    });
+  });
+
+  await writeAudit({ actorId: user.id, action: "dispute.replied", entityType: "Dispute", entityId: id, reason: body });
+  await notifyUser(dispute.openedById, {
+    type: "dispute.replied",
+    title: `Support replied to your ticket`,
+    body: body.length > 160 ? `${body.slice(0, 157)}…` : body,
+    href: ticketHref(dispute.openedByRole),
+  });
+
   revalidatePath("/dashboard/admin/disputes");
   revalidatePath(ticketHref(dispute.openedByRole));
 }

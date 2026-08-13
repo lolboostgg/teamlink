@@ -12,7 +12,15 @@ export default async function ClientDisputesPage() {
 
   const [orders, tickets] = await Promise.all([
     prisma.order.findMany({ where: { clientUserId: session.user.id }, select: { id: true, orderNo: true, gameName: true, option: true }, orderBy: { createdAt: "desc" }, take: 50 }),
-    prisma.dispute.findMany({ where: { openedById: session.user.id }, orderBy: { updatedAt: "desc" }, take: 50 }),
+    prisma.dispute.findMany({
+      where: { openedById: session.user.id },
+      // Public notes only. `internal` is the access rule for the whole
+      // conversation, and it is applied here rather than in the component so
+      // an internal remark cannot reach the client bundle at all.
+      include: { notes: { where: { internal: false }, orderBy: { createdAt: "asc" }, select: { id: true, body: true, authorRole: true, createdAt: true } } },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+    }),
   ]);
 
   // A ticket can outlive the fifty orders the picker offers, and a card that
@@ -35,9 +43,11 @@ export default async function ClientDisputesPage() {
     // Prisma hands Decimal back as its own type, which cannot cross the
     // server/client boundary or be formatted with toFixed.
     amountEUR: ticket.amountEUR === null ? null : Number(ticket.amountEUR),
+    closedByReporter: ticket.closedByReporter,
     orderId: ticket.orderId,
     createdAt: ticket.createdAt,
     updatedAt: ticket.updatedAt,
+    messages: ticket.notes,
   }));
 
   return <div className="dashboard-panel admin-ops-page">

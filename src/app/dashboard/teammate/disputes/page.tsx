@@ -15,7 +15,13 @@ export default async function TeammateDisputesPage() {
       where: { userId: session.user.id },
       select: { candidacies: { where: { selected: true }, select: { order: { select: { id: true, orderNo: true, gameName: true, option: true } } }, orderBy: { invitedAt: "desc" }, take: 50 } },
     }),
-    prisma.dispute.findMany({ where: { openedById: session.user.id }, orderBy: { updatedAt: "desc" }, take: 50 }),
+    prisma.dispute.findMany({
+      where: { openedById: session.user.id },
+      // Public notes only — see the note on the customer page.
+      include: { notes: { where: { internal: false }, orderBy: { createdAt: "asc" }, select: { id: true, body: true, authorRole: true, createdAt: true } } },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+    }),
   ]);
 
   const orders = teammate?.candidacies.map(({ order }) => order) ?? [];
@@ -36,9 +42,11 @@ export default async function TeammateDisputesPage() {
     resolution: ticket.resolution,
     resolutionNote: ticket.resolutionNote,
     amountEUR: ticket.amountEUR === null ? null : Number(ticket.amountEUR),
+    closedByReporter: ticket.closedByReporter,
     orderId: ticket.orderId,
     createdAt: ticket.createdAt,
     updatedAt: ticket.updatedAt,
+    messages: ticket.notes,
   }));
 
   return <section className="dashboard-panel admin-ops-page">

@@ -126,6 +126,16 @@ const POLICY: Record<string, ChannelPolicy> = {
   // off for admins by EMAIL_BY_ROLE regardless of what is set here.
   "dispute.opened": { discord: true, topic: "orders" },
 
+  // Somebody is waiting on an answer at the other end of this, on both
+  // sides — a reply that sits unread for a day is the same as no reply.
+  // Discord and not mail: it wants a reaction, and the thread on the ticket
+  // page is already the durable copy.
+  "dispute.replied": { discord: true, topic: "orders" },
+
+  // Admin-facing, and the point is to stop work already under way, so it has
+  // to arrive rather than wait to be noticed.
+  "dispute.closed": { discord: true, topic: "orders" },
+
   // A status change is a nudge, not news: bell only, so a ticket moving
   // through three states doesn't produce three DMs about nothing.
   "dispute.updated": {},
@@ -176,6 +186,8 @@ const PRESENTATION: Record<string, { emoji: string; color: number }> = {
   "order.unread_escalated": { emoji: "\u{1F4AC}", color: 0xf5a524 },
   "dispute.opened": { emoji: "\u{1F3AB}", color: 0xe5484d },
   "dispute.updated": { emoji: "\u{1F50D}", color: 0xf5a524 },
+  "dispute.replied": { emoji: "\u{1F4E9}", color: 0x4066ff },
+  "dispute.closed": { emoji: "\u{1F513}", color: 0xf5a524 },
   "dispute.resolved": { emoji: "\u{2705}", color: 0x2fbf71 },
 };
 
