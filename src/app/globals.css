@@ -20584,12 +20584,15 @@ img.bento-chat__avatar {
 .support-outcome { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--dash-line); border-radius: 13px; background: var(--dash-surface-3); }
 .support-outcome--good { border-color: color-mix(in srgb, var(--success) 26%, transparent); background: color-mix(in srgb, var(--success) 8%, var(--dash-surface-3)); }
 .support-outcome--bad { border-color: color-mix(in srgb, var(--danger) 26%, transparent); background: color-mix(in srgb, var(--danger) 8%, var(--dash-surface-3)); }
-.support-outcome--waiting { border-color: color-mix(in srgb, var(--hue-gold) 28%, transparent); background: color-mix(in srgb, var(--hue-gold) 8%, var(--dash-surface-3)); }
+/* The reporter closed it themselves: finished, but nothing was decided and
+   nothing was paid, so it earns neither the green of a settled claim nor the
+   red of a rejected one. */
+.support-outcome--neutral { border-color: var(--dash-line-strong); }
 .support-outcome__head { display: flex; align-items: center; gap: 9px; }
 .support-outcome__head > i { font-size: 12px; }
 .support-outcome--good .support-outcome__head > i { color: var(--success); }
 .support-outcome--bad .support-outcome__head > i { color: var(--danger); }
-.support-outcome--waiting .support-outcome__head > i { color: var(--hue-gold); }
+.support-outcome--neutral .support-outcome__head > i { color: var(--text-faint); }
 .support-outcome__head strong { font-size: 13px; }
 .support-outcome__amount { margin-left: auto; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--success) 17%, transparent); color: var(--success); font-size: 12px; font-weight: 900; }
 .support-outcome p { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
@@ -20600,6 +20603,11 @@ img.bento-chat__avatar {
    the reporter is flush left on the card's own surface. */
 .ticket-thread { display: grid; gap: 9px; margin: 0; padding: 0; list-style: none; }
 .ticket-message { display: grid; gap: 5px; padding: 11px 14px; border: 1px solid var(--dash-line); border-radius: 12px; background: var(--dash-surface-3); }
+/* Declared rather than left to the base rule: the reporter's own messages
+   sitting flush on the card while support's are indented and tinted is the
+   design, not an omission, and the next person to read this file should not
+   have to guess which. */
+.ticket-message--mine, .ticket-message--reporter { margin-right: 22px; }
 .ticket-message--support { margin-left: 22px; border-color: color-mix(in srgb, var(--accent) 26%, transparent); background: color-mix(in srgb, var(--accent) 9%, var(--dash-surface-3)); }
 .ticket-message__meta { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .ticket-message__meta strong { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
