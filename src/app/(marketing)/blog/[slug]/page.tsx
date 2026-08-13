@@ -36,7 +36,14 @@ export default async function PostPage({ params }: Props) {
   return <main className="blog-page blog-article-page section"><div className="blog-article-shell">
     <aside className="blog-article-adrail blog-article-adrail--left" aria-label="QUP.gg">
       <Link href="/games" className="blog-article-adrail__sticky">
-        <Image src="/blog/blog-side-left.png" alt="Ready. Queue. Team Up." width={944} height={1668} priority />
+        {/* Neither `priority` nor a full-width `sizes`. The rail is
+            display:none below 1540px, but `priority` emits a preload link
+            that the browser honours whatever the CSS says — so every phone
+            and laptop was fetching two decorative banners it would never
+            show, ahead of the article they came for. Lazy and never visible
+            means never fetched. The column is at most 238px wide, so the
+            optimizer has no reason to hand out the 1080px variant either. */}
+        <Image src="/blog/blog-side-left.png" alt="Ready. Queue. Team Up." width={944} height={1668} sizes="238px" />
       </Link>
     </aside>
     <div className="container container--narrow blog-article-content">
@@ -51,7 +58,7 @@ export default async function PostPage({ params }: Props) {
     </div>
     <aside className="blog-article-adrail blog-article-adrail--right" aria-label="QUP.gg">
       <Link href="/games" className="blog-article-adrail__sticky">
-        <Image src="/blog/blog-side-right.png" alt="Buy. Wait. Team Up." width={944} height={1668} priority />
+        <Image src="/blog/blog-side-right.png" alt="Buy. Wait. Team Up." width={944} height={1668} sizes="238px" />
       </Link>
     </aside>
   </div></main>;
