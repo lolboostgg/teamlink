@@ -34,7 +34,7 @@ export function IconMultiSelect({ label, value, options, placeholder = "Add…",
   useEffect(() => {
     if (!open) return;
     function onDocPointerDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      if (!rootRef.current?.contains(e.target as Node)) close();
     }
     document.addEventListener("mousedown", onDocPointerDown);
     return () => document.removeEventListener("mousedown", onDocPointerDown);
@@ -43,6 +43,29 @@ export function IconMultiSelect({ label, value, options, placeholder = "Add…",
   useEffect(() => {
     if (open) searchRef.current?.focus();
   }, [open]);
+
+  function close() {
+    setOpen(false);
+    setQuery("");
+  }
+
+  /**
+   * Adds one option and empties the search box.
+   *
+   * The clear is the point. Typing "thr" and picking Thresh used to leave
+   * "thr" sitting in the box, so the list stayed filtered to a search whose
+   * only match had just been taken — which reads as "nothing left to add" and
+   * looks like the picker broke. A multi-select is normally used to add
+   * several in a row, so the cursor goes back to an empty box ready for the
+   * next name.
+   */
+  function pick(optionValue: string) {
+    onChange([...value, optionValue]);
+    setQuery("");
+    // Clicking an option moved focus to a button that is about to disappear
+    // from the list, which drops focus to the body and ends keyboard use.
+    searchRef.current?.focus();
+  }
 
   const byValue = useMemo(() => new Map(options.map((o) => [o.value, o])), [options]);
   const selected = value.map((v) => byValue.get(v)).filter((o): o is ProfileOption => Boolean(o));
@@ -79,7 +102,7 @@ export function IconMultiSelect({ label, value, options, placeholder = "Add…",
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={label}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (open ? close() : setOpen(true))}
       >
         <i className="fa-solid fa-plus icon-select__glyph" aria-hidden="true" />
         <span className="icon-select__placeholder">
@@ -100,10 +123,10 @@ export function IconMultiSelect({ label, value, options, placeholder = "Add…",
               placeholder={`Search ${label.toLowerCase()}…`}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Escape") setOpen(false);
+                if (e.key === "Escape") close();
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  if (available[0]) onChange([...value, available[0].value]);
+                  if (available[0]) pick(available[0].value);
                 }
               }}
             />
@@ -117,7 +140,7 @@ export function IconMultiSelect({ label, value, options, placeholder = "Add…",
                   role="option"
                   aria-selected="false"
                   className="icon-select__option"
-                  onClick={() => onChange([...value, o.value])}
+                  onClick={() => pick(o.value)}
                 >
                   <OptionMark option={o} />
                   <span>{o.label}</span>
