@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { openDispute } from "@/app/dashboard/disputes/actions";
+import { SupportTicketList, type SupportTicketRow } from "@/components/dashboard/SupportTicketList";
 
 export const metadata: Metadata = { title: "Support tickets" };
 export const dynamic = "force-dynamic";
@@ -9,12 +9,44 @@ export const dynamic = "force-dynamic";
 export default async function ClientDisputesPage() {
   const session = await auth();
   if (!session?.user?.id) return null;
+
   const [orders, tickets] = await Promise.all([
     prisma.order.findMany({ where: { clientUserId: session.user.id }, select: { id: true, orderNo: true, gameName: true, option: true }, orderBy: { createdAt: "desc" }, take: 50 }),
-    prisma.dispute.findMany({ where: { openedById: session.user.id }, orderBy: { updatedAt: "desc" } }),
+    prisma.dispute.findMany({ where: { openedById: session.user.id }, orderBy: { updatedAt: "desc" }, take: 50 }),
   ]);
-  return <div className="dashboard-panel admin-ops-page"><div className="dashboard-panel__head"><div><div className="dashboard-panel__title">Support tickets</div><div className="dashboard-panel__sub">Tell us what happened in a specific order</div></div></div>
-    <form action={openDispute} className="ops-create-form"><select name="orderId" required><option value="">Choose an order</option>{orders.map(o => <option value={o.id} key={o.id}>#{o.orderNo} · {o.gameName} · {o.option}</option>)}</select><input name="title" required maxLength={120} placeholder="Short summary"/><textarea name="description" required minLength={10} placeholder="What happened?"/><button className="btn btn--vivid">Open ticket</button></form>
-    <div className="admin-ticket-list">{tickets.map(ticket => <article className="admin-ticket" key={ticket.id}><header><div><span className={`status-badge status-${ticket.status.toLowerCase()}`}>{ticket.status}</span><h3>{ticket.title}</h3></div></header><p>{ticket.description}</p>{ticket.resolutionNote && <div className="admin-ticket__context">Resolution: {ticket.resolutionNote}</div>}</article>)}</div>
+
+  // A ticket can outlive the fifty orders the picker offers, and a card that
+  // can't name the order it is about is half a card. Only the ones missing
+  // from the list above are looked up, so the common case costs nothing.
+  const known = new Set(orders.map((order) => order.id));
+  const missing = [...new Set(tickets.flatMap((ticket) => ticket.orderId && !known.has(ticket.orderId) ? [ticket.orderId] : []))];
+  const older = missing.length
+    ? await prisma.order.findMany({ where: { id: { in: missing } }, select: { id: true, orderNo: true, gameName: true, option: true } })
+    : [];
+  const orderLabels = new Map([...orders, ...older].map((order) => [order.id, `#${order.orderNo} · ${order.gameName}`]));
+
+  const rows: SupportTicketRow[] = tickets.map((ticket) => ({
+    id: ticket.id,
+    title: ticket.title,
+    description: ticket.description,
+    status: ticket.status,
+    resolution: ticket.resolution,
+    resolutionNote: ticket.resolutionNote,
+    // Prisma hands Decimal back as its own type, which cannot cross the
+    // server/client boundary or be formatted with toFixed.
+    amountEUR: ticket.amountEUR === null ? null : Number(ticket.amountEUR),
+    orderId: ticket.orderId,
+    createdAt: ticket.createdAt,
+    updatedAt: ticket.updatedAt,
+  }));
+
+  return <div className="dashboard-panel admin-ops-page">
+    <div className="dashboard-panel__head">
+      <div>
+        <div className="dashboard-panel__title">Support tickets</div>
+        <div className="dashboard-panel__sub">Tell us what happened in a specific order</div>
+      </div>
+    </div>
+    <SupportTicketList tickets={rows} orders={orders} orderLabels={orderLabels} hint="Pick the order it happened in and we'll have the session in front of us when we read it." />
   </div>;
 }

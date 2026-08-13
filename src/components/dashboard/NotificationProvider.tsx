@@ -82,6 +82,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (type.startsWith("order.unread")) return "message";
     if (type === "order.cancel_requested") return "cancel";
     if (type === "dispatch.incoming") return "request";
+    // A new ticket is somebody stuck and waiting on a person. It gets the
+    // same cue as a cancellation on purpose — both are "an admin has to look
+    // at this", and neither should sound like a routine bell row.
+    if (type === "dispute.opened") return "cancel";
+    if (type === "dispute.resolved") return "tip";
     return "generic";
   }
 

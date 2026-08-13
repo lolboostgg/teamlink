@@ -55,12 +55,12 @@ const EMAIL_BY_ROLE: Record<string, ReadonlySet<string>> = {
   // Money leaving the platform, and nothing else. A teammate lives in the
   // dispatch panel and on Discord — an order to answer is worth a DM and is
   // worthless as mail, since it has expired by the time it is read.
-  TEAMMATE: new Set(["payout.paid", "payout.rejected"]),
+  TEAMMATE: new Set(["payout.paid", "payout.rejected", "dispute.resolved"]),
 
   // Money and outcomes: what was paid, what it produced, and what came back.
   // The confirmation and the session-complete mails are sent from
   // orderNotifications.ts, where the order detail is to hand.
-  CLIENT: new Set(["order.abandoned", "order.refund_due"]),
+  CLIENT: new Set(["order.abandoned", "order.refund_due", "dispute.resolved"]),
 };
 
 function mayEmail(role: string | undefined, type: string): boolean {
@@ -115,6 +115,24 @@ const POLICY: Record<string, ChannelPolicy> = {
   "payout.requested": {},
   "teammate.joined": {},
   "verification.submitted": {},
+
+  // ── Support tickets ──────────────────────────────────────────
+  //
+  // The exception to "admins are bell-only": support has no dispatch panel
+  // anybody is already staring at, and a ticket that waits until somebody
+  // happens to open /dashboard/admin/disputes is a ticket answered a day
+  // late. Discord DM rather than mail, because it wants a reaction now and
+  // is worthless as a record — the ticket itself is the record. Mail stays
+  // off for admins by EMAIL_BY_ROLE regardless of what is set here.
+  "dispute.opened": { discord: true, topic: "orders" },
+
+  // A status change is a nudge, not news: bell only, so a ticket moving
+  // through three states doesn't produce three DMs about nothing.
+  "dispute.updated": {},
+
+  // The outcome, and usually money with it. This is the one somebody goes
+  // looking for weeks later, which is exactly what mail is for.
+  "dispute.resolved": { discord: true, email: true, topic: "balance" },
 };
 
 /** Types that write a bell row but have no policy entry get nothing extra —
@@ -156,6 +174,9 @@ const PRESENTATION: Record<string, { emoji: string; color: number }> = {
   "order.assigned": { emoji: "\u{1F3AF}", color: 0x2fbf71 },
   "order.unread": { emoji: "\u{1F4AC}", color: 0x4066ff },
   "order.unread_escalated": { emoji: "\u{1F4AC}", color: 0xf5a524 },
+  "dispute.opened": { emoji: "\u{1F3AB}", color: 0xe5484d },
+  "dispute.updated": { emoji: "\u{1F50D}", color: 0xf5a524 },
+  "dispute.resolved": { emoji: "\u{2705}", color: 0x2fbf71 },
 };
 
 /**

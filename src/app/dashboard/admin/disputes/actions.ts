@@ -6,6 +6,26 @@ import { requireAdmin } from "@/lib/admin/access";
 import { writeAudit } from "@/lib/admin/audit";
 import { manualRefund } from "@/app/dashboard/admin/orders/actions";
 import { adjustClientCredit } from "@/app/dashboard/admin/accounts/actions";
+import { notifyUser } from "@/lib/notifications/service";
+
+/**
+ * Where the person who opened a ticket reads it.
+ *
+ * A dispute records the role it was opened under, and the two dashboards live
+ * at different paths — linking a teammate at the client page is a dead end,
+ * and the bell is useless if its link goes nowhere.
+ */
+function ticketHref(openedByRole: string): string {
+  return openedByRole === "TEAMMATE" ? "/dashboard/teammate/disputes" : "/dashboard/client/disputes";
+}
+
+/** Plain-language status, for a notification the customer actually reads. */
+const STATUS_SAID: Record<string, string> = {
+  OPEN: "reopened",
+  INVESTIGATING: "being looked into",
+  WAITING: "waiting on your reply",
+  RESOLVED: "resolved",
+};
 
 export async function updateDispute(formData: FormData) {
   const { user } = await requireAdmin("support");
@@ -20,7 +40,21 @@ export async function updateDispute(formData: FormData) {
     if (note) await tx.disputeNote.create({ data: { disputeId: id, authorId: user.id, internal: true, body: note } });
   });
   await writeAudit({ actorId: user.id, action: "dispute.updated", entityType: "Dispute", entityId: id, reason: note, before: { status: before.status, assigneeId: before.assigneeId }, after: { status, assigneeId } });
+
+  // Only a status the reporter can see the point of. Assigning the ticket to
+  // a different admin, or filing an internal note, is bookkeeping — telling
+  // somebody their ticket "changed" when nothing about it changed for them is
+  // how a notification feed gets muted.
+  if (status !== before.status) {
+    await notifyUser(before.openedById, {
+      type: "dispute.updated",
+      title: `Your ticket is ${STATUS_SAID[status] ?? status.toLowerCase()}`,
+      body: before.title,
+      href: ticketHref(before.openedByRole),
+    });
+  }
   revalidatePath("/dashboard/admin/disputes");
+  revalidatePath(ticketHref(before.openedByRole));
 }
 
 export async function resolveDispute(formData: FormData) {
@@ -53,5 +87,20 @@ export async function resolveDispute(formData: FormData) {
   }
   await prisma.dispute.update({ where: { id }, data: { status: "RESOLVED", resolution, resolutionNote: note, amountEUR: amount || null, resolvedAt: new Date(), assigneeId: dispute.assigneeId ?? user.id } });
   await writeAudit({ actorId: user.id, action: "dispute.resolved", entityType: "Dispute", entityId: id, reason: note, before: { status: dispute.status }, after: { status: "RESOLVED", resolution, amountEUR: amount } });
+
+  // The outcome is the whole point of the ticket, and it is the one message
+  // in this flow that carries money: the resolution note is what a customer
+  // goes looking for weeks later, so this one is mailed as well as belled
+  // (see the policy table in notify/channels.ts).
+  const paid = (resolution === "REFUND" || resolution === "PARTIAL_REFUND" || resolution === "CREDIT") && amount > 0
+    ? ` · €${amount.toFixed(2)}`
+    : "";
+  await notifyUser(dispute.openedById, {
+    type: "dispute.resolved",
+    title: `Ticket resolved · ${resolution.replaceAll("_", " ").toLowerCase()}${paid}`,
+    body: note,
+    href: ticketHref(dispute.openedByRole),
+  });
   revalidatePath("/dashboard/admin/disputes");
+  revalidatePath(ticketHref(dispute.openedByRole));
 }
