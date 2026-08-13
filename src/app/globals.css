@@ -20551,25 +20551,38 @@ img.bento-chat__avatar {
 .support-ticket-form__foot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; }
 .support-ticket-form__foot small { color: var(--text-faint); font-size: 11px; }
 
-.support-ticket-list { display: grid; gap: 12px; }
-.support-ticket-list__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.support-ticket-list__head h2 { margin: 0; font-size: 13px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
-.support-ticket-list__head span { color: var(--text-faint); font-size: 11px; }
+.support-ticket-list { display: grid; gap: 10px; }
+.support-tickets__bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.support-tickets__tally { display: flex; align-items: baseline; gap: 9px; }
+.support-tickets__tally strong { font-size: 13px; font-weight: 900; letter-spacing: .03em; text-transform: uppercase; }
+.support-tickets__tally span { color: var(--hue-gold); font-size: 11px; font-weight: 700; }
+
+/* Collapsed by default, so a list of tickets reads as a list rather than as
+   several screens of conversation stacked on top of each other. */
+.support-ticket__row { display: flex; align-items: center; gap: 11px; width: 100%; padding: 14px 18px 14px 21px; border: 0; background: none; color: var(--text); cursor: pointer; font: inherit; text-align: left; }
+.support-ticket__row-main { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.support-ticket__row-meta { overflow: hidden; color: var(--text-faint); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.support-ticket__row-meta i { font-size: 9px; }
+.support-ticket__row > time { flex: 0 0 auto; color: var(--text-faint); font-size: 11px; white-space: nowrap; }
+.support-ticket__chevron { flex: 0 0 auto; color: var(--text-faint); font-size: 10px; transition: transform .18s ease; }
+.support-ticket.is-open .support-ticket__chevron { transform: rotate(180deg); }
+.support-ticket__waiting { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-size: 10px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.support-ticket__waiting i { font-size: 9px; }
+.support-ticket__body { display: grid; gap: 13px; padding: 0 18px 18px 21px; }
 
 /* The left rail carries the status colour, so the state of a ticket is
    readable down a column of them before a single word is read. */
-.support-ticket { position: relative; display: grid; gap: 13px; overflow: hidden; padding: 18px 20px 18px 23px; border: 1px solid var(--dash-line); border-radius: var(--dash-radius); background: var(--dash-surface-2); }
+.support-ticket { position: relative; overflow: hidden; border: 1px solid var(--dash-line); border-radius: var(--dash-radius); background: var(--dash-surface-2); }
+.support-ticket:hover:not(.is-open) { border-color: var(--dash-line-strong); }
+.support-ticket.is-open { border-color: color-mix(in srgb, var(--accent) 30%, var(--dash-line)); }
 .support-ticket::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--text-faint); }
 .support-ticket--pending::before { background: var(--success); }
 .support-ticket--in_progress::before { background: var(--hue-gold); }
 .support-ticket--solved::before { background: color-mix(in srgb, var(--text-faint) 60%, transparent); }
 .support-ticket--solved { background: color-mix(in srgb, var(--dash-surface-2) 70%, transparent); }
-.support-ticket__head { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
-.support-ticket__order { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--dash-line); border-radius: 999px; background: var(--dash-surface-3); color: var(--text-muted); font-size: 11px; font-weight: 700; }
-.support-ticket__order i { color: var(--accent); font-size: 10px; }
-.support-ticket__head time { margin-left: auto; color: var(--text-faint); font-size: 11px; white-space: nowrap; }
-.support-ticket__title { margin: 0; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
-.support-ticket__body { margin: -5px 0 0; color: var(--text-muted); font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; white-space: pre-line; }
+/* One line, ellipsised: the row is a summary and the title is the part of it
+   that varies in length. The whole thing is in the thread once opened. */
+.support-ticket__title { overflow: hidden; margin: 0; font-size: 13.5px; font-weight: 800; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Progress, not a legend: a step that hasn't happened is dimmed rather than
    hidden, so the whole path stays visible from the first day. */
@@ -20710,7 +20723,11 @@ img.bento-chat__avatar {
 .support-empty p { max-width: 340px; margin: 0; color: var(--text-faint); font-size: 12px; line-height: 1.6; }
 
 @media (max-width: 640px) {
-  .support-ticket__head time { width: 100%; margin-left: 0; }
+  /* The row runs out of width long before the phone does; the summary line
+     underneath already carries the order, so the date and the badge go. */
+  .support-ticket__row > time, .support-ticket__waiting span { display: none; }
+  .support-ticket__row { padding-left: 16px; gap: 9px; }
+  .support-ticket__body { padding-left: 16px; }
   .support-track__step + .support-track__step { margin-left: 0; }
   .support-track__step + .support-track__step::before { display: none; }
 }

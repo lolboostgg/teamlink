@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { SupportTicketForm, type TicketOrderOption } from "@/components/dashboard/SupportTicketForm";
 import { SupportTicketActions } from "@/components/dashboard/SupportTicketActions";
 
@@ -8,6 +11,12 @@ import { SupportTicketActions } from "@/components/dashboard/SupportTicketAction
  * ownership controls. What somebody who opened a ticket wants to know is
  * where it stands and what came of it, and everything here answers one of
  * those two questions — or lets them say something back.
+ *
+ * Tickets come first and the form folds away, which is the opposite of how
+ * this started. Opening a ticket is something a customer does once; coming
+ * back to read the answer is what they do after that, and the form was a
+ * screenful of empty fields standing between them and it. It unfolds by
+ * itself only when there are no tickets, because then it is the whole page.
  */
 
 export interface SupportTicketMessage {
@@ -33,12 +42,13 @@ export interface SupportTicketRow {
   messages: SupportTicketMessage[];
 }
 
-/** The stages a ticket moves through, in the order it moves through them. */
 const STAGES = [
   { key: "PENDING", label: "Pending", icon: "fa-solid fa-inbox" },
   { key: "IN_PROGRESS", label: "In progress", icon: "fa-solid fa-magnifying-glass" },
   { key: "SOLVED", label: "Solved", icon: "fa-solid fa-flag-checkered" },
 ] as const;
+
+const STATUS_LABEL: Record<string, string> = { PENDING: "Pending", IN_PROGRESS: "In progress", SOLVED: "Solved" };
 
 /**
  * What each outcome meant, in the reporter's terms.
@@ -56,6 +66,13 @@ const RESOLUTION_COPY: Record<string, { label: string; blurb: string; tone: stri
 };
 
 const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
+const shortFormat = new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short" });
+
+/** Whether support has said something the customer has not answered. */
+function hasUnansweredReply(ticket: SupportTicketRow): boolean {
+  const last = ticket.messages[ticket.messages.length - 1];
+  return ticket.status !== "SOLVED" && last?.authorRole === "ADMIN";
+}
 
 export function SupportTicketList({ tickets, orders, orderLabels, hint }: {
   tickets: SupportTicketRow[];
@@ -65,86 +82,112 @@ export function SupportTicketList({ tickets, orders, orderLabels, hint }: {
   orderLabels: Map<string, string>;
   hint: string;
 }) {
+  const [formOpen, setFormOpen] = useState(tickets.length === 0);
+  // Open on the ticket that is actually waiting for the customer, and
+  // otherwise on nothing: a list of collapsed rows is the point.
+  const [openId, setOpenId] = useState<string | null>(tickets.find(hasUnansweredReply)?.id ?? null);
+  const open = tickets.filter((ticket) => ticket.status !== "SOLVED").length;
+
   return <div className="support-tickets">
-    <SupportTicketForm orders={orders} hint={hint} />
+    <div className="support-tickets__bar">
+      <div className="support-tickets__tally">
+        <strong>{tickets.length || "No"} {tickets.length === 1 ? "ticket" : "tickets"}</strong>
+        {open > 0 && <span>{open} still open</span>}
+      </div>
+      {tickets.length > 0 && <button type="button" className={`btn btn--sm ${formOpen ? "btn--ghost" : "btn--vivid"}`} onClick={() => setFormOpen((value) => !value)} aria-expanded={formOpen}>
+        <i className={`fa-solid ${formOpen ? "fa-xmark" : "fa-plus"}`} aria-hidden="true" /> {formOpen ? "Cancel" : "New ticket"}
+      </button>}
+    </div>
+
+    {formOpen && <SupportTicketForm orders={orders} hint={hint} />}
+
+    {tickets.length === 0 && !formOpen && <div className="support-empty">
+      <i className="fa-regular fa-comments" aria-hidden="true" />
+      <strong>Nothing open</strong>
+      <p>When something goes wrong in a session, open a ticket and we&apos;ll pick it up.</p>
+    </div>}
 
     <div className="support-ticket-list">
-      <div className="support-ticket-list__head">
-        <h2>Your tickets</h2>
-        <span>{tickets.length || "No"} {tickets.length === 1 ? "ticket" : "tickets"}</span>
-      </div>
+      {tickets.map((ticket) => {
+        const solved = ticket.status === "SOLVED";
+        const tone = ticket.status.toLowerCase();
+        const expanded = openId === ticket.id;
+        const waiting = hasUnansweredReply(ticket);
+        const reached = STAGES.findIndex((stage) => stage.key === ticket.status) + 1;
+        const outcome = ticket.resolution ? RESOLUTION_COPY[ticket.resolution] : null;
+        const orderLabel = ticket.orderId ? orderLabels.get(ticket.orderId) : null;
 
-      {tickets.length === 0
-        ? <div className="support-empty">
-            <i className="fa-regular fa-comments" aria-hidden="true" />
-            <strong>Nothing open</strong>
-            <p>When something goes wrong in a session, open a ticket above and we&apos;ll pick it up.</p>
-          </div>
-        : tickets.map((ticket) => {
-            const solved = ticket.status === "SOLVED";
-            const tone = ticket.status.toLowerCase();
-            const reached = STAGES.findIndex((stage) => stage.key === ticket.status) + 1;
-            const outcome = ticket.resolution ? RESOLUTION_COPY[ticket.resolution] : null;
-            const orderLabel = ticket.orderId ? orderLabels.get(ticket.orderId) : null;
+        return <article className={`support-ticket support-ticket--${tone}${expanded ? " is-open" : ""}`} key={ticket.id}>
+          {/* The whole row is the control. A collapsed ticket has to say
+              enough to be skipped past without opening it: where it stands,
+              which order, and whether anybody is waiting on the customer. */}
+          <button type="button" className="support-ticket__row" onClick={() => setOpenId(expanded ? null : ticket.id)} aria-expanded={expanded}>
+            <span className={`status-badge status-${tone}`}>{STATUS_LABEL[ticket.status] ?? ticket.status}</span>
+            <span className="support-ticket__row-main">
+              <span className="support-ticket__title">{ticket.title}</span>
+              <span className="support-ticket__row-meta">
+                {orderLabel && <><i className="fa-solid fa-receipt" aria-hidden="true" /> {orderLabel} · </>}
+                {ticket.messages.length + 1} {ticket.messages.length === 0 ? "message" : "messages"}
+              </span>
+            </span>
+            {/* The label sits in its own span so a narrow screen can drop the
+                words and keep the icon, rather than losing the signal. */}
+            {waiting && <span className="support-ticket__waiting"><i className="fa-solid fa-envelope" aria-hidden="true" /><span>Support replied</span></span>}
+            <time dateTime={ticket.updatedAt.toISOString()}>{shortFormat.format(ticket.updatedAt)}</time>
+            <i className="fa-solid fa-chevron-down support-ticket__chevron" aria-hidden="true" />
+          </button>
 
-            return <article className={`support-ticket support-ticket--${tone}`} key={ticket.id}>
-              <header className="support-ticket__head">
-                <span className={`status-badge status-${tone}`}>{ticket.status.replace("_", " ").toLowerCase()}</span>
-                {orderLabel && <span className="support-ticket__order"><i className="fa-solid fa-receipt" aria-hidden="true" /> {orderLabel}</span>}
-                <time dateTime={ticket.createdAt.toISOString()}>{dateFormat.format(ticket.createdAt)}</time>
-              </header>
+          {expanded && <div className="support-ticket__body">
+            <ol className="support-track" aria-label="Ticket progress">
+              {STAGES.map((stage, index) => <li key={stage.key} className={`support-track__step${index < reached ? " is-done" : ""}${stage.key === ticket.status ? " is-current" : ""}`}>
+                <i className={stage.icon} aria-hidden="true" />
+                <span>{stage.label}</span>
+              </li>)}
+            </ol>
 
-              <h3 className="support-ticket__title">{ticket.title}</h3>
+            {/* The opening description is the first message in the thread
+                rather than a paragraph above it — it is the same thing, and
+                splitting them made the reply that answered it look like it
+                was answering nothing. */}
+            <ol className="ticket-thread">
+              <li className="ticket-message ticket-message--mine">
+                <div className="ticket-message__meta"><strong>You</strong><time dateTime={ticket.createdAt.toISOString()}>{dateFormat.format(ticket.createdAt)}</time></div>
+                <p>{ticket.description}</p>
+              </li>
+              {ticket.messages.map((message) => {
+                const fromSupport = message.authorRole === "ADMIN";
+                return <li key={message.id} className={`ticket-message ticket-message--${fromSupport ? "support" : "mine"}`}>
+                  <div className="ticket-message__meta">
+                    <strong>{fromSupport ? <><i className="fa-solid fa-headset" aria-hidden="true" /> Support</> : "You"}</strong>
+                    <time dateTime={message.createdAt.toISOString()}>{dateFormat.format(message.createdAt)}</time>
+                  </div>
+                  <p>{message.body}</p>
+                </li>;
+              })}
+            </ol>
 
-              <ol className="support-track" aria-label="Ticket progress">
-                {STAGES.map((stage, index) => <li key={stage.key} className={`support-track__step${index < reached ? " is-done" : ""}${stage.key === ticket.status ? " is-current" : ""}`}>
-                  <i className={stage.icon} aria-hidden="true" />
-                  <span>{stage.label}</span>
-                </li>)}
-              </ol>
+            {solved && outcome && <div className={`support-outcome support-outcome--${outcome.tone}`}>
+              <div className="support-outcome__head">
+                <i className={outcome.icon} aria-hidden="true" />
+                <strong>{outcome.label}</strong>
+                {ticket.amountEUR !== null && ticket.amountEUR > 0 && <span className="support-outcome__amount">€{ticket.amountEUR.toFixed(2)}</span>}
+              </div>
+              <p>{outcome.blurb}</p>
+              {ticket.resolutionNote && <blockquote>{ticket.resolutionNote}</blockquote>}
+            </div>}
 
-              {/* The opening description is the first message in the thread
-                  rather than a paragraph above it — it is the same thing, and
-                  splitting them made the reply that answered it look like it
-                  was answering nothing. */}
-              <ol className="ticket-thread">
-                <li className="ticket-message ticket-message--mine">
-                  <div className="ticket-message__meta"><strong>You</strong><time dateTime={ticket.createdAt.toISOString()}>{dateFormat.format(ticket.createdAt)}</time></div>
-                  <p>{ticket.description}</p>
-                </li>
-                {ticket.messages.map((message) => {
-                  const fromSupport = message.authorRole === "ADMIN";
-                  return <li key={message.id} className={`ticket-message ticket-message--${fromSupport ? "support" : "mine"}`}>
-                    <div className="ticket-message__meta">
-                      <strong>{fromSupport ? <><i className="fa-solid fa-headset" aria-hidden="true" /> Support</> : "You"}</strong>
-                      <time dateTime={message.createdAt.toISOString()}>{dateFormat.format(message.createdAt)}</time>
-                    </div>
-                    <p>{message.body}</p>
-                  </li>;
-                })}
-              </ol>
+            {solved && ticket.closedByReporter && <div className="support-outcome support-outcome--neutral">
+              <div className="support-outcome__head">
+                <i className="fa-solid fa-circle-check" aria-hidden="true" />
+                <strong>You closed this ticket</strong>
+              </div>
+              <p>No refund or credit was issued, because you closed it yourself rather than asking us to settle it. Reply below if it turns out you still need us.</p>
+            </div>}
 
-              {solved && outcome && <div className={`support-outcome support-outcome--${outcome.tone}`}>
-                <div className="support-outcome__head">
-                  <i className={outcome.icon} aria-hidden="true" />
-                  <strong>{outcome.label}</strong>
-                  {ticket.amountEUR !== null && ticket.amountEUR > 0 && <span className="support-outcome__amount">€{ticket.amountEUR.toFixed(2)}</span>}
-                </div>
-                <p>{outcome.blurb}</p>
-                {ticket.resolutionNote && <blockquote>{ticket.resolutionNote}</blockquote>}
-              </div>}
-
-              {solved && ticket.closedByReporter && <div className="support-outcome support-outcome--neutral">
-                <div className="support-outcome__head">
-                  <i className="fa-solid fa-circle-check" aria-hidden="true" />
-                  <strong>You closed this ticket</strong>
-                </div>
-                <p>No refund or credit was issued, because you closed it yourself rather than asking us to settle it. Reply below if it turns out you still need us.</p>
-              </div>}
-
-              <SupportTicketActions ticketId={ticket.id} solved={solved} />
-            </article>;
-          })}
+            <SupportTicketActions ticketId={ticket.id} solved={solved} />
+          </div>}
+        </article>;
+      })}
     </div>
   </div>;
 }
