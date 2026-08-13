@@ -1161,7 +1161,9 @@ export async function tickSearchingOrders(teammateId: string): Promise<void> {
     take: 3,
   });
 
-  for (const order of due) await reconcileOrder(order.id);
+  // Bounded at three by the take above, so this is three round trips against
+  // one — small, but it sits under a panel that polls every four seconds.
+  await Promise.all(due.map((order) => reconcileOrder(order.id)));
 }
 
 /** Everything the teammate dashboard needs in one read. */
@@ -1183,7 +1185,17 @@ export async function getTeammateDispatchView(teammateId: string) {
 
   // Cheap catch-up: the clock-driven transitions only need to happen when
   // somebody actually looks, and there's no scheduler in this deployment.
-  for (const row of rows) await reconcileOrder(row.orderId);
+  //
+  // All at once. This was a loop of awaits, so a teammate with five live
+  // candidacies paid five round trips one after another on every poll of the
+  // dispatch panel — which beats every four seconds while an invitation is
+  // out. None of them reads another's result; reconcileOrder coalesces
+  // duplicate work per order by itself.
+  if (rows.length) await Promise.all([...new Set(rows.map((row) => row.orderId))].map((id) => reconcileOrder(id)));
+
+  // Nothing to re-read if there was nothing to reconcile, and nothing to
+  // return either.
+  if (!rows.length) return rows;
 
   return prisma.dispatchCandidate.findMany({
     where: { id: { in: rows.map((r) => r.id) } },

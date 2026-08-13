@@ -42,7 +42,9 @@ export async function GET(request: Request) {
     select: { id: true },
     take: 10,
   });
-  for (const order of due) await reconcileOrder(order.id);
+  // Ten round trips one after another, on the board an admin leaves open and
+  // which polls every five seconds. Nothing here reads another's result.
+  await Promise.all(due.map((order) => reconcileOrder(order.id)));
 
   const orders = await prisma.order.findMany({
     where: {
