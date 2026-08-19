@@ -39,6 +39,9 @@ export interface CreateOrderInput {
   ignRoles?: string[];
   ignRank?: string | null;
   ignDivision?: string | null;
+  /** Teammates the dispatcher must skip. Set by a reroll, which knows who
+   * the customer has just turned down. */
+  excludedTeammateIds?: string[];
   /**
    * Hold the order at AWAITING_PAYMENT instead of inviting anyone.
    *
@@ -89,6 +92,7 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       ignRoles: (input.ignRoles ?? []) as Prisma.InputJsonValue,
       ignRank: input.ignRank ?? null,
       ignDivision: input.ignDivision ?? null,
+      excludedTeammateIds: (input.excludedTeammateIds ?? []) as Prisma.InputJsonValue,
     },
     include: { candidates: true },
   });

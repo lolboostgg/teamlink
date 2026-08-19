@@ -791,6 +791,12 @@ model Order {
   teammatesRequested  Int         @default(1)
   gamesBooked         Int         @default(1)
   requestedTeammateId String?
+  /// Teammates this order must not be offered to, carried onto a reroll from
+  /// the order it replaces. The dispatcher's own `exclude` only covers people
+  /// who already have a candidate row on *this* order, and a reroll is a new
+  /// order — without this the teammate just rejected is immediately the
+  /// strongest claim again, since a reroll frees them up.
+  excludedTeammateIds Json?
   status              OrderStatus @default(SEARCHING)
   /// Kept for the columns and screens written against it, but no longer a
   /// cut-off: the search runs until somebody accepts or the customer cancels,

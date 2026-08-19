@@ -192,6 +192,24 @@ export async function rerollOrder(orderId: string, accessToken?: string | null):
     return { ok: false, error: "The reroll window for this session has closed." };
   }
 
+  // Whoever the customer is rerolling away from, plus everyone they rerolled
+  // away from on the orders before this one. Cancelling the old order frees
+  // its teammate from the `busy` check, so without carrying this forward the
+  // dispatcher would rank the person just rejected right back at the top —
+  // and a second reroll would hand back the first one.
+  const rejected = await prisma.dispatchCandidate.findMany({
+    where: { orderId: previous.id, selected: true },
+    select: { teammateId: true },
+  });
+  const excludedTeammateIds = [
+    ...new Set([
+      ...(Array.isArray(previous.excludedTeammateIds)
+        ? previous.excludedTeammateIds.filter((id): id is string => typeof id === "string")
+        : []),
+      ...rejected.map((candidate) => candidate.teammateId),
+    ]),
+  ];
+
   const replacement = await createOrderWithDispatch({
     gameSlug: previous.gameSlug,
     gameName: previous.gameName,
@@ -207,6 +225,7 @@ export async function rerollOrder(orderId: string, accessToken?: string | null):
     ignRoles: (previous.ignRoles as string[] | null) ?? [],
     ignRank: previous.ignRank,
     ignDivision: previous.ignDivision,
+    excludedTeammateIds,
     awaitPayment: true,
   });
 

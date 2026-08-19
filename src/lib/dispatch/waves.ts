@@ -105,6 +105,7 @@ type OrderRow = {
   ignRegion: string | null;
   ignRank: string | null;
   ignRoles: unknown;
+  excludedTeammateIds: unknown;
 };
 
 export interface PoolResult {
@@ -308,7 +309,13 @@ export async function sendWave(client: Client, orderId: string, now: Date): Prom
     return { invited: [pick(requested)], wave, exhausted: false };
   }
 
-  const exclude = new Set(order.candidates.map((c) => c.teammateId));
+  // Two sources, same meaning: whoever has already had their turn on this
+  // order, plus whoever the customer rerolled away from on the orders this
+  // one descends from.
+  const exclude = new Set([
+    ...order.candidates.map((c) => c.teammateId),
+    ...asStringArray(order.excludedTeammateIds),
+  ]);
   const { pool, funnel } = await eligiblePool(client, order, exclude, now);
   const invitees = pool.slice(0, WAVE_SIZE);
 
