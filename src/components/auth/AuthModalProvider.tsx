@@ -139,11 +139,16 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ email, password }),
         }));
         if (!check.ok) {
-          const body = await check.json().catch(() => null) as { banned?: boolean; reason?: string } | null;
+          const body = await check.json().catch(() => null) as
+            { banned?: boolean; reason?: string; rateLimited?: boolean; error?: string } | null;
+          // A throttled attempt is not a wrong password, and saying so would
+          // send someone off to reset a password that already works.
           setFormError(
             body?.banned
               ? `This account has been banned. ${body.reason ?? ""}`.trim()
-              : "Incorrect email or password.",
+              : body?.rateLimited
+                ? body.error ?? "Too many attempts. Try again in 15 minutes."
+                : "Incorrect email or password.",
           );
           return;
         }
