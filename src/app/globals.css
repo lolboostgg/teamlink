@@ -14169,6 +14169,75 @@ a.notification-panel__item:hover {
 .join-card h1 { margin: 0; color: var(--text); font-size: 20px; font-weight: 800; }
 .join-card > p { margin: 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.55; }
 .join-card__foot { margin: 0; color: var(--text-faint); font-size: 11.5px; }
+
+/* The handover offer, on the page the recipient opens. */
+.join-card__note {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--dash-surface-2, rgba(127, 127, 127, 0.08));
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-style: italic;
+}
+
+.join-card__dead-reason {
+  margin: 0;
+  color: var(--hue-gold);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.join-card .cancel-confirm__actions { width: 100%; }
+
+/* Handing the session over, in the teammate's order room. */
+.order-room__handover {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.order-room__handover.is-open {
+  padding: 16px;
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+  background: var(--dash-surface-2, rgba(127, 127, 127, 0.05));
+}
+
+.order-room__handover-lead {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.order-room__handover-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-line);
+}
+
+.order-room__handover-link code {
+  /* The link is long and must stay selectable, so it wraps rather than
+     scrolling out of reach on a phone. */
+  overflow-wrap: anywhere;
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.order-room__handover-link small { color: var(--text-faint); font-size: 11px; }
+
+.order-room__handover-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
 .join-card__foot a { color: var(--accent); }
 
 .join-form { width: 100%; display: grid; gap: 12px; margin-top: 6px; text-align: left; }

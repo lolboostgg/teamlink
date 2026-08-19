@@ -20,6 +20,7 @@ import {
   respondToCancelAction,
 } from "@/app/dashboard/teammate/dispatchActions";
 import { CancelRequestModal } from "@/components/dashboard/teammate/CancelRequestModal";
+import { HandoverPanel } from "@/components/dashboard/teammate/HandoverPanel";
 import {
   SESSION_STATUS_LABELS,
   REPORTABLE_STATUSES,
@@ -483,6 +484,10 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               );
             })}
           </div>
+
+          {order.status === "ASSIGNED" && status === "WAITING_FOR_INVITE" && (
+            <HandoverPanel orderId={orderId} />
+          )}
 
           <div className="order-room__proofs">
             {order.games.map((game) => (

@@ -139,6 +139,68 @@ function rankCeiling(gameSlug: string, teammate: TeammateRow): number {
 }
 
 /**
+ * Whether one named teammate may take one named order.
+ *
+ * The same gates eligiblePool() applies, asked about a single person: listed
+ * for the game, serving the region, cleared for the rank, not sanctioned,
+ * and not somebody the customer has already rerolled away from.
+ *
+ * Deliberately not the whole of eligiblePool. `available` and the heartbeat
+ * are about who is awake enough to be *alerted*, and nobody is being alerted
+ * here — a handover is addressed to a person who was asked for by name and
+ * is being sent a link by hand. The busy check is left out for the same
+ * reason: taking a second order is the recipient's call to make, and they
+ * make it by clicking Accept.
+ */
+export async function handoverEligibility(
+  client: Client,
+  teammateId: string,
+  order: OrderRow,
+  now: Date,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const teammate = (await client.teammate.findUnique({
+    where: { id: teammateId },
+  })) as unknown as TeammateRow | null;
+  if (!teammate) return { ok: false, reason: "That account has no teammate profile." };
+
+  if (asStringArray(order.excludedTeammateIds).includes(teammateId)) {
+    // The customer rerolled away from this person. Handing the order back to
+    // them through a side door would undo the one thing the reroll promised.
+    return { ok: false, reason: "The customer has already passed on this teammate." };
+  }
+
+  if (!asStringArray(teammate.gameSlugs).includes(order.gameSlug)) {
+    return { ok: false, reason: `They are not listed for ${order.gameSlug}.` };
+  }
+
+  const regions = asStringArray(teammate.regions);
+  if (order.ignRegion && regions.length > 0 && !regions.includes(order.ignRegion)) {
+    return { ok: false, reason: `They do not play ${order.ignRegion.toUpperCase()}.` };
+  }
+
+  const orderRank = rankIndex(order.gameSlug, order.ignRank);
+  if (orderRank >= 0) {
+    const ceiling = rankCeiling(order.gameSlug, teammate);
+    if (ceiling >= 0 && orderRank > ceiling) {
+      return { ok: false, reason: "They are not cleared for this rank." };
+    }
+  }
+
+  const sanctioned = await client.teammateSanction.findFirst({
+    where: {
+      teammateId,
+      status: "ACTIVE",
+      type: { in: ["TEMP_SUSPENSION", "BAN"] },
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+    },
+    select: { id: true },
+  });
+  if (sanctioned) return { ok: false, reason: "Their account is suspended." };
+
+  return { ok: true };
+}
+
+/**
  * Everyone who may take this order, strongest claim first.
  *
  * `exclude` holds teammates who already have a candidate row on this order —
