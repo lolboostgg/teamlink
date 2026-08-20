@@ -36,15 +36,27 @@ export async function GET(request: Request) {
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      let closed = false;
+      // Two questions, not one. "May we still write?" and "has the heartbeat
+      // been stopped and the bus handler taken off?" are different, and a
+      // single flag answered both with the first one's answer: a failed
+      // enqueue set it, and cleanup() — which opens by returning early if it
+      // is set — then had nothing left to do. So a consumer that vanished
+      // without an abort left its 25s interval running and its listener on
+      // the emitter for the life of the process, one pair per dropped
+      // stream, on a connection the browser reopens every three seconds.
+      let writable = true;
+      let torndown = false;
 
       function send(payload: string) {
-        if (closed) return;
+        if (!writable) return;
         try {
           controller.enqueue(encoder.encode(payload));
         } catch {
-          // The consumer went away between the check and the enqueue.
-          closed = true;
+          // The consumer went away between the check and the enqueue. This is
+          // the only notice we get when abort never fires, so it has to do
+          // the tearing down rather than just noting it.
+          writable = false;
+          cleanup();
         }
       }
 
@@ -67,8 +79,9 @@ export async function GET(request: Request) {
       const heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
 
       function cleanup() {
-        if (closed) return;
-        closed = true;
+        if (torndown) return;
+        torndown = true;
+        writable = false;
         clearInterval(heartbeat);
         unsubscribe();
         try {
