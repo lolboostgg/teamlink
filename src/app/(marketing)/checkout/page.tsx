@@ -5,7 +5,7 @@ import { TrustBadge } from "@/components/ui/TrustBadge";
 import { getCommunityStats } from "@/lib/community";
 import { getServerLanguage } from "@/lib/serverLanguage";
 import { translatePhrase } from "@/lib/phrases";
-import { quoteBookingEUR } from "@/lib/bookingOptions";
+import { decodeAddons, describeAddons, encodeAddons, normalizeAddons, quoteBookingEUR } from "@/lib/bookingOptions";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -22,6 +22,7 @@ interface Props {
     roles?: string;
     rank?: string;
     division?: string;
+    addons?: string;
   }>;
 }
 
@@ -32,7 +33,11 @@ export default async function CheckoutPage({ searchParams }: Props) {
   const teammates = Number(params.teammates ?? 1);
   // The URL is user-editable. Render the same trusted catalogue/rank quote
   // that the payment action will use instead of displaying its `total`.
-  const total = game ? (quoteBookingEUR(game.slug, option, teammates, params.rank) ?? 4.99) : 4.99;
+  // The add-ons arrive through the address bar like everything else here, so
+  // they are put back through the catalogue rather than believed.
+  const addons = game ? normalizeAddons(game.slug, option, decodeAddons(params.addons)) : {};
+  const total = game ? (quoteBookingEUR(game.slug, option, teammates, params.rank, addons) ?? 4.99) : 4.99;
+  const addonSummary = game ? describeAddons(game.slug, option, addons) : [];
   const community = await getCommunityStats();
   const language = await getServerLanguage();
   const p = (phrase: string) => translatePhrase(language, phrase);
@@ -53,6 +58,8 @@ export default async function CheckoutPage({ searchParams }: Props) {
           option={option}
           teammates={teammates}
           baseTotalEUR={total}
+          addons={encodeAddons(addons)}
+          addonSummary={addonSummary}
           // Collected on the booking page; passing it through means checkout
           // doesn't ask the same question twice.
           initialIngame={

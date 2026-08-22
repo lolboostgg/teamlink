@@ -1,4 +1,5 @@
 import type { DispatchOrder, DispatchGame, CandidateStatus, OrderStatus } from "@/lib/matchmaking/types";
+import { readOptionExtras } from "@/lib/dispatch/phase";
 import type { LanguageCode } from "@/lib/i18n";
 import type { LolRankTier, ChampionName, LolLane } from "@/lib/lolAssets";
 
@@ -33,6 +34,7 @@ type Row = {
   gameSlug: string;
   gameName: string;
   option: string;
+  optionExtras?: unknown;
   priceEUR: unknown;
   unitPriceEUR: unknown;
   teammatesRequested: number;
@@ -105,6 +107,7 @@ export function toCustomerOrder(row: Row): DispatchOrder {
     gameSlug: row.gameSlug,
     gameName: row.gameName,
     option: row.option,
+    optionExtras: readOptionExtras(row.optionExtras),
     priceEUR: Number(row.priceEUR),
     unitPriceEUR: Number(row.unitPriceEUR),
     teammates: row.teammatesRequested,

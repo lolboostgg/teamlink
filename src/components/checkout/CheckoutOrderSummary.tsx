@@ -7,6 +7,8 @@ interface Props {
   gameSlug: string;
   gameName: string;
   option: string;
+  /** What was answered about the mode — keystone level, bracket, bundle. */
+  addonSummary?: { key: string; label: string; value: string }[];
   teammates: number;
   subtotalEUR: number;
   feeEUR: number;
@@ -22,6 +24,7 @@ export function CheckoutOrderSummary({
   gameSlug,
   gameName,
   option,
+  addonSummary = [],
   teammates,
   subtotalEUR,
   feeEUR,
@@ -44,6 +47,17 @@ export function CheckoutOrderSummary({
         </div>
       </div>
 
+      {/* Above the group size, because these are what the customer just
+          chose — leaving them off meant paying a keystone surcharge that
+          nothing on this page mentioned. */}
+      {addonSummary.map((addon) => (
+        <div className="order-summary__item" key={addon.key}>
+          <span>
+            <i className="fa-solid fa-sliders" aria-hidden="true" /> {p(addon.label)}
+          </span>
+          <span>{addon.value}</span>
+        </div>
+      ))}
       <div className="order-summary__item">
         <span>
           <i className="fa-solid fa-user-group" aria-hidden="true" /> {p("Group size")}

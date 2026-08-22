@@ -2445,6 +2445,96 @@ body {
 
 /* Sits under the row it belongs to, divided by a hairline — beside the
    price it would compete with the one number the row exists to show. */
+/* The questions a mode asks before it can be priced (keystone level,
+   rating bracket, bundle). Same inset and divider as the teammates row
+   below it, so a mode with both reads as one stack of settings rather
+   than two unrelated strips. */
+.booking-option__addons {
+  margin: 0 16px;
+  border-top: 1px solid color-mix(in srgb, var(--cat-color, var(--accent)) 22%, var(--border));
+  padding: 12px 0 2px;
+  display: grid;
+  gap: 12px;
+}
+
+.booking-addon {
+  display: grid;
+  gap: 7px;
+}
+
+.booking-addon__label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.booking-addon__select {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.booking-addon__select:focus-visible {
+  outline: none;
+  border-color: var(--cat-color, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cat-color, var(--accent)) 25%, transparent);
+}
+
+.booking-addon__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.booking-addon__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-2, rgba(255, 255, 255, 0.03));
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.booking-addon__chip:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 45%, var(--border));
+}
+
+.booking-addon__chip.is-active {
+  color: var(--text);
+  border-color: var(--cat-color, var(--accent));
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 16%, transparent);
+}
+
+.booking-addon__chip-price {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--cat-color, var(--accent));
+}
+
+.booking-sidebar__summary-addons {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 .booking-option__teammates {
   display: flex;
   align-items: center;

@@ -786,6 +786,11 @@ model Order {
   gameSlug            String
   gameName            String
   option              String
+  /// What was chosen about the mode itself — keystone level, rating bracket,
+  /// bundle, coaching focus (see lib/bookingOptions add-ons). Snapshotted as
+  /// label/value pairs rather than keys, so the order still reads correctly
+  /// after the catalogue is rewritten underneath it.
+  optionExtras        Json?
   priceEUR            Decimal     @db.Decimal(10, 2)
   /// Catalogue/rank price of exactly one game, excluding coupons and payment
   /// fees. Extra games and replays are always quoted from this frozen value.

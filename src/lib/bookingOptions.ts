@@ -1,3 +1,39 @@
+/**
+ * One answer inside an add-on group.
+ *
+ * `priceEUR` is added to the per-run price; `multiplier` scales it. A
+ * keystone level is the former (a +15 costs more than a +2), a bundle the
+ * latter (3+1 is three runs' money for four runs). Both default to neutral,
+ * so a choice that only tells the teammate something — a role, a coaching
+ * focus — carries no price at all.
+ */
+export interface BookingAddonChoice {
+  value: string;
+  label: string;
+  priceEUR?: number;
+  multiplier?: number;
+  /** What the customer actually receives, where that is not one of whatever
+   * the option's unit is — a 3+1 bundle is four runs. Shown, not charged. */
+  runs?: number;
+}
+
+/**
+ * A question the customer answers before this mode can be priced.
+ *
+ * A long ladder (keystone levels, rating brackets) reads as a select; a
+ * short, mutually exclusive set (modifiers, a role, a bundle) reads as
+ * chips. The catalogue decides which, because the catalogue is what knows
+ * how many answers there are.
+ */
+export interface BookingAddonGroup {
+  key: string;
+  label: string;
+  control: "select" | "chips";
+  /** Select-only, and only where no answer is a sensible default. */
+  placeholder?: string;
+  choices: BookingAddonChoice[];
+}
+
 export interface BookingOption {
   name: string;
   description: string;
@@ -9,6 +45,9 @@ export interface BookingOption {
    * (Duo, Coach) has nothing to pick, so the group-size stepper hides
    * entirely instead of offering a choice of exactly one. */
   maxTeammates: number;
+  /** What still has to be decided about this mode — see BookingAddonGroup.
+   * Absent for every mode that is fully described by its own name. */
+  addons?: BookingAddonGroup[];
 }
 
 export interface BookingCategory {
@@ -385,6 +424,27 @@ const HANGOUT_CATEGORIES: BookingCategory[] = [
   },
 ];
 
+// Every rated PvP mode is quoted off the same bracket ladder, so the arena
+// and blitz rows cannot drift apart. PvP coaching adds the bracket above it:
+// somebody already at 2100 is asking a different question than somebody
+// climbing towards it.
+const WOW_RATING_CHOICES: BookingAddonChoice[] = [
+  { value: "0-1200", label: "0-1200" },
+  { value: "1200-1600", label: "1200-1600", priceEUR: 10 },
+  { value: "1600-1800", label: "1600-1800", priceEUR: 20 },
+  { value: "1800-2100", label: "1800-2100", priceEUR: 40 },
+];
+
+function wowRatingGroup(withTop: boolean): BookingAddonGroup {
+  return {
+    key: "rating",
+    label: "Current rating",
+    control: "select",
+    placeholder: "Please select your current rating",
+    choices: withTop ? [...WOW_RATING_CHOICES, { value: "2100+", label: "2100+", priceEUR: 60 }] : WOW_RATING_CHOICES,
+  };
+}
+
 /**
  * World of Warcraft sells runs and hours, not "games".
  *
@@ -397,18 +457,164 @@ const WOW_CATEGORIES: BookingCategory[] = [
   {
     category: "Team Up",
     options: [
-      { name: "Mythic+ Dungeon single run", description: "Run Mythic+ keys with top-tier teammates", price: 5.99, eta: "4 min away", unit: "/run", maxTeammates: 4 },
+      {
+        name: "Mythic+ Dungeon single run",
+        description: "Run Mythic+ keys with top-tier teammates",
+        price: 5.99,
+        eta: "4 min away",
+        unit: "/run",
+        maxTeammates: 4,
+        addons: [
+          {
+            key: "keystone",
+            label: "Keystone level",
+            control: "select",
+            placeholder: "Please select your keystone level",
+            choices: [
+              { value: "2-9", label: "Mythic +2-9" },
+              { value: "10", label: "Mythic +10", priceEUR: 3 },
+              { value: "11", label: "Mythic +11", priceEUR: 5 },
+              { value: "12", label: "Mythic +12", priceEUR: 7 },
+              { value: "13", label: "Mythic +13", priceEUR: 10 },
+              { value: "14", label: "Mythic +14", priceEUR: 13 },
+              { value: "15", label: "Mythic +15", priceEUR: 17 },
+              { value: "16", label: "Mythic +16", priceEUR: 23 },
+              { value: "17", label: "Mythic +17", priceEUR: 31 },
+              { value: "18", label: "Mythic +18", priceEUR: 41 },
+              { value: "19", label: "Mythic +19", priceEUR: 54 },
+              { value: "20", label: "Mythic +20", priceEUR: 71 },
+            ],
+          },
+          {
+            key: "modifiers",
+            label: "Modifiers",
+            control: "chips",
+            choices: [
+              { value: "random", label: "Random free" },
+              { value: "specific", label: "Specific", priceEUR: 3 },
+              { value: "traders-3", label: "+3 traders", priceEUR: 6 },
+              { value: "traders-4", label: "+4 traders", priceEUR: 8 },
+            ],
+          },
+          {
+            // Runs given away, not a percentage off: 3+1 is three runs' money
+            // for four, and 6+2 is exactly twice that — both the price and
+            // the runs double, so the deal reads the same at either size.
+            key: "bundle",
+            label: "Bundles",
+            control: "chips",
+            choices: [
+              { value: "single", label: "Single run", runs: 1 },
+              { value: "3plus1", label: "3+1", multiplier: 3, runs: 4 },
+              { value: "6plus2", label: "6+2", multiplier: 6, runs: 8 },
+            ],
+          },
+        ],
+      },
       { name: "Mythic+ starter special", description: "Challenge yourself along with an elite teammate!", price: 6.99, eta: "3 min away", unit: "/run", maxTeammates: 1 },
-      { name: "Delves", description: "Clear Delves with a top-tier teammate", price: 3.99, eta: "4 min away", unit: "/run", maxTeammates: 1 },
-      { name: "Arena", description: "Rated arena sessions with a top-tier teammate", price: 24.99, eta: "4 min away", unit: "/hour", maxTeammates: 2 },
-      { name: "Battleground Blitz", description: "Queue Blitz with a top-tier teammate", price: 24.99, eta: "4 min away", unit: "/hour", maxTeammates: 1 },
+      {
+        name: "Delves",
+        description: "Clear Delves with a top-tier teammate",
+        price: 3.99,
+        eta: "4 min away",
+        unit: "/run",
+        maxTeammates: 4,
+        addons: [
+          {
+            key: "tier",
+            label: "Tier",
+            control: "select",
+            placeholder: "Please select your tier",
+            choices: [
+              { value: "1", label: "Tier 1" },
+              { value: "2", label: "Tier 2" },
+              { value: "3", label: "Tier 3" },
+              { value: "4", label: "Tier 4" },
+              { value: "5", label: "Tier 5", priceEUR: 1 },
+              { value: "6", label: "Tier 6", priceEUR: 1 },
+              { value: "7", label: "Tier 7", priceEUR: 1 },
+              { value: "8", label: "Tier 8", priceEUR: 3 },
+              { value: "9", label: "Tier 9", priceEUR: 3 },
+              { value: "10", label: "Tier 10", priceEUR: 5 },
+              { value: "11", label: "Tier 11", priceEUR: 7 },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Arena",
+        description: "Rated arena sessions with a top-tier teammate",
+        price: 24.99,
+        eta: "4 min away",
+        unit: "/hour",
+        maxTeammates: 1,
+        addons: [wowRatingGroup(false)],
+      },
+      {
+        name: "Battleground Blitz",
+        description: "Queue Blitz with a top-tier teammate",
+        price: 24.99,
+        eta: "4 min away",
+        unit: "/hour",
+        maxTeammates: 1,
+        addons: [
+          wowRatingGroup(false),
+          {
+            key: "role",
+            label: "Teammate role",
+            control: "chips",
+            choices: [
+              { value: "dps", label: "DPS" },
+              { value: "healer", label: "Healer" },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
     category: "Training",
     options: [
-      { name: "Pvp coaching", description: "Get coached by our team teammates", price: 29.99, eta: "3 min away", unit: "/hour", maxTeammates: 1 },
-      { name: "Coaching", description: "1-on-1 coaching session with a verified high-rated player", price: 24.99, eta: "2 min away", unit: "/hour", maxTeammates: 1 },
+      {
+        name: "Pvp coaching",
+        description: "Get coached by our team teammates",
+        price: 29.99,
+        eta: "3 min away",
+        unit: "/hour",
+        maxTeammates: 1,
+        addons: [
+          wowRatingGroup(true),
+          {
+            key: "coach",
+            label: "Coach rank",
+            control: "chips",
+            choices: [
+              { value: "standard", label: "Standard" },
+              { value: "gladiator", label: "Gladiator", priceEUR: 10 },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Coaching",
+        description: "1-on-1 coaching session with a verified high-rated player",
+        price: 24.99,
+        eta: "2 min away",
+        unit: "/hour",
+        maxTeammates: 1,
+        addons: [
+          {
+            key: "focus",
+            label: "Focus",
+            control: "chips",
+            choices: [
+              { value: "general", label: "General" },
+              { value: "mythic-plus", label: "Mythic+" },
+              { value: "arena", label: "Arena" },
+            ],
+          },
+        ],
+      },
     ],
   },
   {
@@ -537,16 +743,124 @@ export function rankPriceMultiplier(gameSlug: string, optionName: string, rank?:
  * anyone can edit — so the server prices the booking again from the same
  * catalogue before charging for it.
  */
+export type AddonSelection = Record<string, string>;
+
+/**
+ * The customer's answers, reduced to ones this mode actually asked.
+ *
+ * Everything downstream — the price, the summary, what the teammate is told —
+ * runs off the result, so a URL carrying `bundle=6plus2` for a mode with no
+ * bundles prices exactly like one carrying nothing. A group left unanswered
+ * falls back to its first choice, which is why every group's first choice is
+ * its free one.
+ */
+export function normalizeAddons(
+  gameSlug: string,
+  optionName: string,
+  selection: AddonSelection | null | undefined,
+): AddonSelection {
+  const groups = getBookingOption(gameSlug, optionName)?.addons ?? [];
+  const clean: AddonSelection = {};
+  for (const group of groups) {
+    const wanted = selection?.[group.key];
+    const choice = group.choices.find((c) => c.value === wanted) ?? group.choices[0];
+    if (choice) clean[group.key] = choice.value;
+  }
+  return clean;
+}
+
+/** The chosen answers themselves, in the order the mode asks for them. */
+export function resolveAddons(
+  gameSlug: string,
+  optionName: string,
+  selection: AddonSelection | null | undefined,
+): { group: BookingAddonGroup; choice: BookingAddonChoice }[] {
+  const groups = getBookingOption(gameSlug, optionName)?.addons ?? [];
+  const clean = normalizeAddons(gameSlug, optionName, selection);
+  return groups.flatMap((group) => {
+    const choice = group.choices.find((c) => c.value === clean[group.key]);
+    return choice ? [{ group, choice }] : [];
+  });
+}
+
+/** What one unit costs once the add-ons are applied — surcharges first, then
+ * whatever scales it (a bundle buys several runs at once). */
+export function addonAdjustedUnitPrice(
+  gameSlug: string,
+  optionName: string,
+  selection: AddonSelection | null | undefined,
+): number {
+  const option = getBookingOption(gameSlug, optionName);
+  if (!option) return 0;
+  const chosen = resolveAddons(gameSlug, optionName, selection);
+  const surcharge = chosen.reduce((sum, { choice }) => sum + (choice.priceEUR ?? 0), 0);
+  const multiplier = chosen.reduce((factor, { choice }) => factor * (choice.multiplier ?? 1), 1);
+  return (option.price + surcharge) * multiplier;
+}
+
+/** How many runs/hours the booking actually buys — a 3+1 bundle is four. */
+export function addonRunCount(
+  gameSlug: string,
+  optionName: string,
+  selection: AddonSelection | null | undefined,
+): number {
+  const runs = resolveAddons(gameSlug, optionName, selection)
+    .map(({ choice }) => choice.runs)
+    .filter((value): value is number => typeof value === "number");
+  return runs.length > 0 ? Math.max(...runs) : 1;
+}
+
+/** "Keystone level: Mythic +15" — for the order, the room and the receipt. */
+export function describeAddons(
+  gameSlug: string,
+  optionName: string,
+  selection: AddonSelection | null | undefined,
+): { key: string; label: string; value: string; priceEUR: number }[] {
+  return resolveAddons(gameSlug, optionName, selection).map(({ group, choice }) => ({
+    key: group.key,
+    label: group.label,
+    value: choice.label,
+    priceEUR: choice.priceEUR ?? 0,
+  }));
+}
+
+/**
+ * Add-ons as one URL-safe string: `keystone:15,modifiers:traders-3`.
+ *
+ * They travel from the booking page to checkout through the address bar,
+ * which is user-editable — hence normalizeAddons on the way back in rather
+ * than trust in what arrives.
+ */
+export function encodeAddons(selection: AddonSelection): string {
+  return Object.entries(selection)
+    .filter(([key, value]) => key && value)
+    .map(([key, value]) => `${key}:${value}`)
+    .join(",");
+}
+
+export function decodeAddons(encoded: string | null | undefined): AddonSelection {
+  if (!encoded) return {};
+  const selection: AddonSelection = {};
+  for (const pair of encoded.split(",")) {
+    const separator = pair.indexOf(":");
+    if (separator <= 0) continue;
+    selection[pair.slice(0, separator).trim()] = pair.slice(separator + 1).trim();
+  }
+  return selection;
+}
+
 export function quoteBookingEUR(
   gameSlug: string,
   optionName: string,
   teammates: number,
   rank?: string | null,
+  addons?: AddonSelection | null,
 ): number | null {
   const option = getBookingOption(gameSlug, optionName);
   if (!option) return null;
   const size = Math.max(1, Math.min(option.maxTeammates, Math.round(teammates)));
-  return Math.round(option.price * size * rankPriceMultiplier(gameSlug, optionName, rank) * 100) / 100;
+  const unit = addonAdjustedUnitPrice(gameSlug, optionName, addons);
+  return Math.round(unit * size * rankPriceMultiplier(gameSlug, optionName, rank) * 100) / 100;
 }
 
 export function getBookingOptionDescription(gameSlug: string, name: string): string | undefined {

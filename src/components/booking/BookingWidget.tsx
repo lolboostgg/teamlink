@@ -6,11 +6,23 @@ import { Modal } from "@/components/ui/Modal";
 import { CheckoutIngameStep, type IngameIdentity } from "@/components/checkout/CheckoutIngameStep";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/lib/games";
-import { getBookingCategories, CATEGORY_COLORS, rankPriceMultiplier, type BookingOption } from "@/lib/bookingOptions";
+import {
+  getBookingCategories,
+  CATEGORY_COLORS,
+  rankPriceMultiplier,
+  addonAdjustedUnitPrice,
+  addonRunCount,
+  describeAddons,
+  encodeAddons,
+  normalizeAddons,
+  type AddonSelection,
+  type BookingOption,
+} from "@/lib/bookingOptions";
 import { listGameAccounts } from "@/app/actions/gameAccounts";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
+import { useCurrency } from "@/components/currency/CurrencyProvider";
 import { TrustPoints, PaymentStrip } from "@/components/ui/TrustPoints";
 import { gameIcon } from "@/lib/gameArt";
 import { FAQ_ITEMS } from "@/lib/content";
@@ -61,6 +73,11 @@ export function BookingWidget({ game }: Props) {
   const [activeCategory, setActiveCategory] = useState(bookingCategories[0].category);
   const [selected, setSelected] = useState<BookingOption>(bookingCategories[0].options[0]);
   const [groupSize, setGroupSize] = useState(1);
+  // Defaulted rather than empty: every group's first choice is its free one,
+  // so an untouched widget prices exactly like the mode's headline figure.
+  const [addons, setAddons] = useState<AddonSelection>(() =>
+    normalizeAddons(game.slug, bookingCategories[0].options[0].name, {}),
+  );
   const visibleCategory = bookingCategories.find((cat) => cat.category === activeCategory) ?? bookingCategories[0];
   const [pulsing, setPulsing] = useState(false);
   const [ingameOpen, setIngameOpen] = useState(false);
@@ -68,6 +85,9 @@ export function BookingWidget({ game }: Props) {
   const [pricingAccount, setPricingAccount] = useState<{ gameSlug: string; rank: string | null } | null>(null);
   const [openFaq, setOpenFaq] = useState(-1);
   const { status } = useSession();
+  // An <option> holds text, not components, so the surcharge inside the
+  // select is formatted with the same converter PriceTag renders through.
+  const { format: formatPrice } = useCurrency();
   const firstRender = useRef(true);
 
   // This widget can stay mounted across a game switch (see games/[slug]/
@@ -85,6 +105,7 @@ export function BookingWidget({ game }: Props) {
     setActiveCategory(bookingCategories[0].category);
     setSelected(bookingCategories[0].options[0]);
     setGroupSize(1);
+    setAddons(normalizeAddons(game.slug, bookingCategories[0].options[0].name, {}));
   }
 
   // Picking a 1-on-1 mode (Duo, Coach, ...) after having raised the group
@@ -93,6 +114,9 @@ export function BookingWidget({ game }: Props) {
   function selectOption(option: BookingOption) {
     setSelected(option);
     setGroupSize((n) => Math.min(n, option.maxTeammates));
+    // Answers are per mode. Carrying a keystone level onto an arena booking
+    // would price a question that mode never asked.
+    setAddons(normalizeAddons(game.slug, option.name, {}));
   }
 
   useEffect(() => {
@@ -108,8 +132,11 @@ export function BookingWidget({ game }: Props) {
     status === "authenticated" && pricingAccount?.gameSlug === game.slug ? pricingAccount.rank : null;
 
   const total = useMemo(
-    () => selected.price * groupSize * rankPriceMultiplier(game.slug, selected.name, effectivePricingRank),
-    [game.slug, selected, groupSize, effectivePricingRank],
+    () =>
+      addonAdjustedUnitPrice(game.slug, selected.name, addons) *
+      groupSize *
+      rankPriceMultiplier(game.slug, selected.name, effectivePricingRank),
+    [game.slug, selected, groupSize, effectivePricingRank, addons],
   );
 
   // Small "flash" on the total whenever the selection changes, so the price
@@ -128,13 +155,18 @@ export function BookingWidget({ game }: Props) {
   // one thing the customer has to look up, and finding out about it after
   // committing to a price is where people drop out.
   function goToCheckout(ingame?: IngameIdentity) {
-    const checkoutTotal = selected.price * groupSize * rankPriceMultiplier(game.slug, selected.name, ingame?.rank ?? effectivePricingRank);
+    const checkoutTotal =
+      addonAdjustedUnitPrice(game.slug, selected.name, addons) *
+      groupSize *
+      rankPriceMultiplier(game.slug, selected.name, ingame?.rank ?? effectivePricingRank);
     const params = new URLSearchParams({
       game: game.slug,
       option: selected.name,
       teammates: String(groupSize),
       total: checkoutTotal.toFixed(2),
     });
+    const encodedAddons = encodeAddons(addons);
+    if (encodedAddons) params.set("addons", encodedAddons);
     if (ingame) {
       params.set("ign", ingame.ign);
       params.set("region", ingame.region);
@@ -144,6 +176,9 @@ export function BookingWidget({ game }: Props) {
     }
     router.push(`/checkout?${params.toString()}`);
   }
+
+  const chosenAddons = describeAddons(game.slug, selected.name, addons);
+  const runsBooked = addonRunCount(game.slug, selected.name, addons);
 
   const catColor = CATEGORY_COLORS[visibleCategory.category] ?? "var(--accent)";
   const categoryFaq = CATEGORY_FAQ[visibleCategory.category];
@@ -242,6 +277,57 @@ export function BookingWidget({ game }: Props) {
                 </span>
               </button>
 
+              {/* What the mode still needs to know — keystone level, rating
+                  bracket, bundle — asked on the row that was picked, so the
+                  answer and the price it moves are never apart. */}
+              {selected.name === option.name && (option.addons?.length ?? 0) > 0 && (
+                <div className="booking-option__addons">
+                  {(option.addons ?? []).map((group) => (
+                    <div className="booking-addon" key={group.key}>
+                      <span className="booking-addon__label">{localizeBookingValue(language, group.label)}</span>
+                      {group.control === "select" ? (
+                        <select
+                          className="booking-addon__select"
+                          value={addons[group.key] ?? group.choices[0].value}
+                          onChange={(e) => setAddons((current) => ({ ...current, [group.key]: e.target.value }))}
+                          aria-label={localizeBookingValue(language, group.label)}
+                        >
+                          {group.choices.map((choice) => (
+                            <option key={choice.value} value={choice.value}>
+                              {choice.priceEUR
+                                ? `${localizeBookingValue(language, choice.label)}  +${formatPrice(choice.priceEUR)}`
+                                : localizeBookingValue(language, choice.label)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="booking-addon__chips">
+                          {group.choices.map((choice) => {
+                            const active = (addons[group.key] ?? group.choices[0].value) === choice.value;
+                            return (
+                              <button
+                                type="button"
+                                key={choice.value}
+                                className={`booking-addon__chip${active ? " is-active" : ""}`}
+                                aria-pressed={active}
+                                onClick={() => setAddons((current) => ({ ...current, [group.key]: choice.value }))}
+                              >
+                                {localizeBookingValue(language, choice.label)}
+                                {choice.priceEUR ? (
+                                  <span className="booking-addon__chip-price">
+                                    +<PriceTag amountEUR={choice.priceEUR} />
+                                  </span>
+                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Only where there is a choice to make, and only on the mode
                   actually selected — a stepper stuck at 1 with both buttons
                   greyed out reads as broken, and four of them at once reads
@@ -320,6 +406,15 @@ export function BookingWidget({ game }: Props) {
               <span className="booking-sidebar__summary-copy">
                 <span className="booking-sidebar__summary-game">{game.name}</span>
                 <span className="booking-sidebar__summary-option">{selected.name}</span>
+                {/* The mode's name no longer says what was booked once the
+                    add-ons decide half the price — a +18 with 4 traders is a
+                    different order than a +2. */}
+                {chosenAddons.length > 0 && (
+                  <span className="booking-sidebar__summary-addons">
+                    {chosenAddons.map(({ value }) => value).join(" · ")}
+                    {runsBooked > 1 ? ` · ${runsBooked} ${localizeBookingValue(language, "runs")}` : ""}
+                  </span>
+                )}
               </span>
             </div>
 

@@ -25,6 +25,9 @@ export interface DispatchOrderView {
   gameSlug: string;
   gameName: string;
   option: string;
+  /** What was chosen about the mode — keystone level, bracket, bundle. The
+   * mode's name alone does not say whether this is a +2 or a +20. */
+  optionExtras: { key: string; label: string; value: string }[];
   priceEUR: number;
   payoutEUR: number;
   customerLabel: string;
@@ -93,6 +96,7 @@ type CandidateRow = {
     gameSlug: string;
     gameName: string;
     option: string;
+    optionExtras?: unknown;
     priceEUR: unknown;
     teammatePayoutEUR: unknown;
     customerLabel: string;
@@ -117,6 +121,17 @@ type CandidateRow = {
   };
 };
 
+/** The JSON column, narrowed to what the screens render. */
+export function readOptionExtras(value: unknown): { key: string; label: string; value: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const row = entry as Record<string, unknown>;
+    if (typeof row.key !== "string" || typeof row.label !== "string" || typeof row.value !== "string") return [];
+    return [{ key: row.key, label: row.label, value: row.value }];
+  });
+}
+
 function toView(order: CandidateRow["order"]): DispatchOrderView {
   const price = Number(order.priceEUR);
   const primary =
@@ -128,6 +143,7 @@ function toView(order: CandidateRow["order"]): DispatchOrderView {
     gameSlug: order.gameSlug,
     gameName: order.gameName,
     option: order.option,
+    optionExtras: readOptionExtras(order.optionExtras),
     priceEUR: price,
     payoutEUR: payoutForOrder(order),
     // Never the raw label: a guest checks out with an email address, and

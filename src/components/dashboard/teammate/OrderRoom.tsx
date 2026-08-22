@@ -333,6 +333,15 @@ export function OrderRoom({ orderId }: { orderId: string }) {
                 {played} / {booked}
               </dd>
             </div>
+            {/* What the customer chose about the mode. A Mythic+ run is not
+                one job: the keystone level, the modifiers and the bundle
+                decide what the teammate is actually signing up for. */}
+            {order.optionExtras?.map((extra) => (
+              <div key={extra.key}>
+                <dt>{extra.label}</dt>
+                <dd>{extra.value}</dd>
+              </div>
+            ))}
             <div>
               <dt>Started</dt>
               <dd>{order.assignedAt ? new Date(order.assignedAt).toLocaleTimeString() : "—"}</dd>

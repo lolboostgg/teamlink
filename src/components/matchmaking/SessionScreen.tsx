@@ -639,6 +639,14 @@ export function SessionScreen({ orderId, accessToken }: Props) {
                 <span>Option</span>
                 <strong>{order.option}</strong>
               </div>
+              {/* The mode's own answers, so the customer can check the
+                  keystone level they paid for against what is being run. */}
+              {order.optionExtras?.map((extra) => (
+                <div key={extra.key}>
+                  <span>{extra.label}</span>
+                  <strong>{extra.value}</strong>
+                </div>
+              ))}
               <div>
                 <span>Region</span>
                 <strong>{teammate.timezone}</strong>

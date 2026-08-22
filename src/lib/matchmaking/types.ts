@@ -45,6 +45,8 @@ export interface DispatchOrder {
   gameSlug: string;
   gameName: string;
   option: string;
+  /** What was chosen about the mode — keystone level, bracket, bundle. */
+  optionExtras?: { key: string; label: string; value: string }[];
   priceEUR: number;
   unitPriceEUR: number;
   teammates: number;

@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { getGameBySlug } from "@/lib/games";
-import { quoteBookingEUR } from "@/lib/bookingOptions";
+import { decodeAddons, describeAddons, normalizeAddons, quoteBookingEUR } from "@/lib/bookingOptions";
 import { calculateFee, type PaymentMethodKey } from "@/lib/payments";
 import { createOrderWithDispatch, activateOrderAfterPayment } from "@/lib/dispatch/create";
 import { findRedeemableCoupon, reserveCoupon, releaseCouponForOrder } from "@/lib/couponsServer";
@@ -17,6 +17,8 @@ import { authorizeCustomerOrder } from "@/lib/orderAccess";
 export interface PlaceOrderInput {
   gameSlug: string;
   option: string;
+  /** Encoded add-on answers from the booking page — priced here, not there. */
+  addons?: string | null;
   teammates: number;
   method: PaymentMethodKey;
   couponCode?: string | null;
@@ -50,6 +52,23 @@ export type PlaceOrderResult = { ok: true; redirect: string } | { ok: false; err
  * and it must not be the order's real id, which every internal API route is
  * keyed by. Orders written before the column existed still resolve by id.
  */
+/**
+ * The stored add-on snapshot, back as the shape the order writer takes.
+ *
+ * A reroll and a replay re-book what was booked before, so they carry the
+ * answers across rather than re-asking. It is a JSON column, so anything
+ * unrecognisable is dropped instead of trusted.
+ */
+function orderExtras(value: unknown): { key: string; label: string; value: string; priceEUR: number }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const row = entry as Record<string, unknown>;
+    if (typeof row.key !== "string" || typeof row.label !== "string" || typeof row.value !== "string") return [];
+    return [{ key: row.key, label: row.label, value: row.value, priceEUR: Number(row.priceEUR) || 0 }];
+  });
+}
+
 function orderPath(order: { id: string; accessToken?: string | null }): string {
   return order.accessToken
     ? `/order/${encodeURIComponent(order.accessToken)}`
@@ -96,7 +115,11 @@ async function placeCheckoutOrderInner(input: PlaceOrderInput): Promise<PlaceOrd
   if (!game) return { ok: false, error: "Unknown game." };
 
   const validRank = ranksForGame(input.gameSlug).some((rank) => rank.value === input.ignRank) ? input.ignRank : null;
-  const subtotalEUR = quoteBookingEUR(input.gameSlug, input.option, input.teammates, validRank);
+  // Whatever the client sent is put back through the catalogue: an answer
+  // this mode never asked for prices as if it were absent, and a missing one
+  // falls back to the free default.
+  const addons = normalizeAddons(input.gameSlug, input.option, decodeAddons(input.addons));
+  const subtotalEUR = quoteBookingEUR(input.gameSlug, input.option, input.teammates, validRank, addons);
   if (subtotalEUR === null) return { ok: false, error: "Unknown booking option." };
 
   const guestEmail = input.guestEmail?.trim().toLowerCase() || null;
@@ -116,6 +139,7 @@ async function placeCheckoutOrderInner(input: PlaceOrderInput): Promise<PlaceOrd
     gameSlug: game.slug,
     gameName: game.name,
     option: input.option.slice(0, 120),
+    optionExtras: describeAddons(input.gameSlug, input.option, addons),
     priceEUR: totalEUR,
     unitPriceEUR: subtotalEUR,
     teammates: input.teammates,
@@ -214,6 +238,8 @@ export async function rerollOrder(orderId: string, accessToken?: string | null):
     gameSlug: previous.gameSlug,
     gameName: previous.gameName,
     option: previous.option,
+    // The reroll books the same thing again, down to the keystone level.
+    optionExtras: orderExtras(previous.optionExtras),
     priceEUR: Number(previous.priceEUR),
     unitPriceEUR: Number(previous.unitPriceEUR),
     teammates: previous.teammatesRequested,
@@ -279,6 +305,7 @@ export async function placeReplayCheckout(
     gameSlug: previous.gameSlug,
     gameName: previous.gameName,
     option: previous.option,
+    optionExtras: orderExtras(previous.optionExtras),
     priceEUR: replayTotalEUR,
     unitPriceEUR: priceEUR,
     teammates: previous.teammatesRequested,

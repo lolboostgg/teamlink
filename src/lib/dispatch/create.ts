@@ -23,6 +23,8 @@ export interface CreateOrderInput {
   gameSlug: string;
   gameName: string;
   option: string;
+  /** The mode's add-on answers, already priced and described by the caller. */
+  optionExtras?: { key: string; label: string; value: string; priceEUR: number }[];
   priceEUR: number;
   unitPriceEUR: number;
   teammates: number;
@@ -75,6 +77,7 @@ export async function createOrderWithDispatch(input: CreateOrderInput) {
       gameSlug: input.gameSlug,
       gameName: input.gameName,
       option: input.option,
+      optionExtras: (input.optionExtras ?? []) as Prisma.InputJsonValue,
       priceEUR: input.priceEUR,
       unitPriceEUR: input.unitPriceEUR,
       // Frozen at creation, so a later price change to the roster or the

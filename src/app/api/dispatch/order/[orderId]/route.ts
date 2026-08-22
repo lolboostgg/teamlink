@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { assertAssignedTeammate, DispatchError } from "@/lib/dispatch/service";
+import { readOptionExtras } from "@/lib/dispatch/phase";
 import { payoutForOrder } from "@/lib/payoutSplit";
 import type { AvatarFrame } from "@/lib/avatarFrame";
 import { publicCustomerName } from "@/lib/customerName";
@@ -67,6 +68,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ord
       gameSlug: order.gameSlug,
       gameName: order.gameName,
       option: order.option,
+      optionExtras: readOptionExtras(order.optionExtras),
       priceEUR: Number(order.priceEUR),
       payoutEUR: payoutForOrder(order),
       // Was falling back to the account's email, and before that to a guest's

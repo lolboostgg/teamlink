@@ -22,6 +22,10 @@ interface Props {
   option: string;
   teammates: number;
   baseTotalEUR: number;
+  /** The mode's answers, encoded (see lib/bookingOptions encodeAddons). Sent
+   * back to the server, which prices them from the catalogue again. */
+  addons?: string;
+  addonSummary?: { key: string; label: string; value: string }[];
   /** Already answered on the booking page, if the customer came that way. */
   initialIngame?: IngameIdentity | null;
 }
@@ -39,7 +43,16 @@ type Identity = { mode: "guest"; email: string } | { mode: "account" } | null;
 // Orchestrates the checkout flow: identity (guest email or login/register)
 // -> in-game account -> payment method + fee -> submit. Owns both columns
 // because the order summary must react live to the payment method's fee.
-export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalEUR, initialIngame = null }: Props) {
+export function CheckoutForm({
+  gameSlug,
+  gameName,
+  option,
+  teammates,
+  baseTotalEUR,
+  addons = "",
+  addonSummary = [],
+  initialIngame = null,
+}: Props) {
   const router = useRouter();
   const { showToast } = useToast();
   const { p } = useLanguage();
@@ -93,6 +106,7 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
       const result = await placeCheckoutOrder({
         gameSlug,
         option,
+        addons,
         teammates,
         method,
         couponCode: appliedCoupon?.code ?? null,
@@ -230,6 +244,7 @@ export function CheckoutForm({ gameSlug, gameName, option, teammates, baseTotalE
             gameSlug={gameSlug}
             gameName={gameName}
             option={option}
+            addonSummary={addonSummary}
             teammates={teammates}
             subtotalEUR={baseTotalEUR}
             feeEUR={feeEUR}
