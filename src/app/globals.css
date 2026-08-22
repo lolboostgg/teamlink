@@ -15145,9 +15145,14 @@ a.notification-panel__item:hover {
 /* Full-width buttons: at this width the pair reads as one decision rather
    than two small controls pushed into a corner. */
 .ingame-modal .ingame-step__actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+/* White, not near-black. The dark label was picked for the pale rank
+   colours this button borrows when a rank is selected (gold, silver), but
+   most of the time there is no rank and it falls back to --accent — a
+   saturated blue that black text sits on badly, which is what "Continue to
+   checkout" and "Save account" actually showed. */
 .ingame-modal .ingame-step__actions .btn--vivid {
   background: var(--rank-color, var(--accent));
-  color: #05070d;
+  color: #fff;
   box-shadow: 0 10px 26px color-mix(in srgb, var(--rank-color, var(--accent)) 40%, transparent);
 }
 .ingame-modal .ingame-step__actions .btn--vivid:hover {
