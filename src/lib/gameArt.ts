@@ -36,6 +36,7 @@ const BACKGROUND_EXTENSIONS: Record<string, string> = {
   "league-of-legends": "avif",
   "marvel-rivals": "avif",
   "rocket-league": "avif",
+  "world-of-warcraft": "avif",
 };
 
 // Games whose background file isn't just `${slug}.${ext}` — used once here
