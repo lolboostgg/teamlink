@@ -25,11 +25,30 @@ export function register() {
   // whether a mistake is a broken request or a broken site.
   guardAgainstUnhandledRejections();
 
+  announceBoot();
+
   // Dev restarts constantly and serves one person, who would rather have the
   // reload back than a warm pool.
   if (process.env.NODE_ENV !== "production") return;
 
   scheduleRouteWarmup();
+}
+
+/**
+ * One line per booting process, with its pid.
+ *
+ * The host's log is a single file that every instance writes into, and
+ * Next's own startup banner carries nothing to tell them apart — so a
+ * banner appearing twice within a couple of milliseconds reads either as
+ * one process logging twice or as two processes starting, and those want
+ * opposite fixes. The pid settles it at a glance.
+ *
+ * The working directory comes along because it is hbuilds/versions/<id>/
+ * nodejs on this host, which answers the other half of the question for
+ * free: whether the process logging this is even the deploy just published.
+ */
+function announceBoot(): void {
+  console.log(`[boot] pid ${process.pid} · node ${process.version} · ${process.cwd()}`);
 }
 
 /**
