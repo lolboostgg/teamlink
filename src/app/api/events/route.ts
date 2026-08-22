@@ -59,7 +59,11 @@ export async function GET(request: Request) {
         // zone at that moment, so a first enqueue that failed threw a
         // ReferenceError out of start() rather than tearing down — which errors
         // the stream, and the browser then reopens it every three seconds.
+        // Assigned after the first send on purpose; see the TDZ explanation
+        // above. `const` would make cleanup unsafe during that first send.
+        // eslint-disable-next-line prefer-const
         let heartbeat: ReturnType<typeof setInterval> | undefined;
+        // eslint-disable-next-line prefer-const
         let unsubscribe: (() => void) | undefined;
 
         function cleanup() {

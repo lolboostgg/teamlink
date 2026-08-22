@@ -44,7 +44,7 @@ export function Hero({ game: gameProp }: Props) {
   return (
     <>
       <section className="hero">
-        <AmbientGameBackground slug={hoverSlug ?? game.slug} />
+        <AmbientGameBackground slug={hoverSlug ?? game.slug} active={hoverSlug !== null} />
         <span className="hero__scrim" aria-hidden="true" />
         <span className="hero__fade-out" aria-hidden="true" />
 

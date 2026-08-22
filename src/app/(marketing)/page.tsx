@@ -8,6 +8,11 @@ import { HowItWorks } from "@/components/home/HowItWorks";
 import { BentoFeatures } from "@/components/home/BentoFeatures";
 import { CtaBand } from "@/components/home/CtaBand";
 
+// The homepage has no request-specific server data. Keep it out of the Node
+// render path so a cold application process cannot delay the first paint;
+// session and community data hydrate through their existing client endpoints.
+export const dynamic = "force-static";
+
 // The root layout's defaults cover the title and the social card; what it
 // cannot give is a canonical, and the homepage is the one URL most likely to
 // be reached by several hostnames at once.

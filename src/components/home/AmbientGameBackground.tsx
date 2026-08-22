@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { gameBackground, gameBackgroundVideo } from "@/lib/gameArt";
 
 // Ambient backdrop scoped to whichever section renders it (see .hero and
@@ -10,17 +12,29 @@ import { gameBackground, gameBackgroundVideo } from "@/lib/gameArt";
 // background-size: cover on the full-viewport .hero had to zoom it in hard
 // to fill the height, which read as distorted/over-cropped.
 // key={slug} forces a remount on change so the fade-in animation replays.
-export function AmbientGameBackground({ slug }: { slug: string | null }) {
+export function AmbientGameBackground({ slug, active = false }: { slug: string | null; active?: boolean }) {
+  const [motionAllowed, setMotionAllowed] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    const timer = window.setTimeout(() => {
+      setMotionAllowed(!media.matches && !connection?.saveData);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const videoSrc = slug ? gameBackgroundVideo(slug) : null;
+  const playVideo = active && motionAllowed && videoSrc;
   return (
     <div className="ambient-bg" aria-hidden="true">
       {slug && (
         <div
           key={slug}
           className="ambient-bg__layer"
-          style={videoSrc ? undefined : { backgroundImage: `url(${gameBackground(slug)})` }}
+          style={playVideo ? undefined : { backgroundImage: `url(${gameBackground(slug)})` }}
         >
-          {videoSrc && (
+          {playVideo && (
             // Same blitz.gg-style ambient clip, minus sound — muted is also
             // what lets it autoplay at all in every browser.
             // preload="none" so nothing is fetched before the element is
@@ -32,7 +46,7 @@ export function AmbientGameBackground({ slug }: { slug: string | null }) {
             // while the clip is on its way.
             <video
               className="ambient-bg__video"
-              src={videoSrc}
+              src={playVideo}
               poster={gameBackground(slug)}
               autoPlay
               muted

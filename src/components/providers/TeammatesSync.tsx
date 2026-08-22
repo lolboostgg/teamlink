@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { setTeammatesCache, type Teammate } from "@/lib/teammates";
 
 // Not a Context — deliberately a side-effect-only component. The rest of
@@ -14,7 +15,14 @@ import { setTeammatesCache, type Teammate } from "@/lib/teammates";
 // server-rendered dashboard page; other already-open tabs pick it up on
 // their next load.
 export function TeammatesSync() {
+  const { status } = useSession();
+
   useEffect(() => {
+    // Public pages already have the static roster as their resilient default.
+    // Avoid waking the database for every anonymous landing-page visit; live
+    // availability has its own narrowly scoped endpoint in LiveTeammates.
+    if (status !== "authenticated") return;
+
     let cancelled = false;
     fetch("/api/teammates")
       .then((res) => (res.ok ? res.json() : null))
@@ -28,7 +36,7 @@ export function TeammatesSync() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [status]);
 
   return null;
 }

@@ -7,8 +7,6 @@ import "./generated/fontawesome.css";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { Starfield } from "@/components/ui/Starfield";
-import { cookies } from "next/headers";
-import { LANGUAGES, type LanguageCode } from "@/lib/i18n";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -67,21 +65,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const storedLanguage = (await cookies()).get("qup:language")?.value;
-  const language: LanguageCode = LANGUAGES.some((item) => item.code === storedLanguage)
-    ? storedLanguage as LanguageCode
-    : "en";
-
   return (
-    <html lang={language} className={`${inter.variable} ${bebasNeue.variable}`}>
+    <html lang="en" className={`${inter.variable} ${bebasNeue.variable}`}>
       <body>
         <Starfield />
-        <AppProviders initialLanguage={language}>{children}</AppProviders>
+        <AppProviders initialLanguage="en">{children}</AppProviders>
       </body>
     </html>
   );
