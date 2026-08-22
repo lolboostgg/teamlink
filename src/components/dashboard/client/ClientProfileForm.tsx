@@ -37,7 +37,10 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
     setProfileError(null);
     startProfileTransition(async () => {
       try {
-        await updateProfile({ name, ...avatar });
+        const result = await updateProfile({ name, ...avatar });
+        // Failures come back as data — Next would strip the message off a
+        // thrown one in production. See lib/actionError.ts.
+        if (!result.ok) throw new Error(result.error);
         // Re-syncs the JWT so the header avatar/name reflect the change
         // immediately, without needing to log out and back in — see the
         // trigger:"update" branch in auth.ts's jwt() callback. Must pass
@@ -62,7 +65,8 @@ export function ClientProfileForm({ initial, section = "both" }: Props) {
     setPasswordError(null);
     startPasswordTransition(async () => {
       try {
-        await changePassword({ currentPassword, newPassword });
+        const result = await changePassword({ currentPassword, newPassword });
+        if (!result.ok) throw new Error(result.error);
         setCurrentPassword("");
         setNewPassword("");
         showToast("Password changed.", "success");

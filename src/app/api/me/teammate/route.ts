@@ -11,7 +11,12 @@ export const dynamic = "force-dynamic";
 // lib/matchmaking/useCurrentTeammateId.ts).
 export async function GET() {
   const session = await auth();
-  if (session?.user?.role !== "TEAMMATE" || !session.user.id) {
+  // Identity comes from the roster row, not from the role: an admin can also
+  // have a Teammate profile of their own (dashboard/teammate/layout.tsx lets
+  // them work in this dashboard), and demanding role === "TEAMMATE" left
+  // exactly those accounts with a null id — every teammate-side dispatch
+  // view then showed nothing, with nothing to explain why.
+  if (!session?.user?.id) {
     return NextResponse.json({ teammateId: null });
   }
 

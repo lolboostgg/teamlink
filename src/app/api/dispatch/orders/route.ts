@@ -15,9 +15,13 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ orders: [] });
 
-  const teammate = session.user.role === "TEAMMATE"
-    ? await prisma.teammate.findUnique({ where: { userId: session.user.id }, select: { id: true } })
-    : null;
+  // Having a roster row is what makes this a teammate's request, not the
+  // account's role — an admin with a profile of their own works the same
+  // dispatch views as anyone else on the roster.
+  const teammate = await prisma.teammate.findUnique({
+    where: { userId: session.user.id },
+    select: { id: true },
+  });
   const orderWhere = teammate
     ? { candidates: { some: { teammateId: teammate.id, selected: true } } }
     : { clientUserId: session.user.id };

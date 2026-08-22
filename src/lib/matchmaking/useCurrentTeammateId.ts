@@ -15,7 +15,10 @@ export function useCurrentTeammateId(): string | null {
   const [teammateId, setTeammateId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status !== "authenticated" || session?.user?.role !== "TEAMMATE") {
+    // Deliberately no role check — /api/me/teammate answers with the roster
+    // row belonging to this account, which an admin can have too. Filtering
+    // by role here only stopped the request from ever being made.
+    if (status !== "authenticated") {
       // Resets on logout/role change, not just the initial mount (which is
       // already null) — a real, necessary effect action, not avoidable via
       // lazy initial state alone.

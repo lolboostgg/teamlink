@@ -114,7 +114,17 @@ export function TeammateSetupWizard({ initial, verification, storageReady, disco
   function saveProfile(successMessage: string, advanceFrom: StepKey) {
     startTransition(async () => {
       try {
-        await updateOwnProfile({ tagline: initial.tagline, timezone, ...avatar, languages, gameSlugs, gameProfiles });
+        const result = await updateOwnProfile({
+          tagline: initial.tagline,
+          timezone,
+          ...avatar,
+          languages,
+          gameSlugs,
+          gameProfiles,
+        });
+        // The action returns its failures rather than throwing them — see
+        // the note on it about Next masking thrown messages in production.
+        if (!result.ok) throw new Error(result.error);
         // Keeps the header avatar in step — see trigger:"update" in auth.ts.
         await updateSession({});
         showToast(successMessage, "success");

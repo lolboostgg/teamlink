@@ -14,7 +14,11 @@ export function TeammateProfileEditor({ initial }: { initial: TeammateProfileFor
       initial={initial}
       showAdminFields={false}
       onSave={async (value) => {
-        await updateOwnProfile(value);
+        const result = await updateOwnProfile(value);
+        // The action reports failures instead of throwing (see its note on
+        // Next's production error masking), so turn one back into the throw
+        // the form's catch is waiting for — with the real reason attached.
+        if (!result.ok) throw new Error(result.error);
         // Re-syncs the JWT so the header avatar reflects the game-profile
         // picture immediately — see trigger:"update" in auth.ts's jwt().
         // Must pass *some* payload: update() with no args does a plain GET
