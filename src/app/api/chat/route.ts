@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { publish } from "@/lib/events/bus";
 import { authorizeCustomerOrder } from "@/lib/orderAccess";
+import { publicCustomerName } from "@/lib/customerName";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +14,14 @@ const typingPresence = globalPresence.qupChatTyping ??= new Map();
 interface ConversationAccess {
   /** Which side the reader is *on this order* — null when they aren't on it at all. */
   side: ChatSide | null;
+  /** How to label what they write, stamped on the row — see `senderName`. */
+  name: string | null;
   locked: boolean;
   orderId: string;
   teammateId: string;
 }
 
-const NO_ACCESS: ConversationAccess = { side: null, locked: false, orderId: "", teammateId: "" };
+const NO_ACCESS: ConversationAccess = { side: null, name: null, locked: false, orderId: "", teammateId: "" };
 
 /**
  * Resolves who the caller is in this conversation.
@@ -48,9 +51,11 @@ async function conversationAccess(
       status: true,
       sessionCompleteAt: true,
       createdAt: true,
+      customerLabel: true,
+      orderNo: true,
       candidates: {
         where: { selected: true },
-        select: { teammateId: true, teammate: { select: { userId: true } } },
+        select: { teammateId: true, teammate: { select: { userId: true, name: true } } },
       },
     },
   });
@@ -82,9 +87,22 @@ async function conversationAccess(
             ? "admin"
             : null;
 
+  const name =
+    side === "teammate"
+      ? candidate.teammate.name
+      : side === "client"
+        ? publicCustomerName({
+            customerLabel: order.customerLabel,
+            clientUserId: order.clientUserId ?? null,
+            orderNo: order.orderNo,
+          })
+        : side === "admin"
+          ? "Admin"
+          : null;
+
   const lockedAt =
     order.status === "COMPLETED" ? (order.sessionCompleteAt ?? order.createdAt).getTime() + 60 * 60 * 1000 : null;
-  return { side, locked: Boolean(lockedAt && lockedAt <= Date.now()), orderId, teammateId };
+  return { side, name, locked: Boolean(lockedAt && lockedAt <= Date.now()), orderId, teammateId };
 }
 
 /**
@@ -132,6 +150,7 @@ export async function GET(request: NextRequest) {
       id: message.id,
       conversationKey: message.conversationKey,
       from: message.sender,
+      fromName: message.senderName,
       text: message.text,
       createdAt: message.createdAt.getTime(),
       readBy: message.readBy,
@@ -178,6 +197,7 @@ export async function POST(request: NextRequest) {
   const data = {
     conversationKey: key,
     sender,
+    senderName: access.name,
     text,
     readBy: [sender],
     ...(Number.isFinite(body?.createdAt) ? { createdAt: new Date(body!.createdAt!) } : {}),

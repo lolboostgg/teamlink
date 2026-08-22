@@ -875,6 +875,10 @@ model ConversationMessage {
   id              String   @id @default(cuid())
   conversationKey String
   sender          String
+  /// Who wrote it, as they were named at the time. The thread outlives the
+  /// teammate holding the order (a handover moves it across), so the label on
+  /// an old message must not follow whoever is on the order now.
+  senderName      String?
   text            String   @db.Text
   readBy          Json?
   createdAt       DateTime @default(now())

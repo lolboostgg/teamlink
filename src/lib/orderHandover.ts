@@ -227,6 +227,17 @@ export async function acceptHandover(token: string, toTeammateId: string) {
         },
       });
 
+      // The conversation is keyed by order *and* teammate (chatStore.ts), so
+      // without this the customer's thread would empty itself the moment the
+      // handover landed and the incoming teammate would start blind. The
+      // thread belongs to the session, not to whoever is holding it, so it
+      // moves across with the assignment. Bubbles keep their own senderName,
+      // so what the previous teammate wrote stays under their name.
+      await tx.conversationMessage.updateMany({
+        where: { conversationKey: `${order.id}::${handover.fromTeammateId}` },
+        data: { conversationKey: `${order.id}::${toTeammateId}` },
+      });
+
       await tx.teammate.update({ where: { id: toTeammateId }, data: { lastAssignedAt: now } });
       await tx.orderHandover.update({
         where: { id: handover.id },
@@ -237,6 +248,19 @@ export async function acceptHandover(token: string, toTeammateId: string) {
         tx.teammate.findUnique({ where: { id: handover.fromTeammateId }, select: { name: true, userId: true } }),
         tx.teammate.findUnique({ where: { id: toTeammateId }, select: { name: true, userId: true } }),
       ]);
+
+      // Said in the thread itself, because the thread just changed hands and
+      // the customer is looking at a stranger answering under a name that was
+      // not there a minute ago.
+      await tx.conversationMessage.create({
+        data: {
+          conversationKey: `${order.id}::${toTeammateId}`,
+          sender: "admin",
+          senderName: "Admin",
+          text: `${to?.name ?? "A new teammate"} has taken over this session from ${from?.name ?? "the previous teammate"}.`,
+          readBy: ["admin"],
+        },
+      });
 
       await logDispatch(
         tx,

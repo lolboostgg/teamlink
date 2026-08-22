@@ -75,6 +75,9 @@ export function SessionChat({
   }, [messages, viewer]);
   const [draft, setDraft] = useState("");
   const seededRef = useRef(false);
+  useEffect(() => {
+    seededRef.current = false;
+  }, [conversationKey, teammateName]);
   const otherSide = viewer === "client" ? "teammate" : "client";
   const otherTyping = useChatTyping(conversationKey, otherSide);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -129,15 +132,29 @@ export function SessionChat({
   // with the side the sender is actually on this order, so seeding it from
   // the customer's browser would file the teammate's greeting under the
   // customer's name.
+  // A message is labelled with the name stored on it, so a handover cannot
+  // rewrite what the previous teammate said into the new teammate's name.
+  // Rows written before that name existed fall back to the current one,
+  // which is what they were already showing.
+  const nameOf = (m: { from: "client" | "teammate" | "admin"; fromName?: string | null }) =>
+    m.fromName ?? (m.from === "client" ? customerName : teammateName);
+  // The intro names whoever opened the thread, not whoever holds it now.
+  const introName = messages.find((m) => m.from === "teammate")?.fromName ?? teammateName;
+  const greeted = messages.some((m) => m.from === "teammate" && nameOf(m) === teammateName);
+
   useEffect(() => {
-    if (viewer !== "teammate" || seededRef.current || messages.length > 0) return;
+    // Once per teammate, not once per thread: after a handover the thread is
+    // carried over intact (see lib/orderHandover.ts) and the incoming
+    // teammate still has to introduce themselves — under their own name,
+    // below everything that was already said.
+    if (viewer !== "teammate" || seededRef.current || greeted) return;
     seededRef.current = true;
     sendChatMessage(conversationKey, "teammate", `Hi! This is ${teammateName} — ready when you are.`, accessToken);
     // BroadcastChannel never delivers a message back to the tab that sent
     // it, so this tab's own subscription won't fire on its own write —
     // refresh() closes that gap for the sender specifically.
     refresh();
-  }, [conversationKey, teammateName, messages.length, refresh, viewer, accessToken]);
+  }, [conversationKey, teammateName, greeted, refresh, viewer, accessToken]);
 
   const systemLines: SystemLine[] = [];
   if (vibe) systemLines.push({ id: "sys-vibe", text: `Vibe set: ${vibe.charAt(0).toUpperCase()}${vibe.slice(1)}` });
@@ -167,7 +184,7 @@ export function SessionChat({
       <div ref={messagesRef} className="chat-thread__messages session-chat__messages">
         <div className="chat-bubble chat-bubble--system">
           <p>
-            You&rsquo;ll now receive a message from {teammateName}, so please don&rsquo;t close this chat. Let them know how
+            You&rsquo;ll now receive a message from {introName}, so please don&rsquo;t close this chat. Let them know how
             you&rsquo;d like to play and your goals (default is to win).
           </p>
         </div>
@@ -184,7 +201,7 @@ export function SessionChat({
           return <div key={m.id} className={`chat-message chat-message--${isAdmin ? "admin" : mine ? "me" : "them"}`}>
             {isAdmin ? <span className="session-chat__admin-icon"><i className="fa-solid fa-shield-halved" /></span> : senderAvatar(m.from)}
             <div className={`chat-bubble chat-bubble--${mine ? "me" : "them"}`}>
-              <strong className="chat-bubble__sender">{isAdmin ? "Admin" : m.from === "client" ? customerName : teammateName}</strong>
+              <strong className="chat-bubble__sender">{isAdmin ? "Admin" : nameOf(m)}</strong>
               <p>{m.text}</p>
               <span>
                 {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

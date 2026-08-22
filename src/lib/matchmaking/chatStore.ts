@@ -15,6 +15,9 @@ export interface ChatMessage {
   id: string;
   conversationKey: string;
   from: "client" | "teammate" | "admin";
+  /** Who wrote it, as they were named then — see the server column of the
+   * same name. Absent on rows written before that existed. */
+  fromName?: string | null;
   text: string;
   createdAt: number;
   readBy?: ("client" | "teammate" | "admin")[];
@@ -204,6 +207,16 @@ export function useConversationMessages(key: string | undefined, accessToken?: s
     });
     // Deliberately thrown rather than swallowed: usePoll reads a rejection as
     // "back off", which is what should happen when the chat API is down.
+    // Access is not permanent: a handover moves the thread to the incoming
+    // teammate, and from that moment the previous one is refused. Their
+    // browser still holds the copy it last synced, so it has to be dropped
+    // here — otherwise the outgoing booster keeps reading a live customer
+    // conversation that is no longer theirs.
+    if (response.status === 401 || response.status === 403) {
+      writeConversation(key, []);
+      setMessages([]);
+      return;
+    }
     if (!response.ok) throw new Error(`Chat sync failed: ${response.status}`);
     const data = (await response.json()) as { messages?: ChatMessage[]; typing?: Partial<Record<ChatSide, number>> };
     if (!data.messages) return;
