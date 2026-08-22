@@ -373,28 +373,11 @@ function AlertPermission() {
  * crowded browser, and the OS notification carries when the browser itself is
  * behind something else.
  */
-/**
- * How long an order stays "already announced" once it leaves the list.
- *
- * The dispatcher genuinely re-invites people: when everyone eligible has been
- * asked and nobody took it, resetForRetry() releases the lapsed invitations
- * and the next wave reaches the same teammates again. That is a real new
- * chance and worth a sound. Doing it every couple of minutes for the same
- * order, forever, is a dripping tap — so the second alert for one order waits
- * this long.
- */
-const REANNOUNCE_AFTER_MS = 10 * 60_000;
-
 function useRequestAlerts(
-  requests: { order: { id: string; orderNo: number; gameName: string }; msLeft: number }[],
+  requests: { order: { id: string; orderNo: number; gameName: string } }[],
   silenced: boolean,
 ) {
-  // Order id -> when it was last announced. A Set that was emptied whenever
-  // the list went empty could not tell "gone for good" from "gone for one
-  // read", and the single-request case is exactly where that mattered: one
-  // request that flickered out and back *is* an empty list, so the guard
-  // wiped itself and the same still-open invitation announced itself again.
-  const seen = useRef<Map<string, number> | null>(null);
+  const seen = useRef<Set<string> | null>(null);
   const baseTitle = useRef<string>("");
 
   useEffect(() => {
@@ -405,33 +388,22 @@ function useRequestAlerts(
   }, []);
 
   useEffect(() => {
-    const at = Date.now();
-
     // The first read is the state of the world, not news — without this,
     // opening the page with two requests already open fires two alerts.
     if (seen.current === null) {
-      seen.current = new Map(requests.map((r) => [r.order.id, at]));
+      seen.current = new Set(requests.map((r) => r.order.id));
       return;
     }
 
-    // Forgetting on a clock rather than on the list emptying. Nothing else
-    // here is allowed to clear this map: "the list is empty right now" is not
-    // evidence an order is finished with, and treating it as such is what let
-    // one order announce itself over and over.
-    for (const [id, announcedAt] of seen.current) {
-      if (at - announcedAt > REANNOUNCE_AFTER_MS) seen.current.delete(id);
-    }
-
-    for (const { order, msLeft } of requests) {
+    for (const { order } of requests) {
       if (seen.current.has(order.id)) continue;
-      seen.current.set(order.id, at);
-      if (silenced) continue;
-      // A card whose clock has already run out says "Too late" and offers a
-      // disabled button. Announcing it calls someone to their desk for
-      // something they cannot answer — and it is not acknowledged either,
-      // since a non-response only counts against them from a delivery they
-      // could still have acted on.
-      if (msLeft <= 1000) continue;
+      if (silenced) {
+        // Still recorded as seen, so it doesn't announce itself later as if
+        // it had just arrived.
+        seen.current.add(order.id);
+        continue;
+      }
+      seen.current.add(order.id);
       // Before the sound: this is the moment the alert is provably on screen,
       // and only from here may a non-response count against them.
       ackDispatchAlert(order.id);
@@ -446,22 +418,26 @@ function useRequestAlerts(
       }
     }
 
+    // Cleared only when the list is genuinely empty, so an order that comes
+    // back around later still counts as new.
+    //
+    // It used to be rebuilt from the current list on every read, which meant
+    // any request missing from a single response — a slow query, a wave
+    // boundary, an order that flickered out and back — was announced all over
+    // again on the next one. That is where the stutter came from.
+    if (requests.length === 0) seen.current = new Set();
+
     document.title = requests.length > 0 ? `(${requests.length}) ${baseTitle.current}` : baseTitle.current;
   }, [requests, silenced]);
 
   // The alert is a recording, not a beep. Accepting two seconds in used to
   // leave the rest of it playing under the "waiting for the customer" dialog,
   // still announcing what had just been answered.
-  // Not requests.length: a request that has run out stays on screen until the
-  // next read drops it, and while it does the list is not empty. Cutting the
-  // clip only then left it calling someone to a card that already said "Too
-  // late". What matters is whether anything is still answerable.
-  const answerable = requests.some((request) => request.msLeft > 1000);
   useEffect(() => {
-    if (silenced || !answerable) stopSound("request");
+    if (silenced || requests.length === 0) stopSound("request");
     // And on the way out. Accepting navigates to the order room, which
     // unmounted this while the clip was still running — so the alert for an
     // order they had just taken followed them into it and kept playing.
     return () => stopSound("request");
-  }, [silenced, answerable]);
+  }, [silenced, requests.length]);
 }

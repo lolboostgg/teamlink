@@ -429,10 +429,6 @@ export function OrderRoom({ orderId }: { orderId: string }) {
             </li>
           </ul>
 
-          {order.status === "ASSIGNED" && status === "WAITING_FOR_INVITE" && (
-            <HandoverPanel orderId={orderId} />
-          )}
-
           <a
             className="order-room__help"
             href="https://discord.com/channels/1535592539195703398/1535592539997081668"
@@ -488,6 +484,10 @@ export function OrderRoom({ orderId }: { orderId: string }) {
               );
             })}
           </div>
+
+          {order.status === "ASSIGNED" && status === "WAITING_FOR_INVITE" && (
+            <HandoverPanel orderId={orderId} />
+          )}
 
           <div className="order-room__proofs">
             {order.games.map((game) => (

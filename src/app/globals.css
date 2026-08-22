@@ -14190,88 +14190,54 @@ a.notification-panel__item:hover {
 
 .join-card .cancel-confirm__actions { width: 100%; }
 
-/* Handing the session over, in the teammate's order room.
-
-   Sits in the left column beside the other order-level actions, and not in
-   the session panel: that panel is the `auto` row of a grid whose other row
-   is the chat, so anything added there is height the chat loses, and the
-   chat clips rather than scrolls. The left column is its own grid's fill row
-   and scrolls on its own, so this costs the chat nothing. */
-.handover-card {
+/* Handing the session over, in the teammate's order room. */
+.order-room__handover {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
-  width: 100%;
-  margin-top: 12px;
-  padding: 11px 14px;
+  margin-top: 4px;
+}
+
+.order-room__handover.is-open {
+  padding: 16px;
   border: 1px solid var(--dash-line);
-  border-radius: 12px;
-  background: var(--dash-surface-3, var(--dash-surface));
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  border-radius: 14px;
+  background: var(--dash-surface-2, rgba(127, 127, 127, 0.05));
 }
 
-.handover-card:hover { border-color: var(--accent); }
-
-.handover-card:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  outline-offset: 2px;
+.order-room__handover-lead {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
 }
 
-.handover-card__icon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 34px;
-  height: 34px;
+.order-room__handover-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
   border-radius: 10px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 14px;
-}
-
-.handover-card__text { display: grid; gap: 2px; min-width: 0; }
-.handover-card__text strong { color: var(--text); font-size: 13px; font-weight: 700; }
-.handover-card__text small { color: var(--text-faint); font-size: 11.5px; }
-
-.handover-card__chevron { margin-left: auto; color: var(--text-faint); font-size: 12px; }
-
-.handover-modal { display: grid; gap: 16px; }
-
-/* The title/sub pair carry their own bottom margins from .cancel-confirm,
-   which would double up against this grid's gap. */
-.handover-modal .cancel-confirm__title,
-.handover-modal .cancel-confirm__sub { margin-bottom: 0; }
-
-.handover-modal__link {
-  display: grid;
-  gap: 8px;
-  padding: 11px 13px;
+  background: var(--dash-surface);
   border: 1px solid var(--dash-line);
-  border-radius: 11px;
-  background: var(--dash-surface-3, var(--dash-surface));
 }
 
-.handover-modal__link code {
-  /* Long and must stay selectable, so it wraps rather than scrolling out of
-     reach on a phone. */
+.order-room__handover-link code {
+  /* The link is long and must stay selectable, so it wraps rather than
+     scrolling out of reach on a phone. */
   overflow-wrap: anywhere;
   color: var(--accent);
   font-size: 12px;
-  line-height: 1.5;
 }
 
-.handover-modal__link-foot {
+.order-room__handover-link small { color: var(--text-faint); font-size: 11px; }
+
+.order-room__handover-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
-
-.handover-modal__link-foot small { color: var(--text-faint); font-size: 11px; }
 .join-card__foot a { color: var(--accent); }
 
 .join-form { width: 100%; display: grid; gap: 12px; margin-top: 6px; text-align: left; }
