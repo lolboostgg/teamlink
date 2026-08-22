@@ -19,9 +19,9 @@ export function useCurrentTeammateId(): string | null {
     // row belonging to this account, which an admin can have too. Filtering
     // by role here only stopped the request from ever being made.
     if (status !== "authenticated") {
-      // Resets on logout/role change, not just the initial mount (which is
-      // already null) — a real, necessary effect action, not avoidable via
-      // lazy initial state alone.
+      // Resets on logout, not just the initial mount (which is already
+      // null) — a real, necessary effect action, not avoidable via lazy
+      // initial state alone.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setTeammateId(null);
       return;
@@ -38,7 +38,7 @@ export function useCurrentTeammateId(): string | null {
     return () => {
       cancelled = true;
     };
-  }, [status, session?.user?.role, session?.user?.id]);
+  }, [status, session?.user?.id]);
 
   return teammateId;
 }
