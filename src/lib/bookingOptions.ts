@@ -385,6 +385,40 @@ const HANGOUT_CATEGORIES: BookingCategory[] = [
   },
 ];
 
+/**
+ * World of Warcraft sells runs and hours, not "games".
+ *
+ * Mythic+ and Delves are priced per run because that is the unit a key is
+ * cleared in; arena, blitz and coaching are booked by the hour. "Training"
+ * is its own group rather than the roster's usual "Coaching" because PvP
+ * coaching and general coaching are different products here.
+ */
+const WOW_CATEGORIES: BookingCategory[] = [
+  {
+    category: "Team Up",
+    options: [
+      { name: "Mythic+ Dungeon single run", description: "Run Mythic+ keys with top-tier teammates", price: 5.99, eta: "4 min away", unit: "/run", maxTeammates: 4 },
+      { name: "Mythic+ starter special", description: "Challenge yourself along with an elite teammate!", price: 6.99, eta: "3 min away", unit: "/run", maxTeammates: 1 },
+      { name: "Delves", description: "Clear Delves with a top-tier teammate", price: 3.99, eta: "4 min away", unit: "/run", maxTeammates: 1 },
+      { name: "Arena", description: "Rated arena sessions with a top-tier teammate", price: 24.99, eta: "4 min away", unit: "/hour", maxTeammates: 2 },
+      { name: "Battleground Blitz", description: "Queue Blitz with a top-tier teammate", price: 24.99, eta: "4 min away", unit: "/hour", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Training",
+    options: [
+      { name: "Pvp coaching", description: "Get coached by our team teammates", price: 29.99, eta: "3 min away", unit: "/hour", maxTeammates: 1 },
+      { name: "Coaching", description: "1-on-1 coaching session with a verified high-rated player", price: 24.99, eta: "2 min away", unit: "/hour", maxTeammates: 1 },
+    ],
+  },
+  {
+    category: "Social",
+    options: [
+      { name: "Gamer Girl", description: "Hangout and meet with our best girl teammates", price: 12.99, eta: "2 min away", unit: "/hour", maxTeammates: 4 },
+    ],
+  },
+];
+
 const CATALOG_BY_GAME: Record<string, BookingCategory[]> = {
   "league-of-legends": LOL_CATEGORIES,
   fortnite: FORTNITE_CATEGORIES,
@@ -398,6 +432,7 @@ const CATALOG_BY_GAME: Record<string, BookingCategory[]> = {
   "marvel-rivals": MARVEL_RIVALS_CATEGORIES,
   "teamfight-tactics": TFT_CATEGORIES,
   "apex-legends": APEX_CATEGORIES,
+  "world-of-warcraft": WOW_CATEGORIES,
 };
 
 export function getBookingCategories(gameSlug: string): BookingCategory[] {
@@ -416,6 +451,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Ranked: "var(--hue-gold)",
   Social: "var(--hue-pink)",
   Coaching: "var(--hue-purple)",
+  Training: "var(--hue-purple)",
   Bundles: "var(--hue-cyan)",
   Hangout: "var(--hue-pink)",
   Events: "var(--hue-green)",

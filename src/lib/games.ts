@@ -27,6 +27,7 @@ export const GAMES: Game[] = [
   { slug: "clash-royale", name: "Clash Royale", shortName: "CR", tint: "#1f2f3a", players: "—" },
   { slug: "minecraft", name: "Minecraft", shortName: "MC", tint: "#1f3a25", players: "—" },
   { slug: "meccha-chameleon", name: "Meccha Chameleon", shortName: "MECH", tint: "#2f1f3a", players: "—" },
+  { slug: "world-of-warcraft", name: "World of Warcraft", shortName: "WoW", tint: "#2b1f3f", players: "—" },
   // No game at all — the teammate is what is being booked.
   { slug: "hangout", name: "Hangout", shortName: "HANG", tint: "#3a1f33", players: "—" },
 

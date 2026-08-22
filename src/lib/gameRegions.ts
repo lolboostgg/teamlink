@@ -55,12 +55,17 @@ export function ignPlaceholder(gameSlug: string): string {
   if (gameSlug === "league-of-legends" || gameSlug === "teamfight-tactics" || gameSlug === "valorant") {
     return "Name#TAG";
   }
+  // A WoW character is added by BattleTag, which is a name and a number.
+  if (gameSlug === "world-of-warcraft") return "Name#1234";
   return "Your in-game name";
 }
 
 export function ignHint(gameSlug: string): string {
   if (gameSlug === "league-of-legends" || gameSlug === "teamfight-tactics" || gameSlug === "valorant") {
     return "Riot ID including the tag — your teammate can't find you without it.";
+  }
+  if (gameSlug === "world-of-warcraft") {
+    return "Your BattleTag including the number — your teammate can't add you without it.";
   }
   return "Exactly as it appears in game, so your teammate can add you.";
 }

@@ -300,6 +300,19 @@ const GAME_PROFILE_LIST: GameProfileConfig[] = [
     },
   },
   {
+    slug: "world-of-warcraft",
+    roles: {
+      label: "Specialities",
+      options: [
+        { value: "tank", label: "Tank", glyph: "fa-solid fa-shield-halved" },
+        { value: "healer", label: "Healer", glyph: "fa-solid fa-kit-medical" },
+        { value: "dps", label: "DPS", glyph: "fa-solid fa-khanda" },
+        { value: "mythic-plus", label: "Mythic+", glyph: "fa-solid fa-dungeon" },
+        { value: "pvp", label: "PvP", glyph: "fa-solid fa-swords" },
+      ],
+    },
+  },
+  {
     slug: "meccha-chameleon",
     roles: {
       label: "Specialities",

@@ -18,10 +18,18 @@ export function localGameBanner(slug: string): string {
   return `/games/${BANNER_FILE_OVERRIDES[slug] ?? `${slug}.${EXTENSIONS[slug] ?? "webp"}`}`;
 }
 
+// The roster's icons are PNG; World of Warcraft's mark arrived as AVIF and is
+// served as it is rather than re-encoded — every browser that reaches this
+// site decodes AVIF, and a lossy round-trip through PNG would only make the
+// file bigger.
+const ICON_EXTENSIONS: Record<string, string> = {
+  "world-of-warcraft": "avif",
+};
+
 // Square logo mark for the same game, used wherever a compact badge/icon
 // reads better than the full poster-style banner (small tags, headers).
 export function gameIcon(slug: string): string {
-  return `/games/icons/${slug}.png`;
+  return `/games/icons/${slug}.${ICON_EXTENSIONS[slug] ?? "png"}`;
 }
 
 const BACKGROUND_EXTENSIONS: Record<string, string> = {
