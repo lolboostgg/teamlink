@@ -46,6 +46,27 @@ export async function GET(request: Request) {
       // stream, on a connection the browser reopens every three seconds.
       let writable = true;
       let torndown = false;
+      // Declared up here, and checked before use, because send() can call
+      // cleanup() and the very first send happens before either of these
+      // exists. As consts declared further down they sat in the temporal dead
+      // zone at that moment, so a first enqueue that failed threw a
+      // ReferenceError out of start() rather than tearing down — which errors
+      // the stream, and the browser then reopens it every three seconds.
+      let heartbeat: ReturnType<typeof setInterval> | undefined;
+      let unsubscribe: (() => void) | undefined;
+
+      function cleanup() {
+        if (torndown) return;
+        torndown = true;
+        writable = false;
+        if (heartbeat) clearInterval(heartbeat);
+        unsubscribe?.();
+        try {
+          controller.close();
+        } catch {
+          // Already closed by the runtime.
+        }
+      }
 
       function send(payload: string) {
         if (!writable) return;
@@ -64,7 +85,7 @@ export async function GET(request: Request) {
       // something to flush so the connection is established immediately.
       send("retry: 3000\n\n");
 
-      const unsubscribe = subscribe((event) => {
+      unsubscribe = subscribe((event) => {
         const forGuestOrder = Boolean(
           guestOrder &&
           ((event.topic === "orders" && event.key === guestOrder.id) ||
@@ -76,22 +97,12 @@ export async function GET(request: Request) {
 
       // Without traffic, an idle proxy will drop the connection well before
       // anything happens on a quiet account.
-      const heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
+      heartbeat = setInterval(() => send(": ping\n\n"), HEARTBEAT_MS);
 
-      function cleanup() {
-        if (torndown) return;
-        torndown = true;
-        writable = false;
-        clearInterval(heartbeat);
-        unsubscribe();
-        try {
-          controller.close();
-        } catch {
-          // Already closed by the runtime.
-        }
-      }
-
-      request.signal.addEventListener("abort", cleanup);
+      // If the request aborted while we were setting up, the event never
+      // fires again and this would be a stream nobody ever tears down.
+      if (request.signal.aborted) cleanup();
+      else request.signal.addEventListener("abort", cleanup);
     },
   });
 
