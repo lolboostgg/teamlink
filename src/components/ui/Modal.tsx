@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { lockBodyScroll, unlockBodyScroll } from "@/lib/scrollLock";
 
 interface Props {
   open: boolean;
@@ -30,10 +31,10 @@ export function Modal({ open, onClose, children, labelledBy }: Props) {
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      unlockBodyScroll();
     };
   }, [open, onClose]);
 
