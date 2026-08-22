@@ -19,6 +19,7 @@ import {
   type BookingOption,
 } from "@/lib/bookingOptions";
 import { listGameAccounts } from "@/app/actions/gameAccounts";
+import { BookingAddonSelect } from "@/components/booking/BookingAddonSelect";
 import { Reveal } from "@/components/ui/Reveal";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 import { PriceTag } from "@/components/currency/PriceTag";
@@ -286,20 +287,14 @@ export function BookingWidget({ game }: Props) {
                     <div className="booking-addon" key={group.key}>
                       <span className="booking-addon__label">{localizeBookingValue(language, group.label)}</span>
                       {group.control === "select" ? (
-                        <select
-                          className="booking-addon__select"
+                        <BookingAddonSelect
+                          label={localizeBookingValue(language, group.label)}
+                          choices={group.choices}
                           value={addons[group.key] ?? group.choices[0].value}
-                          onChange={(e) => setAddons((current) => ({ ...current, [group.key]: e.target.value }))}
-                          aria-label={localizeBookingValue(language, group.label)}
-                        >
-                          {group.choices.map((choice) => (
-                            <option key={choice.value} value={choice.value}>
-                              {choice.priceEUR
-                                ? `${localizeBookingValue(language, choice.label)}  +${formatPrice(choice.priceEUR)}`
-                                : localizeBookingValue(language, choice.label)}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(next) => setAddons((current) => ({ ...current, [group.key]: next }))}
+                          formatPrice={formatPrice}
+                          localize={(text) => localizeBookingValue(language, text)}
+                        />
                       ) : (
                         <div className="booking-addon__chips">
                           {group.choices.map((choice) => {
