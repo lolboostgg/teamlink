@@ -53,13 +53,20 @@ interface MailInput {
 }
 
 export async function sendMail({ to, subject, html, text }: MailInput): Promise<boolean> {
-  const transport = getTransport();
-  if (!transport) {
-    console.warn("[mail] not configured — skipping:", subject);
-    return false;
-  }
-
+  // getTransport() inside the try, not above it. It calls
+  // nodemailer.createTransport, which validates what it is handed and can
+  // throw on a bad SMTP_PORT or an option a new major stopped accepting — and
+  // this function's whole contract is that it never throws, because a mailbox
+  // problem must not take down the write it is reporting on. Above the try
+  // that contract was a comment rather than a fact, and the callers that trust
+  // it are the ones running inside an order transition.
   try {
+    const transport = getTransport();
+    if (!transport) {
+      console.warn("[mail] not configured — skipping:", subject);
+      return false;
+    }
+
     await transport.sendMail({
       from: from(),
       to,

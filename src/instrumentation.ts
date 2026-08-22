@@ -20,11 +20,41 @@
 export function register() {
   // Only the Node server serves these routes.
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  // Before anything else, and in dev too: this is the one that decides
+  // whether a mistake is a broken request or a broken site.
+  guardAgainstUnhandledRejections();
+
   // Dev restarts constantly and serves one person, who would rather have the
   // reload back than a warm pool.
   if (process.env.NODE_ENV !== "production") return;
 
   scheduleRouteWarmup();
+}
+
+/**
+ * Stops one stray promise from taking the whole server with it.
+ *
+ * Node ends the process on an unhandled rejection, and on a server that is
+ * the wrong trade every time: one request's mistake becomes everybody's
+ * outage. Worse, it is silent — preload-timestamp.js installs an
+ * uncaughtExceptionMonitor, and that does not fire for rejections, so the
+ * log shows a restart with nothing above it and no way to tell what died.
+ * Registering a listener is also what disarms the exit, so this both keeps
+ * the server up and leaves the evidence behind.
+ *
+ * Not a licence to leave promises unhandled. Everything that reaches here is
+ * a bug; the point is that it is reported as one instead of being paid for by
+ * every customer with a session open.
+ */
+function guardAgainstUnhandledRejections(): void {
+  // The dev server installs its own and would end up with two.
+  if (process.listenerCount("unhandledRejection") > 0) return;
+
+  process.on("unhandledRejection", (reason) => {
+    const detail = reason instanceof Error ? (reason.stack ?? reason.message) : String(reason);
+    console.error("[unhandledRejection] a promise rejected with nobody listening:", detail);
+  });
 }
 
 /**

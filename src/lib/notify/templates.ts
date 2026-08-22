@@ -6,14 +6,15 @@
  * ships a plain-text alternative too: HTML-only mail scores badly with spam
  * filters, and the text part is what a watch or a screen reader reads out.
  *
- * The palette matches the app (see globals.css :root) so a mail and the order
- * screen it links to read as the same product.
+ * The mail is light where the app is dark — see the note on the palette below.
+ * The accents are still the app's, so the two read as one product.
  *
- * Nothing structural is an image. Most clients block remote images until the
- * reader asks for them, so a masthead built from one is a broken-image icon
- * sitting exactly where the brand should be, for a large share of readers, on
- * first open. The wordmark, the panels and the button are all type, colour and
- * table cells, which no client can refuse to render.
+ * Nothing structural is an image *except* the masthead logo, and that one is
+ * written so a client blocking it loses nothing: the img carries the wordmark
+ * as alt text, styled with the size, weight and colour the wordmark had when
+ * it was type. A blocked masthead therefore renders as "QUP.GG" rather than as
+ * a broken-image icon. Panels, rules and the button remain type, colour and
+ * table cells, which no client can refuse to draw.
  *
  * The one exception is the row of social marks in the footer, where an icon
  * is the whole point and a blocked one costs nothing — they fall back to
@@ -22,14 +23,31 @@
 
 import { COMPANY, SOCIALS as COMPANY_SOCIALS } from "@/lib/company";
 
-const BG = "#060811";
-const CARD = "#0d1120";
-const PANEL = "#131829";
-const BORDER = "#232838";
-const TEXT = "#f3f4f8";
-const MUTED = "#9a9db0";
-const FAINT = "#6c6f80";
+// Light, and deliberately so. A dark mail is the harder thing to get right in
+// somebody else's client: Outlook and Apple Mail invert it on their own terms,
+// a reply quotes it onto a white ground, and printing one is a black
+// rectangle. The app stays dark — a mail is not the app, it is a thing that
+// arrives somewhere we do not control.
+const BG = "#eceef3";
+const CARD = "#ffffff";
+const PANEL = "#f5f6fa";
+const BORDER = "#e6e8ef";
+const TEXT = "#0d1120";
+const MUTED = "#5a5f70";
+// Fine print only, and dark enough to still be read at 11px on BG.
+const FAINT = "#6f7486";
 const ACCENT = "#4066ff";
+/** Inline links. ACCENT carries white text on a button and is right there, but
+ *  as text on white it sits at the edge of legible, so links go a shade
+ *  deeper. */
+const LINK = "#2f4bd4";
+
+// The masthead band, which stays dark: the logo is drawn with a white keyline
+// and a neon glow, both of which need something to sit on. It is also the one
+// place the brand's own colours can be themselves at full strength without
+// having to clear a contrast bar for body text.
+const BAND = "#0a0e1a";
+const BAND_TEXT = "#ffffff";
 const CYAN = "#22d3ee";
 const PURPLE = "#a855f7";
 const GOLD = "#f5b301";
@@ -211,12 +229,14 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <!-- Without these, Outlook and Apple Mail "helpfully" invert a dark
-         template and land dark grey text on a dark grey card. -->
-    <meta name="color-scheme" content="dark">
-    <meta name="supported-color-schemes" content="dark">
+    <!-- Declared, not left to chance: without these a client running in dark
+         mode decides for itself what to do with a light template, and the
+         usual answer is to invert the parts it recognises and leave the rest,
+         which lands light grey text on a now-dark panel. -->
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
   </head>
-  <body style="margin:0;padding:0;background:${BG};-webkit-font-smoothing:antialiased;">
+  <body style="margin:0;padding:0;background:${BG};">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${escapeHtml(preheader ?? intro)}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:36px 12px;">
       <tr>
@@ -228,25 +248,21 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
             <tr>
               <td bgcolor="${ACCENT}" style="background-color:${ACCENT};background-image:linear-gradient(90deg,${CYAN},${ACCENT} 55%,${PURPLE});height:5px;line-height:5px;font-size:0;">&nbsp;</td>
             </tr>
+            <!-- The one dark band on a light mail. The logo is drawn with a
+                 white keyline and a glow, so it needs a ground; giving it one
+                 also keeps the brand at full strength without asking neon to
+                 clear a contrast bar it cannot clear on white. -->
             <tr>
-              <td align="center" style="padding:28px 30px 0;font-family:${FONT};">
-                <!-- Still set as type, not the brand PNG: see the note at the
-                     top of this file. A masthead built from a remote image is
-                     a broken-image icon exactly where the brand should be, for
-                     every reader whose client blocks images on first open. -->
-                <div style="font-size:26px;font-weight:900;letter-spacing:-.02em;color:${TEXT};">
-                  QUP<span style="color:${CYAN};">.GG</span>
-                </div>
-                <div style="margin-top:5px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:${FAINT};">
+              <td align="center" bgcolor="${BAND}" style="background-color:${BAND};padding:26px 30px 24px;font-family:${FONT};">
+                <!-- Served at 2x (the file is 355x128). The alt text is the
+                     wordmark, styled: a client that blocks this draws "QUP.GG"
+                     at the size and weight the type version had, not a
+                     broken-image icon. -->
+                <img src="${COMPANY.site}/brand/qup-logo.png" width="178" height="64" alt="QUP.GG"
+                     style="display:block;width:178px;height:64px;border:0;outline:none;margin:0 auto;font-size:26px;font-weight:900;letter-spacing:-.02em;color:${BAND_TEXT};text-decoration:none;">
+                <div style="margin-top:12px;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#6c7086;">
                   Ready. Queue. Play.
                 </div>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:22px 30px 0;">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                  <tr><td style="border-top:1px solid ${BORDER};font-size:0;line-height:0;">&nbsp;</td></tr>
-                </table>
               </td>
             </tr>
             <tr>
@@ -283,7 +299,7 @@ function shell({ heading, intro, rows, ctaLabel, ctaUrl, footnote, highlight, pr
                   <tr>
                     <td style="padding:14px 16px;font-family:${FONT};font-size:13px;line-height:1.6;color:${MUTED};">
                       Need a hand? Reply to this email, or find us on
-                      <a href="${COMPANY.discord}" style="color:${CYAN};text-decoration:none;font-weight:700;">Discord</a>
+                      <a href="${COMPANY.discord}" style="color:${LINK};text-decoration:none;font-weight:700;">Discord</a>
                       &mdash; someone is usually around.
                     </td>
                   </tr>
